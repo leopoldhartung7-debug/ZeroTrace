@@ -20,6 +20,7 @@ import {
   Terms, Privacy, Legal, Changelogs,
 } from './pages/resources.jsx'
 import SettingsPage from './pages/Settings.jsx'
+import Account from './pages/Account.jsx'
 
 function DashboardLayout() {
   const { state } = useStore()
@@ -73,6 +74,7 @@ export default function App() {
             <Route path="/resources/legal" element={<Legal />} />
             <Route path="/resources/changelogs" element={<Changelogs />} />
             <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/account" element={<Account />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

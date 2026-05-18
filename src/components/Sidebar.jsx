@@ -196,16 +196,6 @@ export default function Sidebar() {
           >
             {dark ? <Moon size={16} /> : <Sun size={16} />}
           </button>
-          <button
-            className="muted hover:text-red-500"
-            title="Log out"
-            onClick={() => {
-              dispatch({ type: 'logout' })
-              navTo('/')
-            }}
-          >
-            <LogOut size={16} />
-          </button>
 
           <Popover open={panel === 'n'} onClose={() => setPanel(null)} className="bottom-10 left-0 w-72">
             <div className="bd flex items-center justify-between border-b px-4 py-3">
@@ -256,14 +246,48 @@ export default function Sidebar() {
           </Popover>
         </div>
 
-        <button className="hoverable flex w-full items-center gap-3 rounded-lg px-2 py-2">
-          <div className="tile txt flex h-9 w-9 items-center justify-center rounded-lg border text-sm font-semibold">H</div>
-          <div className="flex-1 text-left">
-            <p className="txt text-sm font-medium leading-tight">Ham</p>
-            <p className="muted text-xs">ham@anticheat.ac</p>
-          </div>
-          <ChevronsUpDown size={16} className="muted" />
-        </button>
+        <div className="relative">
+          <button
+            onClick={() => setPanel(panel === 'user' ? null : 'user')}
+            className="hoverable flex w-full items-center gap-3 rounded-lg px-2 py-2"
+          >
+            <div className="tile txt flex h-9 w-9 items-center justify-center rounded-lg border text-sm font-semibold">H</div>
+            <div className="flex-1 text-left">
+              <p className="txt text-sm font-medium leading-tight">Ham</p>
+              <p className="muted text-xs">ham@anticheat.ac</p>
+            </div>
+            <ChevronsUpDown size={16} className="muted" />
+          </button>
+
+          <Popover
+            open={panel === 'user'}
+            onClose={() => setPanel(null)}
+            className="bottom-full left-0 right-0 mb-2 py-1"
+          >
+            <div className="bd border-b px-4 py-3">
+              <p className="txt text-sm font-semibold">Ham</p>
+              <p className="muted truncate text-xs">ham@anticheat.ac</p>
+            </div>
+            <button
+              onClick={() => {
+                setPanel(null)
+                navTo('/account')
+              }}
+              className="hoverable txt flex w-full items-center gap-3 px-4 py-2.5 text-sm"
+            >
+              <Settings size={16} className="muted" /> Settings
+            </button>
+            <button
+              onClick={() => {
+                dispatch({ type: 'logout' })
+                navTo('/')
+              }}
+              className="hoverable flex w-full items-center gap-3 px-4 py-2.5 text-sm text-red-500"
+            >
+              <LogOut size={16} /> Logout
+            </button>
+          </Popover>
+        </div>
       </div>
     </aside>
   )
