@@ -1,7 +1,9 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Play, Globe, FastForward, Activity, Lock, RotateCw, AppWindow,
   Clock, Smile, FileCheck, ShieldCheck, Server, ScanFace, MoreVertical,
+  FileText, ChevronDown, Check, Link2,
 } from 'lucide-react'
 import { useStore } from '../store.jsx'
 import { useToast } from '../components/ui.jsx'
@@ -101,6 +103,102 @@ const FEATURES = [
   { icon: FileCheck, color: 'text-purple-500', title: 'Complete Documentation', text: 'We provide documentation tailored for both new users and experts in the field of screensharing and cheat detection.' },
   { icon: ShieldCheck, color: 'text-teal-500', title: 'Privacy Focused', text: 'With future-focused security, we ensure every trace of information remains completely protected and encrypted.' },
 ]
+
+/* ---- "How Ocean works" step mocks ---- */
+function DownloadMock() {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+      <p className="text-sm font-medium">Download</p>
+      <div className="mt-4 space-y-3">
+        {[1, 0.6, 0.35].map((o, i) => (
+          <div
+            key={i}
+            className={`flex items-center gap-3 rounded-lg border border-white/10 px-4 py-3 ${i === 0 ? 'bg-white/[0.05]' : 'bg-white/[0.02]'}`}
+            style={{ opacity: o }}
+          >
+            <FileText size={18} className={i === 0 ? 'text-blue-500' : 'text-neutral-500'} />
+            <div>
+              <p className="text-sm">Ocean-238fS64.exe</p>
+              <p className="text-xs text-neutral-500">Ocean File - exe</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+function ScanningMock() {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-black/60 p-5">
+      <div className="flex justify-end gap-2 text-neutral-600">
+        <span>—</span>
+        <span>×</span>
+      </div>
+      <pre className="mt-1 font-mono text-[11px] leading-relaxed text-yellow-600/70">{`"KeyAuth": {
+  Var1 => String::Keyauth::Nocase;
+  Var2 => String::Keyauth::Wide;`}</pre>
+      <p className="mt-6 text-center font-mono text-3xl font-bold text-yellow-500">{')<(((*>'}</p>
+      <p className="mt-3 text-center text-sm text-neutral-500">Scanning...</p>
+      <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+        <div className="h-full w-3/4 rounded-full bg-yellow-500" />
+      </div>
+    </div>
+  )
+}
+function ReviewMock() {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-black/60 p-5">
+      <div className="flex items-center justify-between text-sm">
+        <span className="text-neutral-300">Results <span className="text-neutral-600">›</span> 238FS64</span>
+        <span className="flex items-center gap-2 text-neutral-600"><Link2 size={14} /> <MoreVertical size={14} /></span>
+      </div>
+      <div className="mt-4 flex items-center justify-center rounded-xl border border-red-600/30 bg-red-600/[0.06] py-10">
+        <span className="relative rounded-md border border-red-500 px-4 py-1.5 text-lg font-semibold text-white">
+          Cheating
+          <span className="absolute -right-3 -top-3 rounded bg-red-600 px-1.5 py-0.5 text-[10px] font-bold text-white">
+            Detected
+          </span>
+        </span>
+      </div>
+      <div className="mt-4 grid grid-cols-2 gap-3">
+        {[0, 1].map((i) => (
+          <div key={i} className="rounded-lg border border-white/10 bg-white/[0.02] p-4">
+            <div className="flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-neutral-600" />
+              <span className="h-1.5 w-20 rounded bg-white/10" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+const STEPS = [
+  { n: '1.', title: 'Downloading', color: 'text-blue-500', text: 'Effortlessly scan suspects in seconds with two simple clicks that handle everything automatically.', mock: <DownloadMock /> },
+  { n: '2.', title: 'Scanning', color: 'text-yellow-500', text: 'Let Ocean take care of all the hard work for you. Simply wait a few seconds while our advanced technology processes everything and delivers accurate results quickly and effortlessly.', mock: <ScanningMock />, reverse: true },
+  { n: '3.', title: 'Data Review', color: 'text-red-500', text: 'Analyze the results on our dashboard and reach a final verdict on the suspect with confidence!', mock: <ReviewMock /> },
+]
+
+const QA = [
+  { q: 'Why should you use Ocean?', a: 'Ocean delivers fast, consent-based forensic screenshare scans with precise, trustworthy results — detecting cheaters in around 60 seconds.' },
+  { q: 'What operating systems do you support?', a: 'The scanner runs on Windows and Linux. The dashboard works in any modern browser.' },
+  { q: 'What type of data does Ocean collect?', a: 'Only anti-cheat artifacts (processes, modules, files, system traces) gathered with consent. Dashboard data stays in your browser; nothing is sold or shared.' },
+  { q: 'What payment methods do you accept?', a: 'Payments are handled by our Merchant of Record (card and common online methods). See the Pricing page for plans.' },
+]
+
+function FaqRow({ q, a }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <div className="border-b border-white/10">
+      <button onClick={() => setOpen((o) => !o)} className="flex w-full items-center justify-between py-6 text-left">
+        <span className="text-lg text-white">{q}</span>
+        <ChevronDown size={20} className={`text-neutral-500 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && <p className="-mt-2 pb-6 pr-8 text-neutral-400">{a}</p>}
+    </div>
+  )
+}
 
 export default function Landing() {
   const nav = useNavigate()
@@ -228,31 +326,126 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* FAQ */}
-      <section id="faq" className="mx-auto max-w-3xl px-6 py-20 md:px-12">
-        <h2 className="text-4xl font-extrabold tracking-tight md:text-5xl">FAQ</h2>
-        <div className="mt-8 space-y-4">
-          {[
-            { q: 'How fast is a scan?', a: 'Most scans complete in around 60 seconds depending on the system.' },
-            { q: 'Can it detect every cheat?', a: 'No usermode tool can. Ocean detects signature, heuristic and artifact-based indicators; kernel/DMA/external cheats are out of scope.' },
-            { q: 'Is consent required?', a: 'Yes. The scanner only runs after the user accepts the consent prompt tied to a pin.' },
-          ].map((f) => (
-            <div key={f.q} className="rounded-xl border border-white/10 bg-white/[0.03] p-5">
-              <p className="font-medium">{f.q}</p>
-              <p className="mt-1.5 text-sm text-neutral-400">{f.a}</p>
+      {/* How Ocean works */}
+      <section className="mx-auto max-w-6xl px-6 py-20 md:px-12">
+        <div className="text-center">
+          <h2 className="text-5xl font-extrabold tracking-tight md:text-7xl">How Ocean works</h2>
+          <p className="mx-auto mt-6 max-w-3xl text-lg text-neutral-400 md:text-xl">
+            We show you how easy it is to use Ocean: in just a few steps, you can download, scan,
+            and get secure results—no complications or lengthy processes.
+          </p>
+        </div>
+        <div className="mt-16 space-y-20">
+          {STEPS.map((s) => (
+            <div key={s.title} className="grid items-center gap-10 md:grid-cols-2">
+              <div className={s.reverse ? 'md:order-2' : ''}>
+                <p className="text-lg text-neutral-500">{s.n}</p>
+                <h3 className={`mt-4 text-5xl font-extrabold tracking-tight md:text-6xl ${s.color}`}>
+                  {s.title}
+                </h3>
+                <p className="mt-6 max-w-md text-lg leading-relaxed text-neutral-400">{s.text}</p>
+              </div>
+              <div className={s.reverse ? 'md:order-1' : ''}>{s.mock}</div>
             </div>
           ))}
         </div>
-        <div className="mt-14 flex flex-col items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.03] p-10 text-center">
-          <h3 className="text-2xl font-bold">Ready to start detecting?</h3>
-          <button onClick={enter} className="rounded-lg bg-blue-600 px-6 py-3 text-sm font-semibold text-white hover:bg-blue-500">
-            Start Ocean
-          </button>
+      </section>
+
+      {/* Answer your questions */}
+      <section id="faq" className="mx-auto max-w-6xl px-6 py-20 md:px-12">
+        <div className="grid gap-10 lg:grid-cols-2">
+          <div>
+            <h2 className="text-5xl font-extrabold leading-[1.05] tracking-tight md:text-7xl">
+              Answer your <span className="text-blue-500">questions</span>
+            </h2>
+            <p className="mt-6 text-lg text-neutral-400">
+              You've got <span className="text-white">answers</span>
+            </p>
+          </div>
+          <div>
+            {QA.map((x) => (
+              <FaqRow key={x.q} q={x.q} a={x.a} />
+            ))}
+          </div>
         </div>
       </section>
 
-      <footer className="border-t border-white/10 px-6 py-8 text-center text-sm text-neutral-500">
-        © 2026 Ocean Anti-Cheat — anticheat.ac
+      {/* Start Swimming Now */}
+      <section className="relative overflow-hidden">
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{ background: 'radial-gradient(60% 80% at 50% 100%, rgba(37,99,235,0.18), transparent 70%)' }}
+        />
+        <div className="relative mx-auto max-w-6xl px-6 py-28 md:px-12">
+          <div className="flex flex-col gap-10 lg:flex-row lg:items-center lg:justify-between">
+            <h2 className="text-6xl font-extrabold leading-[1.05] tracking-tight md:text-7xl">
+              Start Swimming
+              <br />
+              Now
+            </h2>
+            <div className="flex items-center gap-6">
+              <button
+                onClick={enter}
+                className="rounded-full bg-blue-600 px-10 py-5 text-lg font-semibold text-black hover:bg-blue-500"
+              >
+                Get Started
+              </button>
+              <p className="text-neutral-400">
+                More than
+                <br />
+                <span className="text-white">500+ frequent buyers</span>
+              </p>
+            </div>
+          </div>
+          <div className="mt-10 flex flex-wrap gap-8">
+            <span className="flex items-center gap-2 text-neutral-300">
+              <Check size={18} className="text-blue-500" /> Download Ocean
+            </span>
+            <span className="flex items-center gap-2 text-neutral-300">
+              <Check size={18} className="text-blue-500" /> Join our Community
+            </span>
+          </div>
+        </div>
+      </section>
+
+      <footer className="border-t border-white/10 px-6 py-14 md:px-12">
+        <div className="mx-auto grid max-w-6xl gap-10 md:grid-cols-[1.5fr_1fr_1fr_1fr_1fr]">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-xl font-bold">{'(*>'}</span>
+              <span className="text-lg font-semibold">Ocean</span>
+              <span className="text-neutral-500">- anticheat.ac</span>
+            </div>
+            <p className="mt-3 max-w-xs text-sm text-neutral-500">
+              The most powerful screenshare tool — detect cheaters in 60 seconds.
+            </p>
+          </div>
+          {[
+            { h: 'Product', items: ['Features', 'Pricing', 'Download', 'Changelog'] },
+            { h: 'Legal', items: ['Terms of Service', 'Privacy Policy', 'Legal'] },
+            { h: 'Community', items: ['Discord', 'Branding'] },
+            { h: 'Support', items: ['Docs', 'Contact Us', 'FAQ'] },
+          ].map((col) => (
+            <div key={col.h}>
+              <p className="text-sm font-semibold text-white">{col.h}</p>
+              <ul className="mt-3 space-y-2">
+                {col.items.map((it) => (
+                  <li key={it}>
+                    <button
+                      onClick={() => onNav(it === 'Contact Us' ? 'Discord' : it)}
+                      className="text-sm text-neutral-500 hover:text-white"
+                    >
+                      {it}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+        <p className="mx-auto mt-12 max-w-6xl border-t border-white/10 pt-8 text-sm text-neutral-600">
+          © 2026 Ocean Anti-Cheat — anticheat.ac
+        </p>
       </footer>
     </div>
   )
