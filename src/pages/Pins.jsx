@@ -62,6 +62,8 @@ export default function Pins() {
   const [editing, setEditing] = useState(null)
   const [editForm, setEditForm] = useState({ name: '', game: 'HYTALE', visibility: 'Private' })
   const [access, setAccess] = useState(null)
+  const [deleting, setDeleting] = useState(null)
+  const [deleteInput, setDeleteInput] = useState('')
   const [form, setForm] = useState({
     name: '',
     game: state.settings.defaultGame || 'HYTALE',
@@ -346,10 +348,8 @@ export default function Pins() {
                             disabled: scanned,
                             disabledHint: 'A scan was already performed with this pin — it can no longer be deleted.',
                             onClick: () => {
-                              if (confirm(`Delete pin ${r.pin}?`)) {
-                                dispatch({ type: 'delete-pin', id: r.id, pin: r.pin })
-                                toast({ type: 'success', title: 'Pin deleted', body: r.pin })
-                              }
+                              setDeleting(r)
+                              setDeleteInput('')
                             },
                           },
                           {
@@ -711,6 +711,60 @@ export default function Pins() {
               </div>
               <p className="muted mt-2 text-xs">
                 Share this pin with the user so they can run the scanner against it.
+              </p>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      <Modal
+        open={!!deleting}
+        onClose={() => setDeleting(null)}
+        title="Delete Pin"
+        footer={
+          deleting && (
+            <button
+              disabled={deleteInput.trim() !== deleting.pin}
+              onClick={() => {
+                dispatch({ type: 'delete-pin', id: deleting.id, pin: deleting.pin })
+                toast({ type: 'success', title: 'Pin deleted', body: deleting.pin })
+                setDeleting(null)
+              }}
+              className={`w-full rounded-lg px-4 py-3 text-sm font-semibold transition-colors ${
+                deleteInput.trim() === deleting.pin
+                  ? 'bg-red-600 text-white hover:bg-red-500'
+                  : 'cursor-not-allowed border border-red-900/50 bg-red-950/40 text-red-300/40'
+              }`}
+            >
+              Delete Pin
+            </button>
+          )
+        }
+      >
+        {deleting && (
+          <div className="space-y-4">
+            <p className="muted text-sm leading-relaxed">
+              Are you sure you want to delete this pin? This action cannot be undone. Please enter
+              the pin code to confirm deletion.
+            </p>
+            <div>
+              <label className="txt mb-1.5 block text-sm font-medium">Pin Code</label>
+              <input
+                autoFocus
+                value={deleteInput}
+                onChange={(e) => setDeleteInput(e.target.value.toUpperCase())}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && deleteInput.trim() === deleting.pin) {
+                    dispatch({ type: 'delete-pin', id: deleting.id, pin: deleting.pin })
+                    toast({ type: 'success', title: 'Pin deleted', body: deleting.pin })
+                    setDeleting(null)
+                  }
+                }}
+                placeholder={deleting.pin}
+                className="bd tile txt w-full rounded-lg border px-4 py-3 font-mono text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500/40"
+              />
+              <p className="muted mt-2 text-xs">
+                Pin Code: <span className="txt font-mono">{deleting.pin}</span>
               </p>
             </div>
           </div>
