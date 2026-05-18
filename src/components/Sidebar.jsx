@@ -3,7 +3,7 @@ import { NavLink } from 'react-router-dom'
 import {
   LayoutGrid, Pin, FileText, Database, Wrench, History,
   LifeBuoy, BookOpen, Settings, Wifi, Bell, Globe, Moon, Sun,
-  ChevronsUpDown, Trash2, Check, Command, Wand2,
+  ChevronsUpDown, Trash2, Check, Command,
 } from 'lucide-react'
 import { useStore, useT } from '../store.jsx'
 
@@ -43,7 +43,6 @@ export default function Sidebar() {
         { to: '/strings', label: t('nav.strings'), icon: FileText },
         { to: '/database', label: t('nav.database'), icon: Database },
         { to: '/tools', label: t('nav.tools'), icon: Wrench },
-        { to: '/designer', label: t('nav.designer'), icon: Wand2 },
       ],
     },
     {
