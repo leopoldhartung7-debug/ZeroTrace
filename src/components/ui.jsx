@@ -5,6 +5,17 @@ import { X, Check, AlertTriangle, Info } from 'lucide-react'
 function useScrollLock(open) {
   useEffect(() => {
     if (!open) return
+    // Lock the real scroll container (<main>), not <body>. Toggling
+    // body overflow on iOS Safari resets scroll to the top; locking
+    // the scroll element preserves its position.
+    const el = document.getElementById('app-main')
+    if (el) {
+      const prev = el.style.overflow
+      el.style.overflow = 'hidden'
+      return () => {
+        el.style.overflow = prev
+      }
+    }
     const prev = document.body.style.overflow
     document.body.style.overflow = 'hidden'
     return () => {

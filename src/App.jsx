@@ -20,7 +20,7 @@ export default function App() {
       <ToastProvider>
         <div className="app-bg flex h-screen overflow-hidden">
           <Sidebar />
-          <main className="flex-1 overflow-y-auto">
+          <main id="app-main" className="flex-1 overflow-y-auto">
             <div className="mx-auto max-w-6xl px-6 py-10 md:px-10">
               <Routes>
                 <Route path="/" element={<Navigate to="/dashboard" replace />} />
