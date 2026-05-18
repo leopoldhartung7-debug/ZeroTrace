@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Wand2, Save, Download, Upload, RotateCcw, Eye, Copy } from 'lucide-react'
 import { PageHeader, Card, Field } from '../components/kit.jsx'
 import { useToast } from '../components/ui.jsx'
@@ -50,6 +50,9 @@ function Toggle({ label, checked, onChange }) {
 // Faithful-ish mock of the native scanner window using the chosen style.
 function GuiPreview({ s }) {
   const c = s.colors
+  const [imgErr, setImgErr] = useState(false)
+  useEffect(() => setImgErr(false), [s.logoUrl])
+  const showCustom = !s.useDefaultLogo && !!s.logoUrl && !imgErr
   return (
     <div className="overflow-hidden rounded-xl border" style={{ borderColor: c.titlebar }}>
       <div
@@ -74,12 +77,20 @@ function GuiPreview({ s }) {
         }}
       >
         <div className="flex flex-col items-center">
-          {s.useDefaultLogo || !s.logoUrl ? (
+          {showCustom ? (
+            <img
+              src={s.logoUrl}
+              alt="logo"
+              onError={() => setImgErr(true)}
+              className="h-[90px] w-[180px] rounded object-fill"
+            />
+          ) : (
             <p className="font-mono text-3xl font-bold" style={{ color: c.accent }}>
               {'(*>'} OCEAN
             </p>
-          ) : (
-            <img src={s.logoUrl} alt="logo" className="h-14 object-contain" />
+          )}
+          {!s.useDefaultLogo && s.logoUrl && imgErr && (
+            <p className="mt-1 text-[10px] text-red-400">Logo failed to load — check the URL</p>
           )}
           <p className="mt-1.5 text-xs" style={{ color: c.mutedText }}>
             {s.version}
@@ -176,15 +187,24 @@ export default function ToolDesigner({ embedded = false }) {
 
           <p className="caps-label mb-4">Logo</p>
           <div className="space-y-4">
-            <Toggle label="Use Ocean logo" checked={s.useDefaultLogo} onChange={(v) => set({ useDefaultLogo: v })} />
+            <Toggle
+              label="Use Ocean logo"
+              checked={s.useDefaultLogo}
+              onChange={(v) => set({ useDefaultLogo: v })}
+            />
             <Field label="Custom Logo URL (stretched to 600×300)">
               <input
                 value={s.logoUrl}
-                onChange={(e) => set({ logoUrl: e.target.value })}
-                disabled={s.useDefaultLogo}
+                onChange={(e) => {
+                  const url = e.target.value
+                  set({ logoUrl: url, useDefaultLogo: url.trim() ? false : s.useDefaultLogo })
+                }}
                 placeholder="https://cdn.example.com/logo.png"
-                className="bd tile txt w-full rounded-lg border px-4 py-3 text-sm focus:outline-none disabled:opacity-50"
+                className="bd tile txt w-full rounded-lg border px-4 py-3 text-sm focus:outline-none"
               />
+              {s.logoUrl && !s.useDefaultLogo && (
+                <p className="muted mt-1.5 text-xs">Custom logo is active in the preview.</p>
+              )}
             </Field>
             <Toggle label="Game background" checked={s.gameBackground} onChange={(v) => set({ gameBackground: v })} />
           </div>
