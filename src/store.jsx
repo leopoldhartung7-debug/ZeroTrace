@@ -19,48 +19,7 @@ const CHEATS = [
   'FlyHack', 'SpeedHack', 'TriggerBot', 'XRay', 'NoClip',
 ]
 
-// ---- Deterministic per-pin scan report -----------------------------
-function strHash(s) {
-  let h = 2166136261
-  for (let i = 0; i < s.length; i++) {
-    h ^= s.charCodeAt(i)
-    h = Math.imul(h, 16777619)
-  }
-  return h >>> 0
-}
-function mulberry32(a) {
-  return function () {
-    a |= 0
-    a = (a + 0x6d2b79f5) | 0
-    let t = Math.imul(a ^ (a >>> 15), 1 | a)
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
-  }
-}
-
-const BENIGN_EXE = [
-  'C:\\Windows\\explorer.exe',
-  'C:\\Windows\\System32\\conhost.exe',
-  'C:\\Windows\\System32\\ApplicationFrameHost.exe',
-  'C:\\Windows\\System32\\svchost.exe',
-  'C:\\Program Files (x86)\\Steam\\Steam.exe',
-  'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
-  'C:\\Users\\Ryx\\Downloads\\SteamSetup.exe',
-  'MicrosoftRequired.Privacy.Consent',
-  'Microsoft.Credentials.Vault',
-  'MicrosoftDevice.Apps.InstalledApps',
-  'C:\\Program Files\\NVIDIA Corporation\\NVIDIA app\\CEF\\nvcontainer.exe',
-]
-const CHEAT_EXE = [
-  'c:\\users\\ryx\\desktop\\fivem-injector-main\\x64\\release\\fivem-dll-injector.exe',
-  'c:\\users\\ryx\\desktop\\uwp.gg\\x64\\release\\uwp.gg.exe',
-  'c:\\users\\ryx\\documents\\tron-larp\\x64\\release\\lipeee.exe',
-  'c:\\users\\ryx\\downloads\\2ozp_injector.exe',
-  'c:\\users\\ryx\\documents\\sulution\\release\\example_win32_directx11.exe',
-  'c:\\users\\ryx\\appdata\\local\\temp\\ghub-ab12-e2c6-6f40\\loader.exe',
-]
-const COUNTRIES = ['Germany', 'United States', 'France', 'Poland', 'Netherlands', 'Sweden']
-
+// ---- Per-pin scan report (only real scan data) ---------------------
 function pad(n) {
   return String(n).padStart(2, '0')
 }
@@ -72,169 +31,65 @@ function fmtTs(d) {
 }
 
 export function deriveScanReport(pin) {
-  if (!pin) return null
-  const rnd = mulberry32(strHash(pin.pin || 'seed'))
-  const pick = (arr) => arr[Math.floor(rnd() * arr.length)]
-  const ri = (a, b) => a + Math.floor(rnd() * (b - a + 1))
-  const result = pin.result || 'Clean'
-  const base = pin.scannedAt || pin.createdAt || Date.now()
-  const tsAround = (spreadMs) => new Date(base - Math.floor(rnd() * spreadMs))
+  if (!pin || pin.status !== 'Finished') return null
 
   const toolDets = Array.isArray(pin.scanDetections) ? pin.scanDetections : []
   const cheats = pin.cheats || []
+  const time = pin.scannedAt ? fmtTs(new Date(pin.scannedAt)) : null
 
+  // Detections actually returned by the scan.
   const detects = []
   toolDets
     .filter((d) => d.severity === 'Critical' || d.severity === 'High')
-    .forEach((d) =>
-      detects.push({ name: d.name, severity: d.severity, detail: d.detail, time: fmtTs(tsAround(6e6)) }),
-    )
-  if (result !== 'Clean') {
-    const want = pin.detections || ri(3, 12)
-    cheats.forEach((c) =>
-      detects.push({ name: c, severity: 'High', detail: `Signature match: ${c}`, time: fmtTs(tsAround(6e6)) }),
-    )
-    while (detects.length < want)
-      detects.push({
-        name: pick(CHEATS),
-        severity: pick(['Critical', 'High', 'High', 'Medium']),
-        detail: `Heuristic flag in ${pick(CHEAT_EXE)}`,
-        time: fmtTs(tsAround(6e6)),
-      })
-  }
-
-  const mkLogs = (n, kind) =>
-    Array.from({ length: n }, () => ({
-      name: `${kind} check ${ri(1000, 9999)}`,
-      detail: pick([
-        'Module signature verified',
-        'Driver integrity OK',
-        'Memory region scanned',
-        'Handle table inspected',
-        'Hook table validated',
-      ]),
-      time: fmtTs(tsAround(8e6)),
-    }))
-  const integrity = mkLogs(result === 'Clean' ? ri(8, 18) : ri(28, 40), 'Integrity')
-  const warnings =
-    result === 'Clean'
-      ? mkLogs(ri(0, 2), 'Warning')
-      : mkLogs(ri(18, 30), 'Warning').concat(
-          toolDets
-            .filter((d) => d.severity === 'Medium')
-            .map((d) => ({ name: d.name, detail: d.detail, time: fmtTs(tsAround(6e6)) })),
-        )
-  const suspicious =
-    result === 'Clean'
-      ? []
-      : mkLogs(ri(1, 3), 'Suspicious').concat(
-          toolDets
-            .filter((d) => d.severity === 'Low')
-            .map((d) => ({ name: d.name, detail: d.detail, time: fmtTs(tsAround(6e6)) })),
-        )
-
-  const adminApps = Array.from({ length: ri(3, 7) }, () => {
-    const cheaty = result !== 'Clean' && rnd() < 0.4
-    return {
-      path: cheaty ? pick(CHEAT_EXE) : pick(BENIGN_EXE),
-      executedAt: fmtTs(tsAround(2.5e8)),
-      signed: !cheaty && rnd() < 0.5,
-      verdict: cheaty && rnd() < 0.5 ? 'SUSPICIOUS' : 'NORMAL',
-    }
+    .forEach((d) => detects.push({ name: d.name, severity: d.severity, detail: d.detail, time }))
+  cheats.forEach((c) => {
+    if (!detects.some((x) => x.name === c))
+      detects.push({ name: c, severity: 'High', detail: `Signature match: ${c}`, time })
   })
 
-  const lastActivity = Array.from({ length: ri(40, 80) }, () => {
-    const cheaty = result !== 'Clean' && rnd() < 0.15
-    return {
-      filename: cheaty ? pick(CHEAT_EXE) : pick(BENIGN_EXE),
-      runTime: fmtTs(tsAround(3.5e9)),
-      action: 'STARTED',
-      signed: rnd() < 0.55,
-    }
-  })
-  const executables = Array.from({ length: ri(30, 70) }, () => ({
-    path: pick(BENIGN_EXE),
-    timestamp: fmtTs(tsAround(3.5e9)),
-    status: rnd() < 0.6,
-    verified: rnd() < 0.2,
-  }))
-  const mft = Array.from({ length: ri(8, 22) }, () => ({
-    path: pick([
-      'C:\\Users\\Ryx\\Downloads\\MBSetup.exe',
-      'C:\\Program Files\\Malwarebytes\\Anti-Malware\\mbuns.exe',
-      'C:\\Users\\Ryx\\Downloads\\OperaSetup.exe',
-      ...(result !== 'Clean' ? CHEAT_EXE : []),
-    ]),
-    lastAccess: fmtTs(tsAround(2e8)),
-    downloaded: rnd() < 0.4 ? fmtTs(tsAround(3e8)) : '—',
-  }))
-  const execution = Array.from({ length: ri(6, 16) }, () => ({
-    path: rnd() < 0.5 ? pick(BENIGN_EXE) : pick(CHEAT_EXE),
-  }))
-
-  const discordN = ri(0, 3)
-  const discord = Array.from({ length: discordN }, () => ({
-    name: pick(['hopeherefbjli2', 'ej0tjsh_70992_11655', 'ryx', 'lunar_user', 'glqzr']) + ri(1, 99),
-    id: String(14000000000000000 + Math.floor(rnd() * 9e16)).slice(0, 19),
-  }))
-  const recording = rnd() < 0.5 ? [{ name: 'Active Instant replay', exe: 'nvcontainer.exe' }] : []
+  const warnings = toolDets
+    .filter((d) => d.severity === 'Medium')
+    .map((d) => ({ name: d.name, detail: d.detail, time }))
+  const suspicious = toolDets
+    .filter((d) => d.severity === 'Low')
+    .map((d) => ({ name: d.name, detail: d.detail, time }))
 
   return {
-    durationSec: ri(45, 240),
+    scannedAt: pin.scannedAt || null,
     ai: 'Not Supported',
-    aiOpinion:
-      result === 'Clean'
-        ? 'No strong indicators of cheating were observed in this scan.'
-        : 'Multiple high-severity indicators correlate with known cheat tooling. Manual review recommended.',
+    aiOpinion: 'AI analysis is not supported for this game.',
     pc: {
-      system: pin.os || 'Windows 11 Pro 25H2',
-      bootTime: `${ri(1, 6)}d ago`,
-      vpn: rnd() < 0.2 ? 'yes' : 'no',
-      installDate: fmtTs(new Date(base - 5e9)),
-      country: pin.host ? 'Germany' : pick(COUNTRIES),
-      game: rnd() < 0.5 ? 'not running' : 'running',
-      recycle: `${ri(2, 58)} min ago`,
-      hardware: { cpu: 'AMD Ryzen 7 5800X', gpu: 'NVIDIA RTX 4070', ram: '32 GB' },
+      system: pin.os || 'Unknown',
+      host: pin.host || null,
+      bootTime: '—',
+      vpn: '—',
+      installDate: '—',
+      country: '—',
+      game: '—',
+      recycle: '—',
+      hardware: null,
     },
     counts: {
       detects: detects.length,
-      integrity: integrity.length,
+      integrity: 0,
       warnings: warnings.length,
       suspicious: suspicious.length,
     },
     detects,
-    integrity,
+    integrity: [],
     warnings,
     suspicious,
-    adminApps,
-    boot: {
-      biosVendor: 'American Megatrends International, LLC.',
-      biosVersion: '1.P0',
-      boardManufacturer: 'To Be Filled By O.E.M.',
-      boardProduct: String(ri(10000000, 99999999)),
-      boardVersion: '2407',
-      layoutEvents: 1,
-      chainImages: 1,
-      chain: [
-        {
-          pos: 1,
-          image: '\\EFI\\MICROSOFT\\BOOT\\BOOTMGFW.EFI',
-          loadAddress: '0x' + Math.floor(rnd() * 0xfffffff).toString(16),
-          diskId: 'B5CD3032-5C96-4ED2-B3E1-420B513B71EE',
-          driveType: 'Unknown',
-          sizeKb: ri(2000, 3500),
-        },
-      ],
-    },
+    adminApps: [],
+    boot: null,
     accounts: [],
-    discord,
-    recording,
+    discord: [],
+    recording: [],
     mods: [],
-    lastActivity,
-    executables,
+    lastActivity: [],
+    executables: [],
     compilationDates: [],
-    mft,
-    execution,
+    mft: [],
+    execution: [],
     screenshot: null,
   }
 }

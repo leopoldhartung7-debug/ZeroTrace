@@ -127,7 +127,6 @@ export default function ScanResults() {
   const pin = state.pins.find((p) => p.id === id)
   const [cat, setCat] = useState(null)
   const [risk, setRisk] = useState(false)
-  const [hw, setHw] = useState(false)
 
   const report = useMemo(
     () => (pin && pin.status === 'Finished' ? deriveScanReport(pin) : null),
@@ -176,7 +175,9 @@ export default function ScanResults() {
         ? { box: 'border-yellow-900/50 bg-yellow-950/20', txt: 'text-yellow-500', word: 'suspicious' }
         : { box: 'border-green-900/50 bg-green-950/20', txt: 'text-green-500', word: 'clean' }
 
-  const dur = `${Math.floor(report.durationSec / 60)}m ${report.durationSec % 60}s`
+  const scannedLabel = report.scannedAt
+    ? new Date(report.scannedAt).toLocaleString()
+    : '—'
   const cats = [
     { key: 'detects', label: 'Detects Logs', n: report.counts.detects, icon: AlertTriangle, tone: 'text-red-500', badge: 'border-red-600/40 bg-red-600/15 text-red-500' },
     { key: 'integrity', label: 'Integrity Logs', n: report.counts.integrity, icon: CheckCircle2, tone: 'text-green-500', badge: 'border-green-600/40 bg-green-600/15 text-green-500' },
@@ -258,8 +259,8 @@ export default function ScanResults() {
           </p>
         </div>
         <div className="panel flex items-center justify-center rounded-2xl border py-6">
-          <p className="muted flex items-center gap-2 text-lg">
-            <span className="h-2 w-2 rounded-full bg-blue-500" /> {dur}
+          <p className="muted flex items-center gap-2 text-sm">
+            <span className="h-2 w-2 rounded-full bg-blue-500" /> Scanned: {scannedLabel}
           </p>
         </div>
       </div>
@@ -294,21 +295,7 @@ export default function ScanResults() {
           <KV color="#f97316" label="Country" value={report.pc.country} />
           <KV color="#22c55e" label="Game" value={report.pc.game} />
           <KV color="#f97316" label="Recycle" value={report.pc.recycle} />
-          <div className="flex items-center justify-between py-3.5 text-sm">
-            <span className="muted flex items-center gap-2.5">
-              <span className="h-2 w-2 rounded-full bg-cyan-400" /> Hardware Stats
-            </span>
-            <button onClick={() => setHw((v) => !v)} className="flex items-center gap-2 rounded-lg border border-cyan-500/40 bg-cyan-500/10 px-3 py-1.5 text-xs font-medium text-cyan-400">
-              <Cpu size={13} /> {hw ? 'Hide Stats' : 'View Stats'}
-            </button>
-          </div>
-          {hw && (
-            <div className="tile mt-2 grid grid-cols-3 gap-3 rounded-lg border p-3 text-center text-xs">
-              <div><p className="muted">CPU</p><p className="txt mt-1 font-medium">{report.pc.hardware.cpu}</p></div>
-              <div><p className="muted">GPU</p><p className="txt mt-1 font-medium">{report.pc.hardware.gpu}</p></div>
-              <div><p className="muted">RAM</p><p className="txt mt-1 font-medium">{report.pc.hardware.ram}</p></div>
-            </div>
-          )}
+          <KV color="#06b6d4" label="Hardware Stats" value="Not available" />
         </Card>
       </div>
 
@@ -433,43 +420,44 @@ export default function ScanResults() {
           <Cpu size={18} /> Boot sequence
         </h2>
         <p className="muted mb-4 mt-1 text-sm">Recorded boot sequence detail for this machine.</p>
-        <div className="mb-5 flex flex-wrap gap-2 text-xs">
-          <span className="bd muted rounded-md border px-3 py-1.5">LAYOUT EVENTS: {report.boot.layoutEvents}</span>
-          <span className="bd muted rounded-md border px-3 py-1.5">CHAIN IMAGES: {report.boot.chainImages}</span>
-          <span className="rounded-md border border-blue-600/40 bg-blue-600/15 px-3 py-1.5 text-blue-400">EXPECTED SEQUENCE</span>
-        </div>
-        <div className="mb-5 grid gap-3 sm:grid-cols-2">
-          {[
-            ['BIOS VENDOR', report.boot.biosVendor],
-            ['BIOS VERSION', report.boot.biosVersion],
-            ['BOARD MANUFACTURER', report.boot.boardManufacturer],
-            ['BOARD PRODUCT', report.boot.boardProduct],
-            ['BOARD VERSION', report.boot.boardVersion],
-          ].map(([k, v]) => (
-            <div key={k} className="tile rounded-lg border p-3">
-              <p className="caps-label">{k}</p>
-              <p className="txt mt-1 font-mono text-sm">{v}</p>
+        {report.boot ? (
+          <>
+            <div className="mb-5 grid gap-3 sm:grid-cols-2">
+              {[
+                ['BIOS VENDOR', report.boot.biosVendor],
+                ['BIOS VERSION', report.boot.biosVersion],
+                ['BOARD MANUFACTURER', report.boot.boardManufacturer],
+                ['BOARD PRODUCT', report.boot.boardProduct],
+                ['BOARD VERSION', report.boot.boardVersion],
+              ].map(([k, v]) => (
+                <div key={k} className="tile rounded-lg border p-3">
+                  <p className="caps-label">{k}</p>
+                  <p className="txt mt-1 font-mono text-sm">{v}</p>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-        <p className="caps-label mb-3">Measured Boot Chain</p>
-        <PaginatedTable
-          columns={['Load Position', 'Image', 'Load Address', 'Disk ID', 'Drive Type', 'Size (KB)']}
-          rows={report.boot.chain}
-          searchKeys={['image', 'diskId']}
-          placeholder="Search chain..."
-          empty="No boot chain recorded."
-          render={(r) => (
-            <>
-              <td className="txt px-3 py-3">{r.pos}</td>
-              <td className="txt break-all px-3 py-3 font-mono text-xs">{r.image}</td>
-              <td className="muted px-3 py-3 font-mono text-xs">{r.loadAddress}</td>
-              <td className="muted break-all px-3 py-3 font-mono text-xs">{r.diskId}</td>
-              <td className="muted px-3 py-3">{r.driveType}</td>
-              <td className="muted px-3 py-3">{r.sizeKb}</td>
-            </>
-          )}
-        />
+            <p className="caps-label mb-3">Measured Boot Chain</p>
+            <PaginatedTable
+              columns={['Load Position', 'Image', 'Load Address', 'Disk ID', 'Drive Type', 'Size (KB)']}
+              rows={report.boot.chain}
+              searchKeys={['image', 'diskId']}
+              placeholder="Search chain..."
+              empty="No boot chain recorded."
+              render={(r) => (
+                <>
+                  <td className="txt px-3 py-3">{r.pos}</td>
+                  <td className="txt break-all px-3 py-3 font-mono text-xs">{r.image}</td>
+                  <td className="muted px-3 py-3 font-mono text-xs">{r.loadAddress}</td>
+                  <td className="muted break-all px-3 py-3 font-mono text-xs">{r.diskId}</td>
+                  <td className="muted px-3 py-3">{r.driveType}</td>
+                  <td className="muted px-3 py-3">{r.sizeKb}</td>
+                </>
+              )}
+            />
+          </>
+        ) : (
+          <p className="muted py-12 text-center text-sm">No boot sequence recorded.</p>
+        )}
       </Card>
 
       <div className="grid gap-4 lg:grid-cols-2">
