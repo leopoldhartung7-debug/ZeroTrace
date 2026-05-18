@@ -3,7 +3,8 @@ import { NavLink } from 'react-router-dom'
 import {
   LayoutGrid, Pin, FileText, Database, Wrench, History,
   LifeBuoy, BookOpen, Settings, Wifi, Bell, Globe, Moon, Sun,
-  ChevronsUpDown, Trash2, Check, Command,
+  ChevronsUpDown, Trash2, Check, Command, Trophy, ShoppingCart,
+  Download, Scale, ChevronDown, ChevronRight,
 } from 'lucide-react'
 import { useStore, useT } from '../store.jsx'
 
@@ -31,6 +32,7 @@ export default function Sidebar() {
   const { state, dispatch } = useStore()
   const t = useT()
   const [panel, setPanel] = useState(null)
+  const [resOpen, setResOpen] = useState(true)
   const dark = state.settings.theme === 'dark'
   const unread = state.notifications.filter((n) => !n.read).length
 
@@ -56,7 +58,20 @@ export default function Sidebar() {
     {
       label: t('cat.others'),
       items: [
-        { to: '/resources', label: t('nav.resources'), icon: BookOpen },
+        {
+          label: t('nav.resources'),
+          icon: BookOpen,
+          children: [
+            { to: '/resources/leaderboard', label: 'Leaderboard', icon: Trophy },
+            { to: '/resources/documentation', label: 'Documentation', icon: BookOpen },
+            { to: '/resources/pricing', label: 'Pricing', icon: ShoppingCart },
+            { to: '/resources/download', label: 'Download', icon: Download },
+            { to: '/resources/terms', label: 'Terms of Service', icon: FileText },
+            { to: '/resources/privacy', label: 'Privacy Policy', icon: FileText },
+            { to: '/resources/legal', label: 'Legal', icon: Scale },
+            { to: '/resources/changelogs', label: 'Changelogs', icon: History },
+          ],
+        },
         { to: '/settings', label: t('nav.settings'), icon: Settings },
       ],
     },
@@ -78,26 +93,71 @@ export default function Sidebar() {
         {groups.map((g) => (
           <div key={g.label}>
             <SectionLabel>{g.label}</SectionLabel>
-            {g.items.map(({ to, label, icon: Icon }) => (
-              <NavLink
-                key={to}
-                to={to}
-                className={({ isActive }) =>
-                  `mb-1 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-                    isActive
-                      ? 'bg-blue-600/15 text-blue-500 shadow-[inset_0_0_0_1px_rgba(59,130,246,0.18)]'
-                      : 'hoverable'
-                  }`
-                }
-              >
-                {({ isActive }) => (
-                  <>
-                    <Icon size={18} className={isActive ? '' : 'muted'} />
-                    <span className={isActive ? '' : 'txt'}>{label}</span>
-                  </>
-                )}
-              </NavLink>
-            ))}
+            {g.items.map((item) => {
+              const { to, label, icon: Icon, children } = item
+              if (children) {
+                return (
+                  <div key={label} className="mb-1">
+                    <button
+                      onClick={() => setResOpen((o) => !o)}
+                      className="hoverable flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium"
+                    >
+                      <Icon size={18} className="muted" />
+                      <span className="txt flex-1 text-left">{label}</span>
+                      {resOpen ? (
+                        <ChevronDown size={16} className="muted" />
+                      ) : (
+                        <ChevronRight size={16} className="muted" />
+                      )}
+                    </button>
+                    {resOpen && (
+                      <div className="bd ml-5 mt-1 space-y-1 border-l pl-3">
+                        {children.map((c) => (
+                          <NavLink
+                            key={c.to}
+                            to={c.to}
+                            className={({ isActive }) =>
+                              `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                                isActive
+                                  ? 'bg-blue-600/15 text-blue-500 shadow-[inset_0_0_0_1px_rgba(59,130,246,0.18)]'
+                                  : 'hoverable'
+                              }`
+                            }
+                          >
+                            {({ isActive }) => (
+                              <>
+                                <c.icon size={16} className={isActive ? '' : 'text-blue-400/70'} />
+                                <span className={isActive ? '' : 'txt'}>{c.label}</span>
+                              </>
+                            )}
+                          </NavLink>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )
+              }
+              return (
+                <NavLink
+                  key={to}
+                  to={to}
+                  className={({ isActive }) =>
+                    `mb-1 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                      isActive
+                        ? 'bg-blue-600/15 text-blue-500 shadow-[inset_0_0_0_1px_rgba(59,130,246,0.18)]'
+                        : 'hoverable'
+                    }`
+                  }
+                >
+                  {({ isActive }) => (
+                    <>
+                      <Icon size={18} className={isActive ? '' : 'muted'} />
+                      <span className={isActive ? '' : 'txt'}>{label}</span>
+                    </>
+                  )}
+                </NavLink>
+              )
+            })}
           </div>
         ))}
       </nav>

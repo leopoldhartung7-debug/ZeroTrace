@@ -11,7 +11,10 @@ import Tools from './pages/Tools.jsx'
 import ScanResults from './pages/ScanResults.jsx'
 import History from './pages/History.jsx'
 import Support from './pages/Support.jsx'
-import Resources from './pages/Resources.jsx'
+import {
+  Leaderboard, Documentation, Pricing, DownloadPage,
+  Terms, Privacy, Legal, Changelogs,
+} from './pages/resources.jsx'
 import SettingsPage from './pages/Settings.jsx'
 
 export default function App() {
@@ -32,7 +35,15 @@ export default function App() {
                 <Route path="/tools" element={<Tools />} />
                 <Route path="/history" element={<History />} />
                 <Route path="/support" element={<Support />} />
-                <Route path="/resources" element={<Resources />} />
+                <Route path="/resources" element={<Navigate to="/resources/leaderboard" replace />} />
+                <Route path="/resources/leaderboard" element={<Leaderboard />} />
+                <Route path="/resources/documentation" element={<Documentation />} />
+                <Route path="/resources/pricing" element={<Pricing />} />
+                <Route path="/resources/download" element={<DownloadPage />} />
+                <Route path="/resources/terms" element={<Terms />} />
+                <Route path="/resources/privacy" element={<Privacy />} />
+                <Route path="/resources/legal" element={<Legal />} />
+                <Route path="/resources/changelogs" element={<Changelogs />} />
                 <Route path="/settings" element={<SettingsPage />} />
                 <Route path="*" element={<Navigate to="/dashboard" replace />} />
               </Routes>
