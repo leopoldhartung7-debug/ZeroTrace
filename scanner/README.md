@@ -36,10 +36,13 @@ The executable is `scanner/build/Release/OceanScanner.exe`.
 
 ## Usage (end-to-end)
 
-1. **Admin** opens the website → **Pins** → **Create Pin**. The 8-char pin
-   code is the **session code**.
-2. **User** runs `OceanScanner.exe`, enters that code, accepts the consent
-   notice, and presses **Start Scan**.
+1. **Admin** opens the website → **Pins** → **Create Pin**. The
+   "Pin Created Successfully" dialog shows the 8-char code and a
+   **Download** button that saves an `OceanScan-<PIN>.ocean` session file.
+2. **User** opens that `.ocean` file with `OceanScanner.exe` (or drags it
+   onto the exe). The pin is filled in automatically — the user only
+   accepts the consent notice and presses **Start Scan**. *(Manually
+   typing the code still works too.)*
 3. The tool shows the verdict + detections and a `OCEAN1.…` token.
 4. User sends the token back; **admin** pastes it on the website
    (**Pins → Import Result**). The pin, dashboard and activity log update

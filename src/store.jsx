@@ -9,6 +9,10 @@ function genPin() {
   return s
 }
 
+export function generatePinCode() {
+  return genPin()
+}
+
 const GAMES = ['HYTALE', 'MINECRAFT', 'CS2', 'VALORANT', 'RUST', 'FIVEM']
 const CHEATS = [
   'KillAura', 'Reach', 'Velocity', 'AutoClicker', 'Aimbot', 'Wallhack',
@@ -136,7 +140,7 @@ function reducer(state, action) {
 
     case 'add-pin': {
       const pin = {
-        id: 'p' + Date.now(), pin: genPin(), name: action.name, game: action.game,
+        id: 'p' + Date.now(), pin: action.code || genPin(), name: action.name, game: action.game,
         status: 'Pending', used: false, result: null, visibility: action.visibility,
         detections: 0, cheats: [], createdAt: Date.now(),
       }

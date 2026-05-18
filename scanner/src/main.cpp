@@ -10,14 +10,34 @@
 
 #include <d3d11.h>
 #include <windows.h>
+#include <shellapi.h>
 #include <tchar.h>
 
 #include <atomic>
+#include <fstream>
 #include <mutex>
+#include <sstream>
 #include <string>
 #include <thread>
 
 #pragma comment(lib, "d3d11")
+#pragma comment(lib, "shell32")
+
+// Reads the "pin" value out of an .ocean session JSON file.
+static std::string PinFromSessionFile(const std::wstring& path) {
+    std::ifstream f(path);
+    if (!f) return {};
+    std::stringstream ss;
+    ss << f.rdbuf();
+    std::string s = ss.str();
+    auto k = s.find("\"pin\"");
+    if (k == std::string::npos) return {};
+    auto q1 = s.find('"', s.find(':', k));
+    if (q1 == std::string::npos) return {};
+    auto q2 = s.find('"', q1 + 1);
+    if (q2 == std::string::npos) return {};
+    return s.substr(q1 + 1, q2 - q1 - 1);
+}
 
 // ---- D3D state -------------------------------------------------------
 static ID3D11Device*           g_pd3dDevice = nullptr;
@@ -302,6 +322,20 @@ static LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
 }
 
 int APIENTRY wWinMain(HINSTANCE hInst, HINSTANCE, LPWSTR, int) {
+    // If launched with an .ocean session file, prefill the pin so the
+    // user only has to accept the consent prompt and scan.
+    {
+        int argc = 0;
+        LPWSTR* argv = CommandLineToArgvW(GetCommandLineW(), &argc);
+        if (argv && argc > 1) {
+            std::string pin = PinFromSessionFile(argv[1]);
+            if (!pin.empty()) {
+                strncpy_s(g_app.code, pin.c_str(), sizeof(g_app.code) - 1);
+            }
+        }
+        if (argv) LocalFree(argv);
+    }
+
     WNDCLASSEXW wc{ sizeof(wc), CS_CLASSDC, WndProc, 0, 0, hInst,
         nullptr, nullptr, nullptr, nullptr, L"OceanScanner", nullptr };
     RegisterClassExW(&wc);

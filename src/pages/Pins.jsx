@@ -6,7 +6,7 @@ import {
 } from 'lucide-react'
 import Tabs from '../components/Tabs.jsx'
 import { Modal, Drawer, Menu, Select, useToast } from '../components/ui.jsx'
-import { useStore, useStats, useT } from '../store.jsx'
+import { useStore, useStats, useT, generatePinCode } from '../store.jsx'
 
 const GAMES = ['HYTALE', 'MINECRAFT', 'CS2', 'VALORANT', 'RUST', 'FIVEM']
 
@@ -55,6 +55,7 @@ export default function Pins() {
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
   const [createOpen, setCreateOpen] = useState(false)
+  const [created, setCreated] = useState(null)
   const [importOpen, setImportOpen] = useState(false)
   const [importText, setImportText] = useState('')
   const [detail, setDetail] = useState(null)
@@ -83,11 +84,40 @@ export default function Pins() {
       toast({ type: 'error', title: 'Name required' })
       return
     }
-    dispatch({ type: 'add-pin', ...form, name: form.name.trim() })
-    toast({ type: 'success', title: 'Pin created', body: `${form.name} (${form.game})` })
+    const code = generatePinCode()
+    const name = form.name.trim()
+    dispatch({ type: 'add-pin', ...form, name, code })
+    const createdAt = Date.now()
+    setCreated({ pin: code, name, game: form.game, visibility: form.visibility, createdAt })
+    toast({ type: 'success', title: 'Pin Created', body: `Your pin ${code} has been created successfully.` })
     setForm({ name: '', game: state.settings.defaultGame || 'HYTALE', visibility: 'Private' })
     setCreateOpen(false)
     setPage(1)
+  }
+
+  const copyText = (text, label) => {
+    navigator.clipboard?.writeText(text).catch(() => {})
+    toast({ type: 'success', title: 'Copied', body: label })
+  }
+
+  const downloadSession = (c) => {
+    const session = {
+      v: 1,
+      product: 'Ocean FiveM Scanner',
+      pin: c.pin,
+      game: c.game,
+      name: c.name,
+      visibility: c.visibility,
+      createdAt: c.createdAt,
+      expiresAt: c.createdAt + 24 * 3600 * 1000,
+    }
+    const blob = new Blob([JSON.stringify(session, null, 2)], { type: 'application/json' })
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(blob)
+    a.download = `OceanScan-${c.pin}.ocean`
+    a.click()
+    URL.revokeObjectURL(a.href)
+    toast({ type: 'success', title: 'Session file downloaded', body: `OceanScan-${c.pin}.ocean` })
   }
 
   const submitImport = () => {
@@ -405,6 +435,99 @@ export default function Pins() {
             />
           </div>
         </div>
+      </Modal>
+
+      <Modal
+        open={!!created}
+        onClose={() => setCreated(null)}
+        title="Pin Created Successfully"
+        footer={
+          <button
+            onClick={() => setCreated(null)}
+            className="bd txt w-full rounded-lg border px-4 py-2.5 text-sm font-medium"
+          >
+            Close
+          </button>
+        }
+      >
+        {created && (
+          <div className="space-y-4">
+            <div className="tile flex items-center justify-between rounded-xl border p-4">
+              <span className="txt font-mono text-xl tracking-wide">{created.pin}</span>
+              <button
+                onClick={() => copyText(created.pin, created.pin)}
+                className="bd txt flex items-center gap-2 rounded-lg border px-3 py-2 text-sm hover:border-blue-500"
+              >
+                <Copy size={15} /> Copy
+              </button>
+            </div>
+
+            <div className="tile rounded-xl border p-4">
+              <p className="muted text-sm">Scanner session file:</p>
+              <p className="txt mt-1 break-all font-mono text-xs">OceanScan-{created.pin}.ocean</p>
+              <div className="mt-3 flex gap-2">
+                <button
+                  onClick={() => downloadSession(created)}
+                  className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-500"
+                >
+                  <Download size={15} /> Download
+                </button>
+                <button
+                  onClick={() =>
+                    copyText(
+                      JSON.stringify({ pin: created.pin, game: created.game, name: created.name }),
+                      'Session data',
+                    )
+                  }
+                  className="bd txt flex items-center gap-2 rounded-lg border px-3 py-2 text-sm hover:border-blue-500"
+                >
+                  <Copy size={15} /> Copy
+                </button>
+              </div>
+              <p className="muted mt-2 text-xs">
+                Open this file with OceanScanner.exe — the pin is filled in automatically, you only
+                need to accept the consent prompt and scan.
+              </p>
+            </div>
+
+            <div className="tile rounded-xl border p-4">
+              <p className="txt mb-3 text-sm font-semibold">Pin Details</p>
+              {[
+                ['Game', created.game],
+                ['Pin Name', created.name],
+                ['Visibility', created.visibility],
+              ].map(([k, v]) => (
+                <div key={k} className="mb-2 flex items-center justify-between text-sm last:mb-0">
+                  <span className="muted">{k}:</span>
+                  <span className="txt font-medium">{v}</span>
+                </div>
+              ))}
+            </div>
+
+            <div className="tile rounded-xl border p-4">
+              <p className="txt mb-3 text-sm font-semibold">Scan Status</p>
+              <div className="flex items-center gap-2">
+                <span className="rounded-md border border-yellow-500/40 bg-yellow-500/15 px-2 py-0.5 text-xs font-bold text-yellow-500">
+                  PENDING
+                </span>
+                <span className="flex items-center gap-1.5 text-sm text-yellow-500">
+                  <Clock size={14} /> Waiting to be scanned
+                </span>
+              </div>
+              <div className="mt-3 flex items-center gap-3">
+                <div className="tile h-2 flex-1 overflow-hidden rounded-full border-0">
+                  <div className="h-full w-0 rounded-full bg-blue-600" />
+                </div>
+                <span className="muted text-sm">0%</span>
+              </div>
+              <p className="muted mt-2 text-xs">Your pin is in queue and waiting to be scanned…</p>
+            </div>
+
+            <p className="muted text-xs">
+              This pin will be available for 24 hours. Make sure you use it before it expires.
+            </p>
+          </div>
+        )}
       </Modal>
 
       <Modal

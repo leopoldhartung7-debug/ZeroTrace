@@ -23,6 +23,7 @@ target_link_libraries(OceanScanner PRIVATE
     winhttp
     wintrust
     version
+    shell32
 )
 
 target_compile_definitions(OceanScanner PRIVATE
