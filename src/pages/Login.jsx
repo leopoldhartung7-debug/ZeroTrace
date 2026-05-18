@@ -11,11 +11,24 @@ export default function Login() {
   const [show, setShow] = useState(false)
   const [form, setForm] = useState({ id: '', pw: '' })
 
-  const signIn = (method) => {
+  const ADMIN = { user: 'admin', email: 'admin@anticheat.ac', pass: 'OceanAdmin1' }
+
+  const enterDashboard = (method) => {
     dispatch({ type: 'login' })
-    toast({ type: 'success', title: 'Welcome back', body: method ? `Signed in with ${method}` : 'Signed in' })
+    toast({ type: 'success', title: 'Welcome back', body: method ? `Signed in with ${method}` : 'Signed in as admin' })
     nav('/dashboard')
   }
+
+  const submitCredentials = () => {
+    const id = form.id.trim().toLowerCase()
+    if ((id === ADMIN.user || id === ADMIN.email) && form.pw === ADMIN.pass) {
+      enterDashboard(null)
+    } else {
+      toast({ type: 'error', title: 'Invalid credentials', body: 'Wrong username or password.' })
+    }
+  }
+
+  const signIn = (method) => enterDashboard(method)
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-black px-4 py-10 text-white">
@@ -34,7 +47,7 @@ export default function Login() {
           className="mt-8 space-y-4"
           onSubmit={(e) => {
             e.preventDefault()
-            signIn(null)
+            submitCredentials()
           }}
         >
           <input
@@ -101,7 +114,10 @@ export default function Login() {
 
         <p className="mt-7 text-center text-sm text-neutral-400">
           Don't have an account?{' '}
-          <button onClick={() => signIn(null)} className="text-white underline-offset-2 hover:underline">
+          <button
+            onClick={() => toast({ type: 'info', title: 'Registration closed', body: 'Use the provided admin credentials to sign in.' })}
+            className="text-white underline-offset-2 hover:underline"
+          >
             Register
           </button>
         </p>
