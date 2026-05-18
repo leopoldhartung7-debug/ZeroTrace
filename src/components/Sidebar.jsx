@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
-import { NavLink } from 'react-router-dom'
+import { NavLink, useNavigate } from 'react-router-dom'
 import {
   LayoutGrid, Pin, FileText, Database, Wrench, History,
   LifeBuoy, BookOpen, Settings, Wifi, Bell, Globe, Moon, Sun,
   ChevronsUpDown, Trash2, Check, Command, Trophy, ShoppingCart,
-  Download, Scale, ChevronDown, ChevronRight,
+  Download, Scale, ChevronDown, ChevronRight, LogOut,
 } from 'lucide-react'
 import { useStore, useT } from '../store.jsx'
 
@@ -31,6 +31,7 @@ function Popover({ open, onClose, children, className = '' }) {
 export default function Sidebar() {
   const { state, dispatch } = useStore()
   const t = useT()
+  const navTo = useNavigate()
   const [panel, setPanel] = useState(null)
   const [resOpen, setResOpen] = useState(true)
   const dark = state.settings.theme === 'dark'
@@ -79,7 +80,7 @@ export default function Sidebar() {
 
   return (
     <aside className="panel flex w-[280px] shrink-0 flex-col border-r">
-      <div className="flex items-center gap-3 px-6 py-6">
+      <NavLink to="/" className="flex items-center gap-3 px-6 py-6" title="Back to home">
         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 font-mono text-sm font-bold text-white shadow-lg shadow-blue-600/25">
           {'(*>'}
         </div>
@@ -87,7 +88,7 @@ export default function Sidebar() {
           <p className="txt text-[15px] font-semibold leading-tight">Ocean</p>
           <p className="muted text-xs tracking-wide">anticheat.ac</p>
         </div>
-      </div>
+      </NavLink>
 
       <nav className="flex-1 overflow-y-auto px-3 pb-2">
         {groups.map((g) => (
@@ -194,6 +195,16 @@ export default function Sidebar() {
             onClick={() => dispatch({ type: 'set-setting', key: 'theme', value: dark ? 'light' : 'dark' })}
           >
             {dark ? <Moon size={16} /> : <Sun size={16} />}
+          </button>
+          <button
+            className="muted hover:text-red-500"
+            title="Log out"
+            onClick={() => {
+              dispatch({ type: 'logout' })
+              navTo('/')
+            }}
+          >
+            <LogOut size={16} />
           </button>
 
           <Popover open={panel === 'n'} onClose={() => setPanel(null)} className="bottom-10 left-0 w-72">

@@ -149,6 +149,7 @@ function seed() {
     customCheats: CHEAT_DB,
     tickets: [],
     toolStyle: defaultToolStyle(),
+    auth: false,
   }
 }
 
@@ -200,6 +201,12 @@ function reducer(state, action) {
   switch (action.type) {
     case 'set-setting':
       return { ...state, settings: { ...state.settings, [action.key]: action.value } }
+
+    case 'login':
+      return { ...state, auth: true }
+
+    case 'logout':
+      return { ...state, auth: false }
 
     case 'set-tool-style':
       return { ...state, toolStyle: { ...state.toolStyle, ...action.patch } }
