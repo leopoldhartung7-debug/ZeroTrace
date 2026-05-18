@@ -5,6 +5,8 @@ import CommandPalette from './components/CommandPalette.jsx'
 import Sidebar from './components/Sidebar.jsx'
 import Landing from './pages/Landing.jsx'
 import Login from './pages/Login.jsx'
+import PublicLayout from './components/PublicLayout.jsx'
+import Branding from './pages/Branding.jsx'
 import Dashboard from './pages/Dashboard.jsx'
 import Pins from './pages/Pins.jsx'
 import Strings from './pages/Strings.jsx'
@@ -42,6 +44,16 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
+          <Route element={<PublicLayout />}>
+            <Route path="/pricing" element={<Pricing />} />
+            <Route path="/docs" element={<Documentation />} />
+            <Route path="/download" element={<DownloadPage />} />
+            <Route path="/branding" element={<Branding />} />
+            <Route path="/terms" element={<Terms />} />
+            <Route path="/privacy" element={<Privacy />} />
+            <Route path="/legal" element={<Legal />} />
+            <Route path="/changelog" element={<Changelogs />} />
+          </Route>
           <Route element={<DashboardLayout />}>
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/pins" element={<Pins />} />

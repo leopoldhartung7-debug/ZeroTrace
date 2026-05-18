@@ -206,11 +206,22 @@ export default function Landing() {
   const toast = useToast()
   const enter = () => nav(state.auth ? '/dashboard' : '/login')
 
+  const ROUTES = {
+    Pricing: '/pricing',
+    Docs: '/docs',
+    Download: '/download',
+    Branding: '/branding',
+    Changelog: '/changelog',
+    'Terms of Service': '/terms',
+    'Privacy Policy': '/privacy',
+    Legal: '/legal',
+  }
   const onNav = (item) => {
     if (item === 'Features') document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })
     else if (item === 'FAQ') document.getElementById('faq')?.scrollIntoView({ behavior: 'smooth' })
     else if (item === 'Discord') toast({ type: 'info', title: 'Discord', body: 'Community link is not configured in this demo.' })
-    else nav('/login')
+    else if (ROUTES[item]) nav(ROUTES[item])
+    else nav('/')
   }
 
   return (
