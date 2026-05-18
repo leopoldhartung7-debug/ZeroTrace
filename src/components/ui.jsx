@@ -144,8 +144,13 @@ export function ToastProvider({ children }) {
   const push = useCallback((toast) => {
     const id = Date.now() + Math.random()
     setToasts((t) => [...t, { id, ...toast }])
-    setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), toast.duration || 3500)
+    setTimeout(
+      () => setToasts((t) => t.filter((x) => x.id !== id)),
+      toast.duration || (toast.onClick ? 9000 : 3500),
+    )
   }, [])
+
+  const dismiss = (id) => setToasts((t) => t.filter((x) => x.id !== id))
 
   const icons = {
     success: <Check size={16} className="text-green-500" />,
@@ -157,16 +162,29 @@ export function ToastProvider({ children }) {
     <ToastCtx.Provider value={push}>
       {children}
       {createPortal(
-        <div className="fixed bottom-5 right-5 z-[60] flex flex-col gap-2">
+        <div className="fixed bottom-5 right-5 z-[60] flex w-[330px] flex-col gap-2">
           {toasts.map((t) => (
             <div
               key={t.id}
-              className="panel flex items-start gap-3 rounded-lg border px-4 py-3 shadow-xl"
+              onClick={
+                t.onClick
+                  ? () => {
+                      t.onClick()
+                      dismiss(t.id)
+                    }
+                  : undefined
+              }
+              className={`panel flex items-start gap-3 rounded-lg border px-4 py-3 shadow-xl ${
+                t.onClick ? 'hoverable cursor-pointer' : ''
+              }`}
             >
               <span className="mt-0.5">{icons[t.type] || icons.info}</span>
-              <div>
+              <div className="min-w-0">
                 <p className="txt text-sm font-medium">{t.title}</p>
                 {t.body && <p className="muted text-xs">{t.body}</p>}
+                {t.onClick && (
+                  <p className="mt-1 text-xs font-medium text-blue-500">Tap to view →</p>
+                )}
               </div>
             </div>
           ))}

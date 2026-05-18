@@ -217,6 +217,7 @@ function reducer(state, action) {
       const pin = {
         id: 'p' + Date.now(), pin: action.code || genPin(), name: action.name, game: action.game,
         status: 'Pending', used: false, result: null, visibility: action.visibility,
+        discordId: action.discordId || '',
         detections: 0, cheats: [], createdAt: Date.now(),
       }
       return {

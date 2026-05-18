@@ -7,7 +7,7 @@ import {
 } from 'lucide-react'
 import Tabs from '../components/Tabs.jsx'
 import { Modal, Menu, Select, useToast } from '../components/ui.jsx'
-import { useStore, useStats, useT, generatePinCode } from '../store.jsx'
+import { useStore, useStats, useT, generatePinCode, deriveScanReport } from '../store.jsx'
 
 const GAMES = ['HYTALE', 'MINECRAFT', 'CS2', 'VALORANT', 'RUST', 'FIVEM']
 
@@ -59,8 +59,10 @@ export default function Pins() {
   const [access, setAccess] = useState(null)
   const [deleting, setDeleting] = useState(null)
   const [deleteInput, setDeleteInput] = useState('')
+  const [priorScan, setPriorScan] = useState(null)
   const [form, setForm] = useState({
     name: '',
+    discordId: '',
     game: state.settings.defaultGame || 'HYTALE',
     visibility: 'Private',
   })
@@ -84,13 +86,36 @@ export default function Pins() {
       toast({ type: 'error', title: 'Name required' })
       return
     }
+    if (!form.discordId.trim()) {
+      toast({ type: 'error', title: 'Discord ID required', body: 'Enter the scanned user’s Discord ID.' })
+      return
+    }
     const code = generatePinCode()
     const name = form.name.trim()
-    dispatch({ type: 'add-pin', ...form, name, code })
+    const discordId = form.discordId.trim()
+
+    const prior = state.pins.find(
+      (p) =>
+        p.discordId &&
+        p.discordId === discordId &&
+        (p.status === 'Finished' || p.result),
+    )
+
+    dispatch({ type: 'add-pin', ...form, name, discordId, code })
     const createdAt = Date.now()
-    setCreated({ pin: code, name, game: form.game, visibility: form.visibility, createdAt })
+    setCreated({ pin: code, name, discordId, game: form.game, visibility: form.visibility, createdAt })
     toast({ type: 'success', title: 'Pin Created', body: `Your pin ${code} has been created successfully.` })
-    setForm({ name: '', game: state.settings.defaultGame || 'HYTALE', visibility: 'Private' })
+
+    if (prior) {
+      toast({
+        type: 'success',
+        title: 'User already scanned',
+        body: `This Discord ID (${discordId}) was scanned before. Tap to view the previous scan results.`,
+        onClick: () => setPriorScan(prior),
+      })
+    }
+
+    setForm({ name: '', discordId: '', game: state.settings.defaultGame || 'HYTALE', visibility: 'Private' })
     setCreateOpen(false)
     setPage(1)
   }
@@ -440,6 +465,18 @@ export default function Pins() {
             />
           </div>
           <div>
+            <label className="muted mb-1.5 block text-sm">Discord ID</label>
+            <input
+              value={form.discordId}
+              onChange={(e) => setForm({ ...form, discordId: e.target.value.replace(/[^0-9]/g, '') })}
+              onKeyDown={(e) => e.key === 'Enter' && submitCreate()}
+              placeholder="e.g. 145481082291945490"
+              inputMode="numeric"
+              className="bd tile txt w-full rounded-lg border px-4 py-2.5 font-mono text-sm focus:outline-none"
+            />
+            <p className="muted mt-1 text-xs">Discord ID of the scanned user. Saved with the results.</p>
+          </div>
+          <div>
             <label className="muted mb-1.5 block text-sm">Game</label>
             <Select
               value={form.game}
@@ -519,6 +556,7 @@ export default function Pins() {
               {[
                 ['Game', created.game],
                 ['Pin Name', created.name],
+                ['Discord ID', created.discordId],
                 ['Visibility', created.visibility],
               ].map(([k, v]) => (
                 <div key={k} className="mb-2 flex items-center justify-between text-sm last:mb-0">
@@ -764,6 +802,95 @@ export default function Pins() {
             </div>
           </div>
         )}
+      </Modal>
+
+      <Modal
+        open={!!priorScan}
+        onClose={() => setPriorScan(null)}
+        title="Previous Scan Found"
+        footer={
+          priorScan && (
+            <>
+              <button
+                onClick={() => setPriorScan(null)}
+                className="bd txt rounded-lg border px-4 py-2 text-sm"
+              >
+                Close
+              </button>
+              <button
+                onClick={() => {
+                  const id = priorScan.id
+                  setPriorScan(null)
+                  nav(`/scan/${id}`)
+                }}
+                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-500"
+              >
+                Open full results
+              </button>
+            </>
+          )
+        }
+      >
+        {priorScan &&
+          (() => {
+            const rep = deriveScanReport(priorScan)
+            const tone =
+              priorScan.result === 'Cheating'
+                ? 'text-red-500'
+                : priorScan.result === 'Suspicious'
+                  ? 'text-yellow-500'
+                  : 'text-green-500'
+            return (
+              <div className="space-y-4">
+                <p className="muted text-sm">
+                  This Discord ID was already scanned. Here are the results of the previous scan.
+                </p>
+                <div className="tile rounded-xl border p-4">
+                  {[
+                    ['Pin', <span className="font-mono">{priorScan.pin}</span>],
+                    ['Name', priorScan.name],
+                    ['Discord ID', <span className="font-mono">{priorScan.discordId}</span>],
+                    ['Game', priorScan.game],
+                    [
+                      'Result',
+                      <span className={`font-semibold ${tone}`}>
+                        {(priorScan.result || '—').toUpperCase()}
+                      </span>,
+                    ],
+                    ['Scanned', priorScan.scannedAt ? new Date(priorScan.scannedAt).toLocaleString() : '—'],
+                  ].map(([k, v], i) => (
+                    <div
+                      key={i}
+                      className="bd flex items-center justify-between border-b py-2.5 text-sm last:border-0"
+                    >
+                      <span className="muted">{k}</span>
+                      <span className="txt">{v}</span>
+                    </div>
+                  ))}
+                </div>
+                <div>
+                  <p className="caps-label mb-2">
+                    Detections ({rep ? rep.detects.length : 0})
+                  </p>
+                  {rep && rep.detects.length > 0 ? (
+                    <div className="bd tile max-h-48 divide-y divide-[var(--border)] overflow-y-auto rounded-lg border">
+                      {rep.detects.map((d, i) => (
+                        <div key={i} className="px-3 py-2">
+                          <div className="flex items-center justify-between">
+                            <span className="txt text-sm font-medium">{d.name}</span>
+                            <span className="text-xs font-semibold text-red-500">{d.severity}</span>
+                          </div>
+                          <p className="muted mt-0.5 text-xs">{d.detail}</p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="muted text-sm">No detections in the previous scan.</p>
+                  )}
+                </div>
+              </div>
+            )
+          })()}
       </Modal>
 
     </div>

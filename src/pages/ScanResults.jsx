@@ -275,6 +275,7 @@ export default function ScanResults() {
             </div>
           </div>
           <KV color="#22c55e" label="Created" value={ago(pin.createdAt)} />
+          {pin.discordId && <KV color="#6366f1" label="Discord ID" value={pin.discordId} />}
           <KV color="#a855f7" label="Visibility" value={pin.visibility} />
           <KV color="#eab308" label="Status" value={pin.status.toUpperCase()} />
           <KV color="#f97316" label="Used" value={pin.used ? 'Yes' : 'No'} />
