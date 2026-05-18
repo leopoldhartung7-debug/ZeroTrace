@@ -1,25 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import {
-  LayoutGrid, Pin, FileText, LifeBuoy, BookText,
-  Wifi, Bell, Globe, Moon, Sun, ChevronRight, ChevronsUpDown, Trash2, Check,
+  LayoutGrid, Pin, FileText, Database, Wrench, History,
+  LifeBuoy, BookOpen, Settings, Wifi, Bell, Globe, Moon, Sun,
+  ChevronsUpDown, Trash2, Check, Command,
 } from 'lucide-react'
 import { useStore, useT } from '../store.jsx'
 
 function SectionLabel({ children }) {
-  return <p className="caps-label mb-2 mt-6 px-3">{children}</p>
-}
-
-function ExpandableItem({ icon: Icon, label }) {
-  return (
-    <button className="hoverable flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium">
-      <span className="flex items-center gap-3">
-        <Icon size={18} className="muted" />
-        <span className="txt">{label}</span>
-      </span>
-      <ChevronRight size={16} className="muted" />
-    </button>
-  )
+  return <p className="caps-label mb-2 mt-5 px-3">{children}</p>
 }
 
 function Popover({ open, onClose, children, className = '' }) {
@@ -41,20 +30,42 @@ function Popover({ open, onClose, children, className = '' }) {
 export default function Sidebar() {
   const { state, dispatch } = useStore()
   const t = useT()
-  const [openPanel, setOpenPanel] = useState(null)
+  const [panel, setPanel] = useState(null)
   const dark = state.settings.theme === 'dark'
   const unread = state.notifications.filter((n) => !n.read).length
 
-  const services = [
-    { to: '/dashboard', label: t('nav.dashboard'), icon: LayoutGrid },
-    { to: '/pins', label: t('nav.pins'), icon: Pin },
-    { to: '/strings', label: t('nav.strings'), icon: FileText },
+  const groups = [
+    {
+      label: t('cat.services'),
+      items: [
+        { to: '/dashboard', label: t('nav.dashboard'), icon: LayoutGrid },
+        { to: '/pins', label: t('nav.pins'), icon: Pin },
+        { to: '/strings', label: t('nav.strings'), icon: FileText },
+        { to: '/database', label: t('nav.database'), icon: Database },
+        { to: '/tools', label: t('nav.tools'), icon: Wrench },
+      ],
+    },
+    {
+      label: t('cat.activity'),
+      items: [{ to: '/history', label: t('nav.history'), icon: History }],
+    },
+    {
+      label: t('cat.support'),
+      items: [{ to: '/support', label: t('nav.support'), icon: LifeBuoy }],
+    },
+    {
+      label: t('cat.others'),
+      items: [
+        { to: '/resources', label: t('nav.resources'), icon: BookOpen },
+        { to: '/settings', label: t('nav.settings'), icon: Settings },
+      ],
+    },
   ]
 
   return (
     <aside className="panel flex w-[280px] shrink-0 flex-col border-r">
       <div className="flex items-center gap-3 px-6 py-6">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 font-mono text-sm font-bold text-white">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 font-mono text-sm font-bold text-white shadow-lg shadow-blue-600/25">
           {'(*>'}
         </div>
         <div>
@@ -63,47 +74,50 @@ export default function Sidebar() {
         </div>
       </div>
 
-      <nav className="flex-1 overflow-y-auto px-3">
-        <SectionLabel>{t('cat.services')}</SectionLabel>
-        {services.map(({ to, label, icon: Icon }) => (
-          <NavLink
-            key={to}
-            to={to}
-            className={({ isActive }) =>
-              `mb-1 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium ${
-                isActive
-                  ? 'bg-blue-600/15 text-blue-500 shadow-[inset_0_0_0_1px_rgba(59,130,246,0.18)]'
-                  : 'hoverable'
-              }`
-            }
-          >
-            {({ isActive }) => (
-              <>
-                <Icon size={18} className={isActive ? '' : 'muted'} />
-                <span className={isActive ? '' : 'txt'}>{label}</span>
-              </>
-            )}
-          </NavLink>
+      <nav className="flex-1 overflow-y-auto px-3 pb-2">
+        {groups.map((g) => (
+          <div key={g.label}>
+            <SectionLabel>{g.label}</SectionLabel>
+            {g.items.map(({ to, label, icon: Icon }) => (
+              <NavLink
+                key={to}
+                to={to}
+                className={({ isActive }) =>
+                  `mb-1 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                    isActive
+                      ? 'bg-blue-600/15 text-blue-500 shadow-[inset_0_0_0_1px_rgba(59,130,246,0.18)]'
+                      : 'hoverable'
+                  }`
+                }
+              >
+                {({ isActive }) => (
+                  <>
+                    <Icon size={18} className={isActive ? '' : 'muted'} />
+                    <span className={isActive ? '' : 'txt'}>{label}</span>
+                  </>
+                )}
+              </NavLink>
+            ))}
+          </div>
         ))}
-
-        <SectionLabel>{t('cat.support')}</SectionLabel>
-        <ExpandableItem icon={LifeBuoy} label={t('nav.support')} />
-
-        <SectionLabel>{t('cat.others')}</SectionLabel>
-        <ExpandableItem icon={BookText} label={t('nav.resources')} />
       </nav>
 
-      <div className="bd border-t px-4 py-4">
-        <div className="relative mb-4 flex items-center gap-5 px-2">
+      <div className="bd border-t px-4 py-3">
+        <button
+          onClick={() => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true }))}
+          className="hoverable bd muted mb-3 flex w-full items-center justify-between rounded-lg border px-3 py-2 text-xs"
+        >
+          <span className="flex items-center gap-2">
+            <Command size={13} /> Quick search
+          </span>
+          <kbd className="bd rounded border px-1.5 py-0.5">⌘K</kbd>
+        </button>
+
+        <div className="relative mb-3 flex items-center gap-5 px-2">
           <span title="Online">
             <Wifi size={16} className="text-green-500" />
           </span>
-
-          <button
-            className="muted hover:txt relative"
-            onClick={() => setOpenPanel(openPanel === 'notif' ? null : 'notif')}
-            title="Notifications"
-          >
+          <button className="muted hover:txt relative" title="Notifications" onClick={() => setPanel(panel === 'n' ? null : 'n')}>
             <Bell size={16} />
             {unread > 0 && (
               <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold text-white">
@@ -111,43 +125,26 @@ export default function Sidebar() {
               </span>
             )}
           </button>
-
-          <button
-            className="muted hover:txt"
-            onClick={() => setOpenPanel(openPanel === 'lang' ? null : 'lang')}
-            title="Language"
-          >
+          <button className="muted hover:txt" title="Language" onClick={() => setPanel(panel === 'l' ? null : 'l')}>
             <Globe size={16} />
           </button>
-
           <button
             className="muted hover:txt"
-            onClick={() =>
-              dispatch({ type: 'set-setting', key: 'theme', value: dark ? 'light' : 'dark' })
-            }
-            title={dark ? 'Switch to light theme' : 'Switch to dark theme'}
+            title="Theme"
+            onClick={() => dispatch({ type: 'set-setting', key: 'theme', value: dark ? 'light' : 'dark' })}
           >
             {dark ? <Moon size={16} /> : <Sun size={16} />}
           </button>
 
-          <Popover
-            open={openPanel === 'notif'}
-            onClose={() => setOpenPanel(null)}
-            className="bottom-10 left-0 w-72"
-          >
+          <Popover open={panel === 'n'} onClose={() => setPanel(null)} className="bottom-10 left-0 w-72">
             <div className="bd flex items-center justify-between border-b px-4 py-3">
               <p className="txt text-sm font-semibold">Notifications</p>
-              <button
-                className="muted hover:txt text-xs"
-                onClick={() => dispatch({ type: 'mark-notifications-read' })}
-              >
+              <button className="muted hover:txt text-xs" onClick={() => dispatch({ type: 'mark-notifications-read' })}>
                 Mark all read
               </button>
             </div>
             <div className="max-h-72 overflow-y-auto">
-              {state.notifications.length === 0 && (
-                <p className="muted px-4 py-6 text-center text-sm">No notifications</p>
-              )}
+              {state.notifications.length === 0 && <p className="muted px-4 py-6 text-center text-sm">No notifications</p>}
               {state.notifications.map((n) => (
                 <div key={n.id} className="bd border-b px-4 py-3 last:border-0">
                   <div className="flex items-center gap-2">
@@ -168,11 +165,7 @@ export default function Sidebar() {
             )}
           </Popover>
 
-          <Popover
-            open={openPanel === 'lang'}
-            onClose={() => setOpenPanel(null)}
-            className="bottom-10 left-0 w-40 py-1"
-          >
+          <Popover open={panel === 'l'} onClose={() => setPanel(null)} className="bottom-10 left-0 w-40 py-1">
             {[
               { code: 'en', label: 'English' },
               { code: 'de', label: 'Deutsch' },
@@ -181,7 +174,7 @@ export default function Sidebar() {
                 key={l.code}
                 onClick={() => {
                   dispatch({ type: 'set-setting', key: 'lang', value: l.code })
-                  setOpenPanel(null)
+                  setPanel(null)
                 }}
                 className="hoverable txt flex w-full items-center justify-between px-3 py-2 text-sm"
               >
@@ -193,9 +186,7 @@ export default function Sidebar() {
         </div>
 
         <button className="hoverable flex w-full items-center gap-3 rounded-lg px-2 py-2">
-          <div className="tile txt flex h-9 w-9 items-center justify-center rounded-lg border text-sm font-semibold">
-            H
-          </div>
+          <div className="tile txt flex h-9 w-9 items-center justify-center rounded-lg border text-sm font-semibold">H</div>
           <div className="flex-1 text-left">
             <p className="txt text-sm font-medium leading-tight">Ham</p>
             <p className="muted text-xs">ham@anticheat.ac</p>

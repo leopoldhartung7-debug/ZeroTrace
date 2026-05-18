@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useReducer } from 'react'
 
-const KEY = 'ocean-ac-state-v1'
+const KEY = 'ocean-ac-state-v2'
 
 function genPin() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
@@ -14,6 +14,24 @@ const CHEATS = [
   'KillAura', 'Reach', 'Velocity', 'AutoClicker', 'Aimbot', 'Wallhack',
   'FlyHack', 'SpeedHack', 'TriggerBot', 'XRay', 'NoClip',
 ]
+
+const CHEAT_DB = [
+  { name: 'Vape Lite', type: 'Paid Client', game: 'MINECRAFT', severity: 'High', signatures: ['vape.gg', 'VapeLauncher', 'jvm_args'], notes: 'Popular paid ghost client. Check JVM args & recent files.' },
+  { name: 'Vape V4', type: 'Paid Client', game: 'MINECRAFT', severity: 'Critical', signatures: ['vape.gg', 'native_payload', 'rbx'], notes: 'Native ghost client, hard to detect via strings.' },
+  { name: 'LiquidBounce', type: 'Free Client', game: 'MINECRAFT', severity: 'High', signatures: ['liquidbounce.net', 'net.ccbluex'], notes: 'Open-source. Look for ccbluex packages.' },
+  { name: 'Wurst Client', type: 'Free Client', game: 'MINECRAFT', severity: 'Medium', signatures: ['wurstclient.net', 'net.wurstclient'], notes: 'Forge/Fabric mod based.' },
+  { name: 'Impact', type: 'Free Client', game: 'MINECRAFT', severity: 'Medium', signatures: ['impactclient.net', 'com.github.impact'], notes: 'Modular client built on Forge.' },
+  { name: 'Novoline', type: 'Paid Client', game: 'MINECRAFT', severity: 'High', signatures: ['novoline', 'cn.novoline'], notes: 'Obfuscated paid client.' },
+  { name: 'Rise', type: 'Paid Client', game: 'MINECRAFT', severity: 'High', signatures: ['rise.ware', 'risenetwork'], notes: 'Premium client with strong ESP.' },
+  { name: 'Sigma 5.0', type: 'Free Client', game: 'MINECRAFT', severity: 'High', signatures: ['sigmaclient', 'sdk.client'], notes: 'Older but still common.' },
+  { name: 'Meteor Client', type: 'Free Client', game: 'MINECRAFT', severity: 'Medium', signatures: ['meteorclient.com', 'meteordevelopment'], notes: 'Fabric utility/cheat mod.' },
+  { name: 'Baritone', type: 'Utility Mod', game: 'MINECRAFT', severity: 'Low', signatures: ['baritone', 'cabaletta'], notes: 'Pathfinding bot, often paired with clients.' },
+  { name: 'AutoClicker (OP)', type: 'External Tool', game: 'MINECRAFT', severity: 'Medium', signatures: ['op autoclicker', 'orphamielautoclicker'], notes: 'Standalone autoclicker.' },
+  { name: 'Polargen', type: 'Spoofer', game: 'MINECRAFT', severity: 'High', signatures: ['polargen', 'hwid_spoof'], notes: 'HWID spoofer used to evade bans.' },
+  { name: 'Aimware', type: 'Paid Client', game: 'CS2', severity: 'Critical', signatures: ['aimware.net', 'aw_overlay'], notes: 'CS2 paid cheat with overlay.' },
+  { name: 'Fecurity', type: 'Paid Client', game: 'CS2', severity: 'Critical', signatures: ['fecurity', 'fec_loader'], notes: 'External CS2 cheat.' },
+  { name: 'Cheat Engine', type: 'External Tool', game: 'RUST', severity: 'Medium', signatures: ['cheatengine', 'CE_'], notes: 'Generic memory editor.' },
+].map((c, i) => ({ id: 'cdb' + i, builtin: true, ...c }))
 
 function seed() {
   const now = Date.now()
@@ -29,30 +47,28 @@ function seed() {
     })
   }
   return {
-    settings: { theme: 'dark', lang: 'en' },
+    settings: { theme: 'dark', lang: 'en', defaultGame: 'HYTALE' },
     notifications: [
       { id: 'n1', title: 'Scan finished', body: 'Pin F1T5F8C0 returned: Cheating', time: now - 3600000, read: false },
       { id: 'n2', title: 'Welcome to Ocean', body: 'Your anti-cheat dashboard is ready.', time: now - 7200000, read: false },
     ],
+    events: [
+      { id: 'e1', kind: 'scan', title: 'Scan finished', detail: 'F1T5F8C0 — Cheating', time: now - 3600000 },
+      { id: 'e2', kind: 'pin', title: 'Pin created', detail: 'F1T5F8C0 — Test', time: now - 2 * day },
+    ],
     pins: [
       {
-        id: 'p1',
-        pin: 'F1T5F8C0',
-        name: 'Test',
-        game: 'HYTALE',
-        status: 'Finished',
-        used: true,
-        result: 'Cheating',
-        visibility: 'Private',
-        detections: 11,
-        cheats: ['KillAura', 'Reach', 'Velocity'],
-        createdAt: now - 2 * day,
+        id: 'p1', pin: 'F1T5F8C0', name: 'Test', game: 'HYTALE',
+        status: 'Finished', used: true, result: 'Cheating', visibility: 'Private',
+        detections: 11, cheats: ['KillAura', 'Reach', 'Velocity'], createdAt: now - 2 * day,
       },
     ],
     detectionFiles: [],
     yaraRules: [],
     suspiciousFiles: [],
     scans,
+    customCheats: CHEAT_DB,
+    tickets: [],
   }
 }
 
@@ -60,11 +76,21 @@ function load() {
   try {
     const raw = localStorage.getItem(KEY)
     if (!raw) return seed()
-    const parsed = JSON.parse(raw)
-    return { ...seed(), ...parsed }
+    return { ...seed(), ...JSON.parse(raw) }
   } catch {
     return seed()
   }
+}
+
+function ev(state, kind, title, detail) {
+  return [
+    { id: 'e' + Date.now() + Math.random().toString(16).slice(2, 6), kind, title, detail, time: Date.now() },
+    ...state.events,
+  ].slice(0, 300)
+}
+
+function note(state, title, body) {
+  return [{ id: 'n' + Date.now(), title, body, time: Date.now(), read: false }, ...state.notifications].slice(0, 100)
 }
 
 function reducer(state, action) {
@@ -74,25 +100,15 @@ function reducer(state, action) {
 
     case 'add-pin': {
       const pin = {
-        id: 'p' + Date.now(),
-        pin: genPin(),
-        name: action.name,
-        game: action.game,
-        status: 'Pending',
-        used: false,
-        result: null,
-        visibility: action.visibility,
-        detections: 0,
-        cheats: [],
-        createdAt: Date.now(),
+        id: 'p' + Date.now(), pin: genPin(), name: action.name, game: action.game,
+        status: 'Pending', used: false, result: null, visibility: action.visibility,
+        detections: 0, cheats: [], createdAt: Date.now(),
       }
       return {
         ...state,
         pins: [pin, ...state.pins],
-        notifications: [
-          { id: 'n' + Date.now(), title: 'Pin created', body: `${pin.pin} — ${pin.name}`, time: Date.now(), read: false },
-          ...state.notifications,
-        ],
+        events: ev(state, 'pin', 'Pin created', `${pin.pin} — ${pin.name}`),
+        notifications: note(state, 'Pin created', `${pin.pin} — ${pin.name}`),
       }
     }
 
@@ -106,42 +122,29 @@ function reducer(state, action) {
         const c = CHEATS[Math.floor(Math.random() * CHEATS.length)]
         if (!cheats.includes(c)) cheats.push(c)
       }
-      const pins = state.pins.map((p) =>
-        p.id === action.id
-          ? { ...p, status: 'Finished', used: true, result, detections, cheats }
-          : p,
-      )
       const target = state.pins.find((p) => p.id === action.id)
       return {
         ...state,
-        pins,
+        pins: state.pins.map((p) =>
+          p.id === action.id ? { ...p, status: 'Finished', used: true, result, detections, cheats } : p,
+        ),
         scans: [
-          {
-            id: 's' + Date.now(),
-            date: new Date().toISOString().slice(0, 10),
-            game: target?.game || 'HYTALE',
-            result,
-            detections,
-          },
+          { id: 's' + Date.now(), date: new Date().toISOString().slice(0, 10), game: target?.game || 'HYTALE', result, detections },
           ...state.scans,
         ],
-        notifications: [
-          { id: 'n' + Date.now(), title: 'Scan finished', body: `${target?.pin}: ${result}`, time: Date.now(), read: false },
-          ...state.notifications,
-        ],
+        events: ev(state, 'scan', 'Scan finished', `${target?.pin} — ${result}`),
+        notifications: note(state, 'Scan finished', `${target?.pin}: ${result}`),
       }
     }
 
     case 'delete-pin':
-      return { ...state, pins: state.pins.filter((p) => p.id !== action.id) }
+      return { ...state, pins: state.pins.filter((p) => p.id !== action.id), events: ev(state, 'pin', 'Pin deleted', action.pin || '') }
 
     case 'toggle-visibility':
       return {
         ...state,
         pins: state.pins.map((p) =>
-          p.id === action.id
-            ? { ...p, visibility: p.visibility === 'Private' ? 'Public' : 'Private' }
-            : p,
+          p.id === action.id ? { ...p, visibility: p.visibility === 'Private' ? 'Public' : 'Private' } : p,
         ),
       }
 
@@ -149,17 +152,10 @@ function reducer(state, action) {
       return {
         ...state,
         detectionFiles: [
-          {
-            id: 'd' + Date.now(),
-            clientName: action.clientName,
-            fileName: action.fileName,
-            size: action.size,
-            mode: action.mode,
-            signatures: action.signatures,
-            addedAt: Date.now(),
-          },
+          { id: 'd' + Date.now(), clientName: action.clientName, fileName: action.fileName, size: action.size, mode: action.mode, signatures: action.signatures, addedAt: Date.now() },
           ...state.detectionFiles,
         ],
+        events: ev(state, 'file', 'Detection file added', `${action.clientName} (${action.fileName})`),
       }
 
     case 'delete-detection-file':
@@ -168,10 +164,13 @@ function reducer(state, action) {
     case 'save-yara': {
       const existing = state.yaraRules.find((r) => r.name === action.name)
       const rule = { id: 'y' + Date.now(), name: action.name, source: action.source, createdAt: Date.now() }
-      const yaraRules = existing
-        ? state.yaraRules.map((r) => (r.name === action.name ? { ...r, source: action.source } : r))
-        : [rule, ...state.yaraRules]
-      return { ...state, yaraRules }
+      return {
+        ...state,
+        yaraRules: existing
+          ? state.yaraRules.map((r) => (r.name === action.name ? { ...r, source: action.source } : r))
+          : [rule, ...state.yaraRules],
+        events: ev(state, 'rule', 'YARA rule saved', action.name),
+      }
     }
 
     case 'delete-yara':
@@ -181,22 +180,44 @@ function reducer(state, action) {
       return {
         ...state,
         suspiciousFiles: [
-          {
-            id: 'sf' + Date.now(),
-            fileName: action.fileName,
-            size: action.size,
-            matches: action.matches,
-            scannedAt: Date.now(),
-          },
+          { id: 'sf' + Date.now(), fileName: action.fileName, size: action.size, matches: action.matches, scannedAt: Date.now() },
           ...state.suspiciousFiles,
         ],
+        events: ev(state, 'scan', 'File scanned', `${action.fileName} — ${action.matches.length} match(es)`),
       }
+
+    case 'add-cheat':
+      return {
+        ...state,
+        customCheats: [{ id: 'c' + Date.now(), builtin: false, ...action.cheat }, ...state.customCheats],
+        events: ev(state, 'db', 'Cheat added', action.cheat.name),
+      }
+
+    case 'delete-cheat':
+      return { ...state, customCheats: state.customCheats.filter((c) => c.id !== action.id) }
+
+    case 'add-ticket':
+      return {
+        ...state,
+        tickets: [{ id: 'T-' + Date.now().toString().slice(-6), ...action.ticket, status: 'Open', createdAt: Date.now() }, ...state.tickets],
+        events: ev(state, 'support', 'Ticket opened', action.ticket.subject),
+        notifications: note(state, 'Ticket opened', action.ticket.subject),
+      }
+
+    case 'update-ticket':
+      return { ...state, tickets: state.tickets.map((t) => (t.id === action.id ? { ...t, status: action.status } : t)) }
 
     case 'mark-notifications-read':
       return { ...state, notifications: state.notifications.map((n) => ({ ...n, read: true })) }
 
     case 'clear-notifications':
       return { ...state, notifications: [] }
+
+    case 'import-state':
+      return { ...seed(), ...action.state }
+
+    case 'clear-data':
+      return { ...seed(), settings: state.settings }
 
     case 'reset':
       return seed()
@@ -216,8 +237,7 @@ export function StoreProvider({ children }) {
   }, [state])
 
   useEffect(() => {
-    const root = document.documentElement
-    root.classList.toggle('light', state.settings.theme === 'light')
+    document.documentElement.classList.toggle('light', state.settings.theme === 'light')
   }, [state.settings.theme])
 
   const value = useMemo(() => ({ state, dispatch }), [state])
@@ -229,6 +249,8 @@ export function useStore() {
   if (!ctx) throw new Error('useStore must be used within StoreProvider')
   return ctx
 }
+
+export const ALL_GAMES = GAMES
 
 export function useStats() {
   const { state } = useStore()
@@ -266,6 +288,8 @@ export function useStats() {
       pending: pins.filter((p) => p.status === 'Pending').length,
       finished: finished.length,
       expired: pins.filter((p) => p.status === 'Expired').length,
+      openTickets: state.tickets.filter((t) => t.status === 'Open').length,
+      cheatDbCount: state.customCheats.length,
       rates: {
         cheating: Math.round((cheating / total) * 100),
         suspicious: Math.round((suspicious / total) * 100),
@@ -285,8 +309,9 @@ export function useStats() {
 const DICT = {
   en: {
     'nav.dashboard': 'Dashboard', 'nav.pins': 'Pins', 'nav.strings': 'Strings',
-    'nav.support': 'Support', 'nav.resources': 'Resources',
-    'cat.services': 'Services', 'cat.support': 'Support', 'cat.others': 'Others',
+    'nav.database': 'Cheat Database', 'nav.tools': 'Forensic Tools', 'nav.history': 'Activity Log',
+    'nav.support': 'Support', 'nav.resources': 'Resources', 'nav.settings': 'Settings',
+    'cat.services': 'Services', 'cat.activity': 'Activity', 'cat.support': 'Support', 'cat.others': 'Others',
     'dash.kicker': 'View statistics, events, and announcements on the Ocean.',
     'dash.welcome': 'Welcome back, Ham.',
     'pins.kicker': 'View and manage your scan pins and results',
@@ -296,8 +321,9 @@ const DICT = {
   },
   de: {
     'nav.dashboard': 'Übersicht', 'nav.pins': 'Pins', 'nav.strings': 'Strings',
-    'nav.support': 'Support', 'nav.resources': 'Ressourcen',
-    'cat.services': 'Dienste', 'cat.support': 'Hilfe', 'cat.others': 'Sonstiges',
+    'nav.database': 'Cheat-Datenbank', 'nav.tools': 'Forensik-Tools', 'nav.history': 'Aktivität',
+    'nav.support': 'Support', 'nav.resources': 'Ressourcen', 'nav.settings': 'Einstellungen',
+    'cat.services': 'Dienste', 'cat.activity': 'Aktivität', 'cat.support': 'Hilfe', 'cat.others': 'Sonstiges',
     'dash.kicker': 'Statistiken, Ereignisse und Ankündigungen im Überblick.',
     'dash.welcome': 'Willkommen zurück, Ham.',
     'pins.kicker': 'Scan-Pins und Ergebnisse verwalten',

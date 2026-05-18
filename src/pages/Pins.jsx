@@ -40,7 +40,11 @@ export default function Pins() {
   const [pageSize, setPageSize] = useState(10)
   const [createOpen, setCreateOpen] = useState(false)
   const [detail, setDetail] = useState(null)
-  const [form, setForm] = useState({ name: '', game: 'HYTALE', visibility: 'Private' })
+  const [form, setForm] = useState({
+    name: '',
+    game: state.settings.defaultGame || 'HYTALE',
+    visibility: 'Private',
+  })
 
   const filtered = useMemo(() => {
     if (tab === 'shared') return []
@@ -63,7 +67,7 @@ export default function Pins() {
     }
     dispatch({ type: 'add-pin', ...form, name: form.name.trim() })
     toast({ type: 'success', title: 'Pin created', body: `${form.name} (${form.game})` })
-    setForm({ name: '', game: 'HYTALE', visibility: 'Private' })
+    setForm({ name: '', game: state.settings.defaultGame || 'HYTALE', visibility: 'Private' })
     setCreateOpen(false)
     setPage(1)
   }

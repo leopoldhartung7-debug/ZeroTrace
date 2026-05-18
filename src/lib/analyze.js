@@ -164,6 +164,46 @@ export function formatBytes(n) {
   return `${(n / (1024 * 1024)).toFixed(1)} MB`
 }
 
+const CHEAT_DOMAINS = [
+  'vape.gg', 'liquidbounce.net', 'wurstclient.net', 'impactclient.net',
+  'novoline', 'rise.ware', 'sigmaclient', 'meteorclient.com', 'aristois.net',
+  'baritone', 'inertia', 'flux', 'salhack', 'nodus', 'huzuni', 'jigsaw',
+  'future-client', 'entropy', 'aimware.net', 'fecurity', 'neverlose.cc',
+  'gamesense.pub', 'onetap.com', 'cheatengine', 'unknowncheats.me',
+  'mpgh.net', 'nightwa.re', 'moon-client', 'prestige', 'exhibition',
+]
+
+const ARTIFACT_PATTERNS = [
+  'autoclicker', 'auto clicker', 'cheat', 'hacked client', 'ghost client',
+  'injector', '.dll', 'javaw.exe', 'jna', 'reflection', 'macro recorder',
+  'spoofer', 'hwid', 'loader.exe', 'cleaner', 'bleachbit', 'ccleaner',
+  'usn journal', 'prefetch', 'recuva', 'eraser', 'timestomp',
+]
+
+export function analyzeText(text, mode = 'history') {
+  const patterns =
+    mode === 'artifacts'
+      ? [...CHEAT_DOMAINS, ...ARTIFACT_PATTERNS]
+      : CHEAT_DOMAINS
+  const lines = (text || '').split(/\r?\n/)
+  const flagged = []
+  let scanned = 0
+  lines.forEach((line, idx) => {
+    const trimmed = line.trim()
+    if (!trimmed) return
+    scanned++
+    const low = trimmed.toLowerCase()
+    const hits = patterns.filter((p) => low.includes(p))
+    if (hits.length) flagged.push({ idx: idx + 1, line: trimmed.slice(0, 220), hits })
+  })
+  return { scanned, flagged, clean: flagged.length === 0 }
+}
+
+export async function sha256(bytes) {
+  const digest = await crypto.subtle.digest('SHA-256', bytes)
+  return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('')
+}
+
 export function readFileBytes(file) {
   return new Promise((resolve, reject) => {
     const fr = new FileReader()
