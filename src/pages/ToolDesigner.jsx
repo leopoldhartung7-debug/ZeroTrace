@@ -65,7 +65,7 @@ function GuiPreview({ s }) {
       </div>
 
       <div
-        className="relative px-6 py-7"
+        className="relative px-8 py-10"
         style={{
           background: s.gameBackground
             ? `radial-gradient(120% 90% at 50% 0%, ${c.mutedBackground}, ${c.background})`
@@ -75,22 +75,22 @@ function GuiPreview({ s }) {
       >
         <div className="flex flex-col items-center">
           {s.useDefaultLogo || !s.logoUrl ? (
-            <p className="font-mono text-2xl font-bold" style={{ color: c.accent }}>
+            <p className="font-mono text-3xl font-bold" style={{ color: c.accent }}>
               {'(*>'} OCEAN
             </p>
           ) : (
-            <img src={s.logoUrl} alt="logo" className="h-12 object-contain" />
+            <img src={s.logoUrl} alt="logo" className="h-14 object-contain" />
           )}
-          <p className="mt-1 text-xs" style={{ color: c.mutedText }}>
+          <p className="mt-1.5 text-xs" style={{ color: c.mutedText }}>
             {s.version}
           </p>
         </div>
 
-        <p className="mt-6 text-sm" style={{ color: c.text }}>
+        <p className="mt-8 text-sm" style={{ color: c.text }}>
           {s.text.pin}
         </p>
         <div
-          className="mt-2 rounded-md px-3 py-2 text-sm"
+          className="mt-2.5 rounded-md px-4 py-2.5 text-sm tracking-widest"
           style={{ background: c.mutedBackground, color: c.mutedText }}
         >
           F1T5F8C0
@@ -102,25 +102,25 @@ function GuiPreview({ s }) {
         ].map((step) => (
           <div
             key={step.label}
-            className="mt-4 rounded-lg p-4"
+            className="mt-5 rounded-lg p-5"
             style={{ background: c.mutedBackground }}
           >
-            <p className="mb-2 text-sm" style={{ color: c.text }}>
+            <p className="mb-2.5 text-sm" style={{ color: c.text }}>
               {step.label}
             </p>
-            <div className="h-2 w-full overflow-hidden rounded-full" style={{ background: c.background }}>
+            <div className="h-2.5 w-full overflow-hidden rounded-full" style={{ background: c.background }}>
               <div
-                className="h-full rounded-full"
+                className="h-full rounded-full transition-all duration-300"
                 style={{ width: `${step.pct}%`, background: c.accent }}
               />
             </div>
-            <p className="mt-1 text-right text-xs" style={{ color: c.mutedText }}>
+            <p className="mt-1.5 text-right text-xs" style={{ color: c.mutedText }}>
               {step.pct}%
             </p>
           </div>
         ))}
 
-        <p className="mt-4 text-center text-xs" style={{ color: c.mutedText }}>
+        <p className="mt-5 text-center text-xs" style={{ color: c.mutedText }}>
           {s.text.finished}
         </p>
       </div>
@@ -169,13 +169,13 @@ export default function ToolDesigner({ embedded = false }) {
         />
       )}
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_minmax(320px,420px)_280px]">
+      <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(340px,420px)]">
         {/* Options */}
-        <Card className="p-6">
-          <h3 className="txt mb-5 text-lg font-semibold">All Options</h3>
+        <Card className="p-6 md:p-8">
+          <h3 className="txt mb-6 text-lg font-semibold">All Options</h3>
 
-          <p className="caps-label mb-3">Logo</p>
-          <div className="space-y-1">
+          <p className="caps-label mb-4">Logo</p>
+          <div className="space-y-4">
             <Toggle label="Use Ocean logo" checked={s.useDefaultLogo} onChange={(v) => set({ useDefaultLogo: v })} />
             <Field label="Custom Logo URL (stretched to 600×300)">
               <input
@@ -183,14 +183,15 @@ export default function ToolDesigner({ embedded = false }) {
                 onChange={(e) => set({ logoUrl: e.target.value })}
                 disabled={s.useDefaultLogo}
                 placeholder="https://cdn.example.com/logo.png"
-                className="bd tile txt w-full rounded-lg border px-4 py-2.5 text-sm focus:outline-none disabled:opacity-50"
+                className="bd tile txt w-full rounded-lg border px-4 py-3 text-sm focus:outline-none disabled:opacity-50"
               />
             </Field>
             <Toggle label="Game background" checked={s.gameBackground} onChange={(v) => set({ gameBackground: v })} />
           </div>
 
-          <p className="caps-label mb-3 mt-6">Colours</p>
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="bd my-7 border-t" />
+          <p className="caps-label mb-4">Colours</p>
+          <div className="grid gap-5 sm:grid-cols-2">
             <ColorField label="Text colour" value={s.colors.text} onChange={(v) => setColor('text', v)} />
             <ColorField label="Muted text colour" value={s.colors.mutedText} onChange={(v) => setColor('mutedText', v)} />
             <ColorField label="Background colour" value={s.colors.background} onChange={(v) => setColor('background', v)} />
@@ -199,42 +200,43 @@ export default function ToolDesigner({ embedded = false }) {
             <ColorField label="Accent colour" value={s.colors.accent} onChange={(v) => setColor('accent', v)} />
           </div>
 
-          <p className="caps-label mb-3 mt-6">Text</p>
-          <div className="space-y-4">
+          <div className="bd my-7 border-t" />
+          <p className="caps-label mb-4">Text</p>
+          <div className="grid gap-5 sm:grid-cols-2">
             <Field label="Enter pin text">
-              <input value={s.text.pin} onChange={(e) => setText('pin', e.target.value)} className="bd tile txt w-full rounded-lg border px-4 py-2.5 text-sm focus:outline-none" />
+              <input value={s.text.pin} onChange={(e) => setText('pin', e.target.value)} className="bd tile txt w-full rounded-lg border px-4 py-3 text-sm focus:outline-none" />
             </Field>
             <Field label="Scanning process text">
-              <input value={s.text.scanning} onChange={(e) => setText('scanning', e.target.value)} className="bd tile txt w-full rounded-lg border px-4 py-2.5 text-sm focus:outline-none" />
+              <input value={s.text.scanning} onChange={(e) => setText('scanning', e.target.value)} className="bd tile txt w-full rounded-lg border px-4 py-3 text-sm focus:outline-none" />
             </Field>
             <Field label="Heuristic analysis text">
-              <input value={s.text.heuristic} onChange={(e) => setText('heuristic', e.target.value)} className="bd tile txt w-full rounded-lg border px-4 py-2.5 text-sm focus:outline-none" />
+              <input value={s.text.heuristic} onChange={(e) => setText('heuristic', e.target.value)} className="bd tile txt w-full rounded-lg border px-4 py-3 text-sm focus:outline-none" />
             </Field>
             <Field label="Finished text">
-              <input value={s.text.finished} onChange={(e) => setText('finished', e.target.value)} className="bd tile txt w-full rounded-lg border px-4 py-2.5 text-sm focus:outline-none" />
+              <input value={s.text.finished} onChange={(e) => setText('finished', e.target.value)} className="bd tile txt w-full rounded-lg border px-4 py-3 text-sm focus:outline-none" />
             </Field>
             <Field label="Version label">
-              <input value={s.version} onChange={(e) => set({ version: e.target.value })} className="bd tile txt w-full rounded-lg border px-4 py-2.5 text-sm focus:outline-none" />
+              <input value={s.version} onChange={(e) => set({ version: e.target.value })} className="bd tile txt w-full rounded-lg border px-4 py-3 text-sm focus:outline-none" />
             </Field>
           </div>
         </Card>
 
-        {/* Live preview */}
-        <Card className="h-fit p-6">
-          <h3 className="txt mb-5 flex items-center gap-2 text-lg font-semibold">
-            <Eye size={18} /> View Final GUI
-          </h3>
-          <GuiPreview s={s} />
-        </Card>
-
-        {/* Save / Import / Export */}
-        <div className="space-y-6">
+        {/* Right column — sticky, so the live preview always reflects
+            the current options while you scroll through them */}
+        <div className="space-y-6 lg:sticky lg:top-6 lg:self-start">
           <button
             onClick={() => toast({ type: 'success', title: 'Saved', body: 'Style stored locally' })}
             className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-500"
           >
             <Save size={17} /> Save All
           </button>
+
+          <Card className="p-6">
+            <h3 className="txt mb-5 flex items-center gap-2 text-lg font-semibold">
+              <Eye size={18} /> View Final GUI
+            </h3>
+            <GuiPreview s={s} />
+          </Card>
 
           <Card className="p-5">
             <h4 className="txt mb-3 flex items-center gap-2 text-sm font-semibold">
