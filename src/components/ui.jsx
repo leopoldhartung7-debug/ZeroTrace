@@ -2,7 +2,19 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState } f
 import { createPortal } from 'react-dom'
 import { X, Check, AlertTriangle, Info } from 'lucide-react'
 
+function useScrollLock(open) {
+  useEffect(() => {
+    if (!open) return
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = prev
+    }
+  }, [open])
+}
+
 export function Modal({ open, onClose, title, children, footer }) {
+  useScrollLock(open)
   useEffect(() => {
     if (!open) return
     const onEsc = (e) => e.key === 'Escape' && onClose()
@@ -14,15 +26,17 @@ export function Modal({ open, onClose, title, children, footer }) {
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="panel relative z-10 w-full max-w-md rounded-2xl border p-6 shadow-2xl">
-        <div className="mb-4 flex items-center justify-between">
+      <div className="panel relative z-10 flex max-h-[88vh] w-full max-w-md flex-col rounded-2xl border shadow-2xl">
+        <div className="bd flex shrink-0 items-center justify-between border-b px-6 py-4">
           <h3 className="txt text-lg font-semibold">{title}</h3>
           <button onClick={onClose} className="muted hover:txt rounded-md p-1">
             <X size={18} />
           </button>
         </div>
-        {children}
-        {footer && <div className="mt-6 flex justify-end gap-3">{footer}</div>}
+        <div className="flex-1 overflow-y-auto overscroll-contain px-6 py-5">{children}</div>
+        {footer && (
+          <div className="bd flex shrink-0 justify-end gap-3 border-t px-6 py-4">{footer}</div>
+        )}
       </div>
     </div>,
     document.body,
@@ -30,18 +44,19 @@ export function Modal({ open, onClose, title, children, footer }) {
 }
 
 export function Drawer({ open, onClose, title, children }) {
+  useScrollLock(open)
   if (!open) return null
   return createPortal(
     <div className="fixed inset-0 z-50">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
       <div className="panel absolute right-0 top-0 z-10 flex h-full w-full max-w-md flex-col border-l shadow-2xl">
-        <div className="bd flex items-center justify-between border-b p-5">
+        <div className="bd flex shrink-0 items-center justify-between border-b p-5">
           <h3 className="txt text-lg font-semibold">{title}</h3>
           <button onClick={onClose} className="muted hover:txt rounded-md p-1">
             <X size={18} />
           </button>
         </div>
-        <div className="flex-1 overflow-y-auto p-5">{children}</div>
+        <div className="flex-1 overflow-y-auto overscroll-contain p-5">{children}</div>
       </div>
     </div>,
     document.body,
