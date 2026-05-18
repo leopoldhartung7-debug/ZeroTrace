@@ -5,7 +5,7 @@ import {
   ChevronDown, ChevronRight, Monitor, Shield, Ticket, ExternalLink,
   AlertCircle, CheckCircle2, Activity, Code2,
 } from 'lucide-react'
-import { PageHeader, Card, StatTile, Badge } from '../components/kit.jsx'
+import { PageHeader, Card, StatTile } from '../components/kit.jsx'
 import { useStats, useStore } from '../store.jsx'
 import { useToast } from '../components/ui.jsx'
 
@@ -525,216 +525,434 @@ export function DownloadPage() {
   )
 }
 
-/* --------------------------- Privacy / Terms --------------------------- */
-function LegalDoc({ icon, title, kicker, sections }) {
+
+/* ----------------------- Shared doc primitives ------------------------- */
+function HeroBanner({ title, subtitle, meta }) {
   return (
-    <div>
-      <PageHeader icon={icon} kicker={kicker} title={title} subtitle="Last updated: 2026-05-18" />
-      <Card className="space-y-6 p-6 md:p-8">
-        {sections.map((s) => (
-          <div key={s.h}>
-            <h3 className="txt mb-2 text-base font-semibold">{s.h}</h3>
-            <p className="muted text-sm leading-relaxed">{s.p}</p>
-          </div>
-        ))}
-      </Card>
+    <div className="relative mb-10 overflow-hidden rounded-2xl border bd">
+      <div
+        className="absolute inset-0"
+        style={{ background: 'radial-gradient(60% 120% at 50% 0%, rgba(59,130,246,0.18), transparent 70%)' }}
+      />
+      <div className="relative px-6 py-16 text-center">
+        <h1 className="bg-gradient-to-b from-blue-400 to-blue-600 bg-clip-text text-5xl font-extrabold tracking-tight text-transparent md:text-6xl">
+          {title}
+        </h1>
+        <p className="muted mx-auto mt-4 max-w-xl text-lg">{subtitle}</p>
+        {meta && (
+          <p className="muted mt-6 flex items-center justify-center gap-2 text-sm">
+            <FileText size={15} /> {meta}
+          </p>
+        )}
+      </div>
     </div>
   )
 }
 
-export function Terms() {
+function TocDoc({ hero, header, preface, sections }) {
+  const refs = useRef({})
+  const goto = (id) => refs.current[id]?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   return (
-    <LegalDoc
-      icon={FileText}
-      kicker="Legal"
-      title="Terms of Service"
-      sections={[
-        { h: '1. Acceptance', p: 'By using the Ocean dashboard you agree to these terms. The service is provided as-is for anti-cheat investigation purposes only.' },
-        { h: '2. Acceptable use', p: 'You may only scan systems with the explicit, informed consent of the device owner. Unauthorised scanning is prohibited and your responsibility.' },
-        { h: '3. No warranty', p: 'Detection results are indicators, not proof. Usermode scanning cannot detect kernel, DMA or external cheats. No outcome is guaranteed.' },
-        { h: '4. Liability', p: 'Operators are responsible for moderation decisions made based on scan results. We are not liable for actions taken on your platform.' },
-        { h: '5. Changes', p: 'These terms may be updated. Continued use after changes constitutes acceptance.' },
-      ]}
-    />
+    <div>
+      {hero}
+      <div className="grid gap-6 lg:grid-cols-[300px_1fr]">
+        <Card className="h-fit p-5 lg:sticky lg:top-6">
+          <h3 className="txt mb-4 flex items-center gap-2 text-base font-semibold">
+            <FileText size={17} className="text-blue-500" /> Table of Contents
+          </h3>
+          <nav className="max-h-[70vh] space-y-1 overflow-y-auto">
+            {sections.map((s) => (
+              <button
+                key={s.id}
+                onClick={() => goto(s.id)}
+                className={`hoverable flex w-full items-start gap-3 rounded-lg px-3 py-2 text-left text-sm ${
+                  s.sub ? 'pl-8' : ''
+                }`}
+              >
+                <span className="text-blue-500">{s.n}</span>
+                <span className="txt">{s.title}</span>
+              </button>
+            ))}
+          </nav>
+        </Card>
+
+        <div className="space-y-6">
+          {header}
+          {preface}
+          {sections.map((s) => (
+            <div
+              key={s.id}
+              ref={(el) => (refs.current[s.id] = el)}
+              className="scroll-mt-6 space-y-4"
+            >
+              <Card className="flex items-center gap-4 p-5">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-600/15 text-sm font-bold text-blue-400">
+                  {s.n}
+                </span>
+                <h2 className="txt text-xl font-bold md:text-2xl">{s.title}</h2>
+              </Card>
+              <Card className="p-6 md:p-8">{s.content}</Card>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
   )
 }
 
-export function Privacy() {
+function P({ children }) {
+  return <p className="muted text-[15px] leading-relaxed">{children}</p>
+}
+function Group({ title, items }) {
   return (
-    <LegalDoc
-      icon={FileText}
-      kicker="Legal"
-      title="Privacy Policy"
-      sections={[
-        { h: 'Data we store', p: 'This dashboard is fully client-side. Pins, scans, settings, tickets and tool styles are stored only in your browser localStorage. Nothing is sent to a server.' },
-        { h: 'Scan data', p: 'Scan results live on your device. The scanner produces a token you import manually — there is no automatic upload unless you configure your own backend URL.' },
-        { h: 'Discord IDs', p: 'A scanned user’s Discord ID is stored locally with the pin so repeat scans can be correlated. It never leaves your browser.' },
-        { h: 'Third parties', p: 'No analytics, trackers or third-party data processors are used. Optional web fonts are loaded from Google Fonts.' },
-        { h: 'Your control', p: 'Use Settings → Data Management to export, clear or factory-reset all locally stored data at any time.' },
-      ]}
-    />
+    <div className="mb-6 last:mb-0">
+      <p className="mb-2 text-base font-semibold text-blue-400">{title}</p>
+      <ul className="space-y-3">
+        {items.map((it) => (
+          <li key={it.h}>
+            <p className="txt text-sm font-semibold">• {it.h}</p>
+            <ul className="mt-1 space-y-0.5 pl-5">
+              {it.sub.map((x) => (
+                <li key={x} className="muted text-sm">– {x}</li>
+              ))}
+            </ul>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+function Bullets({ items }) {
+  return (
+    <ul className="space-y-2">
+      {items.map((x) => (
+        <li key={x} className="muted flex gap-2 text-[15px] leading-relaxed">
+          <span className="text-blue-500">•</span> {x}
+        </li>
+      ))}
+    </ul>
   )
 }
 
-/* ------------------------------- Legal --------------------------------- */
-const LEGAL_SECTIONS = [
-  { n: '1', id: 's1', title: 'Description of the Software', body: [
-    'Ocean is a post-mortem anti-cheat and screenshare assistance framework. It inspects processes, modules, files and system artifacts on a consenting user’s machine and reports indicators of cheating to the server administrator who initiated the scan.',
-    'The Ocean Monthly/Yearly/Lifetime License and the Ocean Enterprise License, collectively "The Licenses", are classified as Products under these Terms. A License can be a Personal Licence or an Enterprise Licence.',
-  ] },
-  { n: '2', id: 's2', title: 'Use of Ocean', body: [
-    'Ocean may only be used to scan a device with the explicit, informed consent of that device’s owner. Operators are responsible for obtaining consent and for the moderation decisions they make based on results.',
-    'A Personal Licence is granted to an individual upon payment to their Ocean account and may not be shared. An Enterprise Licence provides a number of operator slots for an organisation.',
-  ] },
-  { n: '3', id: 's3', title: 'Intellectual Property', body: [
-    'All Ocean software, branding, signatures and documentation are the intellectual property of Ocean and its licensors. Cheat client names are referenced solely for detection and education; all trademarks belong to their respective owners.',
-  ] },
-  { n: '4', id: 's4', title: 'Privacy Policy', body: [
-    'Scan data produced by the scanner is delivered to the operator who initiated the scan. This dashboard stores all data locally in the browser; no scan content is transmitted to Ocean unless the operator configures their own backend.',
-  ] },
-  { n: '5', id: 's5', title: 'Disclaimer of Warranty', body: [
-    'The Services are provided "as is" without warranty of any kind. Usermode scanning cannot detect kernel-mode, DMA or external (second-PC) cheats. Detection results are indicators and must not be treated as conclusive proof.',
-  ] },
-  { n: '6', id: 's6', title: 'Modification of Terms', body: [
-    'Ocean reserves the right to modify this Agreement at any time. Unless otherwise specified, modifications take effect the day they are posted to this page. Continued use constitutes acceptance.',
-  ] },
-  { n: '7', id: 's7', title: 'Prohibited Activities and Enforcement', body: [
-    'You may not use Ocean to scan devices without consent, to harass individuals, to reverse-engineer the software, or to redistribute licenses. Violations may result in immediate termination without refund.',
-  ] },
-  { n: '7.4', id: 's74', title: 'Appeals Process', sub: true, body: [
-    'A user subjected to a scan may request a review of the result through the operator. Operators may escalate disputed detections via the Support page; Ocean will review the evidence and the methodology, not the moderation decision itself.',
-  ] },
-  { n: '8', id: 's8', title: 'Data Collection and Privacy', body: [
-    'A scanned user’s Discord ID is stored with the pin to correlate repeat scans. No analytics or third-party trackers are used by this dashboard. Operators are the data controllers for any results they retain.',
-  ] },
-  { n: '9', id: 's9', title: 'Self-Scanning Limitations', body: [
-    'Scanning your own machine for testing is permitted, but results may differ from a genuine screenshare scenario and should not be used to certify third parties.',
-  ] },
-  { n: '10', id: 's10', title: 'Termination of Use', body: [
-    'Ocean may suspend or terminate access for breach of these Terms. Upon termination your right to use the Services ends immediately; locally stored data remains under your control.',
-  ] },
-  { n: '11', id: 's11', title: 'Chargebacks and Reversals', body: [
-    'Initiating a chargeback or payment reversal without first contacting support will result in permanent termination of all associated licenses and accounts.',
-  ] },
+/* ------------------ Terms of Service (Legal Agreement) ----------------- */
+const AGREEMENT = [
+  { n: '1', id: 't1', title: 'Description of the Software', body: ['Ocean is a post-mortem anti-cheat and screenshare assistance framework. It inspects processes, modules, files and system artifacts on a consenting user’s machine and reports indicators of cheating to the operator who initiated the scan.', 'The Ocean Monthly/Yearly/Lifetime License and the Ocean Enterprise License, collectively “The Licenses”, are classified as Products. A License can be a Personal Licence or an Enterprise Licence.'] },
+  { n: '2', id: 't2', title: 'Use of Ocean', body: ['Ocean may only be used to scan a device with the explicit, informed consent of that device’s owner. Operators are responsible for obtaining consent and for moderation decisions made from results.', 'A Personal Licence is granted to an individual upon payment and may not be shared. An Enterprise Licence provides operator slots for an organisation.'] },
+  { n: '3', id: 't3', title: 'Intellectual Property', body: ['All Ocean software, branding, signatures and documentation are the intellectual property of Ocean and its licensors. Cheat client names are referenced solely for detection and education.'] },
+  { n: '4', id: 't4', title: 'Privacy Policy', body: ['Scan data produced by the scanner is delivered to the operator who initiated the scan. This dashboard stores all data locally; no scan content is transmitted to Ocean unless the operator configures their own backend.'] },
+  { n: '5', id: 't5', title: 'Disclaimer of Warranty', body: ['The Services are provided “as is” without warranty. Usermode scanning cannot detect kernel-mode, DMA or external (second-PC) cheats. Detection results are indicators and must not be treated as conclusive proof.'] },
+  { n: '6', id: 't6', title: 'Modification of Terms', body: ['Ocean reserves the right to modify this Agreement at any time. Modifications take effect the day they are posted. Continued use constitutes acceptance.'] },
+  { n: '7', id: 't7', title: 'Prohibited Activities and Enforcement', body: ['You may not scan devices without consent, harass individuals, reverse-engineer the software, or redistribute licenses. Violations may result in immediate termination without refund.'] },
+  { n: '7.4', id: 't74', title: 'Appeals Process', sub: true, body: ['A user subjected to a scan may request a review through the operator. Operators may escalate disputed detections via Support; Ocean reviews evidence and methodology, not the moderation decision itself.'] },
+  { n: '8', id: 't8', title: 'Data Collection and Privacy', body: ['A scanned user’s Discord ID is stored with the pin to correlate repeat scans. No analytics or third-party trackers are used by this dashboard.'] },
+  { n: '9', id: 't9', title: 'Self-Scanning Limitations', body: ['Scanning your own machine for testing is permitted, but results may differ from a genuine screenshare scenario and should not be used to certify third parties.'] },
+  { n: '10', id: 't10', title: 'Termination of Use', body: ['Ocean may suspend or terminate access for breach of these Terms. Upon termination your right to use the Services ends immediately; locally stored data remains under your control.'] },
+  { n: '11', id: 't11', title: 'Chargebacks and Reversals', body: ['Initiating a chargeback without first contacting support results in permanent termination of all associated licenses and accounts.'] },
 ]
 
-export function Legal() {
-  const refs = useRef({})
-  const goto = (id) =>
-    refs.current[id]?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-
+export function Terms() {
   return (
-    <div className="grid gap-6 lg:grid-cols-[300px_1fr]">
-      <Card className="h-fit p-5 lg:sticky lg:top-6">
-        <h3 className="txt mb-4 flex items-center gap-2 text-base font-semibold">
-          <FileText size={17} className="text-blue-500" /> Table of Contents
-        </h3>
-        <nav className="space-y-1">
-          {LEGAL_SECTIONS.map((s) => (
-            <button
-              key={s.id}
-              onClick={() => goto(s.id)}
-              className={`hoverable flex w-full items-start gap-3 rounded-lg px-3 py-2 text-left text-sm ${
-                s.sub ? 'pl-8' : ''
-              }`}
-            >
-              <span className="text-blue-500">{s.n}</span>
-              <span className="txt">{s.title}</span>
-            </button>
-          ))}
-        </nav>
-      </Card>
-
-      <Card className="p-6 md:p-8">
-        <div className="bd mb-6 flex items-start gap-4 border-b pb-6">
+    <TocDoc
+      header={
+        <Card className="flex items-start gap-4 p-6 md:p-8">
           <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 text-white">
             <Scale size={22} />
           </span>
           <div>
             <h1 className="txt text-2xl font-bold">Legal Agreement</h1>
-            <p className="muted mt-1 text-sm">
-              Terms and conditions governing the use of Ocean Anti-Cheat services
-            </p>
+            <p className="muted mt-1 text-sm">Terms and conditions governing the use of Ocean Anti-Cheat services</p>
           </div>
-        </div>
-
-        <div className="muted space-y-4 text-sm leading-relaxed">
-          <p>
-            This Terms and Conditions of Use ("Agreement") is a legally binding agreement between
-            "us" or "we" and the entity or person ("you", "your", or "user") that registered an
-            account to receive cheat detection services ("Services").
-          </p>
-          <p>
-            Ocean reserves the right to make modifications to this Agreement at any time. Unless
-            otherwise specified, any modifications to this Agreement will take effect the day they
-            are posted to this page.
-          </p>
-          <p>
-            By accessing or utilizing our Services, you acknowledge and agree to abide by these
-            Terms. If you do not accept these Terms, we kindly ask that you refrain from using our
-            Services.
-          </p>
-        </div>
-
-        <div className="mt-8 space-y-8">
-          {LEGAL_SECTIONS.map((s) => (
-            <section
-              key={s.id}
-              ref={(el) => (refs.current[s.id] = el)}
-              className="scroll-mt-6"
-            >
-              <h2 className={`txt font-semibold ${s.sub ? 'text-base' : 'text-lg'}`}>
-                {s.n}. {s.title}
-              </h2>
-              {s.body.map((p, i) => (
-                <p key={i} className="muted mt-2 text-sm leading-relaxed">
-                  {p}
-                </p>
-              ))}
-            </section>
-          ))}
-        </div>
-      </Card>
-    </div>
+        </Card>
+      }
+      preface={
+        <Card className="muted space-y-4 p-6 text-sm leading-relaxed md:p-8">
+          <p>This Terms and Conditions of Use (“Agreement”) is a legally binding agreement between “us” or “we” and the entity or person (“you”, “your”, or “user”) that registered an account to receive cheat detection services (“Services”).</p>
+          <p>Ocean reserves the right to make modifications to this Agreement at any time. Unless otherwise specified, any modifications will take effect the day they are posted to this page.</p>
+          <p>By accessing or utilizing our Services, you acknowledge and agree to abide by these Terms. If you do not accept these Terms, we kindly ask that you refrain from using our Services.</p>
+        </Card>
+      }
+      sections={AGREEMENT.map((s) => ({
+        ...s,
+        content: s.body.map((p, i) => <P key={i}>{p}</P>),
+      }))}
+    />
   )
 }
 
-/* ------------------------------ Changelogs ----------------------------- */
+/* --------------------------- Privacy Policy ---------------------------- */
+const PRIVACY = [
+  { title: 'Types of Data we Collect' },
+  { title: 'Data Usage and Processing' },
+  { title: 'Data Retention' },
+  { title: 'Data Security' },
+  { title: 'Data Storage Location' },
+  { title: 'Links to Other Sites' },
+  { title: "Children's Privacy" },
+  { title: 'Your Privacy Rights' },
+  { title: 'Legal Basis for Processing' },
+  { title: 'International Data Protection' },
+  { title: 'Data Protection Measures' },
+  { title: 'Data Breach Procedures' },
+  { title: 'Third-Party Service Providers' },
+  { title: 'Business Transfers' },
+  { title: 'COPPA Compliance' },
+  { title: 'Dispute Resolution' },
+  { title: 'Additional Rights and Questions' },
+  { title: 'Scanner Usage' },
+  { title: 'Security Research Program' },
+  { title: 'Service Improvements' },
+  { title: 'Contact for Support' },
+]
+
+const PRIVACY_BODY = {
+  1: (
+    <div>
+      <h3 className="txt mb-4 text-lg font-bold">Account and Platform Data</h3>
+      <Group
+        title="User Registration Information:"
+        items={[
+          { h: 'Email address:', sub: ['Used for account verification', 'Required for communications', 'Encrypted storage', 'Retained for account duration'] },
+          { h: 'Discord ID:', sub: ['Service integration', 'Support communications', 'Community features'] },
+          { h: 'Nametag:', sub: ['Public identification', 'Community interaction', 'User recognition'] },
+        ]}
+      />
+      <Group
+        title="Authentication Data:"
+        items={[
+          { h: 'IP Addresses:', sub: ['Login security', 'Fraud prevention', '90-day retention'] },
+          { h: 'User Agent:', sub: ['Session integrity', 'Abuse detection', 'Diagnostics'] },
+        ]}
+      />
+    </div>
+  ),
+  2: <Bullets items={['Data is processed only to deliver cheat-detection services and account functions.', 'Scan results are tied to the operator who initiated the scan.', 'No automated decision-making with legal effect is performed.']} />,
+  3: <Bullets items={['Account data: retained for the lifetime of the account.', 'IP / authentication logs: 90 days.', 'Scan results: retained by the operator on their own device (localStorage).']} />,
+  4: <Bullets items={['Encryption in transit and at rest for account data.', 'Principle of least privilege for internal access.', 'This dashboard keeps all scan data client-side.']} />,
+  5: <Bullets items={['Account infrastructure is hosted within the EU/EEA where possible.', 'Dashboard scan data never leaves the user’s browser.']} />,
+  6: <P>Our services may link to third-party sites (e.g. Discord). We are not responsible for the privacy practices of external sites.</P>,
+  7: <P>Ocean is not directed to children under 16. We do not knowingly collect data from minors. See COPPA Compliance below.</P>,
+  8: <Bullets items={['Right of access, rectification and erasure.', 'Right to restrict or object to processing.', 'Right to data portability.', 'Right to lodge a complaint with a supervisory authority.']} />,
+  9: <P>Processing is based on contract performance, legitimate interest in fraud prevention, and consent where required.</P>,
+  10: <P>Where data is transferred outside the EEA, appropriate safeguards (SCCs) are applied.</P>,
+  11: <Bullets items={['Hardened infrastructure and monitoring.', 'Regular dependency and security review.', 'Tamper-evident scan tokens.']} />,
+  12: <P>In the event of a breach affecting personal data, affected users and the competent authority will be notified within 72 hours where required by law.</P>,
+  13: <Bullets items={['Payment processing via a Merchant of Record.', 'Discord for authentication & community.', 'No advertising or analytics processors.']} />,
+  14: <P>If Ocean is involved in a merger or acquisition, data may be transferred subject to this policy.</P>,
+  15: <P>We comply with the Children’s Online Privacy Protection Act. Accounts identified as belonging to children under 13 will be removed.</P>,
+  16: <P>Disputes are handled via the Support page first; unresolved matters are subject to the governing law stated in the Legal Agreement.</P>,
+  17: <P>For additional rights requests or questions, contact us through the Support page with your account details.</P>,
+  18: <Bullets items={['The scanner only runs after explicit consent.', 'It collects anti-cheat artifacts, not arbitrary personal files.', 'Results are delivered only to the initiating operator.']} />,
+  19: <P>Security researchers may report vulnerabilities responsibly via Support. We do not pursue good-faith research.</P>,
+  20: <P>Aggregated, non-identifying signals may be used to improve detection quality.</P>,
+  21: <P>Questions about this policy? Open a ticket on the Support page.</P>,
+}
+
+export function Privacy() {
+  const sections = PRIVACY.map((s, i) => ({
+    n: String(i + 1),
+    id: 'pp' + (i + 1),
+    title: s.title,
+    content: PRIVACY_BODY[i + 1] || <P>Details for this section are available on request via Support.</P>,
+  }))
+  return (
+    <TocDoc
+      header={
+        <Card className="flex items-start gap-4 p-6 md:p-8">
+          <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 text-white">
+            <FileText size={22} />
+          </span>
+          <div>
+            <h1 className="txt text-2xl font-bold">Privacy Policy</h1>
+            <p className="muted mt-1 text-sm">How Ocean Anti-Cheat collects, uses and protects data</p>
+          </div>
+        </Card>
+      }
+      preface={
+        <Card className="p-5">
+          <p className="muted text-sm">GDPR compliance verification:</p>
+          <a
+            href="#"
+            onClick={(e) => e.preventDefault()}
+            className="break-all font-mono text-sm text-blue-500"
+          >
+            https://gdpr.euverify.com/verify/c0e9c62b-0d75-4c0d-9146-df73801cfdb2
+          </a>
+        </Card>
+      }
+      sections={sections}
+    />
+  )
+}
+
+/* --------------------------- Legal Notice ------------------------------ */
+const LEGAL_NOTICE = [
+  {
+    title: 'Legal Notice / Impressum',
+    content: (
+      <div>
+        <p className="muted bd mb-5 border-l-2 border-blue-500 pl-4 text-sm italic">
+          Information provided strictly for transparency and regulatory compliance purposes
+          (e.g., according to § 5 DDG).
+        </p>
+        <div className="space-y-2 text-sm">
+          {[
+            ['Operator', 'Ocean Anti-Cheat'],
+            ['Service', 'anticheat.ac'],
+            ['Type', 'Online anti-cheat / screenshare service'],
+            ['Represented by', 'Ocean Operations'],
+            ['Contact', 'Via the Support page within the dashboard'],
+          ].map(([k, v]) => (
+            <div key={k} className="bd flex justify-between border-b py-2 last:border-0">
+              <span className="muted">{k}</span>
+              <span className="txt font-medium">{v}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    ),
+  },
+  { title: 'Company Operations & Headquarters', content: <P>Ocean operates as an online service. Day-to-day operations are handled remotely; correspondence is processed through the in-dashboard Support channel.</P> },
+  { title: 'Contact Information', content: <P>For legal, billing or data-protection enquiries, open a ticket on the Support page including your account email and a description of your request.</P> },
+  { title: 'Merchant of Record', content: <P>Payments are processed by a third-party Merchant of Record who acts as the reseller of the Licenses and handles billing, tax and chargebacks on our behalf.</P> },
+  { title: 'EU Privacy & GDPR (Art. 27)', content: <P>For matters relating to the EU General Data Protection Regulation, requests can be submitted via Support and will be routed to the responsible representative under Art. 27 GDPR where applicable.</P> },
+]
+
+export function Legal() {
+  return (
+    <TocDoc
+      hero={<HeroBanner title="Legal Notice" subtitle="Impressum & company information" meta="Last updated  14 Apr, 2026" />}
+      header={
+        <Card className="flex items-start gap-4 p-6 md:p-8">
+          <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 text-white">
+            <Scale size={22} />
+          </span>
+          <div>
+            <h1 className="txt text-2xl font-bold">Legal Information</h1>
+            <p className="muted mt-1 text-sm">Transparency, company details, and regulatory disclosures for Ocean Anti-Cheat</p>
+          </div>
+        </Card>
+      }
+      sections={LEGAL_NOTICE.map((s, i) => ({
+        n: String(i + 1),
+        id: 'ln' + (i + 1),
+        title: s.title,
+        content: s.content,
+      }))}
+    />
+  )
+}
+
+/* ------------------------------ Changelog ------------------------------ */
+const VERSIONS = [
+  {
+    v: '0.3', title: 'Ocean Changelog 0.3', date: '17 December 2025', author: 'NotRancio',
+    tags: ['FEATURE', 'BUGFIX', 'IMPROVEMENT'], badge: 'Changelog 3',
+    intro: 'We’ve released a new update bringing general improvements and system enhancements across Ocean.',
+    items: ['New Scan Results layout with category drill-down', 'Repeat-scan detection via Discord ID', 'Tool Designer + style import/export', 'Numerous stability and UI fixes'],
+  },
+  {
+    v: '0.2', title: 'Ocean Release 0.2', date: '02 November 2025', author: 'NotRancio',
+    tags: ['FEATURE', 'IMPROVEMENT'], badge: 'Changelog 2',
+    intro: 'Release 0.2 expands detection coverage and adds the forensic toolset.',
+    items: ['Cheat Database & Forensic Tools', 'String / YARA-lite analysis', 'Activity log + CSV export'],
+  },
+  {
+    v: '0.1', title: 'BETA Release 0.1', date: '10 October 2025', author: 'NotRancio',
+    tags: ['FEATURE'], badge: 'Beta',
+    intro: 'First public beta of the Ocean dashboard and FiveM scanner.',
+    items: ['Dashboard, Pins and Strings', 'C++ FiveM scanner with .ocean sessions'],
+  },
+]
+
 export function Changelogs() {
-  const log = [
-    { v: '2.5.0', date: '2026-05-18', items: ['Full Documentation portal, Pricing, Download & Legal pages', 'PIN-gated downloads (.ocean session)'] },
-    { v: '2.4.0', date: '2026-05-18', items: ['Resources hub with sub-pages', 'Fixed iOS scroll-to-top when opening modals'] },
-    { v: '2.3.0', date: '2026-05-18', items: ['Required Discord ID per pin', 'Repeat-scan notification + previous-results popup'] },
-    { v: '2.2.0', date: '2026-05-18', items: ['Full Scan Results page (real scan data only)', 'Scanner .ocean session files'] },
-    { v: '2.1.0', date: '2026-05-18', items: ['Pin Created dialog', 'Delete confirmation modal', 'Actions menu'] },
-    { v: '2.0.0', date: '2026-05-18', items: ['Cheat Database, Forensic Tools, Activity Log, Settings, Support', 'Tool Designer + command palette'] },
-    { v: '1.0.0', date: '2026-05-18', items: ['Initial dashboard: Dashboard, Pins, Strings', 'C++ FiveM scanner'] },
-  ]
+  const refs = useRef({})
+  const [openV, setOpenV] = useState({ '0.3': true })
+  const goto = (v) => refs.current[v]?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   return (
     <div>
-      <PageHeader icon={History} kicker="What’s new" title="Changelogs" subtitle="Recent updates to the Ocean platform." />
-      <Card className="p-6 md:p-8">
-        <ol className="relative ml-3 border-l border-line">
-          {log.map((e) => (
-            <li key={e.v} className="mb-8 ml-6 last:mb-0">
-              <span className="panel absolute -left-3 flex h-6 w-6 items-center justify-center rounded-full border">
-                <Terminal size={11} className="muted" />
-              </span>
-              <div className="flex items-center gap-3">
-                <Badge tone="Open">v{e.v}</Badge>
-                <time className="muted text-xs">{e.date}</time>
+      <HeroBanner
+        title="Changelog"
+        subtitle="Stay up to date with the latest updates, improvements and new features of Ocean"
+        meta={`${VERSIONS.length} versions published`}
+      />
+      <div className="grid gap-6 lg:grid-cols-[260px_1fr]">
+        <Card className="h-fit p-5 lg:sticky lg:top-6">
+          <p className="caps-label mb-2">Navigation</p>
+          <h3 className="txt mb-4 flex items-center gap-2 text-base font-semibold">
+            <History size={17} className="text-blue-500" /> Versions
+          </h3>
+          <nav className="space-y-1">
+            {VERSIONS.map((r) => (
+              <button
+                key={r.v}
+                onClick={() => goto(r.v)}
+                className="hoverable flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm"
+              >
+                <span className="bd tile muted rounded border px-1.5 py-0.5 font-mono text-[11px]">
+                  v{r.v}
+                </span>
+                <span className="txt">{r.title}</span>
+              </button>
+            ))}
+          </nav>
+        </Card>
+
+        <div className="space-y-6">
+          {VERSIONS.map((r, i) => (
+            <Card key={r.v} className="overflow-hidden" >
+              <div ref={(el) => (refs.current[r.v] = el)} className="scroll-mt-6">
+                <div className="bd flex items-center justify-between gap-4 border-b p-5">
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-600/15 text-sm font-bold text-blue-400">
+                      {i + 1}
+                    </span>
+                    <h2 className="txt text-xl font-bold">{r.title}</h2>
+                    <span className="bd tile muted rounded border px-2 py-0.5 font-mono text-[11px]">
+                      v{r.v}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => setOpenV((o) => ({ ...o, [r.v]: !o[r.v] }))}
+                    className="bd txt rounded-lg border px-3 py-1.5 text-xs font-medium hover:border-blue-500"
+                  >
+                    {openV[r.v] ? 'Show less' : 'Show more'}
+                  </button>
+                </div>
+                <div className="p-5">
+                  <div className="muted flex flex-wrap items-center gap-4 text-xs">
+                    <span>📅 {r.date}</span>
+                    <span>👤 {r.author}</span>
+                  </div>
+                  <div className="mt-3 flex items-center gap-2">
+                    <span className="muted text-xs">🏷</span>
+                    <span className="bd tile muted rounded-md border px-2 py-1 text-[11px] font-semibold tracking-wide">
+                      {r.tags.join(', ')}
+                    </span>
+                  </div>
+                  {openV[r.v] && (
+                    <div className="bd mt-5 border-t pt-5">
+                      <h3 className="txt mb-2 flex items-center gap-2 text-lg font-bold">
+                        <span className="rounded bg-blue-600/20 px-1.5 py-0.5 text-[10px] font-bold text-blue-400">
+                          NEW
+                        </span>
+                        {r.badge}
+                      </h3>
+                      <p className="muted text-[15px] leading-relaxed">{r.intro}</p>
+                      <ul className="mt-3 space-y-1.5">
+                        {r.items.map((it) => (
+                          <li key={it} className="muted flex items-start gap-2 text-sm">
+                            <Check size={14} className="mt-0.5 text-green-500" /> {it}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
               </div>
-              <ul className="mt-2 space-y-1">
-                {e.items.map((it) => (
-                  <li key={it} className="muted flex items-start gap-2 text-sm">
-                    <Check size={14} className="mt-0.5 text-green-500" /> {it}
-                  </li>
-                ))}
-              </ul>
-            </li>
+            </Card>
           ))}
-        </ol>
-      </Card>
+        </div>
+      </div>
     </div>
   )
 }
