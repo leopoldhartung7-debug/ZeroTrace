@@ -8,6 +8,7 @@ import Pins from './pages/Pins.jsx'
 import Strings from './pages/Strings.jsx'
 import CheatDatabase from './pages/Database.jsx'
 import Tools from './pages/Tools.jsx'
+import ToolDesigner from './pages/ToolDesigner.jsx'
 import History from './pages/History.jsx'
 import Support from './pages/Support.jsx'
 import Resources from './pages/Resources.jsx'
@@ -28,6 +29,7 @@ export default function App() {
                 <Route path="/strings" element={<Strings />} />
                 <Route path="/database" element={<CheatDatabase />} />
                 <Route path="/tools" element={<Tools />} />
+                <Route path="/designer" element={<ToolDesigner />} />
                 <Route path="/history" element={<History />} />
                 <Route path="/support" element={<Support />} />
                 <Route path="/resources" element={<Resources />} />

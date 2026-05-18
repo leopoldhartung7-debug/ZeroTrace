@@ -69,6 +69,30 @@ function seed() {
     scans,
     customCheats: CHEAT_DB,
     tickets: [],
+    toolStyle: defaultToolStyle(),
+  }
+}
+
+export function defaultToolStyle() {
+  return {
+    useDefaultLogo: true,
+    logoUrl: '',
+    gameBackground: true,
+    version: 'v2.6',
+    colors: {
+      text: '#e8eaf0',
+      mutedText: '#8b93a7',
+      background: '#0d1326',
+      mutedBackground: '#161d33',
+      titlebar: '#070b16',
+      accent: '#3b82f6',
+    },
+    text: {
+      pin: 'Enter a pin below:',
+      scanning: 'Scanning processes...',
+      heuristic: 'Running heuristic analysis...',
+      finished: 'Scan complete — generating report',
+    },
   }
 }
 
@@ -97,6 +121,15 @@ function reducer(state, action) {
   switch (action.type) {
     case 'set-setting':
       return { ...state, settings: { ...state.settings, [action.key]: action.value } }
+
+    case 'set-tool-style':
+      return { ...state, toolStyle: { ...state.toolStyle, ...action.patch } }
+
+    case 'import-tool-style':
+      return { ...state, toolStyle: { ...defaultToolStyle(), ...action.style } }
+
+    case 'reset-tool-style':
+      return { ...state, toolStyle: defaultToolStyle() }
 
     case 'add-pin': {
       const pin = {
@@ -351,6 +384,7 @@ const DICT = {
   en: {
     'nav.dashboard': 'Dashboard', 'nav.pins': 'Pins', 'nav.strings': 'Strings',
     'nav.database': 'Cheat Database', 'nav.tools': 'Forensic Tools', 'nav.history': 'Activity Log',
+    'nav.designer': 'Tool Designer',
     'nav.support': 'Support', 'nav.resources': 'Resources', 'nav.settings': 'Settings',
     'cat.services': 'Services', 'cat.activity': 'Activity', 'cat.support': 'Support', 'cat.others': 'Others',
     'dash.kicker': 'View statistics, events, and announcements on the Ocean.',
@@ -363,6 +397,7 @@ const DICT = {
   de: {
     'nav.dashboard': 'Übersicht', 'nav.pins': 'Pins', 'nav.strings': 'Strings',
     'nav.database': 'Cheat-Datenbank', 'nav.tools': 'Forensik-Tools', 'nav.history': 'Aktivität',
+    'nav.designer': 'Tool-Designer',
     'nav.support': 'Support', 'nav.resources': 'Ressourcen', 'nav.settings': 'Einstellungen',
     'cat.services': 'Dienste', 'cat.activity': 'Aktivität', 'cat.support': 'Hilfe', 'cat.others': 'Sonstiges',
     'dash.kicker': 'Statistiken, Ereignisse und Ankündigungen im Überblick.',

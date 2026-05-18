@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import {
   Search, LayoutGrid, Pin, FileText, Database, Wrench, History,
-  LifeBuoy, BookOpen, Settings, Sun, Moon,
+  LifeBuoy, BookOpen, Settings, Sun, Moon, Wand2,
 } from 'lucide-react'
 import { useStore } from '../store.jsx'
 
@@ -33,6 +33,7 @@ export default function CommandPalette() {
       { label: 'Go to Strings', icon: FileText, run: () => nav('/strings') },
       { label: 'Go to Cheat Database', icon: Database, run: () => nav('/database') },
       { label: 'Go to Forensic Tools', icon: Wrench, run: () => nav('/tools') },
+      { label: 'Go to Tool Designer', icon: Wand2, run: () => nav('/designer') },
       { label: 'Go to Activity Log', icon: History, run: () => nav('/history') },
       { label: 'Go to Support', icon: LifeBuoy, run: () => nav('/support') },
       { label: 'Go to Resources', icon: BookOpen, run: () => nav('/resources') },

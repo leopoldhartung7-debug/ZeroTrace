@@ -1,8 +1,10 @@
-import { useRef } from 'react'
-import { Settings as Cog, Sun, Moon, Download, Upload, Trash2, RotateCcw } from 'lucide-react'
-import { PageHeader, Card, Field } from '../components/kit.jsx'
+import { useRef, useState } from 'react'
+import { Settings as Cog, Sun, Moon, Download, Upload, Trash2, RotateCcw, SlidersHorizontal, Wand2 } from 'lucide-react'
+import { PageHeader, Card } from '../components/kit.jsx'
+import Tabs from '../components/Tabs.jsx'
 import { Select, useToast } from '../components/ui.jsx'
 import { useStore, ALL_GAMES } from '../store.jsx'
+import ToolDesigner from './ToolDesigner.jsx'
 
 function Row({ title, desc, children }) {
   return (
@@ -16,7 +18,7 @@ function Row({ title, desc, children }) {
   )
 }
 
-export default function SettingsPage() {
+function General() {
   const { state, dispatch } = useStore()
   const toast = useToast()
   const fileRef = useRef(null)
@@ -45,8 +47,6 @@ export default function SettingsPage() {
 
   return (
     <div>
-      <PageHeader icon={Cog} kicker="Preferences & data" title="Settings" subtitle="Configure the dashboard and manage your local data." />
-
       <div className="grid gap-6 lg:grid-cols-2">
         <Card className="p-6">
           <h3 className="txt mb-1 text-lg font-semibold">Appearance</h3>
@@ -132,6 +132,26 @@ export default function SettingsPage() {
           <p>Storage <span className="txt">localStorage</span></p>
         </div>
       </Card>
+    </div>
+  )
+}
+
+export default function SettingsPage() {
+  const [tab, setTab] = useState('General')
+  return (
+    <div>
+      <PageHeader icon={Cog} kicker="Preferences & data" title="Settings" subtitle="Configure the dashboard, manage data, and design the scanner GUI." />
+      <Tabs
+        tabs={[
+          { label: 'General', icon: SlidersHorizontal },
+          { label: 'Tool Designer', icon: Wand2 },
+        ]}
+        active={tab}
+        onChange={setTab}
+      />
+      <div className="mt-8">
+        {tab === 'General' ? <General /> : <ToolDesigner embedded />}
+      </div>
     </div>
   )
 }
