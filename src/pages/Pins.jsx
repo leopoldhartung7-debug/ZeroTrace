@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import {
   Plus, Search, Filter, CalendarCheck, MessageSquare, Clock, CheckCircle2,
   AlertCircle, Info, MoreHorizontal, ChevronLeft, ChevronRight, Link2,
-  Copy, Trash2, Play, Eye, EyeOff,
+  Copy, Trash2, Play, Eye, EyeOff, Download,
 } from 'lucide-react'
 import Tabs from '../components/Tabs.jsx'
 import { Modal, Drawer, Menu, Select, useToast } from '../components/ui.jsx'
@@ -25,6 +25,22 @@ function PinStatCard({ icon: Icon, label, value, valueClass = 'txt', children })
 
 const RESULT_TONE = { Cheating: 'text-red-500', Suspicious: 'text-yellow-500', Clean: 'text-green-500' }
 const STATUS_TONE = { Finished: 'text-green-500', Pending: 'text-yellow-500', Expired: 'text-red-500' }
+const SEV_TONE = {
+  Critical: 'text-red-500',
+  High: 'text-orange-400',
+  Medium: 'text-yellow-400',
+  Low: 'text-blue-400',
+}
+
+function decodeToken(raw) {
+  const s = (raw || '').trim()
+  const b64 = s.startsWith('OCEAN1.') ? s.slice(7) : s
+  if (!b64) throw new Error('Empty token')
+  const json = decodeURIComponent(escape(atob(b64)))
+  const obj = JSON.parse(json)
+  if (!obj || !obj.code) throw new Error('Token missing session code')
+  return obj
+}
 
 export default function Pins() {
   const { state, dispatch } = useStore()
@@ -39,6 +55,8 @@ export default function Pins() {
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
   const [createOpen, setCreateOpen] = useState(false)
+  const [importOpen, setImportOpen] = useState(false)
+  const [importText, setImportText] = useState('')
   const [detail, setDetail] = useState(null)
   const [form, setForm] = useState({
     name: '',
@@ -72,6 +90,23 @@ export default function Pins() {
     setPage(1)
   }
 
+  const submitImport = () => {
+    try {
+      const payload = decodeToken(importText)
+      dispatch({ type: 'import-scan', payload })
+      toast({
+        type: payload.verdict === 'Cheating' ? 'error' : 'success',
+        title: 'Scan result imported',
+        body: `${payload.code} — ${payload.verdict}`,
+      })
+      setImportText('')
+      setImportOpen(false)
+      setPage(1)
+    } catch (e) {
+      toast({ type: 'error', title: 'Invalid token', body: e.message })
+    }
+  }
+
   const copyPin = (pin) => {
     navigator.clipboard?.writeText(pin).catch(() => {})
     toast({ type: 'success', title: 'Copied', body: pin })
@@ -82,13 +117,22 @@ export default function Pins() {
       <p className="caps-label">{t('pins.kicker')}</p>
       <h1 className="txt mt-3 text-4xl font-bold tracking-tight">{t('pins.title')}</h1>
 
-      <button
-        onClick={() => setCreateOpen(true)}
-        className="mt-7 flex items-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-semibold text-black transition-opacity hover:opacity-90"
-      >
-        <Plus size={18} />
-        {t('pins.create')}
-      </button>
+      <div className="mt-7 flex flex-wrap gap-3">
+        <button
+          onClick={() => setCreateOpen(true)}
+          className="flex items-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-semibold text-black transition-opacity hover:opacity-90"
+        >
+          <Plus size={18} />
+          {t('pins.create')}
+        </button>
+        <button
+          onClick={() => setImportOpen(true)}
+          className="bd txt flex items-center gap-2 rounded-xl border px-5 py-3 text-sm font-semibold transition-colors hover:border-blue-500"
+        >
+          <Download size={18} />
+          Import Result
+        </button>
+      </div>
 
       <div className="mt-8">
         <Tabs
@@ -363,6 +407,40 @@ export default function Pins() {
         </div>
       </Modal>
 
+      <Modal
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        title="Import Scan Result"
+        footer={
+          <>
+            <button onClick={() => setImportOpen(false)} className="bd txt rounded-lg border px-4 py-2 text-sm">
+              Cancel
+            </button>
+            <button
+              onClick={submitImport}
+              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-500"
+            >
+              Import
+            </button>
+          </>
+        }
+      >
+        <div className="space-y-3">
+          <p className="muted text-sm">
+            Paste the <code className="txt">OCEAN1.…</code> token produced by the FiveM Scanner.
+            It will be matched to its session code and update the pin, dashboard and activity log.
+          </p>
+          <textarea
+            autoFocus
+            value={importText}
+            onChange={(e) => setImportText(e.target.value)}
+            placeholder="OCEAN1.eyJ2IjoxLCJjb2RlIjoi..."
+            rows={6}
+            className="bd tile txt w-full rounded-lg border p-3 font-mono text-xs focus:outline-none"
+          />
+        </div>
+      </Modal>
+
       <Drawer open={!!detail} onClose={() => setDetail(null)} title="Pin Details">
         {detail && (
           <div className="space-y-5">
@@ -378,7 +456,10 @@ export default function Pins() {
               ['Result', detail.result || '—'],
               ['Visibility', detail.visibility],
               ['Detections', detail.detections],
+              ...(detail.host ? [['Host', detail.host]] : []),
+              ...(detail.os ? [['OS', detail.os]] : []),
               ['Created', new Date(detail.createdAt).toLocaleString()],
+              ...(detail.scannedAt ? [['Scanned', new Date(detail.scannedAt).toLocaleString()]] : []),
             ].map(([k, v]) => (
               <div key={k} className="bd flex items-center justify-between border-b pb-3 text-sm">
                 <span className="muted">{k}</span>
@@ -402,6 +483,26 @@ export default function Pins() {
                 <p className="muted text-sm">None</p>
               )}
             </div>
+            {detail.scanDetections?.length > 0 && (
+              <div>
+                <p className="caps-label mb-2">Scanner Findings ({detail.scanDetections.length})</p>
+                <div className="bd tile divide-y divide-[var(--border)] overflow-hidden rounded-lg border">
+                  {detail.scanDetections.map((d, i) => (
+                    <div key={i} className="px-3 py-2.5">
+                      <div className="flex items-center justify-between">
+                        <span className="txt text-sm font-medium">{d.name}</span>
+                        <span className={`text-xs font-semibold ${SEV_TONE[d.severity] || 'muted'}`}>
+                          {d.severity}
+                        </span>
+                      </div>
+                      <p className="muted mt-0.5 text-xs">
+                        {d.type} · {d.detail}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
             {detail.status === 'Pending' && (
               <button
                 onClick={() => {

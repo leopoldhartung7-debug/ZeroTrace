@@ -186,6 +186,47 @@ function reducer(state, action) {
         events: ev(state, 'scan', 'File scanned', `${action.fileName} — ${action.matches.length} match(es)`),
       }
 
+    case 'import-scan': {
+      const p = action.payload
+      const result =
+        p.verdict === 'Cheating' ? 'Cheating' : p.verdict === 'Suspicious' ? 'Suspicious' : 'Clean'
+      const dets = Array.isArray(p.detections) ? p.detections : []
+      const cheats = [...new Set(dets.map((d) => d.name))]
+      const game = p.game || 'FIVEM'
+      const idx = state.pins.findIndex((x) => x.pin === p.code)
+      const prev = idx >= 0 ? state.pins[idx] : null
+      const merged = {
+        pin: p.code,
+        name: prev ? prev.name : p.host || 'Imported scan',
+        game,
+        status: 'Finished',
+        used: true,
+        result,
+        visibility: prev ? prev.visibility : 'Private',
+        detections: dets.length,
+        cheats,
+        scanDetections: dets,
+        host: p.host || '',
+        os: p.os || '',
+        createdAt: prev ? prev.createdAt : Date.now(),
+        scannedAt: p.scannedAt || Date.now(),
+      }
+      const pins =
+        idx >= 0
+          ? state.pins.map((x, i) => (i === idx ? { ...x, ...merged } : x))
+          : [{ id: 'p' + Date.now(), ...merged }, ...state.pins]
+      return {
+        ...state,
+        pins,
+        scans: [
+          { id: 's' + Date.now(), date: new Date().toISOString().slice(0, 10), game, result, detections: dets.length },
+          ...state.scans,
+        ],
+        events: ev(state, 'scan', 'Scan result imported', `${p.code} — ${result} (${dets.length} detections)`),
+        notifications: note(state, 'Scan result imported', `${p.code}: ${result}`),
+      }
+    }
+
     case 'add-cheat':
       return {
         ...state,
