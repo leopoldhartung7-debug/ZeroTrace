@@ -144,25 +144,43 @@ const PREFIX = 'OCEANUI1.'
 export default function ToolDesigner({ embedded = false }) {
   const { state, dispatch } = useStore()
   const toast = useToast()
-  const s = state.toolStyle || defaultToolStyle()
+  const saved = state.toolStyle || defaultToolStyle()
+
+  // Local draft — edits stay here and only persist on "Save All".
+  const [s, setS] = useState(saved)
   const [importText, setImportText] = useState('')
 
-  const set = (patch) => dispatch({ type: 'set-tool-style', patch })
-  const setColor = (k, v) => set({ colors: { ...s.colors, [k]: v } })
-  const setText = (k, v) => set({ text: { ...s.text, [k]: v } })
+  // Re-sync the draft if the saved style changes externally
+  // (e.g. backup import) and there are no pending edits.
+  const savedKey = useMemo(() => JSON.stringify(saved), [saved])
+  useEffect(() => {
+    setS((cur) => (JSON.stringify(cur) === savedKey ? cur : JSON.parse(savedKey)))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [savedKey])
+
+  const dirty = useMemo(() => JSON.stringify(s) !== savedKey, [s, savedKey])
+
+  const set = (patch) => setS((cur) => ({ ...cur, ...patch }))
+  const setColor = (k, v) => setS((cur) => ({ ...cur, colors: { ...cur.colors, [k]: v } }))
+  const setText = (k, v) => setS((cur) => ({ ...cur, text: { ...cur.text, [k]: v } }))
 
   const exportCode = useMemo(
     () => PREFIX + btoa(unescape(encodeURIComponent(JSON.stringify(s)))),
     [s],
   )
 
+  const saveAll = () => {
+    dispatch({ type: 'save-tool-style', style: s })
+    toast({ type: 'success', title: 'Saved', body: 'Tool design stored' })
+  }
+
   const doImport = () => {
     try {
       const raw = importText.trim()
       const b64 = raw.startsWith(PREFIX) ? raw.slice(PREFIX.length) : raw
       const obj = JSON.parse(decodeURIComponent(escape(atob(b64))))
-      dispatch({ type: 'import-tool-style', style: obj })
-      toast({ type: 'success', title: 'Style imported' })
+      setS({ ...defaultToolStyle(), ...obj })
+      toast({ type: 'success', title: 'Style loaded', body: 'Press Save All to apply' })
       setImportText('')
     } catch (e) {
       toast({ type: 'error', title: 'Invalid style code', body: e.message })
@@ -244,12 +262,27 @@ export default function ToolDesigner({ embedded = false }) {
         {/* Right column — sticky, so the live preview always reflects
             the current options while you scroll through them */}
         <div className="space-y-6 lg:sticky lg:top-6 lg:self-start">
-          <button
-            onClick={() => toast({ type: 'success', title: 'Saved', body: 'Style stored locally' })}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-500"
-          >
-            <Save size={17} /> Save All
-          </button>
+          <div>
+            <button
+              onClick={saveAll}
+              disabled={!dirty}
+              className={`flex w-full items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold transition-colors ${
+                dirty
+                  ? 'bg-blue-600 text-white hover:bg-blue-500'
+                  : 'bd tile muted cursor-default'
+              }`}
+            >
+              <Save size={17} /> {dirty ? 'Save All' : 'Saved'}
+            </button>
+            {dirty ? (
+              <p className="mt-2 flex items-center justify-center gap-1.5 text-xs text-yellow-500">
+                <span className="h-1.5 w-1.5 rounded-full bg-yellow-500" />
+                Unsaved changes — press Save All to apply
+              </p>
+            ) : (
+              <p className="muted mt-2 text-center text-xs">All changes saved</p>
+            )}
+          </div>
 
           <Card className="p-6">
             <h3 className="txt mb-5 flex items-center gap-2 text-lg font-semibold">
@@ -295,8 +328,8 @@ export default function ToolDesigner({ embedded = false }) {
             </button>
             <button
               onClick={() => {
-                dispatch({ type: 'reset-tool-style' })
-                toast({ type: 'success', title: 'Reset to defaults' })
+                setS(defaultToolStyle())
+                toast({ type: 'info', title: 'Defaults loaded', body: 'Press Save All to apply' })
               }}
               className="muted hover:txt mt-2 flex w-full items-center justify-center gap-2 py-1.5 text-xs"
             >

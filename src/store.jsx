@@ -125,6 +125,9 @@ function reducer(state, action) {
     case 'set-tool-style':
       return { ...state, toolStyle: { ...state.toolStyle, ...action.patch } }
 
+    case 'save-tool-style':
+      return { ...state, toolStyle: { ...defaultToolStyle(), ...action.style } }
+
     case 'import-tool-style':
       return { ...state, toolStyle: { ...defaultToolStyle(), ...action.style } }
 
