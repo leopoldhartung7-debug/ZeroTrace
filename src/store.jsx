@@ -180,6 +180,19 @@ function reducer(state, action) {
     case 'delete-pin':
       return { ...state, pins: state.pins.filter((p) => p.id !== action.id), events: ev(state, 'pin', 'Pin deleted', action.pin || '') }
 
+    case 'update-pin':
+      return {
+        ...state,
+        pins: state.pins.map((p) => (p.id === action.id ? { ...p, ...action.patch } : p)),
+        events: ev(state, 'pin', 'Pin updated', action.label || ''),
+      }
+
+    case 'set-visibility':
+      return {
+        ...state,
+        pins: state.pins.map((p) => (p.id === action.id ? { ...p, visibility: action.visibility } : p)),
+      }
+
     case 'toggle-visibility':
       return {
         ...state,

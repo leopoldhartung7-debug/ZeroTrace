@@ -63,7 +63,7 @@ export function Drawer({ open, onClose, title, children }) {
   )
 }
 
-export function Menu({ trigger, items }) {
+export function Menu({ trigger, items, header }) {
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
   useEffect(() => {
@@ -75,22 +75,29 @@ export function Menu({ trigger, items }) {
     <div className="relative" ref={ref}>
       <span onClick={() => setOpen((o) => !o)}>{trigger}</span>
       {open && (
-        <div className="panel absolute right-0 z-20 mt-2 w-48 overflow-hidden rounded-lg border py-1 shadow-xl">
-          {items.map((it, i) => (
-            <button
-              key={i}
-              onClick={() => {
-                setOpen(false)
-                it.onClick?.()
-              }}
-              className={`hoverable flex w-full items-center gap-2 px-3 py-2 text-left text-sm ${
-                it.danger ? 'text-red-500' : 'txt'
-              }`}
-            >
-              {it.icon}
-              {it.label}
-            </button>
-          ))}
+        <div className="panel absolute right-0 z-20 mt-2 w-56 overflow-hidden rounded-xl border py-1.5 shadow-2xl">
+          {header && (
+            <p className="txt px-3 pb-1.5 pt-1 text-sm font-semibold">{header}</p>
+          )}
+          {items.map((it, i) =>
+            it.divider ? (
+              <div key={i} className="bd my-1.5 border-t" />
+            ) : (
+              <button
+                key={i}
+                onClick={() => {
+                  setOpen(false)
+                  it.onClick?.()
+                }}
+                className={`hoverable flex w-full items-center gap-3 px-3 py-2.5 text-left text-sm ${
+                  it.danger ? 'text-red-500' : 'txt'
+                }`}
+              >
+                {it.icon}
+                {it.label}
+              </button>
+            ),
+          )}
         </div>
       )}
     </div>

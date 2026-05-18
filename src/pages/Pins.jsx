@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react'
 import {
   Plus, Search, Filter, CalendarCheck, MessageSquare, Clock, CheckCircle2,
-  AlertCircle, Info, MoreHorizontal, ChevronLeft, ChevronRight, Link2,
-  Copy, Trash2, Play, Eye, EyeOff, Download,
+  AlertCircle, MoreHorizontal, ChevronLeft, ChevronRight, Link2,
+  Copy, Trash2, Play, Download, Pencil, Users,
 } from 'lucide-react'
 import Tabs from '../components/Tabs.jsx'
 import { Modal, Drawer, Menu, Select, useToast } from '../components/ui.jsx'
@@ -59,6 +59,9 @@ export default function Pins() {
   const [importOpen, setImportOpen] = useState(false)
   const [importText, setImportText] = useState('')
   const [detail, setDetail] = useState(null)
+  const [editing, setEditing] = useState(null)
+  const [editForm, setEditForm] = useState({ name: '', game: 'HYTALE', visibility: 'Private' })
+  const [access, setAccess] = useState(null)
   const [form, setForm] = useState({
     name: '',
     game: state.settings.defaultGame || 'HYTALE',
@@ -238,13 +241,23 @@ export default function Pins() {
           </button>
         </div>
 
-        <div className="mt-5 overflow-x-auto">
-          <table className="w-full min-w-[760px] text-left">
+        <div className="mt-5">
+          <table className="w-full table-fixed text-left">
+            <colgroup>
+              <col className="w-[14%]" />
+              <col className="w-[17%]" />
+              <col className="w-[13%]" />
+              <col className="w-[12%]" />
+              <col className="w-[9%]" />
+              <col className="w-[13%]" />
+              <col className="w-[13%]" />
+              <col className="w-[9%]" />
+            </colgroup>
             <thead>
               <tr className="caps-label bd border-b">
-                {['Pin', 'Name', 'Game', 'Status', 'Used', 'Result', 'Visibility', 'Actions'].map(
-                  (h) => (
-                    <th key={h} className="px-3 py-3 font-semibold">
+                {['Pin', 'Name', 'Game', 'Status', 'Used', 'Result', 'Visibility', ''].map(
+                  (h, i) => (
+                    <th key={i} className="px-2 py-3 font-semibold">
                       {h}
                     </th>
                   ),
@@ -254,80 +267,91 @@ export default function Pins() {
             <tbody>
               {pageRows.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="muted px-3 py-12 text-center text-sm">
+                  <td colSpan={8} className="muted px-2 py-12 text-center text-sm">
                     {tab === 'shared' ? 'Nothing shared with you yet.' : 'No pins match your filters.'}
                   </td>
                 </tr>
               )}
               {pageRows.map((r) => (
-                <tr key={r.id} className="hoverable bd border-b text-sm">
-                  <td className="txt px-3 py-4 font-mono">{r.pin}</td>
-                  <td className="txt px-3 py-4">{r.name}</td>
-                  <td className="px-3 py-4">
-                    <span className="bd txt rounded-md border px-2.5 py-1 text-xs font-semibold">
+                <tr key={r.id} className="hoverable bd border-b align-middle text-sm">
+                  <td className="txt truncate px-2 py-4 font-mono text-xs" title={r.pin}>
+                    {r.pin}
+                  </td>
+                  <td className="txt truncate px-2 py-4" title={r.name}>
+                    {r.name}
+                  </td>
+                  <td className="px-2 py-4">
+                    <span className="bd txt inline-block max-w-full truncate rounded-md border px-2 py-0.5 text-[11px] font-semibold">
                       {r.game}
                     </span>
                   </td>
-                  <td className={`px-3 py-4 text-xs font-semibold ${STATUS_TONE[r.status]}`}>
+                  <td className={`px-2 py-4 text-[11px] font-semibold ${STATUS_TONE[r.status]}`}>
                     {r.status.toUpperCase()}
                   </td>
                   <td
-                    className={`px-3 py-4 text-xs font-semibold ${
+                    className={`px-2 py-4 text-[11px] font-semibold ${
                       r.used ? 'text-green-500' : 'muted'
                     }`}
                   >
                     {r.used ? 'YES' : 'NO'}
                   </td>
                   <td
-                    className={`px-3 py-4 text-xs font-semibold ${
+                    className={`px-2 py-4 text-[11px] font-semibold ${
                       RESULT_TONE[r.result] || 'muted'
                     }`}
                   >
                     {r.result ? r.result.toUpperCase() : '—'}
                   </td>
-                  <td className="px-3 py-4">
-                    <span className="bd txt rounded-md border px-2.5 py-1 text-xs font-semibold">
+                  <td className="px-2 py-4">
+                    <span className="bd txt inline-block max-w-full truncate rounded-md border px-2 py-0.5 text-[11px] font-semibold">
                       {r.visibility.toUpperCase()}
                     </span>
                   </td>
-                  <td className="px-3 py-4">
-                    <div className="muted flex items-center gap-3">
-                      <button className="hover:txt" onClick={() => setDetail(r)} title="Details">
-                        <Info size={16} />
-                      </button>
+                  <td className="px-2 py-4">
+                    <div className="muted flex items-center justify-end">
                       <Menu
+                        header="Actions"
                         trigger={
-                          <button className="hover:txt" title="Actions">
-                            <MoreHorizontal size={16} />
+                          <button className="hover:txt p-1" title="Actions">
+                            <MoreHorizontal size={18} />
                           </button>
                         }
                         items={[
-                          ...(r.status === 'Pending'
-                            ? [
-                                {
-                                  label: 'Run scan',
-                                  icon: <Play size={14} />,
-                                  onClick: () => {
-                                    dispatch({ type: 'run-scan', id: r.id })
-                                    toast({ type: 'info', title: 'Scan complete', body: r.pin })
-                                  },
-                                },
-                              ]
-                            : []),
-                          { label: 'Copy pin', icon: <Copy size={14} />, onClick: () => copyPin(r.pin) },
                           {
-                            label: r.visibility === 'Private' ? 'Make public' : 'Make private',
-                            icon: r.visibility === 'Private' ? <Eye size={14} /> : <EyeOff size={14} />,
-                            onClick: () => dispatch({ type: 'toggle-visibility', id: r.id }),
+                            label: 'View Results',
+                            icon: <Search size={15} />,
+                            onClick: () => setDetail(r),
                           },
                           {
+                            label: 'Edit',
+                            icon: <Pencil size={15} />,
+                            onClick: () => {
+                              setEditing(r)
+                              setEditForm({ name: r.name, game: r.game, visibility: r.visibility })
+                            },
+                          },
+                          { divider: true },
+                          {
+                            label: 'Manage Access',
+                            icon: <Users size={15} />,
+                            onClick: () => setAccess(r),
+                          },
+                          { divider: true },
+                          {
                             label: 'Delete',
-                            icon: <Trash2 size={14} />,
+                            icon: <Trash2 size={15} />,
                             danger: true,
                             onClick: () => {
-                              dispatch({ type: 'delete-pin', id: r.id })
-                              toast({ type: 'success', title: 'Pin deleted', body: r.pin })
+                              if (confirm(`Delete pin ${r.pin}?`)) {
+                                dispatch({ type: 'delete-pin', id: r.id, pin: r.pin })
+                                toast({ type: 'success', title: 'Pin deleted', body: r.pin })
+                              }
                             },
+                          },
+                          {
+                            label: 'Copy Pin',
+                            icon: <Copy size={15} />,
+                            onClick: () => copyPin(r.pin),
                           },
                         ]}
                       />
@@ -562,6 +586,130 @@ export default function Pins() {
             className="bd tile txt w-full rounded-lg border p-3 font-mono text-xs focus:outline-none"
           />
         </div>
+      </Modal>
+
+      <Modal
+        open={!!editing}
+        onClose={() => setEditing(null)}
+        title="Edit Pin"
+        footer={
+          <>
+            <button onClick={() => setEditing(null)} className="bd txt rounded-lg border px-4 py-2 text-sm">
+              Cancel
+            </button>
+            <button
+              onClick={() => {
+                if (!editForm.name.trim()) {
+                  toast({ type: 'error', title: 'Name required' })
+                  return
+                }
+                dispatch({
+                  type: 'update-pin',
+                  id: editing.id,
+                  patch: { name: editForm.name.trim(), game: editForm.game, visibility: editForm.visibility },
+                  label: `${editing.pin} — ${editForm.name.trim()}`,
+                })
+                toast({ type: 'success', title: 'Pin updated', body: editing.pin })
+                setEditing(null)
+              }}
+              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-500"
+            >
+              Save
+            </button>
+          </>
+        }
+      >
+        {editing && (
+          <div className="space-y-4">
+            <div>
+              <label className="muted mb-1.5 block text-sm">Name</label>
+              <input
+                autoFocus
+                value={editForm.name}
+                onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                className="bd tile txt w-full rounded-lg border px-4 py-2.5 text-sm focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="muted mb-1.5 block text-sm">Game</label>
+              <Select
+                value={editForm.game}
+                onChange={(v) => setEditForm({ ...editForm, game: v })}
+                options={GAMES.map((g) => ({ value: g, label: g }))}
+              />
+            </div>
+            <div>
+              <label className="muted mb-1.5 block text-sm">Visibility</label>
+              <Select
+                value={editForm.visibility}
+                onChange={(v) => setEditForm({ ...editForm, visibility: v })}
+                options={[
+                  { value: 'Private', label: 'Private' },
+                  { value: 'Public', label: 'Public' },
+                ]}
+              />
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      <Modal
+        open={!!access}
+        onClose={() => setAccess(null)}
+        title="Manage Access"
+        footer={
+          <button onClick={() => setAccess(null)} className="bd txt w-full rounded-lg border px-4 py-2.5 text-sm font-medium">
+            Done
+          </button>
+        }
+      >
+        {access && (
+          <div className="space-y-5">
+            <div>
+              <p className="caps-label mb-2">Visibility</p>
+              <div className="grid grid-cols-2 gap-3">
+                {['Private', 'Public'].map((v) => {
+                  const current =
+                    (state.pins.find((p) => p.id === access.id) || access).visibility === v
+                  return (
+                    <button
+                      key={v}
+                      onClick={() => {
+                        dispatch({ type: 'set-visibility', id: access.id, visibility: v })
+                        toast({ type: 'success', title: `Pin is now ${v}` })
+                      }}
+                      className={`rounded-lg border px-4 py-3 text-sm font-medium ${
+                        current
+                          ? 'border-blue-600/50 bg-blue-600/15 text-blue-400'
+                          : 'bd txt hover:border-neutral-600'
+                      }`}
+                    >
+                      {v}
+                      <span className="muted mt-0.5 block text-[11px] font-normal">
+                        {v === 'Private' ? 'Only you can view' : 'Anyone with the pin'}
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+            <div>
+              <p className="caps-label mb-2">Share</p>
+              <div className="tile flex items-center justify-between rounded-lg border px-3 py-2.5">
+                <span className="txt font-mono text-sm">{access.pin}</span>
+                <button
+                  onClick={() => copyPin(access.pin)}
+                  className="bd txt flex items-center gap-2 rounded-md border px-3 py-1.5 text-xs hover:border-blue-500"
+                >
+                  <Copy size={13} /> Copy pin
+                </button>
+              </div>
+              <p className="muted mt-2 text-xs">
+                Share this pin with the user so they can run the scanner against it.
+              </p>
+            </div>
+          </div>
+        )}
       </Modal>
 
       <Drawer open={!!detail} onClose={() => setDetail(null)} title="Pin Details">
