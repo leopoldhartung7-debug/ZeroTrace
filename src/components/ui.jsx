@@ -82,6 +82,15 @@ export function Menu({ trigger, items, header }) {
           {items.map((it, i) =>
             it.divider ? (
               <div key={i} className="bd my-1.5 border-t" />
+            ) : it.disabled ? (
+              <div
+                key={i}
+                title={it.disabledHint}
+                className="muted flex w-full cursor-not-allowed items-center gap-3 px-3 py-2.5 text-left text-sm opacity-50"
+              >
+                {it.icon}
+                <span className="flex-1">{it.label}</span>
+              </div>
             ) : (
               <button
                 key={i}

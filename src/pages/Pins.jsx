@@ -272,7 +272,9 @@ export default function Pins() {
                   </td>
                 </tr>
               )}
-              {pageRows.map((r) => (
+              {pageRows.map((r) => {
+                const scanned = r.used || r.status === 'Finished' || !!r.result
+                return (
                 <tr key={r.id} className="hoverable bd border-b align-middle text-sm">
                   <td className="txt truncate px-2 py-4 font-mono text-xs" title={r.pin}>
                     {r.pin}
@@ -338,9 +340,11 @@ export default function Pins() {
                           },
                           { divider: true },
                           {
-                            label: 'Delete',
+                            label: scanned ? 'Delete (scanned)' : 'Delete',
                             icon: <Trash2 size={15} />,
-                            danger: true,
+                            danger: !scanned,
+                            disabled: scanned,
+                            disabledHint: 'A scan was already performed with this pin — it can no longer be deleted.',
                             onClick: () => {
                               if (confirm(`Delete pin ${r.pin}?`)) {
                                 dispatch({ type: 'delete-pin', id: r.id, pin: r.pin })
@@ -358,7 +362,8 @@ export default function Pins() {
                     </div>
                   </td>
                 </tr>
-              ))}
+                )
+              })}
             </tbody>
           </table>
         </div>

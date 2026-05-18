@@ -177,8 +177,16 @@ function reducer(state, action) {
       }
     }
 
-    case 'delete-pin':
-      return { ...state, pins: state.pins.filter((p) => p.id !== action.id), events: ev(state, 'pin', 'Pin deleted', action.pin || '') }
+    case 'delete-pin': {
+      const target = state.pins.find((p) => p.id === action.id)
+      // Once a scan has been performed with a pin it is locked.
+      if (target && (target.used || target.status === 'Finished' || target.result)) return state
+      return {
+        ...state,
+        pins: state.pins.filter((p) => p.id !== action.id),
+        events: ev(state, 'pin', 'Pin deleted', action.pin || ''),
+      }
+    }
 
     case 'update-pin':
       return {
