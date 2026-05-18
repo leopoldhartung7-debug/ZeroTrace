@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   Plus, Search, Filter, CalendarCheck, MessageSquare, Clock, CheckCircle2,
   AlertCircle, MoreHorizontal, ChevronLeft, ChevronRight, Link2,
-  Copy, Trash2, Play, Download, Pencil, Users,
+  Copy, Trash2, Download, Pencil, Users,
 } from 'lucide-react'
 import Tabs from '../components/Tabs.jsx'
-import { Modal, Drawer, Menu, Select, useToast } from '../components/ui.jsx'
+import { Modal, Menu, Select, useToast } from '../components/ui.jsx'
 import { useStore, useStats, useT, generatePinCode } from '../store.jsx'
 
 const GAMES = ['HYTALE', 'MINECRAFT', 'CS2', 'VALORANT', 'RUST', 'FIVEM']
@@ -25,12 +26,6 @@ function PinStatCard({ icon: Icon, label, value, valueClass = 'txt', children })
 
 const RESULT_TONE = { Cheating: 'text-red-500', Suspicious: 'text-yellow-500', Clean: 'text-green-500' }
 const STATUS_TONE = { Finished: 'text-green-500', Pending: 'text-yellow-500', Expired: 'text-red-500' }
-const SEV_TONE = {
-  Critical: 'text-red-500',
-  High: 'text-orange-400',
-  Medium: 'text-yellow-400',
-  Low: 'text-blue-400',
-}
 
 function decodeToken(raw) {
   const s = (raw || '').trim()
@@ -47,6 +42,7 @@ export default function Pins() {
   const stats = useStats()
   const t = useT()
   const toast = useToast()
+  const nav = useNavigate()
 
   const [tab, setTab] = useState('mine')
   const [query, setQuery] = useState('')
@@ -58,7 +54,6 @@ export default function Pins() {
   const [created, setCreated] = useState(null)
   const [importOpen, setImportOpen] = useState(false)
   const [importText, setImportText] = useState('')
-  const [detail, setDetail] = useState(null)
   const [editing, setEditing] = useState(null)
   const [editForm, setEditForm] = useState({ name: '', game: 'HYTALE', visibility: 'Private' })
   const [access, setAccess] = useState(null)
@@ -324,7 +319,7 @@ export default function Pins() {
                           {
                             label: 'View Results',
                             icon: <Search size={15} />,
-                            onClick: () => setDetail(r),
+                            onClick: () => nav(`/scan/${r.id}`),
                           },
                           {
                             label: 'Edit',
@@ -771,83 +766,6 @@ export default function Pins() {
         )}
       </Modal>
 
-      <Drawer open={!!detail} onClose={() => setDetail(null)} title="Pin Details">
-        {detail && (
-          <div className="space-y-5">
-            <div className="tile rounded-xl border p-4">
-              <p className="caps-label">Pin Code</p>
-              <p className="txt mt-1 font-mono text-lg">{detail.pin}</p>
-            </div>
-            {[
-              ['Name', detail.name],
-              ['Game', detail.game],
-              ['Status', detail.status],
-              ['Used', detail.used ? 'Yes' : 'No'],
-              ['Result', detail.result || '—'],
-              ['Visibility', detail.visibility],
-              ['Detections', detail.detections],
-              ...(detail.host ? [['Host', detail.host]] : []),
-              ...(detail.os ? [['OS', detail.os]] : []),
-              ['Created', new Date(detail.createdAt).toLocaleString()],
-              ...(detail.scannedAt ? [['Scanned', new Date(detail.scannedAt).toLocaleString()]] : []),
-            ].map(([k, v]) => (
-              <div key={k} className="bd flex items-center justify-between border-b pb-3 text-sm">
-                <span className="muted">{k}</span>
-                <span className="txt font-medium">{String(v)}</span>
-              </div>
-            ))}
-            <div>
-              <p className="caps-label mb-2">Detected Cheats</p>
-              {detail.cheats?.length ? (
-                <div className="flex flex-wrap gap-2">
-                  {detail.cheats.map((c) => (
-                    <span
-                      key={c}
-                      className="rounded-md border border-red-600/30 bg-red-600/10 px-2.5 py-1 text-xs font-medium text-red-500"
-                    >
-                      {c}
-                    </span>
-                  ))}
-                </div>
-              ) : (
-                <p className="muted text-sm">None</p>
-              )}
-            </div>
-            {detail.scanDetections?.length > 0 && (
-              <div>
-                <p className="caps-label mb-2">Scanner Findings ({detail.scanDetections.length})</p>
-                <div className="bd tile divide-y divide-[var(--border)] overflow-hidden rounded-lg border">
-                  {detail.scanDetections.map((d, i) => (
-                    <div key={i} className="px-3 py-2.5">
-                      <div className="flex items-center justify-between">
-                        <span className="txt text-sm font-medium">{d.name}</span>
-                        <span className={`text-xs font-semibold ${SEV_TONE[d.severity] || 'muted'}`}>
-                          {d.severity}
-                        </span>
-                      </div>
-                      <p className="muted mt-0.5 text-xs">
-                        {d.type} · {d.detail}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-            {detail.status === 'Pending' && (
-              <button
-                onClick={() => {
-                  dispatch({ type: 'run-scan', id: detail.id })
-                  setDetail(null)
-                  toast({ type: 'info', title: 'Scan complete', body: detail.pin })
-                }}
-                className="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 py-2.5 text-sm font-semibold text-white hover:bg-blue-500"
-              >
-                <Play size={15} /> Run scan now
-              </button>
-            )}
-          </div>
-        )}
-      </Drawer>
     </div>
   )
 }

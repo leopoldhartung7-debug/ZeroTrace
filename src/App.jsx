@@ -8,6 +8,7 @@ import Pins from './pages/Pins.jsx'
 import Strings from './pages/Strings.jsx'
 import CheatDatabase from './pages/Database.jsx'
 import Tools from './pages/Tools.jsx'
+import ScanResults from './pages/ScanResults.jsx'
 import History from './pages/History.jsx'
 import Support from './pages/Support.jsx'
 import Resources from './pages/Resources.jsx'
@@ -25,6 +26,7 @@ export default function App() {
                 <Route path="/" element={<Navigate to="/dashboard" replace />} />
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/pins" element={<Pins />} />
+                <Route path="/scan/:id" element={<ScanResults />} />
                 <Route path="/strings" element={<Strings />} />
                 <Route path="/database" element={<CheatDatabase />} />
                 <Route path="/tools" element={<Tools />} />
