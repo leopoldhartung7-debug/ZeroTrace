@@ -102,6 +102,15 @@ export default function Account() {
   const [showVt, setShowVt] = useState(false)
   const [fmt, setFmt] = useState('json')
   const [sel, setSel] = useState({ profile: true, pins: true, scans: false, activity: false, all: false, security: false })
+  const toggleSel = (key) =>
+    setSel((s) => {
+      if (key === 'all') {
+        return !s.all
+          ? { profile: false, pins: false, scans: false, activity: false, all: true, security: false }
+          : { ...s, all: false }
+      }
+      return { ...s, all: false, [key]: !s[key] }
+    })
 
   const device = useMemo(detectDevice, [])
   const tfaSecret = useMemo(() => randBase32(32), [tfaOpen])
@@ -524,7 +533,7 @@ export default function Account() {
                   ].map((o) => (
                     <button
                       key={o.k}
-                      onClick={() => setSel((s) => ({ ...s, [o.k]: !s[o.k] }))}
+                      onClick={() => toggleSel(o.k)}
                       className={`tile flex w-full items-center gap-4 rounded-xl border p-4 text-left ${sel[o.k] ? 'border-blue-500/50' : ''}`}
                     >
                       <span className={`flex h-5 w-5 items-center justify-center rounded ${sel[o.k] ? 'bg-blue-600 text-white' : 'bd tile'}`}>
@@ -538,7 +547,7 @@ export default function Account() {
                     </button>
                   ))}
                   <button
-                    onClick={() => setSel((s) => ({ ...s, security: !s.security }))}
+                    onClick={() => toggleSel('security')}
                     className={`tile flex w-full items-center gap-4 rounded-xl border p-4 text-left ${sel.security ? 'border-yellow-500/50' : ''}`}
                   >
                     <span className={`flex h-5 w-5 items-center justify-center rounded ${sel.security ? 'bg-yellow-500 text-black' : 'bd tile'}`}>
