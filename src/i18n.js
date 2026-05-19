@@ -673,6 +673,7 @@ function translate(raw) {
 
 const SKIP_TAGS = new Set(['SCRIPT', 'STYLE', 'NOSCRIPT', 'TEXTAREA', 'CODE', 'PRE', 'svg', 'SVG'])
 const ATTRS = ['placeholder', 'title', 'aria-label']
+const ATTR_ORIG = new WeakMap() // element -> { [attr]: originalEnglishValue }
 
 function applyToTree(root, toGerman) {
   // Text nodes
@@ -705,22 +706,25 @@ function applyToTree(root, toGerman) {
       n.__i18nDe = null
     }
   }
-  // Attributes
+  // Attributes (originals kept in a WeakMap — never touch dataset/DOM attrs)
   const els = root.querySelectorAll('[placeholder],[title],[aria-label]')
   for (const el of els) {
     if (el.closest('[data-no-i18n]')) continue
+    const store = ATTR_ORIG.get(el)
     for (const a of ATTRS) {
-      if (!el.hasAttribute(a)) continue
       if (toGerman) {
+        if (!el.hasAttribute(a)) continue
         const cur = el.getAttribute(a)
         const de = translate(cur)
         if (de && de !== cur) {
-          if (el.dataset['i18n_' + a] == null) el.dataset['i18n_' + a] = cur
+          const s = ATTR_ORIG.get(el) || {}
+          if (s[a] == null) s[a] = cur
+          ATTR_ORIG.set(el, s)
           el.setAttribute(a, de)
         }
-      } else if (el.dataset['i18n_' + a] != null) {
-        el.setAttribute(a, el.dataset['i18n_' + a])
-        delete el.dataset['i18n_' + a]
+      } else if (store && store[a] != null) {
+        el.setAttribute(a, store[a])
+        delete store[a]
       }
     }
   }
@@ -741,6 +745,9 @@ export function AutoI18n() {
       if (observer) observer.disconnect()
       try {
         applyToTree(root, toGerman)
+      } catch (err) {
+        // Translation must never break the app
+        console.error('[i18n]', err)
       } finally {
         if (observer) observer.observe(root, { childList: true, subtree: true, characterData: true })
       }
@@ -758,7 +765,11 @@ export function AutoI18n() {
       cancelAnimationFrame(raf)
       observer.disconnect()
       // Restore English on unmount/lang change so a later toggle is clean
-      if (toGerman) applyToTree(root, false)
+      try {
+        if (toGerman) applyToTree(root, false)
+      } catch (err) {
+        console.error('[i18n]', err)
+      }
     }
   }, [lang])
 
