@@ -104,9 +104,11 @@ export default function Account() {
   const [sel, setSel] = useState({ profile: true, pins: true, scans: false, activity: false, all: false, security: false })
   const toggleSel = (key) =>
     setSel((s) => {
+      // "Include Security Data" is an independent add-on — never cleared.
+      if (key === 'security') return { ...s, security: !s.security }
       if (key === 'all') {
         return !s.all
-          ? { profile: false, pins: false, scans: false, activity: false, all: true, security: false }
+          ? { ...s, profile: false, pins: false, scans: false, activity: false, all: true }
           : { ...s, all: false }
       }
       return { ...s, all: false, [key]: !s[key] }
