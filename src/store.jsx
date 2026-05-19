@@ -71,6 +71,29 @@ export function deriveScanReport(pin) {
     .filter((d) => d.severity === 'Low')
     .map((d) => ({ name: d.name, detail: d.detail, location: loc(d.detail), time }))
 
+  // Findings that reference a real file path → also surfaced in the
+  // location tables so you can see WHERE each detection lives.
+  const isPath = (s) => /\\|\.exe|\.dll|\.sys|\.bat|\.jar|\.scr/i.test(s || '')
+  const allFindings = [
+    ...detects.map((d) => ({ ...d, sev: d.severity })),
+    ...warnings.map((d) => ({ ...d, sev: 'Medium' })),
+    ...suspicious.map((d) => ({ ...d, sev: 'Low' })),
+  ].filter((d) => isPath(d.location))
+
+  const executables = allFindings.map((d) => ({
+    path: d.location,
+    timestamp: d.time || '—',
+    status: false,
+    verified: false,
+  }))
+  const lastActivity = allFindings.map((d) => ({
+    filename: d.location,
+    runTime: d.time || '—',
+    action: 'DETECTED',
+    signed: false,
+  }))
+  const execution = allFindings.map((d) => ({ path: d.location }))
+
   return {
     scannedAt: pin.scannedAt || null,
     ai: 'Not Supported',
@@ -102,11 +125,11 @@ export function deriveScanReport(pin) {
     discord: [],
     recording: [],
     mods: [],
-    lastActivity: [],
-    executables: [],
+    lastActivity,
+    executables,
     compilationDates: [],
     mft: [],
-    execution: [],
+    execution,
     screenshot: null,
   }
 }
