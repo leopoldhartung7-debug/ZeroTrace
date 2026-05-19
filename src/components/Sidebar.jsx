@@ -79,7 +79,7 @@ export default function Sidebar() {
   ]
 
   return (
-    <aside className="panel flex w-[280px] shrink-0 flex-col border-r">
+    <aside className="panel flex h-screen w-[280px] shrink-0 flex-col overflow-hidden border-r">
       <NavLink to="/" className="flex items-center gap-3 px-6 py-6" title="Back to home">
         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 font-mono text-sm font-bold text-white shadow-lg shadow-blue-600/25">
           {'(*>'}
