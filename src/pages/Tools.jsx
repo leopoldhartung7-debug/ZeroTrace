@@ -1,12 +1,203 @@
 import { useRef, useState } from 'react'
 import {
   Wrench, Globe, Network, FileSearch, Hash, AlertTriangle,
-  CheckCircle2, Copy, Upload as UploadIcon,
+  CheckCircle2, Copy, Upload as UploadIcon, MessageSquare, Send, Server, ShieldAlert,
 } from 'lucide-react'
 import { PageHeader, Card, EmptyState, Textarea } from '../components/kit.jsx'
 import Tabs from '../components/Tabs.jsx'
 import { useToast } from '../components/ui.jsx'
+import { useStore, deriveScanReport } from '../store.jsx'
 import { analyzeText, sha256, readFileBytes, formatBytes } from '../lib/analyze.js'
+
+const DISCORD_EPOCH = 1420070400000
+
+function decodeSnowflake(id) {
+  try {
+    const ms = Number(BigInt(id) >> 22n) + DISCORD_EPOCH
+    const d = new Date(ms)
+    if (isNaN(d.getTime())) return null
+    return d
+  } catch {
+    return null
+  }
+}
+
+function DiscordChecker() {
+  const toast = useToast()
+  const { state } = useStore()
+  const [id, setId] = useState('')
+  const [res, setRes] = useState(null)
+  const [busy, setBusy] = useState(false)
+
+  const webhook = state.integrations?.discordWebhook || ''
+
+  const build = (cleanId) => {
+    const created = decodeSnowflake(cleanId)
+    // Real data only: aggregate servers detected in past scans bound to this ID.
+    const pins = state.pins.filter((p) => (p.discordId || '') === cleanId)
+    const seen = new Set()
+    const servers = []
+    let scans = 0
+    pins.forEach((p) => {
+      const r = deriveScanReport(p)
+      if (!r) return
+      scans++
+      r.discordServers.forEach((g) => {
+        const k = `${g.name}|${g.id}`
+        if (seen.has(k)) return
+        seen.add(k)
+        servers.push(g)
+      })
+    })
+    servers.sort((a, b) => (a.flag === 'clean' ? 1 : 0) - (b.flag === 'clean' ? 1 : 0))
+    return {
+      id: cleanId,
+      created: created ? created.toISOString() : null,
+      pins: pins.length,
+      scans,
+      servers,
+      cheat: servers.filter((s) => s.flag === 'cheat'),
+      reselling: servers.filter((s) => s.flag === 'reselling'),
+    }
+  }
+
+  const sendWebhook = async (r) => {
+    if (!webhook) {
+      toast({ type: 'error', title: 'No webhook configured', body: 'Add a Discord webhook in Settings → Integrations.' })
+      return
+    }
+    const flagged = [...r.cheat, ...r.reselling]
+    const list = (arr) =>
+      arr.length ? arr.map((s) => `• ${s.name} (${s.flag})`).join('\n').slice(0, 1000) : '—'
+    const embed = {
+      title: 'Discord ID Server Check',
+      color: r.cheat.length ? 0xdc2626 : r.reselling.length ? 0xf59e0b : 0x22c55e,
+      fields: [
+        { name: 'Discord ID', value: '`' + r.id + '`', inline: true },
+        { name: 'Account created', value: r.created ? `<t:${Math.floor(new Date(r.created).getTime() / 1000)}:F>` : 'Unknown', inline: true },
+        { name: 'Scans on record', value: String(r.scans), inline: true },
+        { name: `Servers detected (${r.servers.length})`, value: list(r.servers) },
+        { name: `Flagged (${flagged.length})`, value: list(flagged) },
+      ],
+      footer: { text: 'Ocean Anti-Cheat — Forensic Tools' },
+      timestamp: new Date().toISOString(),
+    }
+    setBusy(true)
+    try {
+      const resp = await fetch(webhook, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: 'Ocean Anti-Cheat', embeds: [embed] }),
+      })
+      if (resp.ok || resp.status === 204) {
+        toast({ type: 'success', title: 'Sent to webhook' })
+      } else {
+        toast({ type: 'error', title: 'Webhook failed', body: `HTTP ${resp.status}` })
+      }
+    } catch (e) {
+      toast({ type: 'error', title: 'Webhook failed', body: e.message })
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const run = async () => {
+    const cleanId = id.trim()
+    if (!/^\d{17,20}$/.test(cleanId)) {
+      return toast({ type: 'error', title: 'Invalid Discord ID', body: 'Enter a numeric Discord ID (17–20 digits).' })
+    }
+    const r = build(cleanId)
+    setRes(r)
+    await sendWebhook(r)
+  }
+
+  return (
+    <Card className="p-6 md:p-8">
+      <p className="caps-label">Discord</p>
+      <h3 className="txt mt-1 text-xl font-semibold">Discord ID Server Checker</h3>
+      <p className="muted mb-4 mt-1 text-sm">
+        Enter only a Discord ID. Decodes the account creation date and aggregates the servers
+        detected in past scans bound to this ID — reselling and cheat servers are flagged.
+        Results are sent to the webhook configured in Settings.
+      </p>
+      <div className="flex flex-col gap-2 sm:flex-row">
+        <input
+          value={id}
+          onChange={(e) => setId(e.target.value.replace(/[^\d]/g, ''))}
+          placeholder="e.g. 145481082291945490"
+          className="bd tile txt w-full rounded-lg border px-3 py-2.5 font-mono text-sm focus:outline-none"
+        />
+        <button
+          onClick={run}
+          disabled={busy}
+          className="flex shrink-0 items-center justify-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-500 disabled:opacity-60"
+        >
+          <Send size={15} /> {busy ? 'Sending…' : 'Check & Send'}
+        </button>
+      </div>
+      {!webhook && (
+        <p className="mt-3 flex items-center gap-2 text-xs text-yellow-500">
+          <AlertTriangle size={13} /> No webhook configured in Settings → Integrations.
+        </p>
+      )}
+
+      {res && (
+        <div className="mt-6 space-y-4">
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="tile rounded-lg border p-3">
+              <p className="caps-label">Account created</p>
+              <p className="txt mt-1 text-sm font-medium">
+                {res.created ? new Date(res.created).toLocaleString() : 'Unknown'}
+              </p>
+            </div>
+            <div className="tile rounded-lg border p-3">
+              <p className="caps-label">Scans on record</p>
+              <p className="txt mt-1 text-sm font-medium">{res.scans}</p>
+            </div>
+            <div className="tile rounded-lg border p-3">
+              <p className="caps-label">Flagged servers</p>
+              <p className="txt mt-1 text-sm font-medium">
+                {res.cheat.length + res.reselling.length} / {res.servers.length}
+              </p>
+            </div>
+          </div>
+
+          {res.servers.length === 0 ? (
+            <p className="muted py-8 text-center text-sm">
+              No server data on record for this ID. Run a scan with a pin bound to this Discord ID.
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {res.servers.map((g, i) => {
+                const tone =
+                  g.flag === 'cheat'
+                    ? 'border-red-600/40 bg-red-600/15 text-red-500'
+                    : g.flag === 'reselling'
+                      ? 'border-orange-500/40 bg-orange-500/15 text-orange-400'
+                      : 'bd muted'
+                const tag = g.flag === 'cheat' ? 'Cheat Discord' : g.flag === 'reselling' ? 'Reselling Discord' : 'Member'
+                return (
+                  <div key={i} className="tile flex flex-wrap items-center justify-between gap-3 rounded-lg border px-4 py-3">
+                    <div className="flex items-center gap-3">
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-600/15 text-blue-400">
+                        <Server size={15} />
+                      </span>
+                      <div>
+                        <p className="txt text-sm font-medium">{g.name}</p>
+                        <p className="muted font-mono text-xs">ID: {g.id}</p>
+                      </div>
+                    </div>
+                    <span className={`rounded-md border px-2.5 py-1 text-[11px] font-semibold ${tone}`}>{tag}</span>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      )}
+    </Card>
+  )
+}
 
 function TextAnalyzer({ mode, placeholder, hint }) {
   const toast = useToast()
@@ -155,6 +346,7 @@ export default function Tools() {
           { label: 'Browser History', icon: Globe },
           { label: 'DNS Cache', icon: Network },
           { label: 'System Artifacts', icon: FileSearch },
+          { label: 'Discord ID', icon: MessageSquare },
           { label: 'File Hash', icon: Hash },
         ]}
         active={tab}
@@ -182,6 +374,7 @@ export default function Tools() {
             placeholder={'JAVAW.EXE-1A2B.pf\nVAPE-LOADER.EXE-99FF.pf\nBLEACHBIT.EXE-...'}
           />
         )}
+        {tab === 'Discord ID' && <DiscordChecker />}
         {tab === 'File Hash' && <FileHasher />}
       </div>
     </div>

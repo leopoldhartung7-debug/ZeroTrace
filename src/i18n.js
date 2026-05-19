@@ -221,6 +221,20 @@ export const DE = {
   'No Discord servers found': 'Keine Discord-Server gefunden',
   'Cheat Discord': 'Cheat-Discord', 'Reselling Discord': 'Reselling-Discord',
   'Member': 'Mitglied', 'flagged ·': 'markiert ·', 'total': 'gesamt', 'suspicious ·': 'verdächtig ·',
+  'Discord ID': 'Discord-ID', 'Discord ID Server Checker': 'Discord-ID-Server-Checker',
+  'Enter only a Discord ID. Decodes the account creation date and aggregates the servers detected in past scans bound to this ID — reselling and cheat servers are flagged. Results are sent to the webhook configured in Settings.':
+    'Gib nur eine Discord-ID ein. Dekodiert das Konto-Erstellungsdatum und fasst die in früheren Scans erkannten Server zusammen, die an diese ID gebunden sind — Reselling- und Cheat-Server werden markiert. Die Ergebnisse werden an den in den Einstellungen hinterlegten Webhook gesendet.',
+  'Check & Send': 'Prüfen & Senden', 'Sending…': 'Senden…',
+  'No webhook configured in Settings → Integrations.': 'Kein Webhook in Einstellungen → Integrationen konfiguriert.',
+  'Account created': 'Konto erstellt', 'Scans on record': 'Scans im Verlauf',
+  'Flagged servers': 'Markierte Server',
+  'No server data on record for this ID. Run a scan with a pin bound to this Discord ID.':
+    'Keine Server-Daten für diese ID vorhanden. Führe einen Scan mit einem Pin durch, der an diese Discord-ID gebunden ist.',
+  'Sent to webhook': 'An Webhook gesendet', 'Webhook failed': 'Webhook fehlgeschlagen',
+  'No webhook configured': 'Kein Webhook konfiguriert',
+  'Add a Discord webhook in Settings → Integrations.': 'Füge in Einstellungen → Integrationen einen Discord-Webhook hinzu.',
+  'Invalid Discord ID': 'Ungültige Discord-ID',
+  'Enter a numeric Discord ID (17–20 digits).': 'Gib eine numerische Discord-ID ein (17–20 Ziffern).',
 
   // ---- Account / settings ----
   'Manage your account settings and preferences': 'Verwalte deine Kontoeinstellungen und Präferenzen',
