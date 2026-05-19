@@ -66,10 +66,10 @@ export function StatTile({ icon: Icon, label, value, accent = 'muted', sub }) {
         <div className="tile flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border">
           <Icon size={18} className={accent} />
         </div>
-        <div className="min-w-0">
-          <p className="caps-label">{label}</p>
-          <p className="txt mt-1 text-2xl font-bold">{value}</p>
-          {sub && <p className="muted mt-0.5 text-xs">{sub}</p>}
+        <div className="min-w-0 flex-1">
+          <p className="caps-label whitespace-normal break-words leading-snug">{label}</p>
+          <p className="txt mt-1 break-words text-2xl font-bold leading-tight">{value}</p>
+          {sub && <p className="muted mt-0.5 break-words text-xs">{sub}</p>}
         </div>
       </div>
     </div>
