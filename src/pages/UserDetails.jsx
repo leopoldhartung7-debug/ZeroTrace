@@ -2,7 +2,8 @@ import { useMemo } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import {
   ArrowLeft, User as UserIcon, KeyRound, AtSign, MessageSquare,
-  Clock, CheckCircle2, AlertCircle, Search,
+  Clock, CheckCircle2, AlertCircle, Search, Activity, Pin as PinIcon,
+  ScanLine, FileText, Code2, Database, LifeBuoy,
 } from 'lucide-react'
 import { PageHeader, Card } from '../components/kit.jsx'
 import { useStore, deriveScanReport } from '../store.jsx'
@@ -34,6 +35,10 @@ export default function UserDetails() {
   const pins = useMemo(
     () => (state.pins || []).filter((p) => p.ownerId === id),
     [state.pins, id],
+  )
+  const events = useMemo(
+    () => (state.events || []).filter((e) => e.ownerId === id),
+    [state.events, id],
   )
 
   if (!user) {
@@ -195,6 +200,41 @@ export default function UserDetails() {
               </tbody>
             </table>
           </div>
+        )}
+      </Card>
+
+      <Card className="mt-6 p-6">
+        <h3 className="txt mb-1 flex items-center gap-2 text-lg font-semibold">
+          <Activity size={18} /> Activity ({events.length})
+        </h3>
+        <p className="muted mb-4 text-sm">All activity-log entries this user has produced.</p>
+        {events.length === 0 ? (
+          <p className="muted py-12 text-center text-sm">No activity recorded for this user.</p>
+        ) : (
+          <ol className="relative ml-3 border-l border-line">
+            {events.map((e) => {
+              const Icon =
+                e.kind === 'pin' ? PinIcon :
+                e.kind === 'scan' ? ScanLine :
+                e.kind === 'file' ? FileText :
+                e.kind === 'rule' ? Code2 :
+                e.kind === 'db' ? Database :
+                e.kind === 'support' ? LifeBuoy :
+                Activity
+              return (
+                <li key={e.id} className="mb-6 ml-6">
+                  <span className="panel absolute -left-3 flex h-6 w-6 items-center justify-center rounded-full border">
+                    <Icon size={12} className="muted" />
+                  </span>
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="txt text-sm font-medium">{e.title}</p>
+                    <time className="muted text-xs">{fmt(e.time)}</time>
+                  </div>
+                  {e.detail && <p className="muted mt-0.5 text-xs">{e.detail}</p>}
+                </li>
+              )
+            })}
+          </ol>
         )}
       </Card>
     </div>

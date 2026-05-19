@@ -287,6 +287,9 @@ export const DE = {
   'This removes only your own activity-log entries. This cannot be undone.':
     'Dies löscht nur deine eigenen Aktivitäts-Einträge. Das kann nicht rückgängig gemacht werden.',
   'Verdict': 'Urteil',
+  'All activity-log entries this user has produced.':
+    'Alle Aktivitäts-Einträge, die dieser Nutzer erzeugt hat.',
+  'No activity recorded for this user.': 'Keine Aktivität für diesen Nutzer aufgezeichnet.',
   'Verify your email': 'E-Mail bestätigen', 'Verify & finish': 'Bestätigen & fertigstellen',
   'Resend code': 'Code erneut senden', 'Checking email…': 'E-Mail wird geprüft…',
   'Verification code': 'Bestätigungscode',
