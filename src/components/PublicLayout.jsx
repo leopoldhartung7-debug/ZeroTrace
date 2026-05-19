@@ -26,7 +26,7 @@ export function PublicHeader() {
   }
 
   return (
-    <header className="sticky top-0 z-30 flex items-center justify-between border-b border-white/5 bg-black/80 px-6 py-5 backdrop-blur md:px-12">
+    <header className="sticky top-0 z-30 flex items-center justify-between border-b border-white/5 bg-[#1a1b1e]/80 px-6 py-5 backdrop-blur md:px-12">
       <button onClick={() => nav('/')} className="flex items-center gap-3">
         <Logo size="md" />
       </button>
@@ -63,7 +63,7 @@ export function PublicHeader() {
 
 export default function PublicLayout() {
   return (
-    <div className="force-dark min-h-screen bg-black text-white">
+    <div className="force-dark app-bg min-h-screen text-white">
       <PublicHeader />
       <main className="mx-auto max-w-6xl px-6 py-12 md:px-12">
         <Outlet />

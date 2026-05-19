@@ -130,7 +130,7 @@ function DownloadMock() {
 }
 function ScanningMock() {
   return (
-    <div className="rounded-2xl border border-white/10 bg-black/60 p-5">
+    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
       <div className="flex justify-end gap-2 text-neutral-600">
         <span>—</span>
         <span>×</span>
@@ -148,7 +148,7 @@ function ScanningMock() {
 }
 function ReviewMock() {
   return (
-    <div className="rounded-2xl border border-white/10 bg-black/60 p-5">
+    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
       <div className="flex items-center justify-between text-sm">
         <span className="text-neutral-300">Results <span className="text-neutral-600">›</span> 238FS64</span>
         <span className="flex items-center gap-2 text-neutral-600"><Link2 size={14} /> <MoreVertical size={14} /></span>
@@ -226,8 +226,8 @@ export default function Landing() {
   }
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-black text-white">
-      <header className="sticky top-0 z-30 flex items-center justify-between border-b border-white/5 bg-black/80 px-6 py-5 backdrop-blur md:px-12">
+    <div className="force-dark app-bg min-h-screen overflow-x-hidden text-white">
+      <header className="sticky top-0 z-30 flex items-center justify-between border-b border-white/5 bg-[#1a1b1e]/80 px-6 py-5 backdrop-blur md:px-12">
         <button onClick={() => nav('/')} className="flex items-center gap-3">
           <Logo size="md" />
         </button>
@@ -307,7 +307,7 @@ export default function Landing() {
                   <h3 className="mt-12 whitespace-pre-line text-3xl font-bold">{p.title}</h3>
                   <p className="mt-4 max-w-md leading-relaxed text-neutral-400">{p.text}</p>
                 </div>
-                <div className={`rounded-2xl border border-white/10 bg-black/40 p-5 ${p.reverse ? 'md:order-1' : ''}`}>
+                <div className={`rounded-2xl border border-white/10 bg-white/[0.03] p-5 ${p.reverse ? 'md:order-1' : ''}`}>
                   {p.mock}
                 </div>
               </div>

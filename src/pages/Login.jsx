@@ -32,7 +32,7 @@ export default function Login() {
   const signIn = (method) => enterDashboard(method)
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-black px-4 py-10 text-white">
+    <div className="force-dark app-bg flex min-h-screen items-center justify-center px-4 py-10 text-white">
       <div
         className="pointer-events-none fixed inset-0"
         style={{ background: 'radial-gradient(60% 50% at 50% 0%, rgba(56,189,248,0.15), transparent 70%)' }}
