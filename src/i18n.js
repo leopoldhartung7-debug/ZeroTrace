@@ -235,6 +235,13 @@ export const DE = {
   'Add a Discord webhook in Settings → Integrations.': 'Füge in Einstellungen → Integrationen einen Discord-Webhook hinzu.',
   'Invalid Discord ID': 'Ungültige Discord-ID',
   'Enter a numeric Discord ID (17–20 digits).': 'Gib eine numerische Discord-ID ein (17–20 Ziffern).',
+  'Scan summary sent to webhook': 'Scan-Übersicht an Webhook gesendet',
+  'Delete as admin': 'Als Admin löschen', 'Delete (scanned)': 'Löschen (gescannt)',
+  'Delete Pin (Admin)': 'Pin löschen (Admin)',
+  'A scan was already performed with this pin — use "Delete as admin".':
+    'Mit diesem Pin wurde bereits ein Scan durchgeführt — nutze „Als Admin löschen“.',
+  'Admin delete — this pin was already used for a scan. Deleting it also removes its scan results. This cannot be undone.':
+    'Admin-Löschung — dieser Pin wurde bereits für einen Scan verwendet. Beim Löschen werden auch seine Scan-Ergebnisse entfernt. Das kann nicht rückgängig gemacht werden.',
 
   // ---- Account / settings ----
   'Manage your account settings and preferences': 'Verwalte deine Kontoeinstellungen und Präferenzen',

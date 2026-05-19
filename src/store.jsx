@@ -423,6 +423,14 @@ function reducer(state, action) {
       }
     }
 
+    case 'admin-delete-pin':
+      // Admin override: removes a pin even if a scan was already performed.
+      return {
+        ...state,
+        pins: state.pins.filter((p) => p.id !== action.id),
+        events: ev(state, 'pin', 'Pin deleted (admin)', action.pin || ''),
+      }
+
     case 'update-pin':
       return {
         ...state,
@@ -525,6 +533,14 @@ function reducer(state, action) {
         notifications: note(state, 'Scan result imported', `${p.code}: ${result}`),
       }
     }
+
+    case 'mark-webhook-sent':
+      return {
+        ...state,
+        pins: state.pins.map((p) =>
+          p.pin === action.code ? { ...p, webhookNotified: true } : p,
+        ),
+      }
 
     case 'add-cheat':
       return {

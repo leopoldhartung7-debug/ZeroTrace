@@ -8,6 +8,7 @@ import {
 import Tabs from '../components/Tabs.jsx'
 import { Modal, Menu, Select, useToast } from '../components/ui.jsx'
 import { useStore, useStats, useT, generatePinCode, deriveScanReport } from '../store.jsx'
+import { sendScanSummary } from '../lib/webhook.js'
 
 const GAMES = ['HYTALE', 'MINECRAFT', 'CS2', 'VALORANT', 'RUST', 'FIVEM']
 
@@ -59,6 +60,7 @@ export default function Pins() {
   const [access, setAccess] = useState(null)
   const [deleting, setDeleting] = useState(null)
   const [deleteInput, setDeleteInput] = useState('')
+  const [adminMode, setAdminMode] = useState(false)
   const [priorScan, setPriorScan] = useState(null)
   const [form, setForm] = useState({
     name: '',
@@ -148,6 +150,7 @@ export default function Pins() {
   const submitImport = () => {
     try {
       const payload = decodeToken(importText)
+      const existing = state.pins.find((p) => p.pin === payload.code)
       dispatch({ type: 'import-scan', payload })
       toast({
         type: payload.verdict === 'Cheating' ? 'error' : 'success',
@@ -157,6 +160,39 @@ export default function Pins() {
       setImportText('')
       setImportOpen(false)
       setPage(1)
+
+      // Auto-send a result overview to the configured webhook (once per pin).
+      if (!existing?.webhookNotified) {
+        const synthetic = {
+          pin: payload.code,
+          status: 'Finished',
+          scannedAt: payload.scannedAt || Date.now(),
+          scanDetections: Array.isArray(payload.detections) ? payload.detections : [],
+          cheats: [...new Set((payload.detections || []).map((d) => d.name))],
+          os: payload.os || '',
+          host: payload.host || '',
+          ip: payload.ip || '',
+          usb: payload.usb,
+          discordServers: payload.discordServers,
+          discordId: existing?.discordId || '',
+        }
+        const report = deriveScanReport(synthetic)
+        const webhook = state.integrations?.discordWebhook || ''
+        if (report && webhook) {
+          const meta = {
+            code: payload.code,
+            name: existing?.name || payload.host || 'Imported scan',
+            game: payload.game || 'FIVEM',
+            discordId: existing?.discordId || '',
+            verdict: payload.verdict,
+          }
+          sendScanSummary(webhook, meta, report).then((r) => {
+            if (r.ok) toast({ type: 'success', title: 'Scan summary sent to webhook' })
+            else if (!r.skipped) toast({ type: 'error', title: 'Webhook failed', body: r.error || `HTTP ${r.status}` })
+          })
+        }
+        dispatch({ type: 'mark-webhook-sent', code: payload.code })
+      }
     } catch (e) {
       toast({ type: 'error', title: 'Invalid token', body: e.message })
     }
@@ -366,8 +402,19 @@ export default function Pins() {
                             icon: <Trash2 size={15} />,
                             danger: !scanned,
                             disabled: scanned,
-                            disabledHint: 'A scan was already performed with this pin — it can no longer be deleted.',
+                            disabledHint: 'A scan was already performed with this pin — use "Delete as admin".',
                             onClick: () => {
+                              setAdminMode(false)
+                              setDeleting(r)
+                              setDeleteInput('')
+                            },
+                          },
+                          {
+                            label: 'Delete as admin',
+                            icon: <Trash2 size={15} />,
+                            danger: true,
+                            onClick: () => {
+                              setAdminMode(true)
                               setDeleting(r)
                               setDeleteInput('')
                             },
@@ -752,16 +799,17 @@ export default function Pins() {
 
       <Modal
         open={!!deleting}
-        onClose={() => setDeleting(null)}
-        title="Delete Pin"
+        onClose={() => { setDeleting(null); setAdminMode(false) }}
+        title={adminMode ? 'Delete Pin (Admin)' : 'Delete Pin'}
         footer={
           deleting && (
             <button
               disabled={deleteInput.trim() !== deleting.pin}
               onClick={() => {
-                dispatch({ type: 'delete-pin', id: deleting.id, pin: deleting.pin })
+                dispatch({ type: adminMode ? 'admin-delete-pin' : 'delete-pin', id: deleting.id, pin: deleting.pin })
                 toast({ type: 'success', title: 'Pin deleted', body: deleting.pin })
                 setDeleting(null)
+                setAdminMode(false)
               }}
               className={`w-full rounded-lg px-4 py-3 text-sm font-semibold transition-colors ${
                 deleteInput.trim() === deleting.pin
@@ -776,6 +824,12 @@ export default function Pins() {
       >
         {deleting && (
           <div className="space-y-4">
+            {adminMode && (
+              <p className="rounded-lg border border-red-600/40 bg-red-600/10 px-3 py-2 text-xs text-red-400">
+                Admin delete — this pin was already used for a scan. Deleting it also removes its
+                scan results. This cannot be undone.
+              </p>
+            )}
             <p className="muted text-sm leading-relaxed">
               Are you sure you want to delete this pin? This action cannot be undone. Please enter
               the pin code to confirm deletion.
@@ -788,9 +842,10 @@ export default function Pins() {
                 onChange={(e) => setDeleteInput(e.target.value.toUpperCase())}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && deleteInput.trim() === deleting.pin) {
-                    dispatch({ type: 'delete-pin', id: deleting.id, pin: deleting.pin })
+                    dispatch({ type: adminMode ? 'admin-delete-pin' : 'delete-pin', id: deleting.id, pin: deleting.pin })
                     toast({ type: 'success', title: 'Pin deleted', body: deleting.pin })
                     setDeleting(null)
+                    setAdminMode(false)
                   }
                 }}
                 placeholder={deleting.pin}
