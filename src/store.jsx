@@ -193,6 +193,9 @@ function seed() {
     savedStrings: [],
     connections: [],
     integrations: { discordWebhook: '', virusTotalKey: '' },
+    security: { twoFA: false, passkeys: [] },
+    session: null,
+    otherSessions: [],
   }
 }
 
@@ -246,10 +249,17 @@ function reducer(state, action) {
       return { ...state, settings: { ...state.settings, [action.key]: action.value } }
 
     case 'login':
-      return { ...state, auth: true }
+      return {
+        ...state,
+        auth: true,
+        session: {
+          id: 'sess_' + Math.random().toString(16).slice(2, 14),
+          createdAt: Date.now(),
+        },
+      }
 
     case 'logout':
-      return { ...state, auth: false }
+      return { ...state, auth: false, session: null }
 
     case 'save-strings': {
       const merged = new Set(state.savedStrings || [])
@@ -285,6 +295,36 @@ function reducer(state, action) {
         ...state,
         integrations: { ...state.integrations, [action.key]: action.value },
       }
+
+    case 'set-2fa':
+      return { ...state, security: { ...state.security, twoFA: action.value } }
+
+    case 'add-passkey':
+      return {
+        ...state,
+        security: {
+          ...state.security,
+          passkeys: [
+            { id: 'pk' + Date.now(), name: action.name || 'Passkey', createdAt: Date.now() },
+            ...state.security.passkeys,
+          ],
+        },
+      }
+
+    case 'remove-passkey':
+      return {
+        ...state,
+        security: {
+          ...state.security,
+          passkeys: state.security.passkeys.filter((p) => p.id !== action.id),
+        },
+      }
+
+    case 'revoke-session':
+      return { ...state, otherSessions: state.otherSessions.filter((s) => s.id !== action.id) }
+
+    case 'revoke-all-sessions':
+      return { ...state, otherSessions: [] }
 
     case 'set-tool-style':
       return { ...state, toolStyle: { ...state.toolStyle, ...action.patch } }
