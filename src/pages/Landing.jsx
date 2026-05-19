@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import {
   Play, Globe, FastForward, Activity, Lock, RotateCw, AppWindow,
   Clock, Smile, FileCheck, ShieldCheck, Server, ScanFace, MoreVertical,
-  FileText, ChevronDown, Check, Link2,
+  FileText, ChevronDown, Check, Link2, BellRing, Webhook,
 } from 'lucide-react'
 import { useStore } from '../store.jsx'
 import { useToast } from '../components/ui.jsx'
@@ -90,9 +90,39 @@ function SecurityMock() {
   )
 }
 
+function WebhookMock() {
+  return (
+    <div className="relative h-full min-h-[200px] w-full">
+      <div className="absolute left-3 top-3 flex items-center gap-3 rounded-lg border border-white/10 bg-white/[0.04] px-4 py-2">
+        <ScanFace size={18} className="text-sky-400" />
+        <div>
+          <p className="text-sm font-medium">Scan finished</p>
+          <p className="text-xs text-neutral-500">Pin · A1B2C3D4</p>
+        </div>
+      </div>
+      <svg className="absolute inset-0 h-full w-full" viewBox="0 0 300 200" fill="none" preserveAspectRatio="none">
+        <path d="M80 50 C 150 50, 180 110, 230 150" stroke="#38bdf8" strokeWidth="2" strokeDasharray="4 4" />
+      </svg>
+      <span className="absolute left-1/2 top-1/2 flex h-7 w-7 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-sky-500/50 bg-sky-500/15 text-sky-400">
+        <Webhook size={14} />
+      </span>
+      <div className="absolute bottom-3 right-3 w-52 rounded-lg border border-sky-500/30 bg-white/[0.04] p-3">
+        <div className="flex items-center gap-2 text-sky-400">
+          <BellRing size={14} />
+          <span className="text-xs font-semibold">Cheating · risk 78</span>
+        </div>
+        <p className="mt-1 text-[11px] text-neutral-500">
+          Discord webhook delivered · 1.2 s
+        </p>
+      </div>
+    </div>
+  )
+}
+
 const PANELS = [
   { icon: FastForward, color: 'text-green-500', title: 'Lightning Fast\nSpeed', text: 'ZeroTrace prioritizes completing scans within a strict time frame, averaging around 60 seconds for comprehensive cheat detection.', mock: <FlowMock /> },
   { icon: Activity, color: 'text-yellow-500', title: 'Detection\nQuality', text: 'Powered by cutting-edge AI and expert digital forensics, we provide precise, trustworthy cheat detection results.', mock: <ResultsMock />, reverse: true },
+  { icon: BellRing, color: 'text-sky-500', title: 'Real-Time\nWebhook Alerts', text: 'The moment a scan finishes, the full verdict, risk score and flagged Discord servers are pushed to your team’s Discord webhook — no polling, no waiting.', mock: <WebhookMock /> },
 ]
 
 const FEATURES = [

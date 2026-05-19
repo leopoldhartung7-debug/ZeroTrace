@@ -279,6 +279,9 @@ export const DE = {
   'Back to Key Generator': 'Zurück zum Key-Generator',
   'Cheating · Susp · Clean': 'Cheating · Verdächtig · Sauber',
   'Verdict': 'Urteil',
+  'Real-Time Webhook Alerts': 'Echtzeit-Webhook-Benachrichtigungen',
+  'The moment a scan finishes, the full verdict, risk score and flagged Discord servers are pushed to your team’s Discord webhook — no polling, no waiting.':
+    'Sobald ein Scan abgeschlossen ist, werden Urteil, Risiko-Score und markierte Discord-Server sofort an den Discord-Webhook deines Teams gesendet — kein Polling, kein Warten.',
   'Welcome back': 'Willkommen zurück',
   'Discord Server Bot': 'Discord-Server-Bot',
   'Live server / role lookup by Discord ID (see bot/README.md)':
