@@ -185,7 +185,7 @@ export default function Pins() {
         </button>
         <button
           onClick={() => setImportOpen(true)}
-          className="bd txt flex items-center gap-2 rounded-xl border px-5 py-3 text-sm font-semibold transition-colors hover:border-teal-500"
+          className="bd txt flex items-center gap-2 rounded-xl border px-5 py-3 text-sm font-semibold transition-colors hover:border-sky-500"
         >
           <Download size={18} />
           Import Result
@@ -205,7 +205,7 @@ export default function Pins() {
 
       <div className="mt-8 grid grid-cols-2 gap-4 lg:grid-cols-5">
         <PinStatCard icon={CalendarCheck} label="Daily Pins" value="1/1" valueClass="text-red-500">
-          <button className="mt-2 flex items-center gap-1.5 text-xs font-medium text-teal-500 hover:text-teal-400">
+          <button className="mt-2 flex items-center gap-1.5 text-xs font-medium text-sky-500 hover:text-sky-400">
             <Link2 size={13} />
             Link Discord for more
           </button>
@@ -418,7 +418,7 @@ export default function Pins() {
             >
               <ChevronLeft size={15} />
             </button>
-            <span className="rounded-md border border-teal-600/40 bg-teal-600/15 px-3 py-1 text-sm font-medium text-teal-500">
+            <span className="rounded-md border border-sky-600/40 bg-sky-600/15 px-3 py-1 text-sm font-medium text-sky-500">
               {safePage}
             </span>
             <button
@@ -459,7 +459,7 @@ export default function Pins() {
             </button>
             <button
               onClick={submitCreate}
-              className="rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-500"
+              className="rounded-lg bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-500"
             >
               Create
             </button>
@@ -531,7 +531,7 @@ export default function Pins() {
               <span className="txt font-mono text-xl tracking-wide">{created.pin}</span>
               <button
                 onClick={() => copyText(created.pin, created.pin)}
-                className="bd txt flex items-center gap-2 rounded-lg border px-3 py-2 text-sm hover:border-teal-500"
+                className="bd txt flex items-center gap-2 rounded-lg border px-3 py-2 text-sm hover:border-sky-500"
               >
                 <Copy size={15} /> Copy
               </button>
@@ -543,7 +543,7 @@ export default function Pins() {
               <div className="mt-3 flex gap-2">
                 <button
                   onClick={() => downloadSession(created)}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-teal-600 px-3 py-2 text-sm font-semibold text-white hover:bg-teal-500"
+                  className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-sky-600 px-3 py-2 text-sm font-semibold text-white hover:bg-sky-500"
                 >
                   <Download size={15} /> Download
                 </button>
@@ -554,7 +554,7 @@ export default function Pins() {
                       'Session data',
                     )
                   }
-                  className="bd txt flex items-center gap-2 rounded-lg border px-3 py-2 text-sm hover:border-teal-500"
+                  className="bd txt flex items-center gap-2 rounded-lg border px-3 py-2 text-sm hover:border-sky-500"
                 >
                   <Copy size={15} /> Copy
                 </button>
@@ -592,7 +592,7 @@ export default function Pins() {
               </div>
               <div className="mt-3 flex items-center gap-3">
                 <div className="tile h-2 flex-1 overflow-hidden rounded-full border-0">
-                  <div className="h-full w-0 rounded-full bg-teal-600" />
+                  <div className="h-full w-0 rounded-full bg-sky-600" />
                 </div>
                 <span className="muted text-sm">0%</span>
               </div>
@@ -617,7 +617,7 @@ export default function Pins() {
             </button>
             <button
               onClick={submitImport}
-              className="rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-500"
+              className="rounded-lg bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-500"
             >
               Import
             </button>
@@ -664,7 +664,7 @@ export default function Pins() {
                 toast({ type: 'success', title: 'Pin updated', body: editing.pin })
                 setEditing(null)
               }}
-              className="rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-500"
+              className="rounded-lg bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-500"
             >
               Save
             </button>
@@ -732,7 +732,7 @@ export default function Pins() {
                       }}
                       className={`rounded-lg border px-4 py-3 text-sm font-medium ${
                         current
-                          ? 'border-teal-600/50 bg-teal-600/15 text-teal-400'
+                          ? 'border-sky-600/50 bg-sky-600/15 text-sky-400'
                           : 'bd txt hover:border-neutral-600'
                       }`}
                     >
@@ -751,7 +751,7 @@ export default function Pins() {
                 <span className="txt font-mono text-sm">{access.pin}</span>
                 <button
                   onClick={() => copyPin(access.pin)}
-                  className="bd txt flex items-center gap-2 rounded-md border px-3 py-1.5 text-xs hover:border-teal-500"
+                  className="bd txt flex items-center gap-2 rounded-md border px-3 py-1.5 text-xs hover:border-sky-500"
                 >
                   <Copy size={13} /> Copy pin
                 </button>
@@ -816,7 +816,7 @@ export default function Pins() {
                   }
                 }}
                 placeholder={deleting.pin}
-                className="bd tile txt w-full rounded-lg border px-4 py-3 font-mono text-sm focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500/40"
+                className="bd tile txt w-full rounded-lg border px-4 py-3 font-mono text-sm focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500/40"
               />
               <p className="muted mt-2 text-xs">
                 Pin Code: <span className="txt font-mono">{deleting.pin}</span>
@@ -845,7 +845,7 @@ export default function Pins() {
                   setPriorScan(null)
                   nav(`/scan/${id}`)
                 }}
-                className="rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-500"
+                className="rounded-lg bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-500"
               >
                 Open full results
               </button>

@@ -35,7 +35,7 @@ export default function Support() {
         title="Support"
         subtitle="Browse FAQs or open a support ticket."
         actions={
-          <button onClick={() => setOpen(true)} className="flex items-center gap-2 rounded-xl bg-teal-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-teal-500">
+          <button onClick={() => setOpen(true)} className="flex items-center gap-2 rounded-xl bg-sky-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-sky-500">
             <Plus size={18} /> New Ticket
           </button>
         }
@@ -66,7 +66,7 @@ export default function Support() {
                   {t.status === 'Open' && (
                     <button
                       onClick={() => dispatch({ type: 'update-ticket', id: t.id, status: 'Resolved' })}
-                      className="mt-3 text-xs font-medium text-teal-500 hover:text-teal-400"
+                      className="mt-3 text-xs font-medium text-sky-500 hover:text-sky-400"
                     >
                       Mark as resolved
                     </button>
@@ -85,7 +85,7 @@ export default function Support() {
         footer={
           <>
             <button onClick={() => setOpen(false)} className="bd txt rounded-lg border px-4 py-2 text-sm">Cancel</button>
-            <button onClick={submit} className="rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-500">Submit</button>
+            <button onClick={submit} className="rounded-lg bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-500">Submit</button>
           </>
         }
       >

@@ -27,7 +27,7 @@ function Dropzone({ onFile, hint, accept = '.exe,.jar,.dll,.sys' }) {
         if (e.dataTransfer.files[0]) onFile(e.dataTransfer.files[0])
       }}
       className={`bd flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed py-16 text-center transition-colors ${
-        drag ? 'border-teal-500 bg-teal-500/5' : ''
+        drag ? 'border-sky-500 bg-sky-500/5' : ''
       }`}
     >
       <input
@@ -173,7 +173,7 @@ function StringExtractor() {
               <button
                 disabled={!file || busy}
                 onClick={analyze}
-                className="rounded-lg bg-teal-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-teal-500 disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-lg bg-sky-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-sky-500 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {busy ? 'Analyzing…' : 'Analyze File'}
               </button>
@@ -281,7 +281,7 @@ function StringExtractor() {
                       body: `${fresh.length} new string(s) added — future scans will flag these.`,
                     })
                   }}
-                  className="flex items-center gap-2 rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-500"
+                  className="flex items-center gap-2 rounded-lg bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-500"
                 >
                   <Download size={15} className="rotate-180" /> Save strings
                 </button>
@@ -651,7 +651,7 @@ function SuspiciousDetection() {
                         <div className="flex items-center gap-3">
                           <Code2 size={15} className="muted" />
                           <button
-                            className="txt text-sm font-medium hover:text-teal-500"
+                            className="txt text-sm font-medium hover:text-sky-500"
                             onClick={() => setRule(r.source)}
                           >
                             {r.name}

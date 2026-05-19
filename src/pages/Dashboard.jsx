@@ -11,7 +11,7 @@ const accentMap = {
   neutral: 'muted',
   red: 'text-red-500',
   yellow: 'text-yellow-500',
-  blue: 'text-teal-500',
+  blue: 'text-sky-500',
 }
 
 function StatCard({ icon: Icon, label, value, accent = 'neutral' }) {
@@ -95,7 +95,7 @@ export default function Dashboard() {
         <p className="caps-label">Overview of your scan activity and detection results</p>
         <div className="mt-2 flex items-center justify-between">
           <h2 className="txt flex items-center gap-2 text-xl font-semibold">
-            <Activity size={20} className="text-teal-500" />
+            <Activity size={20} className="text-sky-500" />
             {platform ? 'Platform Statistics' : 'Your Statistics'}
           </h2>
           <span className="bd txt rounded-md border px-3 py-1.5 text-xs font-semibold tracking-wide">
@@ -165,8 +165,8 @@ export default function Dashboard() {
                 <AreaChart data={stats.trend}>
                   <defs>
                     <linearGradient id="gS" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#2dd4bf" stopOpacity={0.4} />
-                      <stop offset="95%" stopColor="#2dd4bf" stopOpacity={0} />
+                      <stop offset="5%" stopColor="#38bdf8" stopOpacity={0.4} />
+                      <stop offset="95%" stopColor="#38bdf8" stopOpacity={0} />
                     </linearGradient>
                     <linearGradient id="gD" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#dc2626" stopOpacity={0.4} />
@@ -178,7 +178,7 @@ export default function Dashboard() {
                   <YAxis tick={{ fill: 'var(--muted)', fontSize: 11 }} stroke="var(--border)" allowDecimals={false} />
                   <Tooltip content={<ChartTooltip />} />
                   <Legend wrapperStyle={{ fontSize: 12 }} />
-                  <Area type="monotone" dataKey="scans" stroke="#2dd4bf" fill="url(#gS)" name="Scans" />
+                  <Area type="monotone" dataKey="scans" stroke="#38bdf8" fill="url(#gS)" name="Scans" />
                   <Area type="monotone" dataKey="detections" stroke="#dc2626" fill="url(#gD)" name="Detections" />
                 </AreaChart>
               </ResponsiveContainer>
@@ -198,7 +198,7 @@ export default function Dashboard() {
                   <Tooltip content={<ChartTooltip />} cursor={{ fill: 'var(--hover)' }} />
                   <Legend wrapperStyle={{ fontSize: 12 }} />
                   <Bar dataKey="detections" fill="#dc2626" name="Detections" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="scans" fill="#2dd4bf" name="Scans" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="scans" fill="#38bdf8" name="Scans" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>

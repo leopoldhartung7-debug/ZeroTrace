@@ -28,7 +28,7 @@ export function Leaderboard() {
         <StatTile icon={ScanLine} label="Total Scans" value={stats.totalScans} />
         <StatTile icon={Eye} label="Detections" value={stats.detections} accent="text-red-500" />
         <StatTile icon={ShieldAlert} label="Unique Cheats" value={stats.uniqueCheats} accent="text-yellow-500" />
-        <StatTile icon={Trophy} label="Games Tracked" value={ranked.length} accent="text-teal-500" />
+        <StatTile icon={Trophy} label="Games Tracked" value={ranked.length} accent="text-sky-500" />
       </div>
       <Card className="p-6">
         <h3 className="txt mb-4 text-lg font-semibold">Games by Detections</h3>
@@ -225,7 +225,7 @@ export function Documentation() {
                   key={n.id}
                   onClick={() => setActive(n.id)}
                   className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium ${
-                    active === n.id ? 'bg-teal-600/15 text-teal-500' : 'txt hoverable'
+                    active === n.id ? 'bg-sky-600/15 text-sky-500' : 'txt hoverable'
                   }`}
                 >
                   <n.icon size={16} /> {n.label}
@@ -251,7 +251,7 @@ export function Documentation() {
                         key={c.id}
                         onClick={() => setActive(c.id)}
                         className={`block w-full rounded-lg px-3 py-1.5 text-left text-sm ${
-                          active === c.id ? 'bg-teal-600/15 text-teal-500' : 'muted hoverable'
+                          active === c.id ? 'bg-sky-600/15 text-sky-500' : 'muted hoverable'
                         }`}
                       >
                         {c.label}
@@ -276,7 +276,7 @@ export function Documentation() {
                 <ol className="mt-2 space-y-2">
                   {b.list.map((li, j) => (
                     <li key={j} className="muted flex gap-3 text-[15px] leading-relaxed">
-                      <span className="text-teal-500">{j + 1}.</span> {li}
+                      <span className="text-sky-500">{j + 1}.</span> {li}
                     </li>
                   ))}
                 </ol>
@@ -308,7 +308,7 @@ function PriceCard({ title, desc, price, period, features, onBuy }) {
       <ul className="mt-5 flex-1 space-y-2.5">
         {features.map((f) => (
           <li key={f} className="muted flex items-center gap-2.5 text-sm">
-            <span className="text-teal-500">•</span> {f}
+            <span className="text-sky-500">•</span> {f}
           </li>
         ))}
       </ul>
@@ -337,7 +337,7 @@ export function Pricing() {
         onClick={() => toast({ type: 'info', title: 'Claim license', body: 'No pending licenses on this account.' })}
         className="muted hover:txt mx-auto mb-8 flex items-center gap-2 text-sm"
       >
-        <Ticket size={16} /> Have a pending license? <span className="text-teal-500">Claim it here</span>
+        <Ticket size={16} /> Have a pending license? <span className="text-sky-500">Claim it here</span>
       </button>
 
       <div className="mb-4 flex items-center gap-4">
@@ -479,7 +479,7 @@ export function DownloadPage() {
         <DownloadCard icon={Monitor} name="Linux" tagTone="#f59e0b" accent="#d97706"
           desc="Cheat detection for Linux systems" hint="Enter your 8-character PIN."
           pins={state.pins} toast={toast} />
-        <DownloadCard icon={Shield} name="Anti SS Tool" tagTone="#2dd4bf" accent="#14b8a6"
+        <DownloadCard icon={Shield} name="Anti SS Tool" tagTone="#38bdf8" accent="#0ea5e9"
           desc="Bypass blocks preventing ZeroTrace from running"
           hint="Enter your 8-character PIN to download the Anti SS Tool."
           pins={state.pins} toast={toast} />
@@ -514,7 +514,7 @@ export function DownloadPage() {
           <p className="muted mt-3 text-sm">Join our Discord for support.</p>
           <button
             onClick={() => toast({ type: 'info', title: 'Discord', body: 'Community Discord link is not configured in this demo.' })}
-            className="bd txt mt-5 flex w-full items-center justify-center gap-2 rounded-lg border py-2.5 text-sm font-medium hover:border-teal-500"
+            className="bd txt mt-5 flex w-full items-center justify-center gap-2 rounded-lg border py-2.5 text-sm font-medium hover:border-sky-500"
           >
             <ExternalLink size={15} /> Discord
           </button>
@@ -531,10 +531,10 @@ function HeroBanner({ title, subtitle, meta }) {
     <div className="relative mb-10 overflow-hidden rounded-2xl border bd">
       <div
         className="absolute inset-0"
-        style={{ background: 'radial-gradient(60% 120% at 50% 0%, rgba(45,212,191,0.18), transparent 70%)' }}
+        style={{ background: 'radial-gradient(60% 120% at 50% 0%, rgba(56,189,248,0.18), transparent 70%)' }}
       />
       <div className="relative px-6 py-16 text-center">
-        <h1 className="bg-gradient-to-b from-teal-400 to-teal-600 bg-clip-text text-5xl font-extrabold tracking-tight text-transparent md:text-6xl">
+        <h1 className="bg-gradient-to-b from-sky-400 to-sky-600 bg-clip-text text-5xl font-extrabold tracking-tight text-transparent md:text-6xl">
           {title}
         </h1>
         <p className="muted mx-auto mt-4 max-w-xl text-lg">{subtitle}</p>
@@ -557,7 +557,7 @@ function TocDoc({ hero, header, preface, sections }) {
       <div className="grid gap-6 lg:grid-cols-[300px_1fr]">
         <Card className="h-fit p-5 lg:sticky lg:top-6">
           <h3 className="txt mb-4 flex items-center gap-2 text-base font-semibold">
-            <FileText size={17} className="text-teal-500" /> Table of Contents
+            <FileText size={17} className="text-sky-500" /> Table of Contents
           </h3>
           <nav className="max-h-[70vh] space-y-1 overflow-y-auto">
             {sections.map((s) => (
@@ -568,7 +568,7 @@ function TocDoc({ hero, header, preface, sections }) {
                   s.sub ? 'pl-8' : ''
                 }`}
               >
-                <span className="text-teal-500">{s.n}</span>
+                <span className="text-sky-500">{s.n}</span>
                 <span className="txt">{s.title}</span>
               </button>
             ))}
@@ -585,7 +585,7 @@ function TocDoc({ hero, header, preface, sections }) {
               className="scroll-mt-6 space-y-4"
             >
               <Card className="flex items-center gap-4 p-5">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-teal-600/15 text-sm font-bold text-teal-400">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-sky-600/15 text-sm font-bold text-sky-400">
                   {s.n}
                 </span>
                 <h2 className="txt text-xl font-bold md:text-2xl">{s.title}</h2>
@@ -605,7 +605,7 @@ function P({ children }) {
 function Group({ title, items }) {
   return (
     <div className="mb-6 last:mb-0">
-      <p className="mb-2 text-base font-semibold text-teal-400">{title}</p>
+      <p className="mb-2 text-base font-semibold text-sky-400">{title}</p>
       <ul className="space-y-3">
         {items.map((it) => (
           <li key={it.h}>
@@ -626,7 +626,7 @@ function Bullets({ items }) {
     <ul className="space-y-2">
       {items.map((x) => (
         <li key={x} className="muted flex gap-2 text-[15px] leading-relaxed">
-          <span className="text-teal-500">•</span> {x}
+          <span className="text-sky-500">•</span> {x}
         </li>
       ))}
     </ul>
@@ -764,7 +764,7 @@ export function Privacy() {
           <a
             href="#"
             onClick={(e) => e.preventDefault()}
-            className="break-all font-mono text-sm text-teal-500"
+            className="break-all font-mono text-sm text-sky-500"
           >
             https://gdpr.euverify.com/verify/c0e9c62b-0d75-4c0d-9146-df73801cfdb2
           </a>
@@ -781,7 +781,7 @@ const LEGAL_NOTICE = [
     title: 'Legal Notice / Impressum',
     content: (
       <div>
-        <p className="muted bd mb-5 border-l-2 border-teal-500 pl-4 text-sm italic">
+        <p className="muted bd mb-5 border-l-2 border-sky-500 pl-4 text-sm italic">
           Information provided strictly for transparency and regulatory compliance purposes
           (e.g., according to § 5 DDG).
         </p>
@@ -865,7 +865,7 @@ export function Changelogs() {
         <Card className="h-fit p-5 lg:sticky lg:top-6">
           <p className="caps-label mb-2">Navigation</p>
           <h3 className="txt mb-4 flex items-center gap-2 text-base font-semibold">
-            <History size={17} className="text-teal-500" /> Versions
+            <History size={17} className="text-sky-500" /> Versions
           </h3>
           <nav className="space-y-1">
             {VERSIONS.map((r) => (
@@ -889,7 +889,7 @@ export function Changelogs() {
               <div ref={(el) => (refs.current[r.v] = el)} className="scroll-mt-6">
                 <div className="bd flex items-center justify-between gap-4 border-b p-5">
                   <div className="flex items-center gap-3">
-                    <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-teal-600/15 text-sm font-bold text-teal-400">
+                    <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-sky-600/15 text-sm font-bold text-sky-400">
                       {i + 1}
                     </span>
                     <h2 className="txt text-xl font-bold">{r.title}</h2>
@@ -899,7 +899,7 @@ export function Changelogs() {
                   </div>
                   <button
                     onClick={() => setOpenV((o) => ({ ...o, [r.v]: !o[r.v] }))}
-                    className="bd txt rounded-lg border px-3 py-1.5 text-xs font-medium hover:border-teal-500"
+                    className="bd txt rounded-lg border px-3 py-1.5 text-xs font-medium hover:border-sky-500"
                   >
                     {openV[r.v] ? 'Show less' : 'Show more'}
                   </button>
@@ -918,7 +918,7 @@ export function Changelogs() {
                   {openV[r.v] && (
                     <div className="bd mt-5 border-t pt-5">
                       <h3 className="txt mb-2 flex items-center gap-2 text-lg font-bold">
-                        <span className="rounded bg-teal-600/20 px-1.5 py-0.5 text-[10px] font-bold text-teal-400">
+                        <span className="rounded bg-sky-600/20 px-1.5 py-0.5 text-[10px] font-bold text-sky-400">
                           NEW
                         </span>
                         {r.badge}

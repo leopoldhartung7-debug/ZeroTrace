@@ -94,7 +94,7 @@ function PaginatedTable({ columns, rows, render, searchKeys, placeholder, empty 
           <button onClick={() => setPage(Math.max(1, p - 1))} disabled={p <= 1} className="bd rounded-md border p-1.5 disabled:opacity-40">
             <ChevronLeft size={14} />
           </button>
-          <span className="rounded-md border border-teal-600/40 bg-teal-600/15 px-3 py-1 text-teal-500">{p}</span>
+          <span className="rounded-md border border-sky-600/40 bg-sky-600/15 px-3 py-1 text-sky-500">{p}</span>
           <button onClick={() => setPage(Math.min(pages, p + 1))} disabled={p >= pages} className="bd rounded-md border p-1.5 disabled:opacity-40">
             <ChevronRight size={14} />
           </button>
@@ -133,7 +133,7 @@ export default function ScanResults() {
     return (
       <div className="py-20 text-center">
         <p className="txt text-lg font-semibold">Pin not found</p>
-        <button onClick={() => nav('/pins')} className="mt-4 rounded-lg bg-teal-600 px-5 py-2.5 text-sm font-semibold text-white">
+        <button onClick={() => nav('/pins')} className="mt-4 rounded-lg bg-sky-600 px-5 py-2.5 text-sm font-semibold text-white">
           Back to Pins
         </button>
       </div>
@@ -155,7 +155,7 @@ export default function ScanResults() {
               dispatch({ type: 'run-scan', id: pin.id })
               toast({ type: 'info', title: 'Scan complete', body: pin.pin })
             }}
-            className="mt-6 flex items-center gap-2 rounded-lg bg-teal-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-teal-500"
+            className="mt-6 flex items-center gap-2 rounded-lg bg-sky-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-sky-500"
           >
             <Play size={15} /> Run scan now
           </button>
@@ -177,8 +177,8 @@ export default function ScanResults() {
   const cats = [
     { key: 'detects', label: 'Detects Logs', n: report.counts.detects, icon: AlertTriangle, tone: 'text-red-500', badge: 'border-red-600/40 bg-red-600/15 text-red-500' },
     { key: 'integrity', label: 'Integrity Logs', n: report.counts.integrity, icon: CheckCircle2, tone: 'text-green-500', badge: 'border-green-600/40 bg-green-600/15 text-green-500' },
-    { key: 'warnings', label: 'Warnings Logs', n: report.counts.warnings, icon: AlertTriangle, tone: 'text-yellow-400', badge: 'border-teal-600/40 bg-teal-600/15 text-teal-400' },
-    { key: 'suspicious', label: 'Suspicious logs', n: report.counts.suspicious, icon: Eye, tone: 'text-teal-400', badge: 'bd txt' },
+    { key: 'warnings', label: 'Warnings Logs', n: report.counts.warnings, icon: AlertTriangle, tone: 'text-yellow-400', badge: 'border-sky-600/40 bg-sky-600/15 text-sky-400' },
+    { key: 'suspicious', label: 'Suspicious logs', n: report.counts.suspicious, icon: Eye, tone: 'text-sky-400', badge: 'bd txt' },
   ]
   const riskScore = Math.min(
     100,
@@ -211,7 +211,7 @@ export default function ScanResults() {
         <div>
           <div className="flex flex-wrap items-center gap-3">
             <h1 className="txt text-3xl font-bold tracking-tight">Scan Results</h1>
-            <span className="rounded-md border border-teal-600/40 bg-teal-600/15 px-2.5 py-1 text-xs font-semibold text-teal-400">
+            <span className="rounded-md border border-sky-600/40 bg-sky-600/15 px-2.5 py-1 text-xs font-semibold text-sky-400">
               Game: {pin.game}
             </span>
             <span className="rounded-md border border-red-600/40 bg-red-600/15 px-2.5 py-1 text-xs font-semibold text-red-400">
@@ -226,22 +226,22 @@ export default function ScanResults() {
                 navigator.clipboard?.writeText(pin.pin)
                 toast({ type: 'success', title: 'Copied', body: pin.pin })
               }}
-              className="txt font-mono hover:text-teal-500"
+              className="txt font-mono hover:text-sky-500"
             >
               {pin.pin} <Copy size={12} className="inline" />
             </button>
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button onClick={() => setRisk(true)} className="bd txt flex items-center gap-2 rounded-lg border px-4 py-2 text-sm hover:border-teal-500">
+          <button onClick={() => setRisk(true)} className="bd txt flex items-center gap-2 rounded-lg border px-4 py-2 text-sm hover:border-sky-500">
             <Gauge size={15} /> Check Risk Score
           </button>
-          <button onClick={exportReport} className="bd txt flex items-center gap-2 rounded-lg border px-4 py-2 text-sm hover:border-teal-500">
+          <button onClick={exportReport} className="bd txt flex items-center gap-2 rounded-lg border px-4 py-2 text-sm hover:border-sky-500">
             <Download size={15} /> Export
           </button>
           <button
             onClick={() => toast({ type: 'success', title: 'Scan reported', body: pin.pin })}
-            className="bd txt flex items-center gap-2 rounded-lg border px-4 py-2 text-sm hover:border-teal-500"
+            className="bd txt flex items-center gap-2 rounded-lg border px-4 py-2 text-sm hover:border-sky-500"
           >
             <Flag size={15} /> Report Scan
           </button>
@@ -256,7 +256,7 @@ export default function ScanResults() {
         </div>
         <div className="panel flex items-center justify-center rounded-2xl border py-6">
           <p className="muted flex items-center gap-2 text-sm">
-            <span className="h-2 w-2 rounded-full bg-teal-500" /> Scanned: {scannedLabel}
+            <span className="h-2 w-2 rounded-full bg-sky-500" /> Scanned: {scannedLabel}
           </p>
         </div>
       </div>
@@ -264,7 +264,7 @@ export default function ScanResults() {
       <div className="grid gap-4 lg:grid-cols-2">
         <Card className="p-6">
           <div className="mb-4 flex items-center gap-3">
-            <Monitor size={20} className="text-teal-500" />
+            <Monitor size={20} className="text-sky-500" />
             <div>
               <h2 className="txt text-lg font-semibold">Pin Details</h2>
               <p className="muted text-xs">Information about the pin details</p>
@@ -279,13 +279,13 @@ export default function ScanResults() {
 
         <Card className="p-6">
           <div className="mb-4 flex items-center gap-3">
-            <Monitor size={20} className="text-teal-500" />
+            <Monitor size={20} className="text-sky-500" />
             <div>
               <h2 className="txt text-lg font-semibold">PC Information</h2>
               <p className="muted text-xs">Information about the users PC</p>
             </div>
           </div>
-          <KV color="#2dd4bf" label="System" value={report.pc.system} />
+          <KV color="#38bdf8" label="System" value={report.pc.system} />
           <KV color="#ec4899" label="IP Address" value={report.pc.ip} />
           <KV color="#22c55e" label="Boot Time" value={report.pc.bootTime} />
           <KV color="#ef4444" label="VPN" value={report.pc.vpn} />
@@ -313,7 +313,7 @@ export default function ScanResults() {
                 key={c.key}
                 onClick={() => setCat(c.key)}
                 className={`flex w-full items-center justify-between rounded-lg px-3 py-3 text-sm ${
-                  cat === c.key ? 'bg-teal-600/15' : 'hoverable'
+                  cat === c.key ? 'bg-sky-600/15' : 'hoverable'
                 }`}
               >
                 <span className="txt flex items-center gap-3">
@@ -356,7 +356,7 @@ export default function ScanResults() {
                 detects: { accent: '#dc2626', Icon: AlertTriangle, title: 'Detects Logs', badge: 'Boot instance', bcls: 'border-red-600/40 bg-red-600/15 text-red-500' },
                 integrity: { accent: '#22c55e', Icon: CheckCircle2, title: 'Integrity Logs', badge: 'Boot instance', bcls: 'border-green-600/40 bg-green-600/15 text-green-500' },
                 warnings: { accent: '#eab308', Icon: AlertTriangle, title: 'Warnings Logs', badge: 'Warning', bcls: 'border-yellow-600/40 bg-yellow-600/15 text-yellow-500' },
-                suspicious: { accent: '#2dd4bf', Icon: Eye, title: 'Suspicious logs', badge: 'Suspicious', bcls: 'border-teal-600/40 bg-teal-600/15 text-teal-400' },
+                suspicious: { accent: '#38bdf8', Icon: Eye, title: 'Suspicious logs', badge: 'Suspicious', bcls: 'border-sky-600/40 bg-sky-600/15 text-sky-400' },
               }
               const cs = CS[cat]
               const copyDetail = (t) => {
@@ -538,7 +538,7 @@ export default function ScanResults() {
             <div className="space-y-2">
               {report.discord.map((d) => (
                 <div key={d.id} className="tile flex items-center gap-3 rounded-lg border px-4 py-3">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-teal-600 text-xs font-bold text-white">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-sky-600 text-xs font-bold text-white">
                     {d.name[0].toUpperCase()}
                   </span>
                   <div>
@@ -592,7 +592,7 @@ export default function ScanResults() {
                     style={g.flag !== 'clean' ? { borderLeft: '3px solid currentColor' } : undefined}
                   >
                     <div className="flex items-center gap-3">
-                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-teal-600/15 text-teal-400">
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-sky-600/15 text-sky-400">
                         <Server size={15} />
                       </span>
                       <div>
@@ -758,13 +758,13 @@ export default function ScanResults() {
                   : u.action === 'Connected'
                     ? 'border-green-600/40 bg-green-600/15 text-green-500'
                     : u.action === 'Mounted'
-                      ? 'border-teal-600/40 bg-teal-600/15 text-teal-400'
+                      ? 'border-sky-600/40 bg-sky-600/15 text-sky-400'
                       : 'bd muted'
               return (
                 <div key={i} className="tile rounded-xl border p-4">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="flex items-start gap-3">
-                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-teal-600/15 text-teal-400">
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-sky-600/15 text-sky-400">
                         <Usb size={18} />
                       </span>
                       <div>

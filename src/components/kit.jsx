@@ -8,7 +8,7 @@ export function PageHeader({ kicker, title, subtitle, actions, icon: Icon }) {
         <p className="caps-label">{kicker}</p>
         <h1 className="txt mt-2 flex items-center gap-3 text-3xl font-bold tracking-tight md:text-4xl">
           {Icon && (
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-teal-500 to-teal-700 text-white shadow-lg shadow-teal-600/20">
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500 to-sky-700 text-white shadow-lg shadow-sky-600/20">
               <Icon size={20} />
             </span>
           )}
@@ -29,8 +29,8 @@ const SEV = {
   Critical: 'border-red-600/40 bg-red-600/15 text-red-500',
   High: 'border-orange-500/40 bg-orange-500/15 text-orange-400',
   Medium: 'border-yellow-500/40 bg-yellow-500/15 text-yellow-400',
-  Low: 'border-teal-500/40 bg-teal-500/15 text-teal-400',
-  Open: 'border-teal-500/40 bg-teal-500/15 text-teal-400',
+  Low: 'border-sky-500/40 bg-sky-500/15 text-sky-400',
+  Open: 'border-sky-500/40 bg-sky-500/15 text-sky-400',
   Resolved: 'border-green-600/40 bg-green-600/15 text-green-500',
   Closed: 'border-neutral-600/40 bg-neutral-600/15 muted',
 }
@@ -112,7 +112,7 @@ export function Textarea(props) {
   return (
     <textarea
       {...props}
-      className={`bd tile txt w-full rounded-lg border p-3 text-sm focus:outline-none focus:ring-1 focus:ring-teal-500/40 ${
+      className={`bd tile txt w-full rounded-lg border p-3 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500/40 ${
         props.className || ''
       }`}
     />
@@ -123,7 +123,7 @@ export function Input(props) {
   return (
     <input
       {...props}
-      className={`bd tile txt w-full rounded-lg border px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-teal-500/40 ${
+      className={`bd tile txt w-full rounded-lg border px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500/40 ${
         props.className || ''
       }`}
     />

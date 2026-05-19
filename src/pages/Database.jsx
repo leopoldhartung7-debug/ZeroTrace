@@ -57,7 +57,7 @@ export default function CheatDatabase() {
         actions={
           <button
             onClick={() => setOpen(true)}
-            className="flex items-center gap-2 rounded-xl bg-teal-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-teal-500"
+            className="flex items-center gap-2 rounded-xl bg-sky-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-sky-500"
           >
             <Plus size={18} /> Add Entry
           </button>
@@ -68,7 +68,7 @@ export default function CheatDatabase() {
         <StatTile icon={Database} label="Total Entries" value={state.customCheats.length} />
         <StatTile icon={ShieldAlert} label="Critical" value={critical} accent="text-red-500" />
         <StatTile icon={Lock} label="Built-in" value={state.customCheats.filter((c) => c.builtin).length} />
-        <StatTile icon={Plus} label="Custom" value={state.customCheats.filter((c) => !c.builtin).length} accent="text-teal-500" />
+        <StatTile icon={Plus} label="Custom" value={state.customCheats.filter((c) => !c.builtin).length} accent="text-sky-500" />
       </div>
 
       <Card className="p-5">
@@ -163,7 +163,7 @@ export default function CheatDatabase() {
             <button onClick={() => setOpen(false)} className="bd txt rounded-lg border px-4 py-2 text-sm">
               Cancel
             </button>
-            <button onClick={add} className="rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-500">
+            <button onClick={add} className="rounded-lg bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-500">
               Add
             </button>
           </>

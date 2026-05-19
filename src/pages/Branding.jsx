@@ -3,13 +3,13 @@ import Logo from '../components/Logo.jsx'
 
 /* ZeroTrace crosshair mark (shared by the live logo and asset exports). */
 const CROSSHAIR = `
-  <circle cx="26" cy="26" r="22" stroke="#0d9488" stroke-width="1.5" opacity="0.5"/>
-  <circle cx="26" cy="26" r="5" stroke="#2dd4bf" stroke-width="1.5"/>
-  <circle cx="26" cy="26" r="1.5" fill="#2dd4bf"/>
-  <line x1="26" y1="4"  x2="26" y2="18" stroke="#2dd4bf" stroke-width="1.8" stroke-linecap="round"/>
-  <line x1="26" y1="34" x2="26" y2="48" stroke="#2dd4bf" stroke-width="1.8" stroke-linecap="round"/>
-  <line x1="4"  y1="26" x2="18" y2="26" stroke="#2dd4bf" stroke-width="1.8" stroke-linecap="round"/>
-  <line x1="34" y1="26" x2="48" y2="26" stroke="#2dd4bf" stroke-width="1.8" stroke-linecap="round"/>`
+  <circle cx="26" cy="26" r="22" stroke="#0284c7" stroke-width="1.5" opacity="0.5"/>
+  <circle cx="26" cy="26" r="5" stroke="#38bdf8" stroke-width="1.5"/>
+  <circle cx="26" cy="26" r="1.5" fill="#38bdf8"/>
+  <line x1="26" y1="4"  x2="26" y2="18" stroke="#38bdf8" stroke-width="1.8" stroke-linecap="round"/>
+  <line x1="26" y1="34" x2="26" y2="48" stroke="#38bdf8" stroke-width="1.8" stroke-linecap="round"/>
+  <line x1="4"  y1="26" x2="18" y2="26" stroke="#38bdf8" stroke-width="1.8" stroke-linecap="round"/>
+  <line x1="34" y1="26" x2="48" y2="26" stroke="#38bdf8" stroke-width="1.8" stroke-linecap="round"/>`
 
 function drawZeroTrace(ctx, w, h) {
   ctx.fillStyle = '#07070f'
@@ -18,7 +18,7 @@ function drawZeroTrace(ctx, w, h) {
   ctx.textBaseline = 'middle'
   ctx.font = `800 ${Math.floor(h / 5)}px Oxanium, Inter, sans-serif`
   const fs = Math.floor(h / 5)
-  ctx.fillStyle = '#2dd4bf'
+  ctx.fillStyle = '#38bdf8'
   const zero = 'Zero'
   const trace = 'Trace'
   const zw = ctx.measureText(zero).width
@@ -29,7 +29,7 @@ function drawZeroTrace(ctx, w, h) {
   ctx.fillStyle = '#b0b0c0'
   ctx.fillText(trace, startX + zw, h / 2)
   ctx.textAlign = 'center'
-  ctx.fillStyle = '#2a6b65'
+  ctx.fillStyle = '#2a6b7a'
   ctx.font = `600 ${Math.floor(fs / 4)}px Rajdhani, Inter, sans-serif`
   ctx.fillText('ANTICHEAT SCANNER', w / 2, h / 2 + fs * 0.85)
 }
@@ -59,7 +59,7 @@ function downloadPNG(draw, w, h, filename) {
 }
 
 const COLORS = [
-  { hex: '#2DD4BF', rgb: 'rgb(45, 212, 191)' },
+  { hex: '#38bdf8', rgb: 'rgb(56,189,248)' },
   { hex: '#F1F2F2', rgb: 'rgb(241, 242, 242)' },
   { hex: '#DFDFDF', rgb: 'rgb(223, 223, 223)' },
 ]
@@ -120,7 +120,7 @@ export default function Branding() {
     <div className="relative">
       <div
         className="pointer-events-none fixed inset-0 -z-10"
-        style={{ background: 'radial-gradient(60% 70% at 75% 35%, rgba(45,212,191,0.22), transparent 60%)' }}
+        style={{ background: 'radial-gradient(60% 70% at 75% 35%, rgba(56,189,248,0.22), transparent 60%)' }}
       />
 
       {/* Hero */}
@@ -148,7 +148,7 @@ export default function Branding() {
             <button
               onClick={() =>
                 downloadSVG(
-                  `<g transform="translate(263 95) scale(1.4)">${CROSSHAIR}</g><text x="50%" y="78%" dominant-baseline="middle" text-anchor="middle" font-family="Oxanium, sans-serif" font-size="56" font-weight="800"><tspan fill="#2dd4bf">Zero</tspan><tspan fill="#b0b0c0">Trace</tspan></text>`,
+                  `<g transform="translate(263 95) scale(1.4)">${CROSSHAIR}</g><text x="50%" y="78%" dominant-baseline="middle" text-anchor="middle" font-family="Oxanium, sans-serif" font-size="56" font-weight="800"><tspan fill="#38bdf8">Zero</tspan><tspan fill="#b0b0c0">Trace</tspan></text>`,
                   'zerotrace-logo.svg',
                 )
               }

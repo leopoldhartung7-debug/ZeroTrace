@@ -57,7 +57,7 @@ export default function History() {
 
       <div className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatTile icon={Activity} label="Total Events" value={state.events.length} />
-        <StatTile icon={ScanLine} label="Scans" value={count('scan')} accent="text-teal-500" />
+        <StatTile icon={ScanLine} label="Scans" value={count('scan')} accent="text-sky-500" />
         <StatTile icon={Pin} label="Pin Actions" value={count('pin')} />
         <StatTile icon={Code2} label="Rule Changes" value={count('rule')} accent="text-yellow-500" />
       </div>

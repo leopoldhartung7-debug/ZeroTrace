@@ -166,7 +166,7 @@ export function ToastProvider({ children }) {
   const icons = {
     success: <Check size={16} className="text-green-500" />,
     error: <AlertTriangle size={16} className="text-red-500" />,
-    info: <Info size={16} className="text-teal-500" />,
+    info: <Info size={16} className="text-sky-500" />,
   }
 
   return (
@@ -194,7 +194,7 @@ export function ToastProvider({ children }) {
                 <p className="txt text-sm font-medium">{t.title}</p>
                 {t.body && <p className="muted text-xs">{t.body}</p>}
                 {t.onClick && (
-                  <p className="mt-1 text-xs font-medium text-teal-500">Tap to view →</p>
+                  <p className="mt-1 text-xs font-medium text-sky-500">Tap to view →</p>
                 )}
               </div>
             </div>

@@ -33,7 +33,7 @@ function Toggle({ label, checked, onChange }) {
     >
       <span
         className={`flex h-5 w-5 items-center justify-center rounded border transition-colors ${
-          checked ? 'border-teal-500 bg-teal-600 text-white' : 'bd tile'
+          checked ? 'border-sky-500 bg-sky-600 text-white' : 'bd tile'
         }`}
       >
         {checked && (
@@ -268,7 +268,7 @@ export default function ToolDesigner({ embedded = false }) {
               disabled={!dirty}
               className={`flex w-full items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold transition-colors ${
                 dirty
-                  ? 'bg-teal-600 text-white hover:bg-teal-500'
+                  ? 'bg-sky-600 text-white hover:bg-sky-500'
                   : 'bd tile muted cursor-default'
               }`}
             >
@@ -304,7 +304,7 @@ export default function ToolDesigner({ embedded = false }) {
             />
             <button
               onClick={doImport}
-              className="bd txt mt-3 w-full rounded-lg border py-2 text-sm font-medium hover:border-teal-500"
+              className="bd txt mt-3 w-full rounded-lg border py-2 text-sm font-medium hover:border-sky-500"
             >
               Import Style
             </button>
@@ -322,7 +322,7 @@ export default function ToolDesigner({ embedded = false }) {
                 navigator.clipboard?.writeText(exportCode)
                 toast({ type: 'success', title: 'Style code copied' })
               }}
-              className="bd txt mt-3 flex w-full items-center justify-center gap-2 rounded-lg border py-2 text-sm font-medium hover:border-teal-500"
+              className="bd txt mt-3 flex w-full items-center justify-center gap-2 rounded-lg border py-2 text-sm font-medium hover:border-sky-500"
             >
               <Copy size={14} /> Copy code
             </button>

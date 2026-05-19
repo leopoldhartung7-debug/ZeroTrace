@@ -74,7 +74,7 @@ function SecurityMock() {
         <div className="mt-4 flex justify-center"><Server size={26} className="text-neutral-500" /></div>
       </div>
       <svg className="absolute inset-0 h-full w-full" viewBox="0 0 300 200" fill="none" preserveAspectRatio="none">
-        <path d="M120 150 C 200 150, 230 110, 230 70" stroke="#2dd4bf" strokeWidth="2" />
+        <path d="M120 150 C 200 150, 230 110, 230 70" stroke="#38bdf8" strokeWidth="2" />
       </svg>
       <div className="absolute bottom-3 left-3 w-44 rounded-lg border border-white/10 bg-white/[0.06] p-4">
         <div className="flex items-center justify-between">
@@ -84,7 +84,7 @@ function SecurityMock() {
           </div>
           <ScanFace size={15} className="text-neutral-500" />
         </div>
-        <div className="mt-4 flex justify-center"><Lock size={24} className="text-teal-500" /></div>
+        <div className="mt-4 flex justify-center"><Lock size={24} className="text-sky-500" /></div>
       </div>
     </div>
   )
@@ -93,16 +93,16 @@ function SecurityMock() {
 const PANELS = [
   { icon: FastForward, color: 'text-green-500', title: 'Lightning Fast\nSpeed', text: 'ZeroTrace prioritizes completing scans within a strict time frame, averaging around 60 seconds for comprehensive cheat detection.', mock: <FlowMock /> },
   { icon: Activity, color: 'text-yellow-500', title: 'Detection\nQuality', text: 'Powered by cutting-edge AI and expert digital forensics, we provide precise, trustworthy cheat detection results.', mock: <ResultsMock />, reverse: true },
-  { icon: Lock, color: 'text-teal-500', title: 'Military-Grade\nSecurity', text: "ZeroTrace is secured with military-grade encryption — because security comes first, and it's built into every part of our product.", mock: <SecurityMock /> },
+  { icon: Lock, color: 'text-sky-500', title: 'Military-Grade\nSecurity', text: "ZeroTrace is secured with military-grade encryption — because security comes first, and it's built into every part of our product.", mock: <SecurityMock /> },
 ]
 
 const FEATURES = [
   { icon: RotateCw, color: 'text-red-500', title: 'Custom Detection Rules', text: 'ZeroTrace offers customizations ranging from simple design tweaks to real-time threat detection — all as part of our service.' },
   { icon: AppWindow, color: 'text-yellow-500', title: 'Forensic Detections', text: 'Our detections are powered by deep expertise in digital forensics and an advanced understanding of operating systems.' },
   { icon: Clock, color: 'text-green-500', title: '24/7 Active Support', text: "ZeroTrace's support team sets us apart — delivering excellence and unmatched comfort to ensure the best service experience." },
-  { icon: Smile, color: 'text-teal-500', title: 'Growing Community', text: 'Our community is constantly growing, with 500+ active servers and dedicated members ready to help you!' },
+  { icon: Smile, color: 'text-sky-500', title: 'Growing Community', text: 'Our community is constantly growing, with 500+ active servers and dedicated members ready to help you!' },
   { icon: FileCheck, color: 'text-purple-500', title: 'Complete Documentation', text: 'We provide documentation tailored for both new users and experts in the field of screensharing and cheat detection.' },
-  { icon: ShieldCheck, color: 'text-teal-500', title: 'Privacy Focused', text: 'With future-focused security, we ensure every trace of information remains completely protected and encrypted.' },
+  { icon: ShieldCheck, color: 'text-sky-500', title: 'Privacy Focused', text: 'With future-focused security, we ensure every trace of information remains completely protected and encrypted.' },
 ]
 
 /* ---- "How ZeroTrace works" step mocks ---- */
@@ -117,7 +117,7 @@ function DownloadMock() {
             className={`flex items-center gap-3 rounded-lg border border-white/10 px-4 py-3 ${i === 0 ? 'bg-white/[0.05]' : 'bg-white/[0.02]'}`}
             style={{ opacity: o }}
           >
-            <FileText size={18} className={i === 0 ? 'text-teal-500' : 'text-neutral-500'} />
+            <FileText size={18} className={i === 0 ? 'text-sky-500' : 'text-neutral-500'} />
             <div>
               <p className="text-sm">ZeroTrace-238fS64.exe</p>
               <p className="text-xs text-neutral-500">ZeroTrace File - exe</p>
@@ -176,7 +176,7 @@ function ReviewMock() {
 }
 
 const STEPS = [
-  { n: '1.', title: 'Downloading', color: 'text-teal-500', text: 'Effortlessly scan suspects in seconds with two simple clicks that handle everything automatically.', mock: <DownloadMock /> },
+  { n: '1.', title: 'Downloading', color: 'text-sky-500', text: 'Effortlessly scan suspects in seconds with two simple clicks that handle everything automatically.', mock: <DownloadMock /> },
   { n: '2.', title: 'Scanning', color: 'text-yellow-500', text: 'Let ZeroTrace take care of all the hard work for you. Simply wait a few seconds while our advanced technology processes everything and delivers accurate results quickly and effortlessly.', mock: <ScanningMock />, reverse: true },
   { n: '3.', title: 'Data Review', color: 'text-red-500', text: 'Analyze the results on our dashboard and reach a final verdict on the suspect with confidence!', mock: <ReviewMock /> },
 ]
@@ -252,7 +252,7 @@ export default function Landing() {
               <button onClick={() => nav('/login')} className="text-sm text-neutral-300 transition-colors hover:text-white">
                 Login
               </button>
-              <button onClick={() => nav('/login')} className="rounded-lg bg-teal-600 px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-teal-500">
+              <button onClick={() => nav('/login')} className="rounded-lg bg-sky-600 px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-sky-500">
                 Sign Up
               </button>
             </>
@@ -264,12 +264,12 @@ export default function Landing() {
       <section className="relative overflow-hidden">
         <div
           className="pointer-events-none absolute inset-0"
-          style={{ background: 'radial-gradient(70% 60% at 70% 10%, rgba(45,212,191,0.35), transparent 60%), linear-gradient(120deg, transparent 40%, rgba(45,212,191,0.18) 55%, transparent 70%)' }}
+          style={{ background: 'radial-gradient(70% 60% at 70% 10%, rgba(56,189,248,0.35), transparent 60%), linear-gradient(120deg, transparent 40%, rgba(56,189,248,0.18) 55%, transparent 70%)' }}
         />
         <div className="relative mx-auto max-w-6xl px-6 py-24 md:px-12 md:py-32">
-          <span className="inline-block rounded-md bg-teal-600 px-4 py-1.5 text-sm font-bold tracking-wide text-white">UPDATE</span>
+          <span className="inline-block rounded-md bg-sky-600 px-4 py-1.5 text-sm font-bold tracking-wide text-white">UPDATE</span>
           <h1 className="mt-8 max-w-4xl text-6xl font-extrabold leading-[1.05] tracking-tight md:text-8xl">
-            Most <span className="text-teal-500">powerful</span> Screenshare Tool
+            Most <span className="text-sky-500">powerful</span> Screenshare Tool
           </h1>
           <p className="mt-8 max-w-2xl text-lg leading-relaxed text-neutral-400 md:text-xl">
             Experience an unparalleled service designed with quality, safety, and speed in mind.
@@ -367,7 +367,7 @@ export default function Landing() {
         <div className="grid gap-10 lg:grid-cols-2">
           <div>
             <h2 className="text-5xl font-extrabold leading-[1.05] tracking-tight md:text-7xl">
-              Answer your <span className="text-teal-500">questions</span>
+              Answer your <span className="text-sky-500">questions</span>
             </h2>
             <p className="mt-6 text-lg text-neutral-400">
               You've got <span className="text-white">answers</span>
@@ -385,7 +385,7 @@ export default function Landing() {
       <section className="relative overflow-hidden">
         <div
           className="pointer-events-none absolute inset-0"
-          style={{ background: 'radial-gradient(60% 80% at 50% 100%, rgba(45,212,191,0.18), transparent 70%)' }}
+          style={{ background: 'radial-gradient(60% 80% at 50% 100%, rgba(56,189,248,0.18), transparent 70%)' }}
         />
         <div className="relative mx-auto max-w-6xl px-6 py-28 md:px-12">
           <div className="flex flex-col gap-10 lg:flex-row lg:items-center lg:justify-between">
@@ -397,7 +397,7 @@ export default function Landing() {
             <div className="flex items-center gap-6">
               <button
                 onClick={enter}
-                className="rounded-full bg-teal-600 px-10 py-5 text-lg font-semibold text-black hover:bg-teal-500"
+                className="rounded-full bg-sky-600 px-10 py-5 text-lg font-semibold text-black hover:bg-sky-500"
               >
                 Get Started
               </button>
@@ -410,10 +410,10 @@ export default function Landing() {
           </div>
           <div className="mt-10 flex flex-wrap gap-8">
             <span className="flex items-center gap-2 text-neutral-300">
-              <Check size={18} className="text-teal-500" /> Download ZeroTrace
+              <Check size={18} className="text-sky-500" /> Download ZeroTrace
             </span>
             <span className="flex items-center gap-2 text-neutral-300">
-              <Check size={18} className="text-teal-500" /> Join our Community
+              <Check size={18} className="text-sky-500" /> Join our Community
             </span>
           </div>
         </div>

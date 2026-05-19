@@ -115,14 +115,14 @@ export default function Sidebar() {
                             className={({ isActive }) =>
                               `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                                 isActive
-                                  ? 'bg-teal-600/15 text-teal-500 shadow-[inset_0_0_0_1px_rgba(45,212,191,0.18)]'
+                                  ? 'bg-sky-600/15 text-sky-500 shadow-[inset_0_0_0_1px_rgba(56,189,248,0.18)]'
                                   : 'hoverable'
                               }`
                             }
                           >
                             {({ isActive }) => (
                               <>
-                                <c.icon size={16} className={isActive ? '' : 'text-teal-400/70'} />
+                                <c.icon size={16} className={isActive ? '' : 'text-sky-400/70'} />
                                 <span className={isActive ? '' : 'txt'}>{c.label}</span>
                               </>
                             )}
@@ -140,7 +140,7 @@ export default function Sidebar() {
                   className={({ isActive }) =>
                     `mb-1 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
                       isActive
-                        ? 'bg-teal-600/15 text-teal-500 shadow-[inset_0_0_0_1px_rgba(45,212,191,0.18)]'
+                        ? 'bg-sky-600/15 text-sky-500 shadow-[inset_0_0_0_1px_rgba(56,189,248,0.18)]'
                         : 'hoverable'
                     }`
                   }
@@ -204,7 +204,7 @@ export default function Sidebar() {
               {state.notifications.map((n) => (
                 <div key={n.id} className="bd border-b px-4 py-3 last:border-0">
                   <div className="flex items-center gap-2">
-                    {!n.read && <span className="h-2 w-2 rounded-full bg-teal-500" />}
+                    {!n.read && <span className="h-2 w-2 rounded-full bg-sky-500" />}
                     <p className="txt text-sm font-medium">{n.title}</p>
                   </div>
                   <p className="muted mt-0.5 text-xs">{n.body}</p>
@@ -235,7 +235,7 @@ export default function Sidebar() {
                 className="hoverable txt flex w-full items-center justify-between px-3 py-2 text-sm"
               >
                 {l.label}
-                {state.settings.lang === l.code && <Check size={14} className="text-teal-500" />}
+                {state.settings.lang === l.code && <Check size={14} className="text-sky-500" />}
               </button>
             ))}
           </Popover>

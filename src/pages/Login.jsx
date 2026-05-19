@@ -35,7 +35,7 @@ export default function Login() {
     <div className="flex min-h-screen items-center justify-center bg-black px-4 py-10 text-white">
       <div
         className="pointer-events-none fixed inset-0"
-        style={{ background: 'radial-gradient(60% 50% at 50% 0%, rgba(45,212,191,0.15), transparent 70%)' }}
+        style={{ background: 'radial-gradient(60% 50% at 50% 0%, rgba(56,189,248,0.15), transparent 70%)' }}
       />
       <div className="relative w-full max-w-md rounded-2xl border border-white/10 bg-white/[0.02] p-8 md:p-10">
         <div className="flex flex-col items-center">
@@ -55,7 +55,7 @@ export default function Login() {
             value={form.id}
             onChange={(e) => setForm({ ...form, id: e.target.value })}
             placeholder="Email or Username"
-            className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3.5 text-sm placeholder:text-neutral-500 focus:border-teal-500 focus:outline-none"
+            className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3.5 text-sm placeholder:text-neutral-500 focus:border-sky-500 focus:outline-none"
           />
           <div className="relative">
             <input
@@ -63,7 +63,7 @@ export default function Login() {
               value={form.pw}
               onChange={(e) => setForm({ ...form, pw: e.target.value })}
               placeholder="Password"
-              className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3.5 pr-12 text-sm placeholder:text-neutral-500 focus:border-teal-500 focus:outline-none"
+              className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3.5 pr-12 text-sm placeholder:text-neutral-500 focus:border-sky-500 focus:outline-none"
             />
             <button
               type="button"
