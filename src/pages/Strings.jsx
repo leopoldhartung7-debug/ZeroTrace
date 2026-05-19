@@ -84,6 +84,7 @@ function ModeAndStatus({ mode, setMode, statusRows }) {
 
 function StringExtractor() {
   const toast = useToast()
+  const { state, dispatch } = useStore()
   const [tab, setTab] = useState('Upload')
   const [file, setFile] = useState(null)
   const [results, setResults] = useState(null)
@@ -99,12 +100,19 @@ function StringExtractor() {
       const strings = extractStrings(bytes, { min: 4 })
       const susp = scanSuspicious(strings)
       const suspSet = new Set(susp.map((s) => s.offset))
-      setResults({ file: file.name, size: bytes.length, strings, susp, suspSet })
+      const savedLookup = new Set(state.savedStrings || [])
+      const savedSet = new Set(
+        strings.filter((s) => savedLookup.has(s.value)).map((s) => s.offset),
+      )
+      setResults({ file: file.name, size: bytes.length, strings, susp, suspSet, savedSet })
       setTab('Results')
+      const hits = susp.length + savedSet.size
       toast({
-        type: susp.length ? 'error' : 'success',
+        type: hits ? 'error' : 'success',
         title: `${strings.length} strings extracted`,
-        body: susp.length ? `${susp.length} suspicious indicators` : 'No suspicious indicators',
+        body: hits
+          ? `${susp.length} suspicious · ${savedSet.size} saved-signature matches`
+          : 'No suspicious indicators',
       })
     } catch {
       toast({ type: 'error', title: 'Failed to read file' })
@@ -177,16 +185,46 @@ function StringExtractor() {
               <div>
                 <p className="caps-label">Results — {results.file}</p>
                 <p className="txt mt-1 text-lg font-semibold">
-                  {results.strings.length} strings · {results.susp.length} suspicious
+                  {results.strings.length} strings · {results.susp.length} suspicious ·{' '}
+                  <span className="text-amber-400">{results.savedSet?.size || 0} saved matches</span>
                 </p>
               </div>
-              <button
-                onClick={download}
-                className="bd txt flex items-center gap-2 rounded-lg border px-4 py-2 text-sm"
-              >
-                <Download size={15} /> Export .txt
-              </button>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  onClick={() => {
+                    dispatch({ type: 'save-strings', strings: results.strings.map((s) => s.value) })
+                    toast({
+                      type: 'success',
+                      title: 'Strings saved',
+                      body: `${results.strings.length} strings — future scans will flag these.`,
+                    })
+                  }}
+                  className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-500"
+                >
+                  <Download size={15} className="rotate-180" /> Save strings
+                </button>
+                <button
+                  onClick={download}
+                  className="bd txt flex items-center gap-2 rounded-lg border px-4 py-2 text-sm"
+                >
+                  <Download size={15} /> Export .txt
+                </button>
+              </div>
             </div>
+            {(state.savedStrings?.length || 0) > 0 && (
+              <p className="muted mt-2 text-xs">
+                {state.savedStrings.length} saved signature string(s) in your library ·{' '}
+                <button
+                  onClick={() => {
+                    dispatch({ type: 'clear-saved-strings' })
+                    toast({ type: 'success', title: 'Saved strings cleared' })
+                  }}
+                  className="text-red-500 hover:underline"
+                >
+                  clear
+                </button>
+              </p>
+            )}
             <div className="mt-5 flex flex-wrap gap-3">
               <div className="relative flex-1">
                 <Search size={15} className="muted absolute left-3 top-1/2 -translate-y-1/2" />
@@ -210,20 +248,26 @@ function StringExtractor() {
             </div>
             <div className="bd tile mt-4 max-h-[420px] overflow-y-auto rounded-lg border font-mono text-xs">
               {shown.map((s, i) => {
-                const flagged = results.suspSet.has(s.offset)
+                const susp = results.suspSet.has(s.offset)
+                const saved = results.savedSet?.has(s.offset)
                 return (
                   <div
                     key={i}
                     className={`bd flex items-start gap-3 border-b px-3 py-1.5 last:border-0 ${
-                      flagged ? 'bg-red-600/10' : ''
+                      susp ? 'bg-red-600/10' : saved ? 'bg-amber-500/10' : ''
                     }`}
                   >
                     <span className="muted w-20 shrink-0">
                       0x{s.offset.toString(16)}
                     </span>
-                    <span className={`break-all ${flagged ? 'text-red-500' : 'txt'}`}>
+                    <span className={`break-all ${susp ? 'text-red-500' : saved ? 'text-amber-400' : 'txt'}`}>
                       {s.value}
                     </span>
+                    {saved && !susp && (
+                      <span className="ml-auto shrink-0 rounded border border-amber-500/40 bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-bold text-amber-400">
+                        SAVED
+                      </span>
+                    )}
                   </div>
                 )
               })}

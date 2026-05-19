@@ -150,6 +150,7 @@ function seed() {
     tickets: [],
     toolStyle: defaultToolStyle(),
     auth: false,
+    savedStrings: [],
   }
 }
 
@@ -207,6 +208,17 @@ function reducer(state, action) {
 
     case 'logout':
       return { ...state, auth: false }
+
+    case 'save-strings': {
+      const merged = new Set(state.savedStrings || [])
+      for (const v of action.strings || []) {
+        if (v && v.length >= 3) merged.add(v)
+      }
+      return { ...state, savedStrings: [...merged].slice(0, 5000) }
+    }
+
+    case 'clear-saved-strings':
+      return { ...state, savedStrings: [] }
 
     case 'set-tool-style':
       return { ...state, toolStyle: { ...state.toolStyle, ...action.patch } }
