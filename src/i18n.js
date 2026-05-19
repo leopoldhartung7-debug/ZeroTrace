@@ -267,8 +267,10 @@ export const DE = {
   'Login blocked — key expired': 'Login blockiert — Key abgelaufen',
   'License key expires in 24h': 'Lizenz-Key läuft in 24 Std. ab',
   'Email (EmailJS)': 'E-Mail (EmailJS)',
-  "Sends the 24h-before-expiry notice to the analyst's email. Set up a free template at emailjs.com — the template needs the params to_email, subject, message.":
-    'Sendet die Vorab-Benachrichtigung (24 Std. vorher) an die E-Mail des Analysten. Lege bei emailjs.com eine kostenlose Vorlage an — sie benötigt die Parameter to_email, subject, message.',
+  'Sends verification, welcome and expiry emails in the ZeroTrace design. Set up a free template at emailjs.com — its content can be just':
+    'Sendet Bestätigungs-, Willkommens- und Ablauf-Mails im ZeroTrace-Design. Lege bei emailjs.com eine kostenlose Vorlage an — der Inhalt kann einfach',
+  '(triple braces so HTML renders); subject uses': '(dreifache geschweifte Klammern, damit HTML gerendert wird); Betreff nutzt',
+  '; the recipient field uses': '; das Empfänger-Feld nutzt',
   'Service ID': 'Service-ID', 'Template ID': 'Template-ID', 'Public Key': 'Public Key',
   'Not yet bound to an account.': 'Noch keinem Konto zugewiesen.',
   'User account': 'Nutzerkonto',

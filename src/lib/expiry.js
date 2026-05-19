@@ -6,6 +6,7 @@
 
 import { useEffect } from 'react'
 import { useStore } from '../store.jsx'
+import { expiryHtml } from './emailTemplates.js'
 
 const DAY = 86400000
 
@@ -42,7 +43,7 @@ async function sendWebhookNotice(webhook, { title, color, key, user, expiresAt, 
   } catch { /* fire & forget */ }
 }
 
-async function sendEmail(cfg, { to, subject, message }) {
+async function sendEmail(cfg, { to, subject, message, message_html }) {
   if (!cfg.emailJsServiceId || !cfg.emailJsTemplateId || !cfg.emailJsPublicKey) return false
   try {
     const resp = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
@@ -52,7 +53,7 @@ async function sendEmail(cfg, { to, subject, message }) {
         service_id: cfg.emailJsServiceId,
         template_id: cfg.emailJsTemplateId,
         user_id: cfg.emailJsPublicKey,
-        template_params: { to_email: to, subject, message },
+        template_params: { to_email: to, subject, message, message_html: message_html || '' },
       }),
     })
     return resp.ok
@@ -91,15 +92,19 @@ export function KeyExpiryWatcher() {
             expiresAt: key.expiresAt,
             reason: 'Reminder — key expires within 24 hours.',
           })
-          sendEmail(cfg, {
-            to: user.email,
-            subject: 'Your ZeroTrace license key expires in 24 hours',
-            message:
-              `Hi ${user.username},\n\n` +
-              `your ZeroTrace license key ${key.key} will expire on ${fmtDate(key.expiresAt)}. ` +
-              `After that you will no longer be able to sign in to the dashboard.\n\n` +
-              `Contact your admin to renew or replace the key.\n\n— ZeroTrace`,
-          })
+          {
+            const lang = state.settings?.lang || 'en'
+            sendEmail(cfg, {
+              to: user.email,
+              subject: lang === 'de'
+                ? 'Dein ZeroTrace-Lizenz-Key läuft in 24 Std. ab'
+                : 'Your ZeroTrace license key expires in 24 hours',
+              message: lang === 'de'
+                ? `Hallo ${user.username}, dein ZeroTrace-Lizenz-Key ${key.key} läuft am ${fmtDate(key.expiresAt)} ab. Danach kannst du dich nicht mehr im Dashboard anmelden.`
+                : `Hi ${user.username}, your ZeroTrace license key ${key.key} will expire on ${fmtDate(key.expiresAt)}.`,
+              message_html: expiryHtml({ username: user.username, key: key.key, expiresAt: key.expiresAt, expired: false }, lang),
+            })
+          }
         }
 
         // Expired
@@ -117,14 +122,19 @@ export function KeyExpiryWatcher() {
             expiresAt: key.expiresAt,
             reason: 'Key has expired — analyst can no longer sign in.',
           })
-          sendEmail(cfg, {
-            to: user.email,
-            subject: 'Your ZeroTrace license key has expired',
-            message:
-              `Hi ${user.username},\n\n` +
-              `your ZeroTrace license key ${key.key} expired on ${fmtDate(key.expiresAt)}. ` +
-              `You can no longer sign in to the dashboard until a new key is issued.\n\n— ZeroTrace`,
-          })
+          {
+            const lang = state.settings?.lang || 'en'
+            sendEmail(cfg, {
+              to: user.email,
+              subject: lang === 'de'
+                ? 'Dein ZeroTrace-Lizenz-Key ist abgelaufen'
+                : 'Your ZeroTrace license key has expired',
+              message: lang === 'de'
+                ? `Hallo ${user.username}, dein ZeroTrace-Lizenz-Key ${key.key} ist am ${fmtDate(key.expiresAt)} abgelaufen. Du kannst dich erst wieder anmelden, sobald ein Admin einen neuen Key ausstellt.`
+                : `Hi ${user.username}, your ZeroTrace license key ${key.key} expired on ${fmtDate(key.expiresAt)}.`,
+              message_html: expiryHtml({ username: user.username, key: key.key, expiresAt: key.expiresAt, expired: true }, lang),
+            })
+          }
         }
       }
     }

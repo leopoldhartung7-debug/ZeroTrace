@@ -543,7 +543,7 @@ export default function Account() {
                     <span className="flex items-center gap-1 rounded-md border border-green-600/40 bg-green-600/15 px-2 py-0.5 text-[11px] font-bold text-green-500"><Check size={11} /> CONNECTED</span>
                   )}
                 </div>
-                <p className="muted mt-1 text-sm">Sends the 24h-before-expiry notice to the analyst's email. Set up a free template at emailjs.com — the template needs the params <code className="txt">to_email</code>, <code className="txt">subject</code>, <code className="txt">message</code>.</p>
+                <p className="muted mt-1 text-sm">Sends verification, welcome and expiry emails in the ZeroTrace design. Set up a free template at emailjs.com — its content can be just <code className="txt">{'{{{message_html}}}'}</code> (triple braces so HTML renders); subject uses <code className="txt">{'{{subject}}'}</code>; the recipient field uses <code className="txt">{'{{to_email}}'}</code>.</p>
                 <Field label="Service ID">
                   <div className="flex gap-2">
                     <input value={ejsSvc} onChange={(e) => setEjsSvc(e.target.value)} placeholder="service_xxxxxxx" className={inputCls} />

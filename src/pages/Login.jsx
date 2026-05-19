@@ -4,6 +4,7 @@ import { LogIn, Eye, EyeOff, Fingerprint, KeyRound, UserPlus } from 'lucide-reac
 import Logo from '../components/Logo.jsx'
 import { useStore } from '../store.jsx'
 import { useToast, Modal } from '../components/ui.jsx'
+import { verifyHtml, welcomeHtml } from '../lib/emailTemplates.js'
 
 export default function Login() {
   const nav = useNavigate()
@@ -40,9 +41,14 @@ export default function Login() {
     }
   }
 
-  async function sendVerificationCode(email, code) {
+  async function sendVerificationCode(email, code, username) {
     const cfg = state.integrations || {}
     if (!cfg.emailJsServiceId || !cfg.emailJsTemplateId || !cfg.emailJsPublicKey) return false
+    const lang = state.settings?.lang || 'en'
+    const subject = lang === 'de' ? 'ZeroTrace – E-Mail bestätigen' : 'Verify your ZeroTrace email'
+    const message = lang === 'de'
+      ? `Hallo ${username || ''}, dein ZeroTrace-Bestätigungscode lautet: ${code}\n\nDieser Code läuft in 15 Minuten ab. Wenn du diese Registrierung nicht angefordert hast, ignoriere diese E-Mail.`
+      : `Hi ${username || ''}, your ZeroTrace verification code is: ${code}\n\nThe code expires in 15 minutes. If you did not request this, you can ignore this email.`
     try {
       const resp = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
         method: 'POST',
@@ -53,10 +59,9 @@ export default function Login() {
           user_id: cfg.emailJsPublicKey,
           template_params: {
             to_email: email,
-            subject: 'Your ZeroTrace verification code',
-            message:
-              `Your ZeroTrace verification code is: ${code}\n\n` +
-              `If you did not request this, you can ignore this email.`,
+            subject,
+            message,
+            message_html: verifyHtml({ username: username || '', code }, lang),
           },
         }),
       })
@@ -92,7 +97,12 @@ export default function Login() {
           service_id: cfg.emailJsServiceId,
           template_id: cfg.emailJsTemplateId,
           user_id: cfg.emailJsPublicKey,
-          template_params: { to_email: email, subject, message },
+          template_params: {
+            to_email: email,
+            subject,
+            message,
+            message_html: welcomeHtml({ username }, de ? 'de' : 'en'),
+          },
         }),
       })
       return resp.ok
@@ -226,7 +236,7 @@ export default function Login() {
     if (emailJsReady) {
       const code = String(Math.floor(100000 + Math.random() * 900000))
       setChecking(true)
-      const ok = await sendVerificationCode(email, code)
+      const ok = await sendVerificationCode(email, code, username)
       setChecking(false)
       if (!ok) {
         return toast({
@@ -265,7 +275,7 @@ export default function Login() {
     if (!pendingUser) return
     const code = String(Math.floor(100000 + Math.random() * 900000))
     setChecking(true)
-    const ok = await sendVerificationCode(pendingUser.email, code)
+    const ok = await sendVerificationCode(pendingUser.email, code, pendingUser.username)
     setChecking(false)
     if (!ok) return toast({ type: 'error', title: 'Could not resend code' })
     setSentCode(code)
