@@ -1,4 +1,6 @@
-import { Routes, Route, Navigate, Outlet } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom'
+import { Menu, X } from 'lucide-react'
 import { StoreProvider, useStore } from './store.jsx'
 import { ToastProvider } from './components/ui.jsx'
 import CommandPalette from './components/CommandPalette.jsx'
@@ -24,15 +26,51 @@ import Account from './pages/Account.jsx'
 
 function DashboardLayout() {
   const { state } = useStore()
+  const loc = useLocation()
+  const [navOpen, setNavOpen] = useState(false)
+
+  useEffect(() => {
+    setNavOpen(false)
+  }, [loc.pathname])
+
   if (!state.auth) return <Navigate to="/login" replace />
   return (
     <div className="app-bg flex h-screen overflow-hidden">
-      <Sidebar />
-      <main id="app-main" className="flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-6xl px-6 py-10 md:px-10">
-          <Outlet />
+      {/* Desktop / tablet sidebar */}
+      <div className="hidden shrink-0 lg:block">
+        <Sidebar />
+      </div>
+
+      {/* Mobile drawer */}
+      {navOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setNavOpen(false)} />
+          <div className="absolute left-0 top-0 h-full">
+            <Sidebar />
+          </div>
         </div>
-      </main>
+      )}
+
+      <div className="flex flex-1 flex-col overflow-hidden">
+        {/* Mobile top bar */}
+        <div className="bd panel flex shrink-0 items-center gap-3 border-b px-4 py-3 lg:hidden">
+          <button
+            onClick={() => setNavOpen((o) => !o)}
+            className="txt rounded-lg p-1.5"
+            aria-label="Menu"
+          >
+            {navOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
+          <span className="font-mono text-lg font-bold text-blue-500">{'(*>'}</span>
+          <span className="txt text-sm font-semibold">Ocean</span>
+        </div>
+
+        <main id="app-main" className="flex-1 overflow-y-auto">
+          <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 md:px-10 md:py-10">
+            <Outlet />
+          </div>
+        </main>
+      </div>
       <CommandPalette />
     </div>
   )

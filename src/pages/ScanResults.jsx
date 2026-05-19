@@ -114,10 +114,6 @@ function PaginatedTable({ columns, rows, render, searchKeys, placeholder, empty 
   )
 }
 
-const SEV = {
-  Critical: 'text-red-500', High: 'text-orange-400',
-  Medium: 'text-yellow-400', Low: 'text-blue-400',
-}
 
 export default function ScanResults() {
   const { id } = useParams()
@@ -354,27 +350,67 @@ export default function ScanResults() {
               <p className="muted text-sm leading-relaxed">{report.aiOpinion}</p>
             </div>
           ) : (
-            <div>
-              <p className="caps-label">{cats.find((c) => c.key === cat).label}</p>
-              <h3 className="txt mb-4 mt-1 text-lg font-semibold">
-                {report[cat].length} entr{report[cat].length === 1 ? 'y' : 'ies'}
-              </h3>
-              {report[cat].length === 0 ? (
-                <p className="muted py-10 text-center text-sm">Nothing found in this category.</p>
-              ) : (
-                <div className="bd tile max-h-[420px] divide-y divide-[var(--border)] overflow-y-auto rounded-lg border">
-                  {report[cat].map((l, i) => (
-                    <div key={i} className="px-3 py-2.5">
-                      <div className="flex items-center justify-between">
-                        <span className="txt text-sm font-medium">{l.name}</span>
-                        {l.severity && <span className={`text-xs font-semibold ${SEV[l.severity]}`}>{l.severity}</span>}
-                      </div>
-                      <p className="muted mt-0.5 text-xs">{l.detail} · {l.time}</p>
+            (() => {
+              const CS = {
+                detects: { accent: '#dc2626', Icon: AlertTriangle, title: 'Detects Logs', badge: 'Boot instance', bcls: 'border-red-600/40 bg-red-600/15 text-red-500' },
+                integrity: { accent: '#22c55e', Icon: CheckCircle2, title: 'Integrity Logs', badge: 'Boot instance', bcls: 'border-green-600/40 bg-green-600/15 text-green-500' },
+                warnings: { accent: '#eab308', Icon: AlertTriangle, title: 'Warnings Logs', badge: 'Warning', bcls: 'border-yellow-600/40 bg-yellow-600/15 text-yellow-500' },
+                suspicious: { accent: '#3b82f6', Icon: Eye, title: 'Suspicious logs', badge: 'Suspicious', bcls: 'border-blue-600/40 bg-blue-600/15 text-blue-400' },
+              }
+              const cs = CS[cat]
+              const copyDetail = (t) => {
+                navigator.clipboard?.writeText(t)
+                toast({ type: 'success', title: 'Copied' })
+              }
+              return (
+                <div>
+                  <h3 className="txt flex items-center gap-3 text-2xl font-bold">
+                    <cs.Icon size={24} style={{ color: cs.accent }} /> {cs.title}
+                  </h3>
+                  {report[cat].length === 0 ? (
+                    <p className="muted py-10 text-center text-sm">Nothing found in this category.</p>
+                  ) : (
+                    <div className="mt-5 max-h-[560px] space-y-4 overflow-y-auto pr-1">
+                      {report[cat].map((l, i) => (
+                        <div
+                          key={i}
+                          className="rounded-2xl border border-white/5 bg-white/[0.02] p-5"
+                          style={{ borderLeft: `3px solid ${cs.accent}` }}
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <span
+                              className="flex h-11 w-11 items-center justify-center rounded-xl"
+                              style={{ background: `${cs.accent}1f`, color: cs.accent }}
+                            >
+                              <cs.Icon size={20} />
+                            </span>
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => copyDetail(`${l.name} — ${l.detail}`)}
+                                className="bd muted hover:txt rounded-md border p-1.5"
+                                title="Copy"
+                              >
+                                <Copy size={13} />
+                              </button>
+                              <span className={`rounded-md border px-2.5 py-1 text-xs font-semibold ${cs.bcls}`}>
+                                {l.severity || cs.badge}
+                              </span>
+                            </div>
+                          </div>
+                          <p className="txt mt-4 text-lg font-semibold">{l.name}</p>
+                          <div className="tile mt-3 rounded-lg border p-3">
+                            <p className="muted break-all font-mono text-xs leading-relaxed">
+                              {l.detail}
+                              {l.time ? ` at ${l.time}` : ''}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  )}
                 </div>
-              )}
-            </div>
+              )
+            })()
           )}
         </Card>
       </div>
