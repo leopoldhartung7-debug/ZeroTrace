@@ -66,10 +66,47 @@ export default function Login() {
     }
   }
 
+  async function sendWelcomeMail(email, username) {
+    const cfg = state.integrations || {}
+    if (!cfg.emailJsServiceId || !cfg.emailJsTemplateId || !cfg.emailJsPublicKey) return false
+    const de = (state.settings?.lang || 'en') === 'de'
+    const subject = de
+      ? 'Willkommen bei ZeroTrace'
+      : 'Welcome to ZeroTrace'
+    const message = de
+      ? `Hallo ${username},\n\n` +
+        `herzlich willkommen bei ZeroTrace und vielen Dank, dass du dich für unser Tool entschieden hast.\n\n` +
+        `Dein Konto wurde erfolgreich erstellt und mit deinem Lizenz-Key verknüpft. Du kannst dich jetzt im Dashboard anmelden und sofort loslegen — Pins erstellen, Scans auswerten und verdächtige Discord-Server erkennen.\n\n` +
+        `Wenn du Fragen hast oder Hilfe brauchst, melde dich gerne über die Support-Seite.\n\n` +
+        `— Das ZeroTrace-Team`
+      : `Hi ${username},\n\n` +
+        `welcome to ZeroTrace, and thank you for choosing our tool.\n\n` +
+        `Your account has been created and bound to your license key. You can sign in to the dashboard right away — create pins, review scans and surface suspicious Discord servers.\n\n` +
+        `If you ever need a hand, reach out via the Support page.\n\n` +
+        `— The ZeroTrace team`
+    try {
+      const resp = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          service_id: cfg.emailJsServiceId,
+          template_id: cfg.emailJsTemplateId,
+          user_id: cfg.emailJsPublicKey,
+          template_params: { to_email: email, subject, message },
+        }),
+      })
+      return resp.ok
+    } catch {
+      return false
+    }
+  }
+
   const finalizeRegistration = (user) => {
     dispatch({ type: 'register-user', user })
     dispatch({ type: 'login', role: 'analyst', userId: user.id })
     toast({ type: 'success', title: 'Account created', body: `Welcome, ${user.username}` })
+    // Fire-and-forget welcome email (only when EmailJS is configured).
+    sendWelcomeMail(user.email, user.username)
     closeRegister()
     nav('/dashboard')
   }
