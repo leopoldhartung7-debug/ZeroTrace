@@ -7,6 +7,7 @@ import { ScanWebhookNotifier } from './lib/webhook.js'
 import { ToastProvider } from './components/ui.jsx'
 import CommandPalette from './components/CommandPalette.jsx'
 import Sidebar from './components/Sidebar.jsx'
+import Logo from './components/Logo.jsx'
 import Landing from './pages/Landing.jsx'
 import Login from './pages/Login.jsx'
 import PublicLayout from './components/PublicLayout.jsx'
@@ -63,8 +64,7 @@ function DashboardLayout() {
           >
             {navOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
-          <span className="font-mono text-lg font-bold text-blue-500">{'(*>'}</span>
-          <span className="txt text-sm font-semibold">Ocean</span>
+          <Logo size="sm" />
         </div>
 
         <main id="app-main" className="flex-1 overflow-y-auto">

@@ -28,7 +28,7 @@ export function Leaderboard() {
         <StatTile icon={ScanLine} label="Total Scans" value={stats.totalScans} />
         <StatTile icon={Eye} label="Detections" value={stats.detections} accent="text-red-500" />
         <StatTile icon={ShieldAlert} label="Unique Cheats" value={stats.uniqueCheats} accent="text-yellow-500" />
-        <StatTile icon={Trophy} label="Games Tracked" value={ranked.length} accent="text-blue-500" />
+        <StatTile icon={Trophy} label="Games Tracked" value={ranked.length} accent="text-teal-500" />
       </div>
       <Card className="p-6">
         <h3 className="txt mb-4 text-lg font-semibold">Games by Detections</h3>
@@ -92,11 +92,11 @@ const DOC_CONTENT = {
   overview: {
     title: 'Documentation',
     blocks: [
-      { h: null, p: 'Welcome to the official documentation of Ocean Anticheat Solutions, a post-mortem detection framework designed to identify and analyze cheating activity across multiple game environments including FiveM, Minecraft, and other supported platforms.' },
-      { h: null, p: "This portal provides a complete reference for developers, partners, and server administrators who work with Ocean's detection systems. Here you will find detailed explanations of detection categories, integrity modules, logging schemas, and implementation details for the Ocean Dashboard and Ocean+ APIs." },
+      { h: null, p: 'Welcome to the official documentation of ZeroTrace Anticheat Solutions, a post-mortem detection framework designed to identify and analyze cheating activity across multiple game environments including FiveM, Minecraft, and other supported platforms.' },
+      { h: null, p: "This portal provides a complete reference for developers, partners, and server administrators who work with ZeroTrace's detection systems. Here you will find detailed explanations of detection categories, integrity modules, logging schemas, and implementation details for the ZeroTrace Dashboard and ZeroTrace+ APIs." },
       { h: 'Getting Started', list: [
         'Use the navigation sidebar to explore categories such as Detections, Logs, and Integrity Systems.',
-        'Read each section to understand how Ocean classifies detections, processes memory and file artifacts, and communicates results through the dashboard.',
+        'Read each section to understand how ZeroTrace classifies detections, processes memory and file artifacts, and communicates results through the dashboard.',
         'Use the search bar to quickly locate specific detection signatures or log entries by name.',
         'Generate a pin from the Pins page, run the scanner, and review the results on the Scan Results page.',
       ] },
@@ -105,7 +105,7 @@ const DOC_CONTENT = {
   'detects-logs': {
     title: 'Detects Logs',
     blocks: [
-      { p: 'Detects Logs are high-confidence findings produced when Ocean matches a known cheat signature in memory, on disk, or in the loaded module list of the game process. Each entry includes the matched signature, severity (High/Critical), and the evidence (process, module or file path).' },
+      { p: 'Detects Logs are high-confidence findings produced when ZeroTrace matches a known cheat signature in memory, on disk, or in the loaded module list of the game process. Each entry includes the matched signature, severity (High/Critical), and the evidence (process, module or file path).' },
       { h: 'Severity', list: ['Critical — paid/native cheat clients and injectors', 'High — known free clients, loaders and tooling'] },
       { p: 'Detects Logs alone are sufficient grounds for a moderation decision when corroborated by execution evidence.' },
     ],
@@ -127,7 +127,7 @@ const DOC_CONTENT = {
   'detection-systems': {
     title: 'Detection Systems',
     blocks: [
-      { p: 'Ocean combines several engines to reach a verdict:' },
+      { p: 'ZeroTrace combines several engines to reach a verdict:' },
       { h: 'Engines', list: [
         'Signature matching — strings & module names against the cheat database',
         'Hashing — SHA-256 of files compared to known-bad sets',
@@ -148,7 +148,7 @@ const DOC_CONTENT = {
   'api-overview': {
     title: 'API — Overview',
     blocks: [
-      { p: 'The Ocean+ API exposes scan sessions and results. All endpoints require a Bearer API key. Base URL: https://api.anticheat.ac/v1.' },
+      { p: 'The ZeroTrace+ API exposes scan sessions and results. All endpoints require a Bearer API key. Base URL: https://api.anticheat.ac/v1.' },
       { code: 'GET /v1/pins\nAuthorization: Bearer <API_KEY>' },
       { p: 'This dashboard is client-side; the API reference here describes the schema the OCEAN1 token / .ocean session files follow.' },
     ],
@@ -202,7 +202,7 @@ export function Documentation() {
     <div>
       <HeroBanner
         title="Documentation"
-        subtitle="Guides, references and API details for Ocean Anti-Cheat"
+        subtitle="Guides, references and API details for ZeroTrace Anti-Cheat"
       />
       <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
       <Card className="h-fit p-4 lg:sticky lg:top-6">
@@ -225,7 +225,7 @@ export function Documentation() {
                   key={n.id}
                   onClick={() => setActive(n.id)}
                   className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium ${
-                    active === n.id ? 'bg-blue-600/15 text-blue-500' : 'txt hoverable'
+                    active === n.id ? 'bg-teal-600/15 text-teal-500' : 'txt hoverable'
                   }`}
                 >
                   <n.icon size={16} /> {n.label}
@@ -251,7 +251,7 @@ export function Documentation() {
                         key={c.id}
                         onClick={() => setActive(c.id)}
                         className={`block w-full rounded-lg px-3 py-1.5 text-left text-sm ${
-                          active === c.id ? 'bg-blue-600/15 text-blue-500' : 'muted hoverable'
+                          active === c.id ? 'bg-teal-600/15 text-teal-500' : 'muted hoverable'
                         }`}
                       >
                         {c.label}
@@ -276,7 +276,7 @@ export function Documentation() {
                 <ol className="mt-2 space-y-2">
                   {b.list.map((li, j) => (
                     <li key={j} className="muted flex gap-3 text-[15px] leading-relaxed">
-                      <span className="text-blue-500">{j + 1}.</span> {li}
+                      <span className="text-teal-500">{j + 1}.</span> {li}
                     </li>
                   ))}
                 </ol>
@@ -308,7 +308,7 @@ function PriceCard({ title, desc, price, period, features, onBuy }) {
       <ul className="mt-5 flex-1 space-y-2.5">
         {features.map((f) => (
           <li key={f} className="muted flex items-center gap-2.5 text-sm">
-            <span className="text-blue-500">•</span> {f}
+            <span className="text-teal-500">•</span> {f}
           </li>
         ))}
       </ul>
@@ -337,7 +337,7 @@ export function Pricing() {
         onClick={() => toast({ type: 'info', title: 'Claim license', body: 'No pending licenses on this account.' })}
         className="muted hover:txt mx-auto mb-8 flex items-center gap-2 text-sm"
       >
-        <Ticket size={16} /> Have a pending license? <span className="text-blue-500">Claim it here</span>
+        <Ticket size={16} /> Have a pending license? <span className="text-teal-500">Claim it here</span>
       </button>
 
       <div className="mb-4 flex items-center gap-4">
@@ -347,7 +347,7 @@ export function Pricing() {
       </div>
       <div className="grid gap-5 lg:grid-cols-3">
         <PriceCard
-          title="Ocean FiveM - Yearly Personal"
+          title="ZeroTrace FiveM - Yearly Personal"
           desc="Specific license that supports scans for the game FiveM, including its respective detection modules."
           price="$79.99"
           period="/year"
@@ -355,7 +355,7 @@ export function Pricing() {
           onBuy={() => buy('Yearly Personal')}
         />
         <PriceCard
-          title="Ocean FiveM - 6 Month Personal"
+          title="ZeroTrace FiveM - 6 Month Personal"
           desc="Specific license that supports scans for the game FiveM, including its respective detection modules."
           price="$44.99"
           period="/6 months"
@@ -363,7 +363,7 @@ export function Pricing() {
           onBuy={() => buy('6 Month Personal')}
         />
         <PriceCard
-          title="Ocean FiveM - Monthly Personal"
+          title="ZeroTrace FiveM - Monthly Personal"
           desc="Specific license that supports scans for the game FiveM, including its respective detection modules."
           price="$10"
           period="/month"
@@ -379,7 +379,7 @@ export function Pricing() {
       </div>
       <div className="grid gap-5 lg:grid-cols-2">
         <PriceCard
-          title="Ocean FiveM - Enterprise+ (6 months) 20 Slots"
+          title="ZeroTrace FiveM - Enterprise+ (6 months) 20 Slots"
           desc="Team license for organisations. Supports FiveM scans across multiple operators."
           price="$249.99"
           period="/6 months"
@@ -387,7 +387,7 @@ export function Pricing() {
           onBuy={() => buy('Enterprise+ 20 Slots')}
         />
         <PriceCard
-          title="Ocean FiveM - Enterprise (6 months) 10 Slots"
+          title="ZeroTrace FiveM - Enterprise (6 months) 10 Slots"
           desc="Team license for organisations. Supports FiveM scans across multiple operators."
           price="$149.99"
           period="/6 months"
@@ -412,7 +412,7 @@ function DownloadCard({ icon: Icon, name, tagTone, desc, hint, accent, pins, toa
     }
     const session = {
       v: 1,
-      product: `Ocean Scanner (${name})`,
+      product: `ZeroTrace Scanner (${name})`,
       pin: match.pin,
       game: match.game,
       name: match.name,
@@ -470,7 +470,7 @@ export function DownloadPage() {
   const toast = useToast()
   return (
     <div>
-      <HeroBanner title="Start Detecting" subtitle="Download Ocean for your platform — available for Windows & Linux" />
+      <HeroBanner title="Start Detecting" subtitle="Download ZeroTrace for your platform — available for Windows & Linux" />
 
       <div className="grid gap-5 lg:grid-cols-3">
         <DownloadCard icon={Monitor} name="Windows" tagTone="#ef4444" accent="#dc2626"
@@ -479,14 +479,14 @@ export function DownloadPage() {
         <DownloadCard icon={Monitor} name="Linux" tagTone="#f59e0b" accent="#d97706"
           desc="Cheat detection for Linux systems" hint="Enter your 8-character PIN."
           pins={state.pins} toast={toast} />
-        <DownloadCard icon={Shield} name="Anti SS Tool" tagTone="#3b82f6" accent="#2563eb"
-          desc="Bypass blocks preventing Ocean from running"
+        <DownloadCard icon={Shield} name="Anti SS Tool" tagTone="#2dd4bf" accent="#14b8a6"
+          desc="Bypass blocks preventing ZeroTrace from running"
           hint="Enter your 8-character PIN to download the Anti SS Tool."
           pins={state.pins} toast={toast} />
       </div>
 
       <div className="mt-14 text-center">
-        <h2 className="txt text-3xl font-bold">Can't run Ocean?</h2>
+        <h2 className="txt text-3xl font-bold">Can't run ZeroTrace?</h2>
         <p className="muted mt-2">Let's solve that.</p>
       </div>
       <div className="mt-6 grid gap-5 lg:grid-cols-2">
@@ -496,7 +496,7 @@ export function DownloadPage() {
             <AlertCircle size={18} className="text-yellow-500" /> VC++ Runtime Error
           </h3>
           <ol className="mt-4 space-y-3">
-            {['Download and install vcredist (x64)', 'Restart your computer.', 'Try running Ocean again.', 'Contact support if persists.'].map((s, i) => (
+            {['Download and install vcredist (x64)', 'Restart your computer.', 'Try running ZeroTrace again.', 'Contact support if persists.'].map((s, i) => (
               <li key={i} className="muted flex items-start gap-3 text-sm">
                 <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-yellow-600/40 bg-yellow-600/15 text-[11px] font-bold text-yellow-500">
                   {i + 1}
@@ -514,7 +514,7 @@ export function DownloadPage() {
           <p className="muted mt-3 text-sm">Join our Discord for support.</p>
           <button
             onClick={() => toast({ type: 'info', title: 'Discord', body: 'Community Discord link is not configured in this demo.' })}
-            className="bd txt mt-5 flex w-full items-center justify-center gap-2 rounded-lg border py-2.5 text-sm font-medium hover:border-blue-500"
+            className="bd txt mt-5 flex w-full items-center justify-center gap-2 rounded-lg border py-2.5 text-sm font-medium hover:border-teal-500"
           >
             <ExternalLink size={15} /> Discord
           </button>
@@ -531,10 +531,10 @@ function HeroBanner({ title, subtitle, meta }) {
     <div className="relative mb-10 overflow-hidden rounded-2xl border bd">
       <div
         className="absolute inset-0"
-        style={{ background: 'radial-gradient(60% 120% at 50% 0%, rgba(59,130,246,0.18), transparent 70%)' }}
+        style={{ background: 'radial-gradient(60% 120% at 50% 0%, rgba(45,212,191,0.18), transparent 70%)' }}
       />
       <div className="relative px-6 py-16 text-center">
-        <h1 className="bg-gradient-to-b from-blue-400 to-blue-600 bg-clip-text text-5xl font-extrabold tracking-tight text-transparent md:text-6xl">
+        <h1 className="bg-gradient-to-b from-teal-400 to-teal-600 bg-clip-text text-5xl font-extrabold tracking-tight text-transparent md:text-6xl">
           {title}
         </h1>
         <p className="muted mx-auto mt-4 max-w-xl text-lg">{subtitle}</p>
@@ -557,7 +557,7 @@ function TocDoc({ hero, header, preface, sections }) {
       <div className="grid gap-6 lg:grid-cols-[300px_1fr]">
         <Card className="h-fit p-5 lg:sticky lg:top-6">
           <h3 className="txt mb-4 flex items-center gap-2 text-base font-semibold">
-            <FileText size={17} className="text-blue-500" /> Table of Contents
+            <FileText size={17} className="text-teal-500" /> Table of Contents
           </h3>
           <nav className="max-h-[70vh] space-y-1 overflow-y-auto">
             {sections.map((s) => (
@@ -568,7 +568,7 @@ function TocDoc({ hero, header, preface, sections }) {
                   s.sub ? 'pl-8' : ''
                 }`}
               >
-                <span className="text-blue-500">{s.n}</span>
+                <span className="text-teal-500">{s.n}</span>
                 <span className="txt">{s.title}</span>
               </button>
             ))}
@@ -585,7 +585,7 @@ function TocDoc({ hero, header, preface, sections }) {
               className="scroll-mt-6 space-y-4"
             >
               <Card className="flex items-center gap-4 p-5">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-600/15 text-sm font-bold text-blue-400">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-teal-600/15 text-sm font-bold text-teal-400">
                   {s.n}
                 </span>
                 <h2 className="txt text-xl font-bold md:text-2xl">{s.title}</h2>
@@ -605,7 +605,7 @@ function P({ children }) {
 function Group({ title, items }) {
   return (
     <div className="mb-6 last:mb-0">
-      <p className="mb-2 text-base font-semibold text-blue-400">{title}</p>
+      <p className="mb-2 text-base font-semibold text-teal-400">{title}</p>
       <ul className="space-y-3">
         {items.map((it) => (
           <li key={it.h}>
@@ -626,7 +626,7 @@ function Bullets({ items }) {
     <ul className="space-y-2">
       {items.map((x) => (
         <li key={x} className="muted flex gap-2 text-[15px] leading-relaxed">
-          <span className="text-blue-500">•</span> {x}
+          <span className="text-teal-500">•</span> {x}
         </li>
       ))}
     </ul>
@@ -635,17 +635,17 @@ function Bullets({ items }) {
 
 /* ------------------ Terms of Service (Legal Agreement) ----------------- */
 const AGREEMENT = [
-  { n: '1', id: 't1', title: 'Description of the Software', body: ['Ocean is a post-mortem anti-cheat and screenshare assistance framework. It inspects processes, modules, files and system artifacts on a consenting user’s machine and reports indicators of cheating to the operator who initiated the scan.', 'The Ocean Monthly/Yearly/Lifetime License and the Ocean Enterprise License, collectively “The Licenses”, are classified as Products. A License can be a Personal Licence or an Enterprise Licence.'] },
-  { n: '2', id: 't2', title: 'Use of Ocean', body: ['Ocean may only be used to scan a device with the explicit, informed consent of that device’s owner. Operators are responsible for obtaining consent and for moderation decisions made from results.', 'A Personal Licence is granted to an individual upon payment and may not be shared. An Enterprise Licence provides operator slots for an organisation.'] },
-  { n: '3', id: 't3', title: 'Intellectual Property', body: ['All Ocean software, branding, signatures and documentation are the intellectual property of Ocean and its licensors. Cheat client names are referenced solely for detection and education.'] },
-  { n: '4', id: 't4', title: 'Privacy Policy', body: ['Scan data produced by the scanner is delivered to the operator who initiated the scan. This dashboard stores all data locally; no scan content is transmitted to Ocean unless the operator configures their own backend.'] },
+  { n: '1', id: 't1', title: 'Description of the Software', body: ['ZeroTrace is a post-mortem anti-cheat and screenshare assistance framework. It inspects processes, modules, files and system artifacts on a consenting user’s machine and reports indicators of cheating to the operator who initiated the scan.', 'The ZeroTrace Monthly/Yearly/Lifetime License and the ZeroTrace Enterprise License, collectively “The Licenses”, are classified as Products. A License can be a Personal Licence or an Enterprise Licence.'] },
+  { n: '2', id: 't2', title: 'Use of ZeroTrace', body: ['ZeroTrace may only be used to scan a device with the explicit, informed consent of that device’s owner. Operators are responsible for obtaining consent and for moderation decisions made from results.', 'A Personal Licence is granted to an individual upon payment and may not be shared. An Enterprise Licence provides operator slots for an organisation.'] },
+  { n: '3', id: 't3', title: 'Intellectual Property', body: ['All ZeroTrace software, branding, signatures and documentation are the intellectual property of ZeroTrace and its licensors. Cheat client names are referenced solely for detection and education.'] },
+  { n: '4', id: 't4', title: 'Privacy Policy', body: ['Scan data produced by the scanner is delivered to the operator who initiated the scan. This dashboard stores all data locally; no scan content is transmitted to ZeroTrace unless the operator configures their own backend.'] },
   { n: '5', id: 't5', title: 'Disclaimer of Warranty', body: ['The Services are provided “as is” without warranty. Usermode scanning cannot detect kernel-mode, DMA or external (second-PC) cheats. Detection results are indicators and must not be treated as conclusive proof.'] },
-  { n: '6', id: 't6', title: 'Modification of Terms', body: ['Ocean reserves the right to modify this Agreement at any time. Modifications take effect the day they are posted. Continued use constitutes acceptance.'] },
+  { n: '6', id: 't6', title: 'Modification of Terms', body: ['ZeroTrace reserves the right to modify this Agreement at any time. Modifications take effect the day they are posted. Continued use constitutes acceptance.'] },
   { n: '7', id: 't7', title: 'Prohibited Activities and Enforcement', body: ['You may not scan devices without consent, harass individuals, reverse-engineer the software, or redistribute licenses. Violations may result in immediate termination without refund.'] },
-  { n: '7.4', id: 't74', title: 'Appeals Process', sub: true, body: ['A user subjected to a scan may request a review through the operator. Operators may escalate disputed detections via Support; Ocean reviews evidence and methodology, not the moderation decision itself.'] },
+  { n: '7.4', id: 't74', title: 'Appeals Process', sub: true, body: ['A user subjected to a scan may request a review through the operator. Operators may escalate disputed detections via Support; ZeroTrace reviews evidence and methodology, not the moderation decision itself.'] },
   { n: '8', id: 't8', title: 'Data Collection and Privacy', body: ['A scanned user’s Discord ID is stored with the pin to correlate repeat scans. No analytics or third-party trackers are used by this dashboard.'] },
   { n: '9', id: 't9', title: 'Self-Scanning Limitations', body: ['Scanning your own machine for testing is permitted, but results may differ from a genuine screenshare scenario and should not be used to certify third parties.'] },
-  { n: '10', id: 't10', title: 'Termination of Use', body: ['Ocean may suspend or terminate access for breach of these Terms. Upon termination your right to use the Services ends immediately; locally stored data remains under your control.'] },
+  { n: '10', id: 't10', title: 'Termination of Use', body: ['ZeroTrace may suspend or terminate access for breach of these Terms. Upon termination your right to use the Services ends immediately; locally stored data remains under your control.'] },
   { n: '11', id: 't11', title: 'Chargebacks and Reversals', body: ['Initiating a chargeback without first contacting support results in permanent termination of all associated licenses and accounts.'] },
 ]
 
@@ -655,14 +655,14 @@ export function Terms() {
       hero={
         <HeroBanner
           title="Legal Agreement"
-          subtitle="Terms and conditions governing the use of Ocean Anti-Cheat services"
+          subtitle="Terms and conditions governing the use of ZeroTrace Anti-Cheat services"
           meta="Last updated  18 May, 2026"
         />
       }
       preface={
         <Card className="muted space-y-4 p-6 text-sm leading-relaxed md:p-8">
           <p>This Terms and Conditions of Use (“Agreement”) is a legally binding agreement between “us” or “we” and the entity or person (“you”, “your”, or “user”) that registered an account to receive cheat detection services (“Services”).</p>
-          <p>Ocean reserves the right to make modifications to this Agreement at any time. Unless otherwise specified, any modifications will take effect the day they are posted to this page.</p>
+          <p>ZeroTrace reserves the right to make modifications to this Agreement at any time. Unless otherwise specified, any modifications will take effect the day they are posted to this page.</p>
           <p>By accessing or utilizing our Services, you acknowledge and agree to abide by these Terms. If you do not accept these Terms, we kindly ask that you refrain from using our Services.</p>
         </Card>
       }
@@ -725,14 +725,14 @@ const PRIVACY_BODY = {
   4: <Bullets items={['Encryption in transit and at rest for account data.', 'Principle of least privilege for internal access.', 'This dashboard keeps all scan data client-side.']} />,
   5: <Bullets items={['Account infrastructure is hosted within the EU/EEA where possible.', 'Dashboard scan data never leaves the user’s browser.']} />,
   6: <P>Our services may link to third-party sites (e.g. Discord). We are not responsible for the privacy practices of external sites.</P>,
-  7: <P>Ocean is not directed to children under 16. We do not knowingly collect data from minors. See COPPA Compliance below.</P>,
+  7: <P>ZeroTrace is not directed to children under 16. We do not knowingly collect data from minors. See COPPA Compliance below.</P>,
   8: <Bullets items={['Right of access, rectification and erasure.', 'Right to restrict or object to processing.', 'Right to data portability.', 'Right to lodge a complaint with a supervisory authority.']} />,
   9: <P>Processing is based on contract performance, legitimate interest in fraud prevention, and consent where required.</P>,
   10: <P>Where data is transferred outside the EEA, appropriate safeguards (SCCs) are applied.</P>,
   11: <Bullets items={['Hardened infrastructure and monitoring.', 'Regular dependency and security review.', 'Tamper-evident scan tokens.']} />,
   12: <P>In the event of a breach affecting personal data, affected users and the competent authority will be notified within 72 hours where required by law.</P>,
   13: <Bullets items={['Payment processing via a Merchant of Record.', 'Discord for authentication & community.', 'No advertising or analytics processors.']} />,
-  14: <P>If Ocean is involved in a merger or acquisition, data may be transferred subject to this policy.</P>,
+  14: <P>If ZeroTrace is involved in a merger or acquisition, data may be transferred subject to this policy.</P>,
   15: <P>We comply with the Children’s Online Privacy Protection Act. Accounts identified as belonging to children under 13 will be removed.</P>,
   16: <P>Disputes are handled via the Support page first; unresolved matters are subject to the governing law stated in the Legal Agreement.</P>,
   17: <P>For additional rights requests or questions, contact us through the Support page with your account details.</P>,
@@ -754,7 +754,7 @@ export function Privacy() {
       hero={
         <HeroBanner
           title="Privacy Policy"
-          subtitle="How Ocean Anti-Cheat collects, uses and protects data"
+          subtitle="How ZeroTrace Anti-Cheat collects, uses and protects data"
           meta="Last updated  18 May, 2026"
         />
       }
@@ -764,7 +764,7 @@ export function Privacy() {
           <a
             href="#"
             onClick={(e) => e.preventDefault()}
-            className="break-all font-mono text-sm text-blue-500"
+            className="break-all font-mono text-sm text-teal-500"
           >
             https://gdpr.euverify.com/verify/c0e9c62b-0d75-4c0d-9146-df73801cfdb2
           </a>
@@ -781,16 +781,16 @@ const LEGAL_NOTICE = [
     title: 'Legal Notice / Impressum',
     content: (
       <div>
-        <p className="muted bd mb-5 border-l-2 border-blue-500 pl-4 text-sm italic">
+        <p className="muted bd mb-5 border-l-2 border-teal-500 pl-4 text-sm italic">
           Information provided strictly for transparency and regulatory compliance purposes
           (e.g., according to § 5 DDG).
         </p>
         <div className="space-y-2 text-sm">
           {[
-            ['Operator', 'Ocean Anti-Cheat'],
+            ['Operator', 'ZeroTrace Anti-Cheat'],
             ['Service', 'anticheat.ac'],
             ['Type', 'Online anti-cheat / screenshare service'],
-            ['Represented by', 'Ocean Operations'],
+            ['Represented by', 'ZeroTrace Operations'],
             ['Contact', 'Via the Support page within the dashboard'],
           ].map(([k, v]) => (
             <div key={k} className="bd flex justify-between border-b py-2 last:border-0">
@@ -802,7 +802,7 @@ const LEGAL_NOTICE = [
       </div>
     ),
   },
-  { title: 'Company Operations & Headquarters', content: <P>Ocean operates as an online service. Day-to-day operations are handled remotely; correspondence is processed through the in-dashboard Support channel.</P> },
+  { title: 'Company Operations & Headquarters', content: <P>ZeroTrace operates as an online service. Day-to-day operations are handled remotely; correspondence is processed through the in-dashboard Support channel.</P> },
   { title: 'Contact Information', content: <P>For legal, billing or data-protection enquiries, open a ticket on the Support page including your account email and a description of your request.</P> },
   { title: 'Merchant of Record', content: <P>Payments are processed by a third-party Merchant of Record who acts as the reseller of the Licenses and handles billing, tax and chargebacks on our behalf.</P> },
   { title: 'EU Privacy & GDPR (Art. 27)', content: <P>For matters relating to the EU General Data Protection Regulation, requests can be submitted via Support and will be routed to the responsible representative under Art. 27 GDPR where applicable.</P> },
@@ -814,7 +814,7 @@ export function Legal() {
       hero={
         <HeroBanner
           title="Legal Notice"
-          subtitle="Impressum, transparency & company information for Ocean Anti-Cheat"
+          subtitle="Impressum, transparency & company information for ZeroTrace Anti-Cheat"
           meta="Last updated  18 May, 2026"
         />
       }
@@ -831,13 +831,13 @@ export function Legal() {
 /* ------------------------------ Changelog ------------------------------ */
 const VERSIONS = [
   {
-    v: '0.3', title: 'Ocean Changelog 0.3', date: '17 December 2025', author: 'NotRancio',
+    v: '0.3', title: 'ZeroTrace Changelog 0.3', date: '17 December 2025', author: 'NotRancio',
     tags: ['FEATURE', 'BUGFIX', 'IMPROVEMENT'], badge: 'Changelog 3',
-    intro: 'We’ve released a new update bringing general improvements and system enhancements across Ocean.',
+    intro: 'We’ve released a new update bringing general improvements and system enhancements across ZeroTrace.',
     items: ['New Scan Results layout with category drill-down', 'Repeat-scan detection via Discord ID', 'Tool Designer + style import/export', 'Numerous stability and UI fixes'],
   },
   {
-    v: '0.2', title: 'Ocean Release 0.2', date: '02 November 2025', author: 'NotRancio',
+    v: '0.2', title: 'ZeroTrace Release 0.2', date: '02 November 2025', author: 'NotRancio',
     tags: ['FEATURE', 'IMPROVEMENT'], badge: 'Changelog 2',
     intro: 'Release 0.2 expands detection coverage and adds the forensic toolset.',
     items: ['Cheat Database & Forensic Tools', 'String / YARA-lite analysis', 'Activity log + CSV export'],
@@ -845,7 +845,7 @@ const VERSIONS = [
   {
     v: '0.1', title: 'BETA Release 0.1', date: '10 October 2025', author: 'NotRancio',
     tags: ['FEATURE'], badge: 'Beta',
-    intro: 'First public beta of the Ocean dashboard and FiveM scanner.',
+    intro: 'First public beta of the ZeroTrace dashboard and FiveM scanner.',
     items: ['Dashboard, Pins and Strings', 'C++ FiveM scanner with .ocean sessions'],
   },
 ]
@@ -858,14 +858,14 @@ export function Changelogs() {
     <div>
       <HeroBanner
         title="Changelog"
-        subtitle="Stay up to date with the latest updates, improvements and new features of Ocean"
+        subtitle="Stay up to date with the latest updates, improvements and new features of ZeroTrace"
         meta={`${VERSIONS.length} versions published`}
       />
       <div className="grid gap-6 lg:grid-cols-[260px_1fr]">
         <Card className="h-fit p-5 lg:sticky lg:top-6">
           <p className="caps-label mb-2">Navigation</p>
           <h3 className="txt mb-4 flex items-center gap-2 text-base font-semibold">
-            <History size={17} className="text-blue-500" /> Versions
+            <History size={17} className="text-teal-500" /> Versions
           </h3>
           <nav className="space-y-1">
             {VERSIONS.map((r) => (
@@ -889,7 +889,7 @@ export function Changelogs() {
               <div ref={(el) => (refs.current[r.v] = el)} className="scroll-mt-6">
                 <div className="bd flex items-center justify-between gap-4 border-b p-5">
                   <div className="flex items-center gap-3">
-                    <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-600/15 text-sm font-bold text-blue-400">
+                    <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-teal-600/15 text-sm font-bold text-teal-400">
                       {i + 1}
                     </span>
                     <h2 className="txt text-xl font-bold">{r.title}</h2>
@@ -899,7 +899,7 @@ export function Changelogs() {
                   </div>
                   <button
                     onClick={() => setOpenV((o) => ({ ...o, [r.v]: !o[r.v] }))}
-                    className="bd txt rounded-lg border px-3 py-1.5 text-xs font-medium hover:border-blue-500"
+                    className="bd txt rounded-lg border px-3 py-1.5 text-xs font-medium hover:border-teal-500"
                   >
                     {openV[r.v] ? 'Show less' : 'Show more'}
                   </button>
@@ -918,7 +918,7 @@ export function Changelogs() {
                   {openV[r.v] && (
                     <div className="bd mt-5 border-t pt-5">
                       <h3 className="txt mb-2 flex items-center gap-2 text-lg font-bold">
-                        <span className="rounded bg-blue-600/20 px-1.5 py-0.5 text-[10px] font-bold text-blue-400">
+                        <span className="rounded bg-teal-600/20 px-1.5 py-0.5 text-[10px] font-bold text-teal-400">
                           NEW
                         </span>
                         {r.badge}

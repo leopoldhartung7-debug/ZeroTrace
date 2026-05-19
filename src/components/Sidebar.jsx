@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
+import Logo from './Logo.jsx'
 import {
   LayoutGrid, Pin, FileText, Database, Wrench, History,
   LifeBuoy, BookOpen, Settings, Wifi, Bell, Globe, Moon, Sun,
@@ -81,13 +82,7 @@ export default function Sidebar() {
   return (
     <aside className="panel flex h-screen w-[280px] shrink-0 flex-col overflow-hidden border-r">
       <NavLink to="/" className="flex items-center gap-3 px-6 py-6" title="Back to home">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 font-mono text-sm font-bold text-white shadow-lg shadow-blue-600/25">
-          {'(*>'}
-        </div>
-        <div>
-          <p className="txt text-[15px] font-semibold leading-tight">Ocean</p>
-          <p className="muted text-xs tracking-wide">anticheat.ac</p>
-        </div>
+        <Logo size="sm" sub />
       </NavLink>
 
       <nav className="flex-1 overflow-y-auto px-3 pb-2">
@@ -120,14 +115,14 @@ export default function Sidebar() {
                             className={({ isActive }) =>
                               `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                                 isActive
-                                  ? 'bg-blue-600/15 text-blue-500 shadow-[inset_0_0_0_1px_rgba(59,130,246,0.18)]'
+                                  ? 'bg-teal-600/15 text-teal-500 shadow-[inset_0_0_0_1px_rgba(45,212,191,0.18)]'
                                   : 'hoverable'
                               }`
                             }
                           >
                             {({ isActive }) => (
                               <>
-                                <c.icon size={16} className={isActive ? '' : 'text-blue-400/70'} />
+                                <c.icon size={16} className={isActive ? '' : 'text-teal-400/70'} />
                                 <span className={isActive ? '' : 'txt'}>{c.label}</span>
                               </>
                             )}
@@ -145,7 +140,7 @@ export default function Sidebar() {
                   className={({ isActive }) =>
                     `mb-1 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
                       isActive
-                        ? 'bg-blue-600/15 text-blue-500 shadow-[inset_0_0_0_1px_rgba(59,130,246,0.18)]'
+                        ? 'bg-teal-600/15 text-teal-500 shadow-[inset_0_0_0_1px_rgba(45,212,191,0.18)]'
                         : 'hoverable'
                     }`
                   }
@@ -209,7 +204,7 @@ export default function Sidebar() {
               {state.notifications.map((n) => (
                 <div key={n.id} className="bd border-b px-4 py-3 last:border-0">
                   <div className="flex items-center gap-2">
-                    {!n.read && <span className="h-2 w-2 rounded-full bg-blue-500" />}
+                    {!n.read && <span className="h-2 w-2 rounded-full bg-teal-500" />}
                     <p className="txt text-sm font-medium">{n.title}</p>
                   </div>
                   <p className="muted mt-0.5 text-xs">{n.body}</p>
@@ -240,7 +235,7 @@ export default function Sidebar() {
                 className="hoverable txt flex w-full items-center justify-between px-3 py-2 text-sm"
               >
                 {l.label}
-                {state.settings.lang === l.code && <Check size={14} className="text-blue-500" />}
+                {state.settings.lang === l.code && <Check size={14} className="text-teal-500" />}
               </button>
             ))}
           </Popover>

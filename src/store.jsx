@@ -203,7 +203,7 @@ function seed() {
     settings: { theme: 'dark', lang: 'en', defaultGame: 'HYTALE' },
     notifications: [
       { id: 'n1', title: 'Scan finished', body: 'Pin F1T5F8C0 returned: Cheating', time: now - 3600000, read: false },
-      { id: 'n2', title: 'Welcome to Ocean', body: 'Your anti-cheat dashboard is ready.', time: now - 7200000, read: false },
+      { id: 'n2', title: 'Welcome to ZeroTrace', body: 'Your anti-cheat dashboard is ready.', time: now - 7200000, read: false },
     ],
     events: [
       { id: 'e1', kind: 'scan', title: 'Scan finished', detail: 'F1T5F8C0 — Cheating', time: now - 3600000 },
@@ -245,7 +245,7 @@ export function defaultToolStyle() {
       background: '#0d1326',
       mutedBackground: '#161d33',
       titlebar: '#070b16',
-      accent: '#3b82f6',
+      accent: '#2dd4bf',
     },
     text: {
       pin: 'Enter a pin below:',
@@ -669,7 +669,7 @@ const DICT = {
     'nav.designer': 'Tool Designer',
     'nav.support': 'Support', 'nav.resources': 'Resources', 'nav.settings': 'Settings',
     'cat.services': 'Services', 'cat.activity': 'Activity', 'cat.support': 'Support', 'cat.others': 'Others',
-    'dash.kicker': 'View statistics, events, and announcements on the Ocean.',
+    'dash.kicker': 'View statistics, events, and announcements on the ZeroTrace.',
     'dash.welcome': 'Welcome back, Ham.',
     'pins.kicker': 'View and manage your scan pins and results',
     'pins.title': 'My Pins', 'pins.create': 'Create Pin',

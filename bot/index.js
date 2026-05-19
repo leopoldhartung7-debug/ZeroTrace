@@ -1,7 +1,7 @@
-/* Ocean — Discord Server / Role Checker bot.
+/* ZeroTrace — Discord Server / Role Checker bot.
  *
  * Invite this bot to the cheat / reselling Discords you want to monitor.
- * It exposes a tiny HTTP API the Ocean dashboard calls:
+ * It exposes a tiny HTTP API the ZeroTrace dashboard calls:
  *
  *   GET /check?id=<discordUserId>     header: x-api-key: <API_KEY>
  *   GET /health

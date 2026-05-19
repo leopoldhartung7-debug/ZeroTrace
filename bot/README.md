@@ -1,7 +1,7 @@
-# Ocean — Discord Server / Role Checker Bot
+# ZeroTrace — Discord Server / Role Checker Bot
 
 A small Discord bot + HTTP API. Invite it to the cheat / reselling Discords
-you want to monitor. When you run a **Discord ID** check in the Ocean
+you want to monitor. When you run a **Discord ID** check in the ZeroTrace
 dashboard (Forensic Tools), the dashboard asks this bot which of those
 servers the user ID is in, and what roles they hold. All data comes
 straight from the Discord API — nothing is invented.

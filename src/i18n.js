@@ -60,19 +60,19 @@ export const DE = {
   'Add Cheat Entry': 'Cheat-Eintrag hinzufügen', 'Claim license': 'Lizenz einlösen',
   'Claim it here': 'Hier einlösen', 'Contact support': 'Support kontaktieren',
   'View AI opinion': 'KI-Einschätzung ansehen', 'View Final GUI': 'Finale GUI ansehen',
-  'Check Risk Score': 'Risikobewertung prüfen', 'Start Ocean': 'Ocean starten',
+  'Check Risk Score': 'Risikobewertung prüfen', 'Start ZeroTrace': 'ZeroTrace starten',
   'Start Swimming': 'Jetzt loslegen', 'See why': 'Erfahre warum',
   'Export .txt': '.txt exportieren', 'Export CSV': 'CSV exportieren',
   'Export Style': 'Stil exportieren', 'Import Style': 'Stil importieren',
   'Export Data': 'Daten exportieren', 'Import Result': 'Ergebnis importieren',
   'Import Scan Result': 'Scan-Ergebnis importieren', 'Defaults loaded': 'Standard geladen',
-  'Use Ocean logo': 'Ocean-Logo verwenden', 'Connect third-party services': 'Drittanbieter-Dienste verbinden',
+  'Use ZeroTrace logo': 'ZeroTrace-Logo verwenden', 'Connect third-party services': 'Drittanbieter-Dienste verbinden',
   'Restore from a JSON file': 'Aus einer JSON-Datei wiederherstellen',
 
   // ---- Dashboard ----
-  'View statistics, events, and announcements on the Ocean.': 'Statistiken, Ereignisse und Ankündigungen im Überblick.',
+  'View statistics, events, and announcements on the ZeroTrace.': 'Statistiken, Ereignisse und Ankündigungen im Überblick.',
   'Welcome back, Ham.': 'Willkommen zurück, Ham.', 'Welcome back': 'Willkommen zurück',
-  'Welcome to Ocean': 'Willkommen bei Ocean',
+  'Welcome to ZeroTrace': 'Willkommen bei ZeroTrace',
   'Overview of your scan activity and detection results': 'Überblick über deine Scan-Aktivität und Erkennungsergebnisse',
   'Total Scans': 'Scans gesamt', 'Detections': 'Erkennungen', 'Unique Cheats': 'Einzigartige Cheats',
   'Games Tracked': 'Erfasste Spiele', 'Games Covered': 'Abgedeckte Spiele',
@@ -281,7 +281,7 @@ export const DE = {
   'Passwords do not match': 'Passwörter stimmen nicht überein', 'Password': 'Passwort',
   'Connected Accounts': 'Verbundene Konten', 'Connect your accounts to enable additional features and seamless integration.':
     'Verbinde deine Konten, um zusätzliche Funktionen und nahtlose Integration zu aktivieren.',
-  'No accounts connected with Ocean yet.': 'Noch keine Konten mit Ocean verbunden.',
+  'No accounts connected with ZeroTrace yet.': 'Noch keine Konten mit ZeroTrace verbunden.',
   'Discord connected': 'Discord verbunden', 'Disconnected': 'Getrennt', 'Connected': 'Verbunden',
   'Current Session': 'Aktuelle Sitzung', 'Other Sessions': 'Andere Sitzungen',
   'Session Details': 'Sitzungsdetails', 'Sessions, IPs, devices': 'Sitzungen, IPs, Geräte',
@@ -324,7 +324,7 @@ export const DE = {
   'OR CONTINUE WITH': 'ODER FORTFAHREN MIT', 'Invalid credentials': 'Ungültige Anmeldedaten',
   'Registration closed': 'Registrierung geschlossen', 'Get Started': 'Loslegen',
   'A reliable solution against cheaters': 'Eine zuverlässige Lösung gegen Cheater',
-  'How Ocean works': 'So funktioniert Ocean', 'Discover the key features of Ocean': 'Entdecke die wichtigsten Funktionen von Ocean',
+  'How ZeroTrace works': 'So funktioniert ZeroTrace', 'Discover the key features of ZeroTrace': 'Entdecke die wichtigsten Funktionen von ZeroTrace',
   'Features': 'Funktionen', 'Community': 'Community', 'Team': 'Team', 'Docs': 'Doku',
   'Frequently Asked Questions': 'Häufig gestellte Fragen', 'Join our Community': 'Tritt unserer Community bei',
   'Growing Community': 'Wachsende Community', 'Privacy Focused': 'Datenschutzorientiert',
@@ -333,27 +333,27 @@ export const DE = {
     'Scanne Verdächtige mühelos in Sekunden mit zwei einfachen Klicks, die alles automatisch erledigen.',
   'Analyze the results on our dashboard and reach a final verdict on the suspect with confidence!':
     'Analysiere die Ergebnisse in unserem Dashboard und fälle mit Sicherheit ein endgültiges Urteil über den Verdächtigen!',
-  'Let Ocean take care of all the hard work for you. Simply wait a few seconds while our advanced technology processes everything and delivers accurate results quickly and effortlessly.':
-    'Lass Ocean die ganze harte Arbeit für dich erledigen. Warte einfach ein paar Sekunden, während unsere fortschrittliche Technologie alles verarbeitet und schnell sowie mühelos präzise Ergebnisse liefert.',
+  'Let ZeroTrace take care of all the hard work for you. Simply wait a few seconds while our advanced technology processes everything and delivers accurate results quickly and effortlessly.':
+    'Lass ZeroTrace die ganze harte Arbeit für dich erledigen. Warte einfach ein paar Sekunden, während unsere fortschrittliche Technologie alles verarbeitet und schnell sowie mühelos präzise Ergebnisse liefert.',
   'Powered by cutting-edge AI and expert digital forensics, we provide precise, trustworthy cheat detection results.':
     'Angetrieben von modernster KI und Experten der digitalen Forensik liefern wir präzise, vertrauenswürdige Cheat-Erkennungsergebnisse.',
   'Our detections are powered by deep expertise in digital forensics and an advanced understanding of operating systems.':
     'Unsere Erkennungen basieren auf tiefem Fachwissen in digitaler Forensik und einem fortgeschrittenen Verständnis von Betriebssystemen.',
-  'Ocean prioritizes completing scans within a strict time frame, averaging around 60 seconds for comprehensive cheat detection.':
-    'Ocean priorisiert den Abschluss von Scans innerhalb eines strengen Zeitrahmens — im Schnitt rund 60 Sekunden für eine umfassende Cheat-Erkennung.',
-  'Ocean is secured with military-grade encryption — because security comes first, and it':
-    'Ocean ist mit Verschlüsselung auf Militärniveau gesichert — denn Sicherheit steht an erster Stelle, und sie',
+  'ZeroTrace prioritizes completing scans within a strict time frame, averaging around 60 seconds for comprehensive cheat detection.':
+    'ZeroTrace priorisiert den Abschluss von Scans innerhalb eines strengen Zeitrahmens — im Schnitt rund 60 Sekunden für eine umfassende Cheat-Erkennung.',
+  'ZeroTrace is secured with military-grade encryption — because security comes first, and it':
+    'ZeroTrace ist mit Verschlüsselung auf Militärniveau gesichert — denn Sicherheit steht an erster Stelle, und sie',
   'With future-focused security, we ensure every trace of information remains completely protected and encrypted.':
     'Mit zukunftsorientierter Sicherheit stellen wir sicher, dass jede Spur von Informationen vollständig geschützt und verschlüsselt bleibt.',
-  'Ocean offers customizations ranging from simple design tweaks to real-time threat detection — all as part of our service.':
-    'Ocean bietet Anpassungen von einfachen Design-Optimierungen bis hin zur Echtzeit-Bedrohungserkennung — alles als Teil unseres Dienstes.',
+  'ZeroTrace offers customizations ranging from simple design tweaks to real-time threat detection — all as part of our service.':
+    'ZeroTrace bietet Anpassungen von einfachen Design-Optimierungen bis hin zur Echtzeit-Bedrohungserkennung — alles als Teil unseres Dienstes.',
   'Our community is constantly growing, with 500+ active servers and dedicated members ready to help you!':
     'Unsere Community wächst ständig — mit über 500 aktiven Servern und engagierten Mitgliedern, die dir gerne helfen!',
   'Join our Discord for support.': 'Tritt für Support unserem Discord bei.',
   'Link Discord for more': 'Discord für mehr verknüpfen', 'Answer your': 'Beantworte deine',
   'Think.': 'Denken.', 'Scan.': 'Scannen.', 'Find.': 'Finden.', 'Think. Scan. Find.': 'Denken. Scannen. Finden.',
   'Rise': 'Aufstieg', 'Most': 'Am meisten', 'More than': 'Mehr als', 'See why': 'Erfahre warum',
-  'Let\'s solve that.': 'Lösen wir das.', 'Can\'t run Ocean?': 'Ocean lässt sich nicht starten?',
+  'Let\'s solve that.': 'Lösen wir das.', 'Can\'t run ZeroTrace?': 'ZeroTrace lässt sich nicht starten?',
   'Need More Help?': 'Brauchst du mehr Hilfe?', 'Browse FAQs or open a support ticket.':
     'Durchsuche die FAQ oder eröffne ein Support-Ticket.',
   'A reliable solution against cheaters': 'Eine zuverlässige Lösung gegen Cheater',
@@ -371,28 +371,28 @@ export const DE = {
   'Leaderboard': 'Bestenliste', 'Ranking is computed live from your own scan data.':
     'Das Ranking wird live aus deinen eigenen Scan-Daten berechnet.',
   'Games by Detections': 'Spiele nach Erkennungen', 'No scan data yet.': 'Noch keine Scan-Daten.',
-  'Documentation': 'Dokumentation', 'Guides, references and API details for Ocean Anti-Cheat':
-    'Anleitungen, Referenzen und API-Details für Ocean Anti-Cheat',
+  'Documentation': 'Dokumentation', 'Guides, references and API details for ZeroTrace Anti-Cheat':
+    'Anleitungen, Referenzen und API-Details für ZeroTrace Anti-Cheat',
   'Pricing': 'Preise', 'Plans & limits — pick the plan that fits your community':
     'Pläne & Limits — wähle den Plan, der zu deiner Community passt',
-  'Start Detecting': 'Jetzt erkennen', 'Download Ocean for your platform — available for Windows & Linux':
-    'Lade Ocean für deine Plattform herunter — verfügbar für Windows & Linux',
-  'Download Ocean': 'Ocean herunterladen', 'Changelog': 'Änderungsprotokoll', 'Changelogs': 'Änderungsprotokolle',
-  'Stay up to date with the latest updates, improvements and new features of Ocean':
-    'Bleibe auf dem Laufenden über die neuesten Updates, Verbesserungen und neuen Funktionen von Ocean',
+  'Start Detecting': 'Jetzt erkennen', 'Download ZeroTrace for your platform — available for Windows & Linux':
+    'Lade ZeroTrace für deine Plattform herunter — verfügbar für Windows & Linux',
+  'Download ZeroTrace': 'ZeroTrace herunterladen', 'Changelog': 'Änderungsprotokoll', 'Changelogs': 'Änderungsprotokolle',
+  'Stay up to date with the latest updates, improvements and new features of ZeroTrace':
+    'Bleibe auf dem Laufenden über die neuesten Updates, Verbesserungen und neuen Funktionen von ZeroTrace',
   'Legal': 'Rechtliches', 'Legal Agreement': 'Rechtliche Vereinbarung',
-  'Terms and conditions governing the use of Ocean Anti-Cheat services':
-    'Geschäftsbedingungen für die Nutzung der Ocean-Anti-Cheat-Dienste',
-  'Privacy Policy': 'Datenschutzerklärung', 'How Ocean Anti-Cheat collects, uses and protects data':
-    'Wie Ocean Anti-Cheat Daten erhebt, verwendet und schützt',
-  'Legal Notice': 'Impressum', 'Impressum, transparency & company information for Ocean Anti-Cheat':
-    'Impressum, Transparenz & Unternehmensinformationen zu Ocean Anti-Cheat',
+  'Terms and conditions governing the use of ZeroTrace Anti-Cheat services':
+    'Geschäftsbedingungen für die Nutzung der ZeroTrace-Anti-Cheat-Dienste',
+  'Privacy Policy': 'Datenschutzerklärung', 'How ZeroTrace Anti-Cheat collects, uses and protects data':
+    'Wie ZeroTrace Anti-Cheat Daten erhebt, verwendet und schützt',
+  'Legal Notice': 'Impressum', 'Impressum, transparency & company information for ZeroTrace Anti-Cheat':
+    'Impressum, Transparenz & Unternehmensinformationen zu ZeroTrace Anti-Cheat',
   'Terms of Service': 'Nutzungsbedingungen', 'Table of Contents': 'Inhaltsverzeichnis',
   'Versions': 'Versionen', 'PIN Required': 'PIN erforderlich', 'Enter your PIN code': 'Gib deinen PIN-Code ein',
   'Invalid PIN': 'Ungültige PIN', 'Session downloaded': 'Sitzung heruntergeladen',
   'Advanced cheat detection': 'Fortschrittliche Cheat-Erkennung',
   'Cheat detection for Linux systems': 'Cheat-Erkennung für Linux-Systeme',
-  'Bypass blocks preventing Ocean from running': 'Umgeht Sperren, die Ocean am Ausführen hindern',
+  'Bypass blocks preventing ZeroTrace from running': 'Umgeht Sperren, die ZeroTrace am Ausführen hindern',
   'Have a pending license?': 'Hast du eine ausstehende Lizenz?',
   'Personal Plans': 'Privat-Pläne', 'Enterprise Plans': 'Unternehmens-Pläne',
   'Demo pricing — no payment processing is wired up.': 'Demo-Preise — es ist keine Zahlungsabwicklung angebunden.',
@@ -402,48 +402,48 @@ export const DE = {
     'Team-Lizenz für Organisationen. Unterstützt FiveM-Scans über mehrere Operatoren hinweg.',
   'Troubleshooting': 'Fehlerbehebung', 'VC++ Runtime Error': 'VC++-Laufzeitfehler',
   'Download and install vcredist (x64)': 'vcredist (x64) herunterladen und installieren',
-  'Restart your computer.': 'Starte deinen Computer neu.', 'Try running Ocean again.': 'Versuche, Ocean erneut zu starten.',
+  'Restart your computer.': 'Starte deinen Computer neu.', 'Try running ZeroTrace again.': 'Versuche, ZeroTrace erneut zu starten.',
   'Contact support if persists.': 'Kontaktiere den Support, falls das Problem bestehen bleibt.',
 
   // Terms preface + sections
   'This Terms and Conditions of Use (“Agreement”) is a legally binding agreement between “us” or “we” and the entity or person (“you”, “your”, or “user”) that registered an account to receive cheat detection services (“Services”).':
     'Diese Nutzungsbedingungen („Vereinbarung“) sind eine rechtlich bindende Vereinbarung zwischen „uns“ bzw. „wir“ und der Einrichtung oder Person („du“, „dein“ oder „Nutzer“), die ein Konto registriert hat, um Cheat-Erkennungsdienste („Dienste“) zu erhalten.',
-  'Ocean reserves the right to make modifications to this Agreement at any time. Unless otherwise specified, any modifications will take effect the day they are posted to this page.':
-    'Ocean behält sich das Recht vor, diese Vereinbarung jederzeit zu ändern. Sofern nicht anders angegeben, treten Änderungen an dem Tag in Kraft, an dem sie auf dieser Seite veröffentlicht werden.',
+  'ZeroTrace reserves the right to make modifications to this Agreement at any time. Unless otherwise specified, any modifications will take effect the day they are posted to this page.':
+    'ZeroTrace behält sich das Recht vor, diese Vereinbarung jederzeit zu ändern. Sofern nicht anders angegeben, treten Änderungen an dem Tag in Kraft, an dem sie auf dieser Seite veröffentlicht werden.',
   'By accessing or utilizing our Services, you acknowledge and agree to abide by these Terms. If you do not accept these Terms, we kindly ask that you refrain from using our Services.':
     'Durch den Zugriff auf oder die Nutzung unserer Dienste erkennst du diese Bedingungen an und stimmst zu, sie einzuhalten. Wenn du diese Bedingungen nicht akzeptierst, bitten wir dich, unsere Dienste nicht zu nutzen.',
-  'Description of the Software': 'Beschreibung der Software', 'Use of Ocean': 'Nutzung von Ocean',
+  'Description of the Software': 'Beschreibung der Software', 'Use of ZeroTrace': 'Nutzung von ZeroTrace',
   'Intellectual Property': 'Geistiges Eigentum', 'Disclaimer of Warranty': 'Gewährleistungsausschluss',
   'Modification of Terms': 'Änderung der Bedingungen', 'Prohibited Activities and Enforcement': 'Verbotene Aktivitäten und Durchsetzung',
   'Appeals Process': 'Einspruchsverfahren', 'Data Collection and Privacy': 'Datenerhebung und Datenschutz',
   'Self-Scanning Limitations': 'Einschränkungen beim Selbst-Scan', 'Termination of Use': 'Beendigung der Nutzung',
   'Chargebacks and Reversals': 'Rückbuchungen und Stornierungen',
-  'Ocean is a post-mortem anti-cheat and screenshare assistance framework. It inspects processes, modules, files and system artifacts on a consenting user’s machine and reports indicators of cheating to the operator who initiated the scan.':
-    'Ocean ist ein Post-mortem-Anti-Cheat- und Screenshare-Hilfsframework. Es untersucht Prozesse, Module, Dateien und Systemartefakte auf dem Rechner eines einwilligenden Nutzers und meldet Indikatoren für Cheating an den Operator, der den Scan ausgelöst hat.',
-  'The Ocean Monthly/Yearly/Lifetime License and the Ocean Enterprise License, collectively “The Licenses”, are classified as Products. A License can be a Personal Licence or an Enterprise Licence.':
-    'Die Ocean-Monats-/Jahres-/Lifetime-Lizenz und die Ocean-Enterprise-Lizenz, zusammen „die Lizenzen“, werden als Produkte eingestuft. Eine Lizenz kann eine Privat-Lizenz oder eine Enterprise-Lizenz sein.',
-  'Ocean may only be used to scan a device with the explicit, informed consent of that device’s owner. Operators are responsible for obtaining consent and for moderation decisions made from results.':
-    'Ocean darf nur verwendet werden, um ein Gerät mit der ausdrücklichen, informierten Einwilligung des Geräteeigentümers zu scannen. Operatoren sind für das Einholen der Einwilligung und für Moderationsentscheidungen auf Basis der Ergebnisse verantwortlich.',
+  'ZeroTrace is a post-mortem anti-cheat and screenshare assistance framework. It inspects processes, modules, files and system artifacts on a consenting user’s machine and reports indicators of cheating to the operator who initiated the scan.':
+    'ZeroTrace ist ein Post-mortem-Anti-Cheat- und Screenshare-Hilfsframework. Es untersucht Prozesse, Module, Dateien und Systemartefakte auf dem Rechner eines einwilligenden Nutzers und meldet Indikatoren für Cheating an den Operator, der den Scan ausgelöst hat.',
+  'The ZeroTrace Monthly/Yearly/Lifetime License and the ZeroTrace Enterprise License, collectively “The Licenses”, are classified as Products. A License can be a Personal Licence or an Enterprise Licence.':
+    'Die ZeroTrace-Monats-/Jahres-/Lifetime-Lizenz und die ZeroTrace-Enterprise-Lizenz, zusammen „die Lizenzen“, werden als Produkte eingestuft. Eine Lizenz kann eine Privat-Lizenz oder eine Enterprise-Lizenz sein.',
+  'ZeroTrace may only be used to scan a device with the explicit, informed consent of that device’s owner. Operators are responsible for obtaining consent and for moderation decisions made from results.':
+    'ZeroTrace darf nur verwendet werden, um ein Gerät mit der ausdrücklichen, informierten Einwilligung des Geräteeigentümers zu scannen. Operatoren sind für das Einholen der Einwilligung und für Moderationsentscheidungen auf Basis der Ergebnisse verantwortlich.',
   'A Personal Licence is granted to an individual upon payment and may not be shared. An Enterprise Licence provides operator slots for an organisation.':
     'Eine Privat-Lizenz wird einer Einzelperson gegen Zahlung gewährt und darf nicht geteilt werden. Eine Enterprise-Lizenz stellt Operator-Slots für eine Organisation bereit.',
-  'All Ocean software, branding, signatures and documentation are the intellectual property of Ocean and its licensors. Cheat client names are referenced solely for detection and education.':
-    'Sämtliche Ocean-Software, -Branding, -Signaturen und -Dokumentation sind geistiges Eigentum von Ocean und seinen Lizenzgebern. Cheat-Client-Namen werden ausschließlich zur Erkennung und Aufklärung genannt.',
-  'Scan data produced by the scanner is delivered to the operator who initiated the scan. This dashboard stores all data locally; no scan content is transmitted to Ocean unless the operator configures their own backend.':
-    'Die vom Scanner erzeugten Scan-Daten werden an den Operator geliefert, der den Scan ausgelöst hat. Dieses Dashboard speichert alle Daten lokal; es werden keine Scan-Inhalte an Ocean übertragen, es sei denn, der Operator konfiguriert ein eigenes Backend.',
+  'All ZeroTrace software, branding, signatures and documentation are the intellectual property of ZeroTrace and its licensors. Cheat client names are referenced solely for detection and education.':
+    'Sämtliche ZeroTrace-Software, -Branding, -Signaturen und -Dokumentation sind geistiges Eigentum von ZeroTrace und seinen Lizenzgebern. Cheat-Client-Namen werden ausschließlich zur Erkennung und Aufklärung genannt.',
+  'Scan data produced by the scanner is delivered to the operator who initiated the scan. This dashboard stores all data locally; no scan content is transmitted to ZeroTrace unless the operator configures their own backend.':
+    'Die vom Scanner erzeugten Scan-Daten werden an den Operator geliefert, der den Scan ausgelöst hat. Dieses Dashboard speichert alle Daten lokal; es werden keine Scan-Inhalte an ZeroTrace übertragen, es sei denn, der Operator konfiguriert ein eigenes Backend.',
   'The Services are provided “as is” without warranty. Usermode scanning cannot detect kernel-mode, DMA or external (second-PC) cheats. Detection results are indicators and must not be treated as conclusive proof.':
     'Die Dienste werden „wie besehen“ ohne Gewährleistung bereitgestellt. Usermode-Scans können keine Kernel-Mode-, DMA- oder externen (Zweit-PC-)Cheats erkennen. Erkennungsergebnisse sind Indikatoren und dürfen nicht als endgültiger Beweis behandelt werden.',
-  'Ocean reserves the right to modify this Agreement at any time. Modifications take effect the day they are posted. Continued use constitutes acceptance.':
-    'Ocean behält sich das Recht vor, diese Vereinbarung jederzeit zu ändern. Änderungen treten am Tag ihrer Veröffentlichung in Kraft. Die fortgesetzte Nutzung gilt als Zustimmung.',
+  'ZeroTrace reserves the right to modify this Agreement at any time. Modifications take effect the day they are posted. Continued use constitutes acceptance.':
+    'ZeroTrace behält sich das Recht vor, diese Vereinbarung jederzeit zu ändern. Änderungen treten am Tag ihrer Veröffentlichung in Kraft. Die fortgesetzte Nutzung gilt als Zustimmung.',
   'You may not scan devices without consent, harass individuals, reverse-engineer the software, or redistribute licenses. Violations may result in immediate termination without refund.':
     'Du darfst keine Geräte ohne Einwilligung scannen, keine Personen belästigen, die Software nicht zurückentwickeln und keine Lizenzen weiterverbreiten. Verstöße können zur sofortigen Kündigung ohne Rückerstattung führen.',
-  'A user subjected to a scan may request a review through the operator. Operators may escalate disputed detections via Support; Ocean reviews evidence and methodology, not the moderation decision itself.':
-    'Ein gescannter Nutzer kann über den Operator eine Überprüfung beantragen. Operatoren können strittige Erkennungen über den Support eskalieren; Ocean prüft Beweise und Methodik, nicht die Moderationsentscheidung selbst.',
+  'A user subjected to a scan may request a review through the operator. Operators may escalate disputed detections via Support; ZeroTrace reviews evidence and methodology, not the moderation decision itself.':
+    'Ein gescannter Nutzer kann über den Operator eine Überprüfung beantragen. Operatoren können strittige Erkennungen über den Support eskalieren; ZeroTrace prüft Beweise und Methodik, nicht die Moderationsentscheidung selbst.',
   'A scanned user’s Discord ID is stored with the pin to correlate repeat scans. No analytics or third-party trackers are used by this dashboard.':
     'Die Discord-ID eines gescannten Nutzers wird mit dem Pin gespeichert, um wiederholte Scans zuzuordnen. Dieses Dashboard verwendet keine Analyse- oder Drittanbieter-Tracker.',
   'Scanning your own machine for testing is permitted, but results may differ from a genuine screenshare scenario and should not be used to certify third parties.':
     'Das Scannen des eigenen Rechners zu Testzwecken ist erlaubt, die Ergebnisse können jedoch von einem echten Screenshare-Szenario abweichen und sollten nicht zur Zertifizierung Dritter verwendet werden.',
-  'Ocean may suspend or terminate access for breach of these Terms. Upon termination your right to use the Services ends immediately; locally stored data remains under your control.':
-    'Ocean kann den Zugriff bei Verstoß gegen diese Bedingungen aussetzen oder beenden. Mit der Beendigung endet dein Recht zur Nutzung der Dienste sofort; lokal gespeicherte Daten bleiben unter deiner Kontrolle.',
+  'ZeroTrace may suspend or terminate access for breach of these Terms. Upon termination your right to use the Services ends immediately; locally stored data remains under your control.':
+    'ZeroTrace kann den Zugriff bei Verstoß gegen diese Bedingungen aussetzen oder beenden. Mit der Beendigung endet dein Recht zur Nutzung der Dienste sofort; lokal gespeicherte Daten bleiben unter deiner Kontrolle.',
   'Initiating a chargeback without first contacting support results in permanent termination of all associated licenses and accounts.':
     'Das Einleiten einer Rückbuchung, ohne zuvor den Support zu kontaktieren, führt zur dauerhaften Kündigung aller zugehörigen Lizenzen und Konten.',
 
@@ -494,8 +494,8 @@ export const DE = {
     'Dashboard-Scan-Daten verlassen niemals den Browser des Nutzers.',
   'Our services may link to third-party sites (e.g. Discord). We are not responsible for the privacy practices of external sites.':
     'Unsere Dienste können auf Drittanbieter-Seiten verlinken (z. B. Discord). Wir sind nicht für die Datenschutzpraktiken externer Seiten verantwortlich.',
-  'Ocean is not directed to children under 16. We do not knowingly collect data from minors. See COPPA Compliance below.':
-    'Ocean richtet sich nicht an Kinder unter 16 Jahren. Wir erheben nicht wissentlich Daten von Minderjährigen. Siehe COPPA-Konformität unten.',
+  'ZeroTrace is not directed to children under 16. We do not knowingly collect data from minors. See COPPA Compliance below.':
+    'ZeroTrace richtet sich nicht an Kinder unter 16 Jahren. Wir erheben nicht wissentlich Daten von Minderjährigen. Siehe COPPA-Konformität unten.',
   'Right of access, rectification and erasure.': 'Recht auf Auskunft, Berichtigung und Löschung.',
   'Right to restrict or object to processing.': 'Recht auf Einschränkung oder Widerspruch gegen die Verarbeitung.',
   'Right to data portability.': 'Recht auf Datenübertragbarkeit.',
@@ -513,8 +513,8 @@ export const DE = {
   'Payment processing via a Merchant of Record.': 'Zahlungsabwicklung über einen Merchant of Record.',
   'Discord for authentication & community.': 'Discord für Authentifizierung & Community.',
   'No advertising or analytics processors.': 'Keine Werbe- oder Analyse-Dienstleister.',
-  'If Ocean is involved in a merger or acquisition, data may be transferred subject to this policy.':
-    'Sollte Ocean an einer Fusion oder Übernahme beteiligt sein, können Daten gemäß dieser Richtlinie übertragen werden.',
+  'If ZeroTrace is involved in a merger or acquisition, data may be transferred subject to this policy.':
+    'Sollte ZeroTrace an einer Fusion oder Übernahme beteiligt sein, können Daten gemäß dieser Richtlinie übertragen werden.',
   'We comply with the Children’s Online Privacy Protection Act. Accounts identified as belonging to children under 13 will be removed.':
     'Wir halten den Children’s Online Privacy Protection Act ein. Konten, die als zu Kindern unter 13 Jahren gehörig identifiziert werden, werden entfernt.',
   'Disputes are handled via the Support page first; unresolved matters are subject to the governing law stated in the Legal Agreement.':
@@ -541,11 +541,11 @@ export const DE = {
     'Diese Angaben dienen ausschließlich der Transparenz und der Einhaltung gesetzlicher Vorschriften (z. B. gemäß § 5 DDG).',
   'Operator': 'Betreiber', 'Service': 'Dienst', 'Represented by': 'Vertreten durch', 'Contact': 'Kontakt',
   'Online anti-cheat / screenshare service': 'Online-Anti-Cheat-/Screenshare-Dienst',
-  'Ocean Operations': 'Ocean Operations', 'Via the Support page within the dashboard':
+  'ZeroTrace Operations': 'ZeroTrace Operations', 'Via the Support page within the dashboard':
     'Über die Support-Seite im Dashboard',
   'Company Operations & Headquarters': 'Geschäftsbetrieb & Hauptsitz',
-  'Ocean operates as an online service. Day-to-day operations are handled remotely; correspondence is processed through the in-dashboard Support channel.':
-    'Ocean wird als Online-Dienst betrieben. Der laufende Betrieb erfolgt remote; die Korrespondenz wird über den Support-Kanal im Dashboard abgewickelt.',
+  'ZeroTrace operates as an online service. Day-to-day operations are handled remotely; correspondence is processed through the in-dashboard Support channel.':
+    'ZeroTrace wird als Online-Dienst betrieben. Der laufende Betrieb erfolgt remote; die Korrespondenz wird über den Support-Kanal im Dashboard abgewickelt.',
   'For legal, billing or data-protection enquiries, open a ticket on the Support page including your account email and a description of your request.':
     'Für rechtliche, abrechnungsbezogene oder datenschutzbezogene Anfragen eröffne ein Ticket auf der Support-Seite mit deiner Konto-E-Mail und einer Beschreibung deines Anliegens.',
   'Merchant of Record': 'Merchant of Record',
@@ -556,8 +556,8 @@ export const DE = {
     'Für Angelegenheiten im Zusammenhang mit der EU-Datenschutz-Grundverordnung können Anfragen über den Support eingereicht werden und werden, soweit zutreffend, an den verantwortlichen Vertreter gemäß Art. 27 DSGVO weitergeleitet.',
 
   // Changelog content
-  'We’ve released a new update bringing general improvements and system enhancements across Ocean.':
-    'Wir haben ein neues Update veröffentlicht, das allgemeine Verbesserungen und Systemoptimierungen in ganz Ocean bringt.',
+  'We’ve released a new update bringing general improvements and system enhancements across ZeroTrace.':
+    'Wir haben ein neues Update veröffentlicht, das allgemeine Verbesserungen und Systemoptimierungen in ganz ZeroTrace bringt.',
   'New Scan Results layout with category drill-down': 'Neues Scan-Ergebnis-Layout mit Kategorie-Aufschlüsselung',
   'Repeat-scan detection via Discord ID': 'Erkennung wiederholter Scans über Discord-ID',
   'Tool Designer + style import/export': 'Tool-Designer + Stil-Import/-Export',
@@ -566,8 +566,8 @@ export const DE = {
     'Release 0.2 erweitert die Erkennungsabdeckung und fügt das Forensik-Toolset hinzu.',
   'Cheat Database & Forensic Tools': 'Cheat-Datenbank & Forensik-Tools',
   'String / YARA-lite analysis': 'String-/YARA-lite-Analyse', 'Activity log + CSV export': 'Aktivitätsprotokoll + CSV-Export',
-  'First public beta of the Ocean dashboard and FiveM scanner.':
-    'Erste öffentliche Beta des Ocean-Dashboards und des FiveM-Scanners.',
+  'First public beta of the ZeroTrace dashboard and FiveM scanner.':
+    'Erste öffentliche Beta des ZeroTrace-Dashboards und des FiveM-Scanners.',
   'Dashboard, Pins and Strings': 'Dashboard, Pins und Strings',
   'C++ FiveM scanner with .ocean sessions': 'C++-FiveM-Scanner mit .ocean-Sitzungen',
 
@@ -582,20 +582,20 @@ export const DE = {
   'API — Pin Status': 'API — Pin-Status', 'API — Create Pins': 'API — Pins erstellen',
   'Scanned Users': 'Gescannte Nutzer', 'User Risk Score': 'Nutzer-Risikobewertung',
   'Create Pins': 'Pins erstellen', 'Severity': 'Schweregrad',
-  'Welcome to the official documentation of Ocean Anticheat Solutions, a post-mortem detection framework designed to identify and analyze cheating activity across multiple game environments including FiveM, Minecraft, and other supported platforms.':
-    'Willkommen zur offiziellen Dokumentation von Ocean Anticheat Solutions, einem Post-mortem-Erkennungsframework, das entwickelt wurde, um Cheating-Aktivitäten über mehrere Spielumgebungen hinweg — darunter FiveM, Minecraft und andere unterstützte Plattformen — zu identifizieren und zu analysieren.',
-  "This portal provides a complete reference for developers, partners, and server administrators who work with Ocean's detection systems. Here you will find detailed explanations of detection categories, integrity modules, logging schemas, and implementation details for the Ocean Dashboard and Ocean+ APIs.":
-    'Dieses Portal bietet eine vollständige Referenz für Entwickler, Partner und Serveradministratoren, die mit den Erkennungssystemen von Ocean arbeiten. Hier findest du detaillierte Erläuterungen zu Erkennungskategorien, Integritätsmodulen, Logging-Schemata und Implementierungsdetails für das Ocean-Dashboard und die Ocean+-APIs.',
+  'Welcome to the official documentation of ZeroTrace Anticheat Solutions, a post-mortem detection framework designed to identify and analyze cheating activity across multiple game environments including FiveM, Minecraft, and other supported platforms.':
+    'Willkommen zur offiziellen Dokumentation von ZeroTrace Anticheat Solutions, einem Post-mortem-Erkennungsframework, das entwickelt wurde, um Cheating-Aktivitäten über mehrere Spielumgebungen hinweg — darunter FiveM, Minecraft und andere unterstützte Plattformen — zu identifizieren und zu analysieren.',
+  "This portal provides a complete reference for developers, partners, and server administrators who work with ZeroTrace's detection systems. Here you will find detailed explanations of detection categories, integrity modules, logging schemas, and implementation details for the ZeroTrace Dashboard and ZeroTrace+ APIs.":
+    'Dieses Portal bietet eine vollständige Referenz für Entwickler, Partner und Serveradministratoren, die mit den Erkennungssystemen von ZeroTrace arbeiten. Hier findest du detaillierte Erläuterungen zu Erkennungskategorien, Integritätsmodulen, Logging-Schemata und Implementierungsdetails für das ZeroTrace-Dashboard und die ZeroTrace+-APIs.',
   'Use the navigation sidebar to explore categories such as Detections, Logs, and Integrity Systems.':
     'Nutze die Navigations-Seitenleiste, um Kategorien wie Erkennungen, Protokolle und Integritätssysteme zu erkunden.',
-  'Read each section to understand how Ocean classifies detections, processes memory and file artifacts, and communicates results through the dashboard.':
-    'Lies jeden Abschnitt, um zu verstehen, wie Ocean Erkennungen klassifiziert, Speicher- und Dateiartefakte verarbeitet und Ergebnisse über das Dashboard kommuniziert.',
+  'Read each section to understand how ZeroTrace classifies detections, processes memory and file artifacts, and communicates results through the dashboard.':
+    'Lies jeden Abschnitt, um zu verstehen, wie ZeroTrace Erkennungen klassifiziert, Speicher- und Dateiartefakte verarbeitet und Ergebnisse über das Dashboard kommuniziert.',
   'Use the search bar to quickly locate specific detection signatures or log entries by name.':
     'Nutze die Suchleiste, um bestimmte Erkennungssignaturen oder Protokolleinträge schnell nach Namen zu finden.',
   'Generate a pin from the Pins page, run the scanner, and review the results on the Scan Results page.':
     'Erzeuge auf der Pins-Seite einen Pin, führe den Scanner aus und prüfe die Ergebnisse auf der Scan-Ergebnis-Seite.',
-  'Detects Logs are high-confidence findings produced when Ocean matches a known cheat signature in memory, on disk, or in the loaded module list of the game process. Each entry includes the matched signature, severity (High/Critical), and the evidence (process, module or file path).':
-    'Erkennungsprotokolle sind Funde mit hoher Zuverlässigkeit, die entstehen, wenn Ocean eine bekannte Cheat-Signatur im Speicher, auf der Festplatte oder in der geladenen Modulliste des Spielprozesses findet. Jeder Eintrag enthält die getroffene Signatur, den Schweregrad (Hoch/Kritisch) und den Beweis (Prozess-, Modul- oder Dateipfad).',
+  'Detects Logs are high-confidence findings produced when ZeroTrace matches a known cheat signature in memory, on disk, or in the loaded module list of the game process. Each entry includes the matched signature, severity (High/Critical), and the evidence (process, module or file path).':
+    'Erkennungsprotokolle sind Funde mit hoher Zuverlässigkeit, die entstehen, wenn ZeroTrace eine bekannte Cheat-Signatur im Speicher, auf der Festplatte oder in der geladenen Modulliste des Spielprozesses findet. Jeder Eintrag enthält die getroffene Signatur, den Schweregrad (Hoch/Kritisch) und den Beweis (Prozess-, Modul- oder Dateipfad).',
   'Critical — paid/native cheat clients and injectors': 'Kritisch — bezahlte/native Cheat-Clients und Injektoren',
   'High — known free clients, loaders and tooling': 'Hoch — bekannte kostenlose Clients, Loader und Tools',
   'Detects Logs alone are sufficient grounds for a moderation decision when corroborated by execution evidence.':
@@ -610,7 +610,7 @@ export const DE = {
     'Verdächtig-Protokolle sind kontextbezogene Funde geringen Schweregrads zur Zeitachsen-Korrelation. Sie werden bedeutsam, wenn sie mit Erkennungs- oder Warnprotokollen kombiniert werden.',
   'Examples: short-lived processes from temp directories, renamed binaries, or gaps in the prefetch/USN journal.':
     'Beispiele: kurzlebige Prozesse aus Temp-Verzeichnissen, umbenannte Binärdateien oder Lücken im Prefetch-/USN-Journal.',
-  'Ocean combines several engines to reach a verdict:': 'Ocean kombiniert mehrere Engines, um zu einem Urteil zu gelangen:',
+  'ZeroTrace combines several engines to reach a verdict:': 'ZeroTrace kombiniert mehrere Engines, um zu einem Urteil zu gelangen:',
   'Signature matching — strings & module names against the cheat database':
     'Signaturabgleich — Strings & Modulnamen gegen die Cheat-Datenbank',
   'Hashing — SHA-256 of files compared to known-bad sets':
@@ -626,8 +626,8 @@ export const DE = {
     'Integritätsprüfungen stellen sicher, dass das System und der Scanner selbst nicht manipuliert wurden: Modul-Signaturprüfung, Treiberintegrität, Inspektion der Handle-/Hook-Tabellen und Scannen von Speicherbereichen.',
   'Passing integrity checks are logged as Integrity Logs and increase confidence in a Clean verdict.':
     'Bestandene Integritätsprüfungen werden als Integritätsprotokolle erfasst und erhöhen die Zuverlässigkeit eines „sauber“-Urteils.',
-  'The Ocean+ API exposes scan sessions and results. All endpoints require a Bearer API key. Base URL: https://api.anticheat.ac/v1.':
-    'Die Ocean+-API stellt Scan-Sitzungen und -Ergebnisse bereit. Alle Endpunkte erfordern einen Bearer-API-Schlüssel. Basis-URL: https://api.anticheat.ac/v1.',
+  'The ZeroTrace+ API exposes scan sessions and results. All endpoints require a Bearer API key. Base URL: https://api.anticheat.ac/v1.':
+    'Die ZeroTrace+-API stellt Scan-Sitzungen und -Ergebnisse bereit. Alle Endpunkte erfordern einen Bearer-API-Schlüssel. Basis-URL: https://api.anticheat.ac/v1.',
   'This dashboard is client-side; the API reference here describes the schema the OCEAN1 token / .ocean session files follow.':
     'Dieses Dashboard ist clientseitig; die API-Referenz hier beschreibt das Schema, dem der OCEAN1-Token / die .ocean-Sitzungsdateien folgen.',
   'Returns users that have been scanned, keyed by Discord ID. Repeat scans of the same Discord ID are grouped so previous results can be retrieved.':
@@ -673,7 +673,7 @@ export const DE = {
     'Mindestabstand um das Symbol. Skaliert mit der Größe des Logos.',
   'Fixed aspect ratio. No effects or distortion. Same geometry in both backgrounds.':
     'Festes Seitenverhältnis. Keine Effekte oder Verzerrungen. Gleiche Geometrie in beiden Hintergründen.',
-  'A base of grays and black; blue as an accent.': 'Eine Basis aus Grautönen und Schwarz; Blau als Akzent.',
+  'A base of grays and black; teal as an accent.': 'Eine Basis aus Grautönen und Schwarz; Türkis als Akzent.',
   'Geist Sans for interface and communication. Geist Mono for data. Plus Jakarta for brand accents.':
     'Geist Sans für Oberfläche und Kommunikation. Geist Mono für Daten. Plus Jakarta für Marken-Akzente.',
   'Naming': 'Namensgebung', 'Spacing': 'Abstände',

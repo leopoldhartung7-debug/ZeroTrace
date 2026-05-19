@@ -1,4 +1,4 @@
-# Ocean FiveM Scanner (C++)
+# ZeroTrace FiveM Scanner (C++)
 
 A consent-based usermode anti-cheat **screenshare** tool for FiveM, with a
 Dear ImGui (DirectX 11) UI. It scans the local machine for known cheat

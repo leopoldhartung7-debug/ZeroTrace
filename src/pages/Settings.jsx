@@ -26,7 +26,7 @@ function General() {
   const exportData = () => {
     const a = document.createElement('a')
     a.href = URL.createObjectURL(new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' }))
-    a.download = 'ocean-ac-backup.json'
+    a.download = 'zerotrace-ac-backup.json'
     a.click()
     URL.revokeObjectURL(a.href)
     toast({ type: 'success', title: 'Backup exported' })

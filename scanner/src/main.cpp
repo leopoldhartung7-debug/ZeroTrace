@@ -1,4 +1,4 @@
-// Ocean FiveM Scanner — Dear ImGui (DirectX 11) frontend.
+// ZeroTrace FiveM Scanner — Dear ImGui (DirectX 11) frontend.
 // Consent-based anti-cheat screenshare tool.
 
 #include "scanner.hpp"
@@ -150,7 +150,7 @@ static void DrawUI() {
 
     // Header
     ImGui::PushFont(nullptr);
-    ImGui::TextColored(ImVec4(0.231f, 0.470f, 0.980f, 1.0f), "(*>  OCEAN");
+    ImGui::TextColored(ImVec4(0.231f, 0.470f, 0.980f, 1.0f), "(*>  ZEROTRACE");
     ImGui::SameLine();
     ImGui::TextDisabled("FiveM Anti-Cheat Scanner  ·  v1.0");
     ImGui::PopFont();
@@ -339,7 +339,7 @@ int APIENTRY wWinMain(HINSTANCE hInst, HINSTANCE, LPWSTR, int) {
     WNDCLASSEXW wc{ sizeof(wc), CS_CLASSDC, WndProc, 0, 0, hInst,
         nullptr, nullptr, nullptr, nullptr, L"OceanScanner", nullptr };
     RegisterClassExW(&wc);
-    HWND hwnd = CreateWindowW(wc.lpszClassName, L"Ocean FiveM Scanner",
+    HWND hwnd = CreateWindowW(wc.lpszClassName, L"ZeroTrace FiveM Scanner",
         WS_OVERLAPPEDWINDOW, 100, 100, 980, 760,
         nullptr, nullptr, hInst, nullptr);
 

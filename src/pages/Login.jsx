@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { LogIn, Eye, EyeOff, Fingerprint } from 'lucide-react'
+import Logo from '../components/Logo.jsx'
 import { useStore } from '../store.jsx'
 import { useToast } from '../components/ui.jsx'
 
@@ -34,11 +35,11 @@ export default function Login() {
     <div className="flex min-h-screen items-center justify-center bg-black px-4 py-10 text-white">
       <div
         className="pointer-events-none fixed inset-0"
-        style={{ background: 'radial-gradient(60% 50% at 50% 0%, rgba(37,99,235,0.15), transparent 70%)' }}
+        style={{ background: 'radial-gradient(60% 50% at 50% 0%, rgba(45,212,191,0.15), transparent 70%)' }}
       />
       <div className="relative w-full max-w-md rounded-2xl border border-white/10 bg-white/[0.02] p-8 md:p-10">
         <div className="flex flex-col items-center">
-          <span className="font-mono text-4xl font-bold">{'(*>'}</span>
+          <Logo size="lg" sub />
           <h1 className="mt-6 text-3xl font-bold">Login</h1>
           <p className="mt-1 text-sm text-neutral-400">Enter your credentials to access your account</p>
         </div>
@@ -54,7 +55,7 @@ export default function Login() {
             value={form.id}
             onChange={(e) => setForm({ ...form, id: e.target.value })}
             placeholder="Email or Username"
-            className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3.5 text-sm placeholder:text-neutral-500 focus:border-blue-500 focus:outline-none"
+            className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3.5 text-sm placeholder:text-neutral-500 focus:border-teal-500 focus:outline-none"
           />
           <div className="relative">
             <input
@@ -62,7 +63,7 @@ export default function Login() {
               value={form.pw}
               onChange={(e) => setForm({ ...form, pw: e.target.value })}
               placeholder="Password"
-              className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3.5 pr-12 text-sm placeholder:text-neutral-500 focus:border-blue-500 focus:outline-none"
+              className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3.5 pr-12 text-sm placeholder:text-neutral-500 focus:border-teal-500 focus:outline-none"
             />
             <button
               type="button"

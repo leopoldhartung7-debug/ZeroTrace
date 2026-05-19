@@ -33,7 +33,7 @@ function Toggle({ label, checked, onChange }) {
     >
       <span
         className={`flex h-5 w-5 items-center justify-center rounded border transition-colors ${
-          checked ? 'border-blue-500 bg-blue-600 text-white' : 'bd tile'
+          checked ? 'border-teal-500 bg-teal-600 text-white' : 'bd tile'
         }`}
       >
         {checked && (
@@ -63,7 +63,7 @@ function GuiPreview({ s }) {
         <span className="h-2.5 w-2.5 rounded-full bg-yellow-500" />
         <span className="h-2.5 w-2.5 rounded-full bg-green-500" />
         <span className="ml-2 text-xs" style={{ color: c.mutedText }}>
-          Ocean FiveM Scanner
+          ZeroTrace FiveM Scanner
         </span>
       </div>
 
@@ -86,7 +86,7 @@ function GuiPreview({ s }) {
             />
           ) : (
             <p className="font-mono text-3xl font-bold" style={{ color: c.accent }}>
-              {'(*>'} OCEAN
+              ZEROTRACE
             </p>
           )}
           {!s.useDefaultLogo && s.logoUrl && imgErr && (
@@ -206,7 +206,7 @@ export default function ToolDesigner({ embedded = false }) {
           <p className="caps-label mb-4">Logo</p>
           <div className="space-y-4">
             <Toggle
-              label="Use Ocean logo"
+              label="Use ZeroTrace logo"
               checked={s.useDefaultLogo}
               onChange={(v) => set({ useDefaultLogo: v })}
             />
@@ -268,7 +268,7 @@ export default function ToolDesigner({ embedded = false }) {
               disabled={!dirty}
               className={`flex w-full items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold transition-colors ${
                 dirty
-                  ? 'bg-blue-600 text-white hover:bg-blue-500'
+                  ? 'bg-teal-600 text-white hover:bg-teal-500'
                   : 'bd tile muted cursor-default'
               }`}
             >
@@ -304,7 +304,7 @@ export default function ToolDesigner({ embedded = false }) {
             />
             <button
               onClick={doImport}
-              className="bd txt mt-3 w-full rounded-lg border py-2 text-sm font-medium hover:border-blue-500"
+              className="bd txt mt-3 w-full rounded-lg border py-2 text-sm font-medium hover:border-teal-500"
             >
               Import Style
             </button>
@@ -322,7 +322,7 @@ export default function ToolDesigner({ embedded = false }) {
                 navigator.clipboard?.writeText(exportCode)
                 toast({ type: 'success', title: 'Style code copied' })
               }}
-              className="bd txt mt-3 flex w-full items-center justify-center gap-2 rounded-lg border py-2 text-sm font-medium hover:border-blue-500"
+              className="bd txt mt-3 flex w-full items-center justify-center gap-2 rounded-lg border py-2 text-sm font-medium hover:border-teal-500"
             >
               <Copy size={14} /> Copy code
             </button>

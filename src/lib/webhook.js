@@ -32,7 +32,7 @@ export function buildScanEmbed(meta, report) {
       field('USB devices', report.usb.length),
       field(`Flagged Discord servers (${flagged.length})`, serverList, false),
     ],
-    footer: { text: 'Ocean Anti-Cheat — Scan Report' },
+    footer: { text: 'ZeroTrace Anti-Cheat — Scan Report' },
     timestamp: new Date().toISOString(),
   }
 }
@@ -44,7 +44,7 @@ export async function sendScanSummary(webhook, meta, report) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        username: 'Ocean Anti-Cheat',
+        username: 'ZeroTrace Anti-Cheat',
         embeds: [buildScanEmbed(meta, report)],
       }),
     })

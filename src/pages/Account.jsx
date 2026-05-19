@@ -76,7 +76,7 @@ const TABS = [
   { id: 'privacy', label: 'Privacy & Data', icon: Database },
 ]
 const inputCls =
-  'bd tile txt w-full rounded-lg border px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500/40'
+  'bd tile txt w-full rounded-lg border px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-teal-500/40'
 
 function Field({ label, children }) {
   return (
@@ -192,7 +192,7 @@ export default function Account() {
               <Field label="Email">
                 <input className={inputCls} value={profile.email} onChange={(e) => setProfile({ ...profile, email: e.target.value })} />
               </Field>
-              <button onClick={() => toast({ type: 'success', title: 'Profile saved' })} className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-500">
+              <button onClick={() => toast({ type: 'success', title: 'Profile saved' })} className="rounded-lg bg-teal-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-teal-500">
                 Save changes
               </button>
             </div>
@@ -231,7 +231,7 @@ export default function Account() {
                   <p className="txt text-lg font-semibold">Password</p>
                   <p className="muted text-sm">Change your password to keep your account secure</p>
                 </div>
-                <button onClick={() => setPwOpen(true)} className="bd txt flex items-center gap-2 rounded-lg border px-5 py-2.5 text-sm font-medium hover:border-blue-500">
+                <button onClick={() => setPwOpen(true)} className="bd txt flex items-center gap-2 rounded-lg border px-5 py-2.5 text-sm font-medium hover:border-teal-500">
                   <Lock size={15} /> Change Password
                 </button>
               </div>
@@ -333,13 +333,13 @@ export default function Account() {
               <p className="caps-label">Connected Accounts</p>
               {state.connections.length === 0 ? (
                 <div className="tile rounded-xl border p-8 text-center">
-                  <p className="muted text-sm">No accounts connected with Ocean yet.</p>
+                  <p className="muted text-sm">No accounts connected with ZeroTrace yet.</p>
                 </div>
               ) : (
                 <div className="space-y-2">
                   {state.connections.map((c) => (
                     <div key={c.id} className="tile flex items-center gap-3 rounded-xl border p-4">
-                      <span className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-sm font-bold text-white">
+                      <span className="flex h-10 w-10 items-center justify-center rounded-full bg-teal-600 text-sm font-bold text-white">
                         {c.name[0]?.toUpperCase()}
                       </span>
                       <div className="min-w-0 flex-1">
@@ -360,7 +360,7 @@ export default function Account() {
                   dispatch({ type: 'connect-account', account: { id, name: 'discord_user' } })
                   toast({ type: 'success', title: 'Discord connected', body: `ID ${id}` })
                 }}
-                className="flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-500"
+                className="flex items-center gap-2 rounded-lg bg-teal-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-teal-500"
               >
                 <Globe size={16} /> Connect Discord
               </button>
@@ -446,7 +446,7 @@ export default function Account() {
                   <p className="txt font-semibold">Free plan</p>
                   <p className="muted text-xs">1 daily pin · basic support</p>
                 </div>
-                <button onClick={() => nav('/pricing')} className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-500">
+                <button onClick={() => nav('/pricing')} className="rounded-lg bg-teal-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-teal-500">
                   View plans
                 </button>
               </div>
@@ -464,7 +464,7 @@ export default function Account() {
               </div>
               <div className="tile rounded-xl border p-5">
                 <div className="flex items-center gap-3">
-                  <Zap size={18} className="text-blue-500" />
+                  <Zap size={18} className="text-teal-500" />
                   <h4 className="txt text-lg font-bold">Discord Webhook</h4>
                   {state.integrations.discordWebhook && (
                     <span className="flex items-center gap-1 rounded-md border border-green-600/40 bg-green-600/15 px-2 py-0.5 text-[11px] font-bold text-green-500"><Check size={11} /> CONNECTED</span>
@@ -477,7 +477,7 @@ export default function Account() {
                       <input type={showHook ? 'text' : 'password'} value={hook} onChange={(e) => setHook(e.target.value)} placeholder="https://discord.com/api/webhooks/..." className={inputCls} />
                       <button onClick={() => setShowHook((s) => !s)} className="muted hover:txt absolute right-3 top-1/2 -translate-y-1/2">{showHook ? <EyeOff size={16} /> : <Eye size={16} />}</button>
                     </div>
-                    <button onClick={() => { dispatch({ type: 'set-integration', key: 'discordWebhook', value: hook.trim() }); toast({ type: 'success', title: 'Webhook saved' }) }} className="rounded-lg bg-blue-600 px-4 text-sm font-semibold text-white hover:bg-blue-500">Save</button>
+                    <button onClick={() => { dispatch({ type: 'set-integration', key: 'discordWebhook', value: hook.trim() }); toast({ type: 'success', title: 'Webhook saved' }) }} className="rounded-lg bg-teal-600 px-4 text-sm font-semibold text-white hover:bg-teal-500">Save</button>
                   </div>
                 </Field>
                 {state.integrations.discordWebhook && (
@@ -486,7 +486,7 @@ export default function Account() {
               </div>
               <div className="tile rounded-xl border p-5">
                 <div className="flex items-center gap-3">
-                  <Shield size={18} className="text-blue-500" />
+                  <Shield size={18} className="text-teal-500" />
                   <h4 className="txt text-lg font-bold">VirusTotal API</h4>
                   {state.integrations.virusTotalKey && (
                     <span className="flex items-center gap-1 rounded-md border border-green-600/40 bg-green-600/15 px-2 py-0.5 text-[11px] font-bold text-green-500"><Check size={11} /> CONNECTED</span>
@@ -499,13 +499,13 @@ export default function Account() {
                       <input type={showVt ? 'text' : 'password'} value={vt} onChange={(e) => setVt(e.target.value)} placeholder="Enter VirusTotal API key" className={inputCls} />
                       <button onClick={() => setShowVt((s) => !s)} className="muted hover:txt absolute right-3 top-1/2 -translate-y-1/2">{showVt ? <EyeOff size={16} /> : <Eye size={16} />}</button>
                     </div>
-                    <button onClick={() => { dispatch({ type: 'set-integration', key: 'virusTotalKey', value: vt.trim() }); toast({ type: 'success', title: 'API key saved' }) }} className="rounded-lg bg-blue-600 px-4 text-sm font-semibold text-white hover:bg-blue-500">Save</button>
+                    <button onClick={() => { dispatch({ type: 'set-integration', key: 'virusTotalKey', value: vt.trim() }); toast({ type: 'success', title: 'API key saved' }) }} className="rounded-lg bg-teal-600 px-4 text-sm font-semibold text-white hover:bg-teal-500">Save</button>
                   </div>
                 </Field>
               </div>
               <div className="tile rounded-xl border p-5">
                 <div className="flex items-center gap-3">
-                  <Zap size={18} className="text-blue-500" />
+                  <Zap size={18} className="text-teal-500" />
                   <h4 className="txt text-lg font-bold">Discord Server Bot</h4>
                   {state.integrations.discordBotUrl && (
                     <span className="flex items-center gap-1 rounded-md border border-green-600/40 bg-green-600/15 px-2 py-0.5 text-[11px] font-bold text-green-500"><Check size={11} /> CONNECTED</span>
@@ -515,7 +515,7 @@ export default function Account() {
                 <Field label="Bot API URL">
                   <div className="flex gap-2">
                     <input value={botUrl} onChange={(e) => setBotUrl(e.target.value)} placeholder="https://yourhost.example" className={inputCls} />
-                    <button onClick={() => { dispatch({ type: 'set-integration', key: 'discordBotUrl', value: botUrl.trim().replace(/\/$/, '') }); toast({ type: 'success', title: 'Saved' }) }} className="rounded-lg bg-blue-600 px-4 text-sm font-semibold text-white hover:bg-blue-500">Save</button>
+                    <button onClick={() => { dispatch({ type: 'set-integration', key: 'discordBotUrl', value: botUrl.trim().replace(/\/$/, '') }); toast({ type: 'success', title: 'Saved' }) }} className="rounded-lg bg-teal-600 px-4 text-sm font-semibold text-white hover:bg-teal-500">Save</button>
                   </div>
                 </Field>
                 <Field label="API Key">
@@ -524,7 +524,7 @@ export default function Account() {
                       <input type={showBotKey ? 'text' : 'password'} value={botKey} onChange={(e) => setBotKey(e.target.value)} placeholder="Bot API key" className={inputCls} />
                       <button onClick={() => setShowBotKey((s) => !s)} className="muted hover:txt absolute right-3 top-1/2 -translate-y-1/2">{showBotKey ? <EyeOff size={16} /> : <Eye size={16} />}</button>
                     </div>
-                    <button onClick={() => { dispatch({ type: 'set-integration', key: 'discordBotKey', value: botKey.trim() }); toast({ type: 'success', title: 'API key saved' }) }} className="rounded-lg bg-blue-600 px-4 text-sm font-semibold text-white hover:bg-blue-500">Save</button>
+                    <button onClick={() => { dispatch({ type: 'set-integration', key: 'discordBotKey', value: botKey.trim() }); toast({ type: 'success', title: 'API key saved' }) }} className="rounded-lg bg-teal-600 px-4 text-sm font-semibold text-white hover:bg-teal-500">Save</button>
                   </div>
                 </Field>
                 {state.integrations.discordBotUrl && (
@@ -546,8 +546,8 @@ export default function Account() {
                   { v: 'csv', label: 'CSV', icon: FileSpreadsheet },
                 ].map((f) => (
                   <button key={f.v} onClick={() => setFmt(f.v)} className="flex items-center gap-2 text-sm">
-                    <span className={`flex h-4 w-4 items-center justify-center rounded-full border ${fmt === f.v ? 'border-blue-500' : 'bd'}`}>
-                      {fmt === f.v && <span className="h-2 w-2 rounded-full bg-blue-500" />}
+                    <span className={`flex h-4 w-4 items-center justify-center rounded-full border ${fmt === f.v ? 'border-teal-500' : 'bd'}`}>
+                      {fmt === f.v && <span className="h-2 w-2 rounded-full bg-teal-500" />}
                     </span>
                     <f.icon size={16} className={f.v === 'json' ? 'text-yellow-500' : 'text-green-500'} />
                     <span className="txt">{f.label}</span>
@@ -567,9 +567,9 @@ export default function Account() {
                     <button
                       key={o.k}
                       onClick={() => toggleSel(o.k)}
-                      className={`tile flex w-full items-center gap-4 rounded-xl border p-4 text-left ${sel[o.k] ? 'border-blue-500/50' : ''}`}
+                      className={`tile flex w-full items-center gap-4 rounded-xl border p-4 text-left ${sel[o.k] ? 'border-teal-500/50' : ''}`}
                     >
-                      <span className={`flex h-5 w-5 items-center justify-center rounded ${sel[o.k] ? 'bg-blue-600 text-white' : 'bd tile'}`}>
+                      <span className={`flex h-5 w-5 items-center justify-center rounded ${sel[o.k] ? 'bg-teal-600 text-white' : 'bd tile'}`}>
                         {sel[o.k] && <Check size={13} />}
                       </span>
                       <o.icon size={18} className="muted" />
@@ -618,7 +618,7 @@ export default function Account() {
                 setPwOpen(false)
                 toast({ type: 'success', title: 'Password changed' })
               }}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-500"
+              className="rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-500"
             >
               Update
             </button>
@@ -645,7 +645,7 @@ export default function Account() {
                 setTfaOpen(false)
                 toast({ type: 'success', title: '2FA enabled' })
               }}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-500"
+              className="rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-500"
             >
               Enable 2FA
             </button>
@@ -658,12 +658,12 @@ export default function Account() {
             <code className="txt break-all font-mono text-sm">{tfaSecret}</code>
             <button
               onClick={() => { navigator.clipboard?.writeText(tfaSecret); toast({ type: 'success', title: 'Secret copied' }) }}
-              className="bd txt shrink-0 rounded-md border px-2.5 py-1.5 text-xs hover:border-blue-500"
+              className="bd txt shrink-0 rounded-md border px-2.5 py-1.5 text-xs hover:border-teal-500"
             >
               Copy
             </button>
           </div>
-          <p className="muted break-all text-xs">otpauth://totp/Ocean:{profile.email}?secret={tfaSecret}&amp;issuer=Ocean</p>
+          <p className="muted break-all text-xs">otpauth://totp/ZeroTrace:{profile.email}?secret={tfaSecret}&amp;issuer=ZeroTrace</p>
         </div>
       </Modal>
     </div>

@@ -92,7 +92,7 @@ export default function CommandPalette() {
                 setQ('')
               }}
               className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm ${
-                idx === i ? 'bg-blue-600/15 text-blue-400' : 'txt hoverable'
+                idx === i ? 'bg-teal-600/15 text-teal-400' : 'txt hoverable'
               }`}
             >
               <c.icon size={16} />

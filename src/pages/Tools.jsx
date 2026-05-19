@@ -119,7 +119,7 @@ function DiscordChecker() {
         { name: `Servers (${r.servers.length})`, value: list(r.servers) },
         { name: `Flagged (${flagged.length})`, value: list(flagged) },
       ],
-      footer: { text: 'Ocean Anti-Cheat — Forensic Tools' },
+      footer: { text: 'ZeroTrace Anti-Cheat — Forensic Tools' },
       timestamp: new Date().toISOString(),
     }
     setBusy(true)
@@ -127,7 +127,7 @@ function DiscordChecker() {
       const resp = await fetch(webhook, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: 'Ocean Anti-Cheat', embeds: [embed] }),
+        body: JSON.stringify({ username: 'ZeroTrace Anti-Cheat', embeds: [embed] }),
       })
       if (resp.ok || resp.status === 204) {
         toast({ type: 'success', title: 'Sent to webhook' })
@@ -184,7 +184,7 @@ function DiscordChecker() {
         <button
           onClick={run}
           disabled={busy}
-          className="flex shrink-0 items-center justify-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-500 disabled:opacity-60"
+          className="flex shrink-0 items-center justify-center gap-2 rounded-lg bg-teal-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-teal-500 disabled:opacity-60"
         >
           <Send size={15} /> {busy ? 'Sending…' : 'Check & Send'}
         </button>
@@ -242,7 +242,7 @@ function DiscordChecker() {
                   <div key={i} className="tile rounded-lg border px-4 py-3">
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <div className="flex items-center gap-3">
-                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-600/15 text-blue-400">
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-teal-600/15 text-teal-400">
                           <Server size={15} />
                         </span>
                         <div>
@@ -305,7 +305,7 @@ function TextAnalyzer({ mode, placeholder, hint }) {
         <button onClick={() => { setText(''); setRes(null) }} className="bd txt rounded-lg border px-4 py-2 text-sm">
           Clear
         </button>
-        <button onClick={run} className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-500">
+        <button onClick={run} className="rounded-lg bg-teal-600 px-5 py-2 text-sm font-semibold text-white hover:bg-teal-500">
           Analyze
         </button>
       </div>
@@ -378,7 +378,7 @@ function FileHasher() {
       <input ref={ref} type="file" className="hidden" onChange={(e) => e.target.files[0] && handle(e.target.files[0])} />
       <button
         onClick={() => ref.current?.click()}
-        className="bd flex w-full flex-col items-center justify-center rounded-xl border-2 border-dashed py-14 hover:border-blue-500"
+        className="bd flex w-full flex-col items-center justify-center rounded-xl border-2 border-dashed py-14 hover:border-teal-500"
       >
         <UploadIcon size={30} className="muted" />
         <span className="txt mt-3 text-sm font-medium">{busy ? 'Hashing…' : 'Select a file to hash'}</span>

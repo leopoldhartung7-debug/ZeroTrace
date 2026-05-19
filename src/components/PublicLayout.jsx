@@ -1,6 +1,7 @@
 import { Outlet, useNavigate } from 'react-router-dom'
 import { Globe } from 'lucide-react'
 import { useStore } from '../store.jsx'
+import Logo from './Logo.jsx'
 import { useToast } from './ui.jsx'
 
 const NAV = [
@@ -27,8 +28,7 @@ export function PublicHeader() {
   return (
     <header className="sticky top-0 z-30 flex items-center justify-between border-b border-white/5 bg-black/80 px-6 py-5 backdrop-blur md:px-12">
       <button onClick={() => nav('/')} className="flex items-center gap-3">
-        <span className="font-mono text-2xl font-bold text-white">{'(*>'}</span>
-        <span className="text-xl font-semibold text-white">ocean</span>
+        <Logo size="md" />
       </button>
       <nav className="hidden items-center gap-7 lg:flex">
         {NAV.map((n) => (
@@ -51,7 +51,7 @@ export function PublicHeader() {
             <button onClick={() => nav('/login')} className="text-sm text-neutral-300 transition-colors hover:text-white">
               Login
             </button>
-            <button onClick={() => nav('/login')} className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-500">
+            <button onClick={() => nav('/login')} className="rounded-lg bg-teal-600 px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-teal-500">
               Sign Up
             </button>
           </>
@@ -69,7 +69,7 @@ export default function PublicLayout() {
         <Outlet />
       </main>
       <footer className="border-t border-white/10 px-6 py-8 text-center text-sm text-neutral-600 md:px-12">
-        © 2026 Ocean Anti-Cheat — anticheat.ac
+        © 2026 ZeroTrace Anti-Cheat — anticheat.ac
       </footer>
     </div>
   )

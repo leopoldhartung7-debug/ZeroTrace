@@ -1,6 +1,38 @@
-import { useState } from 'react'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useToast } from '../components/ui.jsx'
+import Logo from '../components/Logo.jsx'
+
+/* ZeroTrace crosshair mark (shared by the live logo and asset exports). */
+const CROSSHAIR = `
+  <circle cx="26" cy="26" r="22" stroke="#0d9488" stroke-width="1.5" opacity="0.5"/>
+  <circle cx="26" cy="26" r="5" stroke="#2dd4bf" stroke-width="1.5"/>
+  <circle cx="26" cy="26" r="1.5" fill="#2dd4bf"/>
+  <line x1="26" y1="4"  x2="26" y2="18" stroke="#2dd4bf" stroke-width="1.8" stroke-linecap="round"/>
+  <line x1="26" y1="34" x2="26" y2="48" stroke="#2dd4bf" stroke-width="1.8" stroke-linecap="round"/>
+  <line x1="4"  y1="26" x2="18" y2="26" stroke="#2dd4bf" stroke-width="1.8" stroke-linecap="round"/>
+  <line x1="34" y1="26" x2="48" y2="26" stroke="#2dd4bf" stroke-width="1.8" stroke-linecap="round"/>`
+
+function drawZeroTrace(ctx, w, h) {
+  ctx.fillStyle = '#07070f'
+  ctx.fillRect(0, 0, w, h)
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.font = `800 ${Math.floor(h / 5)}px Oxanium, Inter, sans-serif`
+  const fs = Math.floor(h / 5)
+  ctx.fillStyle = '#2dd4bf'
+  const zero = 'Zero'
+  const trace = 'Trace'
+  const zw = ctx.measureText(zero).width
+  const tw = ctx.measureText(trace).width
+  const startX = w / 2 - (zw + tw) / 2
+  ctx.textAlign = 'left'
+  ctx.fillText(zero, startX, h / 2)
+  ctx.fillStyle = '#b0b0c0'
+  ctx.fillText(trace, startX + zw, h / 2)
+  ctx.textAlign = 'center'
+  ctx.fillStyle = '#2a6b65'
+  ctx.font = `600 ${Math.floor(fs / 4)}px Rajdhani, Inter, sans-serif`
+  ctx.fillText('ANTICHEAT SCANNER', w / 2, h / 2 + fs * 0.85)
+}
 
 /* ---- asset generation (functional downloads, no backend) ---- */
 function triggerDownload(blob, filename) {
@@ -10,10 +42,10 @@ function triggerDownload(blob, filename) {
   a.click()
   URL.revokeObjectURL(a.href)
 }
-function downloadSVG(text, filename, fg = '#ffffff', bg = 'none') {
+function downloadSVG(inner, filename, bg = '#07070f') {
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="600" height="300" viewBox="0 0 600 300">
   <rect width="600" height="300" fill="${bg}"/>
-  <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="110" font-weight="700" fill="${fg}">${text}</text>
+  ${inner}
 </svg>`
   triggerDownload(new Blob([svg], { type: 'image/svg+xml' }), filename)
 }
@@ -27,7 +59,7 @@ function downloadPNG(draw, w, h, filename) {
 }
 
 const COLORS = [
-  { hex: '#3A63EC', rgb: 'rgb(58, 99, 236)' },
+  { hex: '#2DD4BF', rgb: 'rgb(45, 212, 191)' },
   { hex: '#F1F2F2', rgb: 'rgb(241, 242, 242)' },
   { hex: '#DFDFDF', rgb: 'rgb(223, 223, 223)' },
 ]
@@ -61,8 +93,6 @@ function Section({ n, label, title, desc, children }) {
 
 export default function Branding() {
   const toast = useToast()
-  const [logo, setLogo] = useState(0)
-  const LOGOS = ['(*>', ')<(((*>']
 
   const copy = (c) => {
     navigator.clipboard?.writeText(c.hex)
@@ -82,8 +112,7 @@ export default function Branding() {
       ctx.font = `bold ${Math.floor(h / 12)}px Inter, sans-serif`
       ctx.fillText('Think. Scan. Find.', w / 2, h / 2)
     } else {
-      ctx.font = `bold ${Math.floor(h / (kind === 'logo-sm' ? 6 : 3))}px ui-monospace, monospace`
-      ctx.fillText('(*>', w / 2, h / 2)
+      drawZeroTrace(ctx, w, h)
     }
   }
 
@@ -91,7 +120,7 @@ export default function Branding() {
     <div className="relative">
       <div
         className="pointer-events-none fixed inset-0 -z-10"
-        style={{ background: 'radial-gradient(60% 70% at 75% 35%, rgba(37,99,235,0.22), transparent 60%)' }}
+        style={{ background: 'radial-gradient(60% 70% at 75% 35%, rgba(45,212,191,0.22), transparent 60%)' }}
       />
 
       {/* Hero */}
@@ -111,43 +140,31 @@ export default function Branding() {
 
       {/* 01 Logo */}
       <Section n="01" label="IDENTITY" title="Logo" desc="Fixed aspect ratio. No effects or distortion. Same geometry in both backgrounds.">
-        <div className="grid w-full gap-10 sm:grid-cols-2">
-          <div>
-            <div className="flex items-center justify-center gap-4">
-              <button onClick={() => setLogo((l) => (l + 1) % 2)} className="rounded-md border border-white/10 p-2 hover:border-white/30">
-                <ChevronLeft size={18} />
-              </button>
-              <span className="font-mono text-5xl font-bold">{LOGOS[logo]}</span>
-              <button onClick={() => setLogo((l) => (l + 1) % 2)} className="rounded-md border border-white/10 bg-white/5 p-2 hover:border-white/30">
-                <ChevronRight size={18} />
-              </button>
-            </div>
-            <div className="mt-5 flex justify-center gap-1.5">
-              {[0, 1].map((i) => (
-                <span key={i} className={`h-1 rounded-full ${i === logo ? 'w-6 bg-white' : 'w-1.5 bg-white/30'}`} />
-              ))}
-            </div>
-            <div className="mt-7 grid grid-cols-2 gap-x-6 gap-y-2 text-center text-[11px] font-semibold tracking-[0.15em] text-neutral-400">
-              <button onClick={() => downloadSVG('(*>', 'ocean-logo.svg')} className="underline-offset-4 hover:text-white hover:underline">SVG · LOGO</button>
-              <button onClick={() => downloadPNG(wpDraw('logo-sm'), 600, 300, 'ocean-logo.png')} className="underline-offset-4 hover:text-white hover:underline">PNG · LOGO</button>
-              <button onClick={() => downloadSVG(')<(((*>', 'ocean-variant.svg')} className="underline-offset-4 hover:text-white hover:underline">SVG · VARIANT</button>
-              <button onClick={() => downloadPNG((x, w, h) => { x.fillStyle = '#000'; x.fillRect(0,0,w,h); x.fillStyle='#fff'; x.textAlign='center'; x.textBaseline='middle'; x.font='bold 90px ui-monospace, monospace'; x.fillText(')<(((*>', w/2, h/2) }, 700, 300, 'ocean-variant.png')} className="underline-offset-4 hover:text-white hover:underline">PNG · VARIANT</button>
-            </div>
+        <div className="w-full">
+          <div className="flex items-center justify-center rounded-2xl border border-white/10 bg-black/40 py-14">
+            <Logo size="lg" sub />
           </div>
-          <div>
-            <div className="flex items-center justify-center">
-              <span className="font-mono text-5xl font-bold">{')<(((*>'}</span>
-            </div>
-            <div className="mt-12 flex justify-center gap-8 text-[11px] font-semibold tracking-[0.15em] text-neutral-400">
-              <button onClick={() => downloadSVG(')<(((*>', 'ocean-variant.svg')} className="underline-offset-4 hover:text-white hover:underline">SVG</button>
-              <button onClick={() => downloadPNG((x, w, h) => { x.fillStyle='#000'; x.fillRect(0,0,w,h); x.fillStyle='#fff'; x.textAlign='center'; x.textBaseline='middle'; x.font='bold 90px ui-monospace, monospace'; x.fillText(')<(((*>', w/2, h/2) }, 700, 300, 'ocean-variant.png')} className="underline-offset-4 hover:text-white hover:underline">PNG</button>
-            </div>
+          <div className="mt-7 flex flex-wrap justify-center gap-x-8 gap-y-2 text-center text-[11px] font-semibold tracking-[0.15em] text-neutral-400">
+            <button
+              onClick={() =>
+                downloadSVG(
+                  `<g transform="translate(263 95) scale(1.4)">${CROSSHAIR}</g><text x="50%" y="78%" dominant-baseline="middle" text-anchor="middle" font-family="Oxanium, sans-serif" font-size="56" font-weight="800"><tspan fill="#2dd4bf">Zero</tspan><tspan fill="#b0b0c0">Trace</tspan></text>`,
+                  'zerotrace-logo.svg',
+                )
+              }
+              className="underline-offset-4 hover:text-white hover:underline"
+            >
+              SVG · LOGO
+            </button>
+            <button onClick={() => downloadPNG(drawZeroTrace, 1200, 600, 'zerotrace-logo.png')} className="underline-offset-4 hover:text-white hover:underline">
+              PNG · LOGO
+            </button>
           </div>
         </div>
       </Section>
 
       {/* 02 Color */}
-      <Section n="02" label="PALETTE" title="Color" desc="A base of grays and black; blue as an accent.">
+      <Section n="02" label="PALETTE" title="Color" desc="A base of grays and black; teal as an accent.">
         <div className="grid w-full grid-cols-3 gap-6">
           {COLORS.map((c) => (
             <button key={c.hex} onClick={() => copy(c)} className="text-left">
@@ -163,7 +180,7 @@ export default function Branding() {
       <Section n="03" label="TYPO" title="Typography" desc="Geist Sans for interface and communication. Geist Mono for data. Plus Jakarta for brand accents.">
         <div className="w-full">
           <p className="text-8xl font-medium leading-none">Aa</p>
-          <p className="mt-6 text-2xl text-neutral-300">Ocean Anticheat - antcheat.ac</p>
+          <p className="mt-6 text-2xl text-neutral-300">ZeroTrace Anticheat - antcheat.ac</p>
           <div className="my-8 h-px w-full bg-white/10" />
           <div className="grid grid-cols-2 gap-x-12 gap-y-8">
             {WEIGHTS.map((x) => (
@@ -181,7 +198,7 @@ export default function Branding() {
         <div className="w-full">
           <div className="relative mx-auto flex h-72 max-w-md items-center justify-center rounded-sm border border-dashed border-white/15">
             <div className="flex h-44 w-72 items-center justify-center border border-dashed border-white/15">
-              <span className="font-mono text-6xl font-bold">{'(*>'}</span>
+              <Logo size="lg" />
             </div>
           </div>
           <p className="mt-6 text-center text-[11px] font-semibold tracking-[0.25em] text-neutral-600">
@@ -201,15 +218,13 @@ export default function Branding() {
                 ) : wp.label === 'tagline' ? (
                   <span className="text-sm font-semibold text-neutral-300">Think. Scan. Find.</span>
                 ) : (
-                  <span className={`font-mono font-bold ${wp.label === 'logo-sm' ? 'text-3xl' : 'text-6xl'}`}>
-                    {'(*>'}
-                  </span>
+                  <Logo size={wp.label === 'logo-sm' ? 'sm' : 'lg'} />
                 )}
               </div>
               <div className="mt-4 flex items-center justify-between">
                 <span className="text-xs tracking-[0.2em] text-neutral-500">16:9</span>
                 <button
-                  onClick={() => downloadPNG(wpDraw(wp.label), 1920, 1080, `ocean-wallpaper-${i + 1}.png`)}
+                  onClick={() => downloadPNG(wpDraw(wp.label), 1920, 1080, `zerotrace-wallpaper-${i + 1}.png`)}
                   className="text-[11px] font-semibold tracking-[0.2em] text-neutral-300 underline-offset-4 hover:text-white hover:underline"
                 >
                   DOWNLOAD
@@ -228,17 +243,17 @@ export default function Branding() {
           <div>
             <p className="mb-6 text-xs font-semibold tracking-[0.3em] text-neutral-600">CORRECT</p>
             <ul className="space-y-6 text-2xl">
-              <li>Ocean Anticheat</li>
-              <li>Ocean</li>
+              <li>ZeroTrace Anticheat</li>
+              <li>ZeroTrace</li>
               <li>antcheat.ac</li>
             </ul>
           </div>
           <div>
             <p className="mb-6 text-xs font-semibold tracking-[0.3em] text-neutral-600">INCORRECT</p>
             <ul className="space-y-6 text-2xl text-neutral-600 line-through">
-              <li>OCEAN ANTICHEAT</li>
-              <li>OceanAC</li>
-              <li>Ocean Anti Cheat</li>
+              <li>ZEROTRACE ANTICHEAT</li>
+              <li>ZeroTraceAC</li>
+              <li>ZeroTrace Anti Cheat</li>
             </ul>
           </div>
         </div>
