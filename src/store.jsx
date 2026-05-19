@@ -715,7 +715,12 @@ export const ALL_GAMES = GAMES
 export function useStats() {
   const { state } = useStore()
   return useMemo(() => {
-    const pins = state.pins
+    // Admins see everything; analysts see only the pins they own.
+    const allPins = state.pins || []
+    const pins = state.role === 'admin'
+      ? allPins
+      : allPins.filter((p) => p.ownerId && p.ownerId === state.session?.userId)
+
     const finished = pins.filter((p) => p.status === 'Finished')
     const detections = pins.reduce((a, p) => a + (p.detections || 0), 0)
     const cheatSet = new Set()
@@ -732,17 +737,20 @@ export function useStats() {
       byGame[p.game].scans += p.status === 'Finished' ? 1 : 0
     })
 
+    // Trend is built from the user's own finished scans so analysts don't
+    // see global activity here.
     const byDay = {}
-    state.scans.forEach((s) => {
-      byDay[s.date] = byDay[s.date] || { date: s.date, scans: 0, detections: 0 }
-      byDay[s.date].scans += 1
-      byDay[s.date].detections += s.detections || 0
+    finished.forEach((p) => {
+      const d = new Date(p.scannedAt || p.createdAt || Date.now()).toISOString().slice(0, 10)
+      byDay[d] = byDay[d] || { date: d, scans: 0, detections: 0 }
+      byDay[d].scans += 1
+      byDay[d].detections += p.detections || 0
     })
     const trend = Object.values(byDay).sort((a, b) => a.date.localeCompare(b.date)).slice(-14)
 
     return {
       totalPins: pins.length,
-      totalScans: state.scans.length,
+      totalScans: finished.length,
       detections,
       uniqueCheats: cheatSet.size,
       pending: pins.filter((p) => p.status === 'Pending').length,
