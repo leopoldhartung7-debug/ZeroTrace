@@ -390,21 +390,43 @@ function reducer(state, action) {
       }
 
     case 'save-strings': {
-      const merged = new Set(state.savedStrings || [])
+      const owner = action.ownerId ?? null
+      // Normalize existing entries (legacy plain strings → {value, ownerId:null}).
+      const existing = (state.savedStrings || []).map((s) =>
+        typeof s === 'string' ? { value: s, ownerId: null } : s,
+      )
+      const have = new Set(existing.filter((e) => e.ownerId === owner).map((e) => e.value))
+      const additions = []
       for (const v of action.strings || []) {
-        if (v && v.length >= 3) merged.add(v)
+        if (v && v.length >= 3 && !have.has(v)) {
+          have.add(v)
+          additions.push({ value: v, ownerId: owner })
+        }
       }
-      return { ...state, savedStrings: [...merged].slice(0, 5000) }
+      return { ...state, savedStrings: [...additions, ...existing].slice(0, 5000) }
     }
 
-    case 'remove-saved-string':
+    case 'remove-saved-string': {
+      const owner = action.ownerId ?? null
       return {
         ...state,
-        savedStrings: (state.savedStrings || []).filter((s) => s !== action.value),
+        savedStrings: (state.savedStrings || []).filter((s) => {
+          const e = typeof s === 'string' ? { value: s, ownerId: null } : s
+          return !(e.value === action.value && e.ownerId === owner)
+        }),
       }
+    }
 
-    case 'clear-saved-strings':
-      return { ...state, savedStrings: [] }
+    case 'clear-saved-strings': {
+      const owner = action.ownerId ?? null
+      return {
+        ...state,
+        savedStrings: (state.savedStrings || []).filter((s) => {
+          const e = typeof s === 'string' ? { value: s, ownerId: null } : s
+          return e.ownerId !== owner
+        }),
+      }
+    }
 
     case 'connect-account':
       return {
@@ -551,7 +573,7 @@ function reducer(state, action) {
       return {
         ...state,
         detectionFiles: [
-          { id: 'd' + Date.now(), clientName: action.clientName, fileName: action.fileName, size: action.size, mode: action.mode, signatures: action.signatures, addedAt: Date.now() },
+          { id: 'd' + Date.now(), clientName: action.clientName, fileName: action.fileName, size: action.size, mode: action.mode, signatures: action.signatures, addedAt: Date.now(), ownerId: action.ownerId ?? null },
           ...state.detectionFiles,
         ],
         events: ev(state, 'file', 'Detection file added', `${action.clientName} (${action.fileName})`),
@@ -579,7 +601,7 @@ function reducer(state, action) {
       return {
         ...state,
         suspiciousFiles: [
-          { id: 'sf' + Date.now(), fileName: action.fileName, size: action.size, matches: action.matches, scannedAt: Date.now() },
+          { id: 'sf' + Date.now(), fileName: action.fileName, size: action.size, matches: action.matches, scannedAt: Date.now(), ownerId: action.ownerId ?? null },
           ...state.suspiciousFiles,
         ],
         events: ev(state, 'scan', 'File scanned', `${action.fileName} — ${action.matches.length} match(es)`),

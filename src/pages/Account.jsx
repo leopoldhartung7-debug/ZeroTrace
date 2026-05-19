@@ -506,6 +506,7 @@ export default function Account() {
                   </div>
                 </Field>
               </div>
+              {state.role === 'admin' && (<>
               <div className="tile rounded-xl border p-5">
                 <div className="flex items-center gap-3">
                   <Zap size={18} className="text-sky-500" />
@@ -563,6 +564,7 @@ export default function Account() {
                   </div>
                 </Field>
               </div>
+              </>)}
             </div>
           )}
 

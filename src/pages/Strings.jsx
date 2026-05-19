@@ -85,6 +85,11 @@ function ModeAndStatus({ mode, setMode, statusRows }) {
 function StringExtractor() {
   const toast = useToast()
   const { state, dispatch } = useStore()
+  const me = state.role === 'admin' ? 'admin' : (state.session?.userId || null)
+  const ownedSaved = (state.savedStrings || [])
+    .map((s) => (typeof s === 'string' ? { value: s, ownerId: null } : s))
+    .filter((s) => state.role === 'admin' ? true : s.ownerId === me)
+    .map((s) => s.value)
   const [tab, setTab] = useState('Upload')
   const [file, setFile] = useState(null)
   const [results, setResults] = useState(null)
@@ -101,7 +106,7 @@ function StringExtractor() {
       const strings = extractStrings(bytes, { min: 4 })
       const susp = scanSuspicious(strings)
       const suspSet = new Set(susp.map((s) => s.offset))
-      const savedLookup = new Set(state.savedStrings || [])
+      const savedLookup = new Set(ownedSaved)
       const savedSet = new Set(
         strings.filter((s) => savedLookup.has(s.value)).map((s) => s.offset),
       )
@@ -185,13 +190,13 @@ function StringExtractor() {
               <div>
                 <p className="caps-label">Saved signature strings</p>
                 <p className="txt mt-1 text-lg font-semibold">
-                  {(state.savedStrings || []).length} saved string(s)
+                  {ownedSaved.length} saved string(s)
                 </p>
               </div>
-              {(state.savedStrings || []).length > 0 && (
+              {ownedSaved.length > 0 && (
                 <button
                   onClick={() => {
-                    dispatch({ type: 'clear-saved-strings' })
+                    dispatch({ type: 'clear-saved-strings', ownerId: me })
                     toast({ type: 'success', title: 'All saved strings cleared' })
                   }}
                   className="bd txt flex items-center gap-2 rounded-lg border px-4 py-2 text-sm hover:border-red-500"
@@ -213,12 +218,12 @@ function StringExtractor() {
               />
             </div>
             <div className="bd tile mt-4 max-h-[420px] overflow-y-auto rounded-lg border font-mono text-xs">
-              {(state.savedStrings || []).length === 0 && (
+              {ownedSaved.length === 0 && (
                 <p className="muted px-3 py-10 text-center">
                   No saved strings yet. Analyze a file and press “Save strings”.
                 </p>
               )}
-              {(state.savedStrings || [])
+              {ownedSaved
                 .filter((v) => (slq ? v.toLowerCase().includes(slq.toLowerCase()) : true))
                 .slice(0, 3000)
                 .map((v, i) => (
@@ -235,7 +240,7 @@ function StringExtractor() {
                       onClick={(e) => {
                         e.preventDefault()
                         e.stopPropagation()
-                        dispatch({ type: 'remove-saved-string', value: v })
+                        dispatch({ type: 'remove-saved-string', value: v, ownerId: me })
                         toast({ type: 'success', title: 'String deleted', body: v.slice(0, 60) })
                       }}
                       className="ml-auto flex shrink-0 items-center gap-1.5 rounded-md border border-red-600/30 bg-red-600/10 px-3 py-1.5 text-red-500 hover:bg-red-600/20"
@@ -262,7 +267,7 @@ function StringExtractor() {
               <div className="flex flex-wrap items-center gap-2">
                 <button
                   onClick={() => {
-                    const existing = new Set(state.savedStrings || [])
+                    const existing = new Set(ownedSaved)
                     const fresh = [
                       ...new Set(
                         results.strings
@@ -274,7 +279,7 @@ function StringExtractor() {
                       toast({ type: 'info', title: 'Nothing new', body: 'All strings are already saved.' })
                       return
                     }
-                    dispatch({ type: 'save-strings', strings: fresh })
+                    dispatch({ type: 'save-strings', strings: fresh, ownerId: me })
                     toast({
                       type: 'success',
                       title: 'Strings saved',
@@ -293,12 +298,12 @@ function StringExtractor() {
                 </button>
               </div>
             </div>
-            {(state.savedStrings?.length || 0) > 0 && (
+            {ownedSaved.length > 0 && (
               <p className="muted mt-2 text-xs">
-                {state.savedStrings.length} saved signature string(s) in your library ·{' '}
+                {ownedSaved.length} saved signature string(s) in your library ·{' '}
                 <button
                   onClick={() => {
-                    dispatch({ type: 'clear-saved-strings' })
+                    dispatch({ type: 'clear-saved-strings', ownerId: me })
                     toast({ type: 'success', title: 'Saved strings cleared' })
                   }}
                   className="text-red-500 hover:underline"
@@ -367,12 +372,13 @@ function StringExtractor() {
 function PresenceDetection() {
   const { state, dispatch } = useStore()
   const toast = useToast()
+  const me = state.role === 'admin' ? 'admin' : (state.session?.userId || null)
   const [mode, setMode] = useState('Personal')
   const [tab, setTab] = useState('Upload')
   const [client, setClient] = useState('')
   const [busy, setBusy] = useState(false)
 
-  const files = state.detectionFiles
+  const files = (state.detectionFiles || []).filter((f) => state.role === 'admin' || f.ownerId === me)
   const last = files[0]
 
   const handleFile = async (file) => {
@@ -395,6 +401,7 @@ function PresenceDetection() {
         size: bytes.length,
         mode,
         signatures,
+        ownerId: me,
       })
       toast({ type: 'success', title: 'Detection file added', body: `${client} — ${signatures.length} signatures` })
       setClient('')
@@ -494,6 +501,8 @@ function PresenceDetection() {
 function SuspiciousDetection() {
   const { state, dispatch } = useStore()
   const toast = useToast()
+  const me = state.role === 'admin' ? 'admin' : (state.session?.userId || null)
+  const ownedSusp = (state.suspiciousFiles || []).filter((f) => state.role === 'admin' || f.ownerId === me)
   const [mode, setMode] = useState('Personal')
   const [tab, setTab] = useState('YARA Rules')
   const [rule, setRule] = useState(
@@ -546,6 +555,7 @@ function SuspiciousDetection() {
         fileName: file.name,
         size: bytes.length,
         matches: matches.map((m) => m.rule),
+        ownerId: me,
       })
       toast({
         type: matches.length ? 'error' : 'success',
@@ -566,7 +576,7 @@ function SuspiciousDetection() {
         setMode={setMode}
         statusRows={[
           { label: 'YARA Rule:', value: rules.length ? `${rules.length} configured` : 'Not configured' },
-          { label: 'Suspicious Files:', value: state.suspiciousFiles.length },
+          { label: 'Suspicious Files:', value: ownedSusp.length },
         ]}
       />
       <div>
@@ -675,11 +685,11 @@ function SuspiciousDetection() {
             <>
               <p className="caps-label">Scanned files</p>
               <h3 className="txt mb-5 mt-1 text-xl font-semibold">Suspicious Files</h3>
-              {state.suspiciousFiles.length === 0 ? (
+              {ownedSusp.length === 0 ? (
                 <p className="muted py-12 text-center text-sm">No files scanned yet.</p>
               ) : (
                 <div className="space-y-3">
-                  {state.suspiciousFiles.map((f) => (
+                  {ownedSusp.map((f) => (
                     <div
                       key={f.id}
                       className="tile flex items-center justify-between rounded-lg border px-4 py-3"
