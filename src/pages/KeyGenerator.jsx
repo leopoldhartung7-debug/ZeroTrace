@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { KeyRound, Copy, Trash2, ShieldOff, ShieldCheck, Plus } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { KeyRound, Copy, Trash2, ShieldOff, ShieldCheck, Plus, User as UserIcon, ChevronRight } from 'lucide-react'
 import { PageHeader, Card, Field, Input } from '../components/kit.jsx'
 import { Select, useToast } from '../components/ui.jsx'
 import { useStore, generateLicenseKey } from '../store.jsx'
@@ -25,6 +26,7 @@ function fmt(ts) {
 export default function KeyGenerator() {
   const { state, dispatch } = useStore()
   const toast = useToast()
+  const nav = useNavigate()
   const [label, setLabel] = useState('')
   const [plan, setPlan] = useState('Personal')
   const [duration, setDuration] = useState('30')
@@ -106,6 +108,8 @@ export default function KeyGenerator() {
           <div className="space-y-2">
             {keys.map((k) => {
               const st = statusOf(k)
+              const owner = (state.users || []).find((u) => u.id === k.usedBy)
+              const ownerPins = owner ? (state.pins || []).filter((p) => p.ownerId === owner.id) : []
               return (
                 <div key={k.id} className="tile rounded-lg border p-4">
                   <div className="flex flex-wrap items-center justify-between gap-3">
@@ -125,6 +129,32 @@ export default function KeyGenerator() {
                       {st}
                     </span>
                   </div>
+                  {owner ? (
+                    <button
+                      onClick={() => nav(`/users/${owner.id}`)}
+                      className="bd hoverable mt-3 flex w-full items-center justify-between rounded-lg border px-3 py-2 text-left"
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-sky-500/15 text-sky-400">
+                          <UserIcon size={15} />
+                        </span>
+                        <div>
+                          <p className="txt text-sm font-medium">{owner.username}</p>
+                          <p className="muted text-[11px]">
+                            {owner.email} · Discord ID: <span className="font-mono">{owner.discordId}</span>
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="bd muted rounded-md border px-2 py-0.5 text-[11px]">
+                          {ownerPins.length} pin{ownerPins.length === 1 ? '' : 's'}
+                        </span>
+                        <ChevronRight size={15} className="muted" />
+                      </div>
+                    </button>
+                  ) : (
+                    <p className="muted mt-3 text-xs italic">Not yet bound to an account.</p>
+                  )}
                   <div className="bd mt-3 flex flex-wrap items-center justify-between gap-3 border-t pt-3 text-xs">
                     <span className="muted">
                       Created {fmt(k.createdAt)} · Expires {k.expiresAt ? fmt(k.expiresAt) : 'Never'}

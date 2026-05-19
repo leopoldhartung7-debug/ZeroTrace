@@ -28,6 +28,7 @@ import {
 import SettingsPage from './pages/Settings.jsx'
 import Account from './pages/Account.jsx'
 import KeyGenerator from './pages/KeyGenerator.jsx'
+import UserDetails from './pages/UserDetails.jsx'
 
 function AdminRoute({ children }) {
   const { state } = useStore()
@@ -131,6 +132,14 @@ export default function App() {
               element={
                 <AdminRoute>
                   <KeyGenerator />
+                </AdminRoute>
+              }
+            />
+            <Route
+              path="/users/:id"
+              element={
+                <AdminRoute>
+                  <UserDetails />
                 </AdminRoute>
               }
             />

@@ -270,6 +270,15 @@ export const DE = {
   "Sends the 24h-before-expiry notice to the analyst's email. Set up a free template at emailjs.com — the template needs the params to_email, subject, message.":
     'Sendet die Vorab-Benachrichtigung (24 Std. vorher) an die E-Mail des Analysten. Lege bei emailjs.com eine kostenlose Vorlage an — sie benötigt die Parameter to_email, subject, message.',
   'Service ID': 'Service-ID', 'Template ID': 'Template-ID', 'Public Key': 'Public Key',
+  'Not yet bound to an account.': 'Noch keinem Konto zugewiesen.',
+  'User account': 'Nutzerkonto',
+  'All pins and scan results bound to this analyst.':
+    'Alle Pins und Scan-Ergebnisse, die an diesen Analysten gebunden sind.',
+  'This user has no pins yet.': 'Dieser Nutzer hat noch keine Pins.',
+  'User not found': 'Nutzer nicht gefunden',
+  'Back to Key Generator': 'Zurück zum Key-Generator',
+  'Cheating · Susp · Clean': 'Cheating · Verdächtig · Sauber',
+  'Verdict': 'Urteil',
   'Welcome back': 'Willkommen zurück',
   'Discord Server Bot': 'Discord-Server-Bot',
   'Live server / role lookup by Discord ID (see bot/README.md)':
