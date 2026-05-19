@@ -5,9 +5,9 @@
 
 const ACCENT = '#38bdf8'
 const ACCENT_DARK = '#0284c7'
-const BG = '#0a0c10'
-const PANEL = '#15181f'
-const BORDER = '#2a3140'
+const BG = '#1a1b1e'
+const PANEL = '#26272b'
+const BORDER = '#34363b'
 const TEXT = '#e7e8ea'
 const MUTED = '#8a8d93'
 
