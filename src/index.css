@@ -3,13 +3,13 @@
 @tailwind utilities;
 
 :root {
-  --bg: #080a0f;
-  --panel: #0e1118;
-  --tile: #131826;
-  --border: #1e2533;
-  --text: #e7e9ee;
-  --muted: #7b8493;
-  --hover: rgba(56, 189, 248, 0.06);
+  --bg: #1a1b1e;
+  --panel: #212226;
+  --tile: #26272b;
+  --border: #34363b;
+  --text: #e7e8ea;
+  --muted: #8a8d93;
+  --hover: rgba(255, 255, 255, 0.04);
   --accent: #38bdf8;
 }
 
@@ -26,13 +26,13 @@
 
 /* Public marketing pages stay dark regardless of the dashboard theme */
 .force-dark {
-  --bg: #080a0f;
-  --panel: #0e1118;
-  --tile: #131826;
-  --border: #1e2533;
-  --text: #e7e9ee;
-  --muted: #7b8493;
-  --hover: rgba(56, 189, 248, 0.06);
+  --bg: #1a1b1e;
+  --panel: #212226;
+  --tile: #26272b;
+  --border: #34363b;
+  --text: #e7e8ea;
+  --muted: #8a8d93;
+  --hover: rgba(255, 255, 255, 0.04);
   --accent: #38bdf8;
 }
 
@@ -43,9 +43,7 @@
     height: 100%;
   }
   body {
-    background:
-      radial-gradient(70% 55% at 50% -10%, rgba(56, 189, 248, 0.07), transparent 60%),
-      var(--bg);
+    background: var(--bg);
     color: var(--text);
     -webkit-font-smoothing: antialiased;
   }
