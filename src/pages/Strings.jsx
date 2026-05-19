@@ -10,6 +10,26 @@ import {
   extractStrings, scanSuspicious, parseYaraRule, runYaraRule, formatBytes, readFileBytes,
 } from '../lib/analyze.js'
 
+// Press-and-hold: fires `cb` only after holding for `ms`; any release,
+// move or scroll cancels it. Prevents accidental single-tap deletes.
+function holdHandlers(timer, cb, ms = 650) {
+  const start = () => {
+    clearTimeout(timer.current)
+    timer.current = setTimeout(cb, ms)
+  }
+  const cancel = () => clearTimeout(timer.current)
+  return {
+    onMouseDown: start,
+    onMouseUp: cancel,
+    onMouseLeave: cancel,
+    onTouchStart: start,
+    onTouchEnd: cancel,
+    onTouchMove: cancel,
+    onTouchCancel: cancel,
+    onContextMenu: (e) => e.preventDefault(),
+  }
+}
+
 function Dropzone({ onFile, hint, accept = '.exe,.jar,.dll,.sys' }) {
   const ref = useRef(null)
   const [drag, setDrag] = useState(false)
@@ -92,6 +112,7 @@ function StringExtractor() {
   const [q, setQ] = useState('')
   const [onlySusp, setOnlySusp] = useState(false)
   const [slq, setSlq] = useState('')
+  const holdTimer = useRef(null)
 
   const analyze = async () => {
     if (!file) return
@@ -201,7 +222,7 @@ function StringExtractor() {
               )}
             </div>
             <p className="muted mt-1 text-sm">
-              Click a string to delete it. These are matched on every file analysis.
+              Press and hold a string to delete it. These are matched on every file analysis.
             </p>
             <div className="relative mt-5">
               <Search size={15} className="muted absolute left-3 top-1/2 -translate-y-1/2" />
@@ -224,14 +245,14 @@ function StringExtractor() {
                 .map((v, i) => (
                   <button
                     key={i}
-                    onClick={() => {
+                    {...holdHandlers(holdTimer, () => {
                       dispatch({ type: 'remove-saved-string', value: v })
                       toast({ type: 'success', title: 'String deleted', body: v.slice(0, 60) })
-                    }}
-                    className="bd hoverable group flex w-full items-start gap-3 border-b px-3 py-1.5 text-left last:border-0"
+                    })}
+                    className="bd hoverable group flex w-full select-none items-start gap-3 border-b px-3 py-1.5 text-left last:border-0 active:bg-red-600/10"
                   >
                     <span className="muted w-6 shrink-0">{i + 1}</span>
-                    <span className="txt break-all group-hover:text-red-500">{v}</span>
+                    <span className="txt break-all group-active:text-red-500">{v}</span>
                     <Trash2 size={13} className="muted ml-auto shrink-0 opacity-0 group-hover:opacity-100" />
                   </button>
                 ))}
