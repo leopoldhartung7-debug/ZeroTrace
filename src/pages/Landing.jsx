@@ -93,7 +93,6 @@ function SecurityMock() {
 const PANELS = [
   { icon: FastForward, color: 'text-green-500', title: 'Lightning Fast\nSpeed', text: 'ZeroTrace prioritizes completing scans within a strict time frame, averaging around 60 seconds for comprehensive cheat detection.', mock: <FlowMock /> },
   { icon: Activity, color: 'text-yellow-500', title: 'Detection\nQuality', text: 'Powered by cutting-edge AI and expert digital forensics, we provide precise, trustworthy cheat detection results.', mock: <ResultsMock />, reverse: true },
-  { icon: Lock, color: 'text-sky-500', title: 'Military-Grade\nSecurity', text: "ZeroTrace is secured with military-grade encryption — because security comes first, and it's built into every part of our product.", mock: <SecurityMock /> },
 ]
 
 const FEATURES = [
