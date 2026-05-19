@@ -279,6 +279,27 @@ export const DE = {
   'Back to Key Generator': 'Zurück zum Key-Generator',
   'Cheating · Susp · Clean': 'Cheating · Verdächtig · Sauber',
   'Verdict': 'Urteil',
+  'Verify your email': 'E-Mail bestätigen', 'Verify & finish': 'Bestätigen & fertigstellen',
+  'Resend code': 'Code erneut senden', 'Checking email…': 'E-Mail wird geprüft…',
+  'Verification code': 'Bestätigungscode',
+  'A 6-digit verification code was sent to': 'Ein 6-stelliger Bestätigungscode wurde gesendet an',
+  '. Enter it below to finish creating your account.':
+    '. Gib ihn unten ein, um die Kontoerstellung abzuschließen.',
+  "Didn't get it? Check spam, or use Resend. EmailJS must be configured under Account → Integrations.":
+    'Nicht angekommen? Spam-Ordner prüfen oder „Code erneut senden" nutzen. EmailJS muss unter Konto → Integrationen konfiguriert sein.',
+  'Bind your account to a license key issued by an admin. The email is checked (MX record) and — if EmailJS is set up — a verification code is sent to it.':
+    'Verknüpfe dein Konto mit einem von einem Admin ausgestellten Lizenz-Key. Die E-Mail wird per MX-Record geprüft, und falls EmailJS eingerichtet ist, wird ein Bestätigungscode an sie gesendet.',
+  'Email not deliverable': 'E-Mail nicht zustellbar',
+  'Email domain not verified': 'E-Mail-Domain nicht geprüft',
+  "Couldn't reach the DNS service — proceeding without domain check.":
+    'DNS-Dienst nicht erreichbar — wird ohne Domain-Prüfung fortgesetzt.',
+  'Could not send verification email': 'Bestätigungs-E-Mail konnte nicht gesendet werden',
+  'Check your EmailJS configuration.': 'Überprüfe deine EmailJS-Konfiguration.',
+  'Verification code sent': 'Bestätigungscode gesendet',
+  'Code resent': 'Code erneut gesendet', 'Could not resend code': 'Code konnte nicht erneut gesendet werden',
+  'Wrong code': 'Falscher Code', 'The verification code does not match.': 'Der Bestätigungscode stimmt nicht.',
+  'Invalid email': 'Ungültige E-Mail',
+  'That does not look like a valid email address.': 'Das sieht nicht nach einer gültigen E-Mail-Adresse aus.',
   'Real-Time Webhook Alerts': 'Echtzeit-Webhook-Benachrichtigungen',
   'The moment a scan finishes, the full verdict, risk score and flagged Discord servers are pushed to your team’s Discord webhook — no polling, no waiting.':
     'Sobald ein Scan abgeschlossen ist, werden Urteil, Risiko-Score und markierte Discord-Server sofort an den Discord-Webhook deines Teams gesendet — kein Polling, kein Warten.',
