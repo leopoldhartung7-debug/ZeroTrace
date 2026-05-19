@@ -13,6 +13,12 @@ export function generatePinCode() {
   return genPin()
 }
 
+export function generateLicenseKey() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+  const block = () => Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
+  return `ZT-${block()}-${block()}-${block()}-${block()}`
+}
+
 const GAMES = ['HYTALE', 'MINECRAFT', 'CS2', 'VALORANT', 'RUST', 'FIVEM']
 const CHEATS = [
   'KillAura', 'Reach', 'Velocity', 'AutoClicker', 'Aimbot', 'Wallhack',
@@ -224,6 +230,8 @@ function seed() {
     tickets: [],
     toolStyle: defaultToolStyle(),
     auth: false,
+    role: null,
+    licenseKeys: [],
     savedStrings: [],
     connections: [],
     integrations: { discordWebhook: '', virusTotalKey: '', discordBotUrl: '', discordBotKey: '' },
@@ -282,18 +290,56 @@ function reducer(state, action) {
     case 'set-setting':
       return { ...state, settings: { ...state.settings, [action.key]: action.value } }
 
-    case 'login':
+    case 'login': {
+      const role = action.role === 'admin' ? 'admin' : 'analyst'
       return {
         ...state,
         auth: true,
+        role,
         session: {
           id: 'sess_' + Math.random().toString(16).slice(2, 14),
+          role,
           createdAt: Date.now(),
         },
       }
+    }
 
     case 'logout':
-      return { ...state, auth: false, session: null }
+      return { ...state, auth: false, role: null, session: null }
+
+    case 'create-key': {
+      const days = Number(action.durationDays) || 0
+      const key = {
+        id: 'lk_' + Date.now(),
+        key: action.key,
+        label: (action.label || '').trim() || 'Untitled key',
+        plan: action.plan || 'Personal',
+        durationDays: days,
+        createdAt: Date.now(),
+        expiresAt: days > 0 ? Date.now() + days * 86400000 : null,
+        status: 'Active',
+      }
+      return {
+        ...state,
+        licenseKeys: [key, ...(state.licenseKeys || [])],
+        events: ev(state, 'pin', 'License key created', `${key.label} — ${key.plan}`),
+      }
+    }
+
+    case 'revoke-key':
+      return {
+        ...state,
+        licenseKeys: (state.licenseKeys || []).map((k) =>
+          k.id === action.id ? { ...k, status: k.status === 'Active' ? 'Revoked' : 'Active' } : k,
+        ),
+      }
+
+    case 'delete-key':
+      return {
+        ...state,
+        licenseKeys: (state.licenseKeys || []).filter((k) => k.id !== action.id),
+        events: ev(state, 'pin', 'License key deleted', action.key || ''),
+      }
 
     case 'save-strings': {
       const merged = new Set(state.savedStrings || [])
@@ -666,7 +712,7 @@ const DICT = {
   en: {
     'nav.dashboard': 'Dashboard', 'nav.pins': 'Pins', 'nav.strings': 'Strings',
     'nav.database': 'Cheat Database', 'nav.tools': 'Forensic Tools', 'nav.history': 'Activity Log',
-    'nav.designer': 'Tool Designer',
+    'nav.designer': 'Tool Designer', 'nav.keys': 'Key Generator',
     'nav.support': 'Support', 'nav.resources': 'Resources', 'nav.settings': 'Settings',
     'cat.services': 'Services', 'cat.activity': 'Activity', 'cat.support': 'Support', 'cat.others': 'Others',
     'dash.kicker': 'View statistics, events, and announcements on the ZeroTrace.',
@@ -679,7 +725,7 @@ const DICT = {
   de: {
     'nav.dashboard': 'Übersicht', 'nav.pins': 'Pins', 'nav.strings': 'Strings',
     'nav.database': 'Cheat-Datenbank', 'nav.tools': 'Forensik-Tools', 'nav.history': 'Aktivität',
-    'nav.designer': 'Tool-Designer',
+    'nav.designer': 'Tool-Designer', 'nav.keys': 'Key-Generator',
     'nav.support': 'Support', 'nav.resources': 'Ressourcen', 'nav.settings': 'Einstellungen',
     'cat.services': 'Dienste', 'cat.activity': 'Aktivität', 'cat.support': 'Hilfe', 'cat.others': 'Sonstiges',
     'dash.kicker': 'Statistiken, Ereignisse und Ankündigungen im Überblick.',

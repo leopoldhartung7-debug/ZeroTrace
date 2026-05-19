@@ -236,6 +236,18 @@ export const DE = {
   'Invalid Discord ID': 'Ungültige Discord-ID',
   'Enter a numeric Discord ID (17–20 digits).': 'Gib eine numerische Discord-ID ein (17–20 Ziffern).',
   'Scan summary sent to webhook': 'Scan-Übersicht an Webhook gesendet',
+  'Key Generator': 'Key-Generator', 'Admin only': 'Nur Admin',
+  'Create and manage license keys. Choose a plan and how long the key stays valid.':
+    'Lizenz-Keys erstellen und verwalten. Wähle einen Plan und wie lange der Key gültig bleibt.',
+  'Label': 'Bezeichnung', 'Valid for': 'Gültig für', 'Generate Key': 'Key erstellen',
+  'Generated Keys': 'Erstellte Keys', 'No keys generated yet.': 'Noch keine Keys erstellt.',
+  'Key created & copied': 'Key erstellt & kopiert', 'Activate': 'Aktivieren', 'Revoke': 'Sperren',
+  'Lifetime': 'Lebenslang', '1 Day': '1 Tag', '7 Days': '7 Tage', '30 Days': '30 Tage',
+  '90 Days': '90 Tage', '1 Year': '1 Jahr', 'Trial': 'Test', 'Personal': 'Privat',
+  'active ·': 'aktiv ·', 'Created': 'Erstellt', '· Expires': '· Läuft ab', 'Never': 'Nie',
+  'e.g. Customer #42': 'z. B. Kunde #42',
+  'Demo logins — Admin:': 'Demo-Logins — Admin:', '· Analyst:': '· Analyst:',
+  'Welcome back': 'Willkommen zurück',
   'Discord Server Bot': 'Discord-Server-Bot',
   'Live server / role lookup by Discord ID (see bot/README.md)':
     'Live-Server-/Rollen-Abfrage per Discord-ID (siehe bot/README.md)',

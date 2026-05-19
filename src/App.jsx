@@ -26,6 +26,13 @@ import {
 } from './pages/resources.jsx'
 import SettingsPage from './pages/Settings.jsx'
 import Account from './pages/Account.jsx'
+import KeyGenerator from './pages/KeyGenerator.jsx'
+
+function AdminRoute({ children }) {
+  const { state } = useStore()
+  if (state.role !== 'admin') return <Navigate to="/dashboard" replace />
+  return children
+}
 
 function DashboardLayout() {
   const { state } = useStore()
@@ -117,6 +124,14 @@ export default function App() {
             <Route path="/resources/changelogs" element={<Changelogs />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/account" element={<Account />} />
+            <Route
+              path="/keys"
+              element={
+                <AdminRoute>
+                  <KeyGenerator />
+                </AdminRoute>
+              }
+            />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

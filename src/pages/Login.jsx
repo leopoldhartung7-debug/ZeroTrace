@@ -13,23 +13,30 @@ export default function Login() {
   const [form, setForm] = useState({ id: '', pw: '' })
 
   const ADMIN = { user: 'admin', email: 'admin@anticheat.ac', pass: 'OceanAdmin1' }
+  const ANALYST = { user: 'analyst', email: 'analyst@anticheat.ac', pass: 'ZeroTraceAnalyst1' }
 
-  const enterDashboard = (method) => {
-    dispatch({ type: 'login' })
-    toast({ type: 'success', title: 'Welcome back', body: method ? `Signed in with ${method}` : 'Signed in as admin' })
+  const enterDashboard = (role, method) => {
+    dispatch({ type: 'login', role })
+    toast({
+      type: 'success',
+      title: 'Welcome back',
+      body: method ? `Signed in with ${method}` : `Signed in as ${role}`,
+    })
     nav('/dashboard')
   }
 
   const submitCredentials = () => {
     const id = form.id.trim().toLowerCase()
     if ((id === ADMIN.user || id === ADMIN.email) && form.pw === ADMIN.pass) {
-      enterDashboard(null)
+      enterDashboard('admin', null)
+    } else if ((id === ANALYST.user || id === ANALYST.email) && form.pw === ANALYST.pass) {
+      enterDashboard('analyst', null)
     } else {
       toast({ type: 'error', title: 'Invalid credentials', body: 'Wrong username or password.' })
     }
   }
 
-  const signIn = (method) => enterDashboard(method)
+  const signIn = (method) => enterDashboard('analyst', method)
 
   return (
     <div className="force-dark app-bg flex min-h-screen items-center justify-center px-4 py-10 text-white">
@@ -121,6 +128,10 @@ export default function Login() {
           >
             Register
           </button>
+        </p>
+        <p className="mt-4 rounded-lg border border-white/10 bg-white/[0.02] px-3 py-2 text-center text-[11px] leading-relaxed text-neutral-500">
+          Demo logins — Admin: <span className="text-neutral-300">admin / OceanAdmin1</span>
+          {' · '}Analyst: <span className="text-neutral-300">analyst / ZeroTraceAnalyst1</span>
         </p>
         <p className="mt-3 text-center text-xs text-neutral-500">
           Need help?{' '}
