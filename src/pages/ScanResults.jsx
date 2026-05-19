@@ -4,7 +4,7 @@ import {
   ArrowLeft, Copy, ShieldAlert, Download, Flag, Gauge, Monitor, Cpu,
   AlertTriangle, CheckCircle2, Eye, Sparkles, Search, ChevronLeft,
   ChevronRight, Shield, MessageSquare, Video, Gamepad2, Database, Activity,
-  Clock, Play, ImageOff,
+  Clock, Play, ImageOff, Usb, FileText,
 } from 'lucide-react'
 import { Card } from '../components/kit.jsx'
 import { Modal, Select, useToast } from '../components/ui.jsx'
@@ -680,6 +680,72 @@ export default function ScanResults() {
             <td className="txt break-all px-3 py-4 font-mono text-xs">{r.path}</td>
           )}
         />
+      </Card>
+
+      <Card className="p-6">
+        <p className="caps-label">USB Activity</p>
+        <h2 className="txt mt-1 flex items-center gap-2 text-lg font-semibold">
+          <Usb size={18} /> USB Activity ({report.usb.length})
+        </h2>
+        <p className="muted mb-4 mt-1 text-sm">
+          Removable / USB storage recently connected or removed, and what was on it
+        </p>
+        {report.usb.length === 0 ? (
+          <p className="muted py-12 text-center text-sm">No USB activity recorded.</p>
+        ) : (
+          <div className="space-y-3">
+            {report.usb.map((u, i) => {
+              const tone =
+                u.action === 'Removed'
+                  ? 'border-red-600/40 bg-red-600/15 text-red-500'
+                  : u.action === 'Connected'
+                    ? 'border-green-600/40 bg-green-600/15 text-green-500'
+                    : u.action === 'Mounted'
+                      ? 'border-blue-600/40 bg-blue-600/15 text-blue-400'
+                      : 'bd muted'
+              return (
+                <div key={i} className="tile rounded-xl border p-4">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="flex items-start gap-3">
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-600/15 text-blue-400">
+                        <Usb size={18} />
+                      </span>
+                      <div>
+                        <p className="txt text-sm font-semibold">{u.device}</p>
+                        <p className="muted font-mono text-xs">Serial: {u.serial}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className={`rounded-md border px-2.5 py-1 text-[11px] font-semibold ${tone}`}>
+                        {u.action}
+                      </span>
+                      <span className="muted flex items-center gap-1.5 text-xs">
+                        <Clock size={12} /> {u.time}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="bd mt-3 border-t pt-3">
+                    <p className="caps-label mb-2">Contents ({u.contents.length})</p>
+                    {u.contents.length === 0 ? (
+                      <p className="muted text-xs">Contents not recorded for this device.</p>
+                    ) : (
+                      <div className="flex flex-wrap gap-1.5">
+                        {u.contents.map((c, k) => (
+                          <span
+                            key={k}
+                            className="bd tile muted inline-flex items-center gap-1.5 rounded-md border px-2 py-1 font-mono text-[11px]"
+                          >
+                            <FileText size={11} /> {c}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
       </Card>
 
       <Card className="p-6">

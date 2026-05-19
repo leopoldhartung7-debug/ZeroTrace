@@ -50,6 +50,21 @@ std::string BuildJson(const std::string& sessionCode, const ScanResult& r) {
           << "\"severity\":\"" << JsonEscape(d.severity) << "\","
           << "\"detail\":\"" << JsonEscape(d.detail) << "\"}";
     }
+    j << "],\"usb\":[";
+    for (size_t i = 0; i < r.usb.size(); ++i) {
+        const auto& u = r.usb[i];
+        if (i) j << ",";
+        j << "{\"device\":\"" << JsonEscape(u.device) << "\","
+          << "\"serial\":\"" << JsonEscape(u.serial) << "\","
+          << "\"action\":\"" << JsonEscape(u.action) << "\","
+          << "\"time\":\"" << JsonEscape(u.time) << "\","
+          << "\"contents\":[";
+        for (size_t k = 0; k < u.contents.size(); ++k) {
+            if (k) j << ",";
+            j << "\"" << JsonEscape(u.contents[k]) << "\"";
+        }
+        j << "]}";
+    }
     j << "]}";
     return j.str();
 }

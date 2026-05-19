@@ -208,6 +208,13 @@ export const DE = {
   'User PC': 'Nutzer-PC', 'User': 'Nutzer', 'Install Date': 'Installationsdatum',
   'Presence Detection': 'Präsenzerkennung', 'Screenshare & forensic helpers': 'Screenshare- & Forensik-Helfer',
   'Screenshare Tool': 'Screenshare-Tool',
+  'USB Activity': 'USB-Aktivität',
+  'Removable / USB storage recently connected or removed, and what was on it':
+    'Wechseldatenträger / USB-Speicher, der kürzlich angeschlossen oder entfernt wurde, und was darauf war',
+  'No USB activity recorded.': 'Keine USB-Aktivität aufgezeichnet.',
+  'Contents not recorded for this device.': 'Inhalt für dieses Gerät nicht aufgezeichnet.',
+  'Connected': 'Angeschlossen', 'Mounted': 'Eingebunden', 'Seen': 'Gesehen',
+  'Serial:': 'Seriennr.:',
 
   // ---- Account / settings ----
   'Manage your account settings and preferences': 'Verwalte deine Kontoeinstellungen und Präferenzen',

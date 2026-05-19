@@ -94,6 +94,17 @@ export function deriveScanReport(pin) {
   }))
   const execution = allFindings.map((d) => ({ path: d.location }))
 
+  // USB / removable storage activity — only what the scanner reported.
+  const usb = (Array.isArray(pin.usb) ? pin.usb : [])
+    .filter((u) => u && (u.device || u.serial))
+    .map((u) => ({
+      device: (u.device || '').trim() || 'Unknown device',
+      serial: (u.serial || '').trim() || '—',
+      action: (u.action || '').trim() || 'Seen',
+      time: (u.time || '').trim() || '—',
+      contents: Array.isArray(u.contents) ? u.contents.filter(Boolean) : [],
+    }))
+
   return {
     scannedAt: pin.scannedAt || null,
     ai: 'Not Supported',
@@ -130,6 +141,7 @@ export function deriveScanReport(pin) {
     compilationDates: [],
     mft: [],
     execution,
+    usb,
     screenshot: null,
   }
 }
@@ -468,6 +480,7 @@ function reducer(state, action) {
         detections: dets.length,
         cheats,
         scanDetections: dets,
+        usb: Array.isArray(p.usb) ? p.usb : [],
         host: p.host || '',
         os: p.os || '',
         createdAt: prev ? prev.createdAt : Date.now(),
