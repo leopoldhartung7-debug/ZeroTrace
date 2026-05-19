@@ -91,6 +91,7 @@ function StringExtractor() {
   const [busy, setBusy] = useState(false)
   const [q, setQ] = useState('')
   const [onlySusp, setOnlySusp] = useState(false)
+  const [slq, setSlq] = useState('')
 
   const analyze = async () => {
     if (!file) return
@@ -144,6 +145,7 @@ function StringExtractor() {
         tabs={[
           { label: 'Upload', icon: UploadIcon },
           { label: 'Results', icon: FileText },
+          { label: 'String List', icon: Search },
         ]}
         active={tab}
         onChange={setTab}
@@ -177,6 +179,64 @@ function StringExtractor() {
               </button>
             </div>
           </>
+        ) : tab === 'String List' ? (
+          <>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="caps-label">Saved signature strings</p>
+                <p className="txt mt-1 text-lg font-semibold">
+                  {(state.savedStrings || []).length} saved string(s)
+                </p>
+              </div>
+              {(state.savedStrings || []).length > 0 && (
+                <button
+                  onClick={() => {
+                    dispatch({ type: 'clear-saved-strings' })
+                    toast({ type: 'success', title: 'All saved strings cleared' })
+                  }}
+                  className="bd txt flex items-center gap-2 rounded-lg border px-4 py-2 text-sm hover:border-red-500"
+                >
+                  <Trash2 size={15} /> Clear all
+                </button>
+              )}
+            </div>
+            <p className="muted mt-1 text-sm">
+              Click a string to delete it. These are matched on every file analysis.
+            </p>
+            <div className="relative mt-5">
+              <Search size={15} className="muted absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                value={slq}
+                onChange={(e) => setSlq(e.target.value)}
+                placeholder="Filter saved strings..."
+                className="bd tile txt w-full rounded-lg border py-2 pl-9 pr-3 text-sm focus:outline-none"
+              />
+            </div>
+            <div className="bd tile mt-4 max-h-[420px] overflow-y-auto rounded-lg border font-mono text-xs">
+              {(state.savedStrings || []).length === 0 && (
+                <p className="muted px-3 py-10 text-center">
+                  No saved strings yet. Analyze a file and press “Save strings”.
+                </p>
+              )}
+              {(state.savedStrings || [])
+                .filter((v) => (slq ? v.toLowerCase().includes(slq.toLowerCase()) : true))
+                .slice(0, 3000)
+                .map((v, i) => (
+                  <button
+                    key={i}
+                    onClick={() => {
+                      dispatch({ type: 'remove-saved-string', value: v })
+                      toast({ type: 'success', title: 'String deleted', body: v.slice(0, 60) })
+                    }}
+                    className="bd hoverable group flex w-full items-start gap-3 border-b px-3 py-1.5 text-left last:border-0"
+                  >
+                    <span className="muted w-6 shrink-0">{i + 1}</span>
+                    <span className="txt break-all group-hover:text-red-500">{v}</span>
+                    <Trash2 size={13} className="muted ml-auto shrink-0 opacity-0 group-hover:opacity-100" />
+                  </button>
+                ))}
+            </div>
+          </>
         ) : !results ? (
           <div className="muted py-16 text-center text-sm">No analysis results yet.</div>
         ) : (
@@ -192,11 +252,23 @@ function StringExtractor() {
               <div className="flex flex-wrap items-center gap-2">
                 <button
                   onClick={() => {
-                    dispatch({ type: 'save-strings', strings: results.strings.map((s) => s.value) })
+                    const existing = new Set(state.savedStrings || [])
+                    const fresh = [
+                      ...new Set(
+                        results.strings
+                          .map((s) => s.value)
+                          .filter((v) => v && v.length >= 3 && !existing.has(v)),
+                      ),
+                    ]
+                    if (fresh.length === 0) {
+                      toast({ type: 'info', title: 'Nothing new', body: 'All strings are already saved.' })
+                      return
+                    }
+                    dispatch({ type: 'save-strings', strings: fresh })
                     toast({
                       type: 'success',
                       title: 'Strings saved',
-                      body: `${results.strings.length} strings — future scans will flag these.`,
+                      body: `${fresh.length} new string(s) added — future scans will flag these.`,
                     })
                   }}
                   className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-500"

@@ -217,6 +217,12 @@ function reducer(state, action) {
       return { ...state, savedStrings: [...merged].slice(0, 5000) }
     }
 
+    case 'remove-saved-string':
+      return {
+        ...state,
+        savedStrings: (state.savedStrings || []).filter((s) => s !== action.value),
+      }
+
     case 'clear-saved-strings':
       return { ...state, savedStrings: [] }
 
