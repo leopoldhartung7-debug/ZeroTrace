@@ -30,6 +30,37 @@ function DiscordChecker() {
   const [busy, setBusy] = useState(false)
 
   const webhook = state.integrations?.discordWebhook || ''
+  const botUrl = state.integrations?.discordBotUrl || ''
+  const botKey = state.integrations?.discordBotKey || ''
+
+  const liveCheck = async (cleanId) => {
+    const resp = await fetch(`${botUrl}/check?id=${encodeURIComponent(cleanId)}`, {
+      headers: botKey ? { 'x-api-key': botKey } : {},
+    })
+    if (!resp.ok) throw new Error(`Bot HTTP ${resp.status}`)
+    const data = await resp.json()
+    const servers = (data.results || [])
+      .filter((s) => s.member)
+      .map((s) => ({
+        name: s.guild,
+        id: s.guildId,
+        flag: s.flag || 'clean',
+        roles: Array.isArray(s.roles) ? s.roles : [],
+        joinedAt: s.joinedAt || null,
+      }))
+      .sort((a, b) => (a.flag === 'clean' ? 1 : 0) - (b.flag === 'clean' ? 1 : 0))
+    return {
+      id: cleanId,
+      created: data.createdAt || (decodeSnowflake(cleanId)?.toISOString() ?? null),
+      source: 'bot',
+      totalServers: data.totalServers || 0,
+      found: data.found ?? servers.length,
+      scans: 0,
+      servers,
+      cheat: servers.filter((s) => s.flag === 'cheat'),
+      reselling: servers.filter((s) => s.flag === 'reselling'),
+    }
+  }
 
   const build = (cleanId) => {
     const created = decodeSnowflake(cleanId)
@@ -53,6 +84,7 @@ function DiscordChecker() {
     return {
       id: cleanId,
       created: created ? created.toISOString() : null,
+      source: 'scans',
       pins: pins.length,
       scans,
       servers,
@@ -67,16 +99,24 @@ function DiscordChecker() {
       return
     }
     const flagged = [...r.cheat, ...r.reselling]
-    const list = (arr) =>
-      arr.length ? arr.map((s) => `• ${s.name} (${s.flag})`).join('\n').slice(0, 1000) : '—'
+    const line = (s) => {
+      const roles = s.roles && s.roles.length ? ` — roles: ${s.roles.join(', ')}` : ''
+      return `• ${s.name} (${s.flag})${roles}`
+    }
+    const list = (arr) => (arr.length ? arr.map(line).join('\n').slice(0, 1024) : '—')
+    const srcField =
+      r.source === 'bot'
+        ? { name: 'Servers (member / checked)', value: `${r.found} / ${r.totalServers}`, inline: true }
+        : { name: 'Scans on record', value: String(r.scans), inline: true }
     const embed = {
       title: 'Discord ID Server Check',
       color: r.cheat.length ? 0xdc2626 : r.reselling.length ? 0xf59e0b : 0x22c55e,
       fields: [
         { name: 'Discord ID', value: '`' + r.id + '`', inline: true },
         { name: 'Account created', value: r.created ? `<t:${Math.floor(new Date(r.created).getTime() / 1000)}:F>` : 'Unknown', inline: true },
-        { name: 'Scans on record', value: String(r.scans), inline: true },
-        { name: `Servers detected (${r.servers.length})`, value: list(r.servers) },
+        srcField,
+        { name: 'Source', value: r.source === 'bot' ? 'Live bot lookup' : 'Past scan data', inline: true },
+        { name: `Servers (${r.servers.length})`, value: list(r.servers) },
         { name: `Flagged (${flagged.length})`, value: list(flagged) },
       ],
       footer: { text: 'Ocean Anti-Cheat — Forensic Tools' },
@@ -106,7 +146,20 @@ function DiscordChecker() {
     if (!/^\d{17,20}$/.test(cleanId)) {
       return toast({ type: 'error', title: 'Invalid Discord ID', body: 'Enter a numeric Discord ID (17–20 digits).' })
     }
-    const r = build(cleanId)
+    let r
+    if (botUrl) {
+      setBusy(true)
+      try {
+        r = await liveCheck(cleanId)
+      } catch (e) {
+        toast({ type: 'error', title: 'Bot lookup failed — using scan data', body: e.message })
+        r = build(cleanId)
+      } finally {
+        setBusy(false)
+      }
+    } else {
+      r = build(cleanId)
+    }
     setRes(r)
     await sendWebhook(r)
   }
@@ -116,9 +169,10 @@ function DiscordChecker() {
       <p className="caps-label">Discord</p>
       <h3 className="txt mt-1 text-xl font-semibold">Discord ID Server Checker</h3>
       <p className="muted mb-4 mt-1 text-sm">
-        Enter only a Discord ID. Decodes the account creation date and aggregates the servers
-        detected in past scans bound to this ID — reselling and cheat servers are flagged.
-        Results are sent to the webhook configured in Settings.
+        Enter only a Discord ID. With the Discord Server Bot configured (Account → Integrations)
+        it checks live which cheat / reselling servers the account is in and which roles it holds.
+        Without the bot it falls back to servers detected in past scans for this ID. Reselling and
+        cheat servers are flagged and the result is sent to the configured webhook.
       </p>
       <div className="flex flex-col gap-2 sm:flex-row">
         <input
@@ -151,8 +205,10 @@ function DiscordChecker() {
               </p>
             </div>
             <div className="tile rounded-lg border p-3">
-              <p className="caps-label">Scans on record</p>
-              <p className="txt mt-1 text-sm font-medium">{res.scans}</p>
+              <p className="caps-label">{res.source === 'bot' ? 'Member / checked' : 'Scans on record'}</p>
+              <p className="txt mt-1 text-sm font-medium">
+                {res.source === 'bot' ? `${res.found} / ${res.totalServers}` : res.scans}
+              </p>
             </div>
             <div className="tile rounded-lg border p-3">
               <p className="caps-label">Flagged servers</p>
@@ -162,9 +218,15 @@ function DiscordChecker() {
             </div>
           </div>
 
+          <p className="muted text-xs">
+            Source: {res.source === 'bot' ? 'Live Discord bot lookup' : 'Past scan data'}
+          </p>
+
           {res.servers.length === 0 ? (
             <p className="muted py-8 text-center text-sm">
-              No server data on record for this ID. Run a scan with a pin bound to this Discord ID.
+              {res.source === 'bot'
+                ? 'This account is not in any server the bot monitors.'
+                : 'No server data on record for this ID. Run a scan with a pin bound to this Discord ID.'}
             </p>
           ) : (
             <div className="space-y-2">
@@ -177,17 +239,29 @@ function DiscordChecker() {
                       : 'bd muted'
                 const tag = g.flag === 'cheat' ? 'Cheat Discord' : g.flag === 'reselling' ? 'Reselling Discord' : 'Member'
                 return (
-                  <div key={i} className="tile flex flex-wrap items-center justify-between gap-3 rounded-lg border px-4 py-3">
-                    <div className="flex items-center gap-3">
-                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-600/15 text-blue-400">
-                        <Server size={15} />
-                      </span>
-                      <div>
-                        <p className="txt text-sm font-medium">{g.name}</p>
-                        <p className="muted font-mono text-xs">ID: {g.id}</p>
+                  <div key={i} className="tile rounded-lg border px-4 py-3">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-600/15 text-blue-400">
+                          <Server size={15} />
+                        </span>
+                        <div>
+                          <p className="txt text-sm font-medium">{g.name}</p>
+                          <p className="muted font-mono text-xs">ID: {g.id}</p>
+                        </div>
                       </div>
+                      <span className={`rounded-md border px-2.5 py-1 text-[11px] font-semibold ${tone}`}>{tag}</span>
                     </div>
-                    <span className={`rounded-md border px-2.5 py-1 text-[11px] font-semibold ${tone}`}>{tag}</span>
+                    {g.roles && g.roles.length > 0 && (
+                      <div className="bd mt-3 border-t pt-3">
+                        <p className="caps-label mb-2">Roles ({g.roles.length})</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {g.roles.map((rn, k) => (
+                            <span key={k} className="bd tile muted rounded-md border px-2 py-1 text-[11px]">{rn}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )
               })}

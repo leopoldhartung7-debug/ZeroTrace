@@ -236,6 +236,18 @@ export const DE = {
   'Invalid Discord ID': 'Ungültige Discord-ID',
   'Enter a numeric Discord ID (17–20 digits).': 'Gib eine numerische Discord-ID ein (17–20 Ziffern).',
   'Scan summary sent to webhook': 'Scan-Übersicht an Webhook gesendet',
+  'Discord Server Bot': 'Discord-Server-Bot',
+  'Live server / role lookup by Discord ID (see bot/README.md)':
+    'Live-Server-/Rollen-Abfrage per Discord-ID (siehe bot/README.md)',
+  'Bot API URL': 'Bot-API-URL', 'Bot API key': 'Bot-API-Schlüssel',
+  'Enter only a Discord ID. With the Discord Server Bot configured (Account → Integrations) it checks live which cheat / reselling servers the account is in and which roles it holds. Without the bot it falls back to servers detected in past scans for this ID. Reselling and cheat servers are flagged and the result is sent to the configured webhook.':
+    'Gib nur eine Discord-ID ein. Wenn der Discord-Server-Bot konfiguriert ist (Konto → Integrationen), wird live geprüft, in welchen Cheat-/Reselling-Servern der Account ist und welche Rollen er hat. Ohne Bot werden ersatzweise die in früheren Scans erkannten Server dieser ID verwendet. Reselling- und Cheat-Server werden markiert und das Ergebnis an den hinterlegten Webhook gesendet.',
+  'Member / checked': 'Mitglied / geprüft', 'Scans on record': 'Scans im Verlauf',
+  'Source:': 'Quelle:', 'Live Discord bot lookup': 'Live-Discord-Bot-Abfrage',
+  'Past scan data': 'Frühere Scan-Daten',
+  'This account is not in any server the bot monitors.':
+    'Dieser Account ist in keinem vom Bot überwachten Server.',
+  'Bot lookup failed — using scan data': 'Bot-Abfrage fehlgeschlagen — nutze Scan-Daten',
   'Delete as admin': 'Als Admin löschen', 'Delete (scanned)': 'Löschen (gescannt)',
   'Delete Pin (Admin)': 'Pin löschen (Admin)',
   'A scan was already performed with this pin — use "Delete as admin".':

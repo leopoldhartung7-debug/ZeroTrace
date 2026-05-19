@@ -226,7 +226,7 @@ function seed() {
     auth: false,
     savedStrings: [],
     connections: [],
-    integrations: { discordWebhook: '', virusTotalKey: '' },
+    integrations: { discordWebhook: '', virusTotalKey: '', discordBotUrl: '', discordBotKey: '' },
     security: { twoFA: false, passkeys: [] },
     session: null,
     otherSessions: [],
