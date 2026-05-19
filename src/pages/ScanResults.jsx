@@ -398,10 +398,27 @@ export default function ScanResults() {
                             </div>
                           </div>
                           <p className="txt mt-4 text-lg font-semibold">{l.name}</p>
+                          {l.location && (
+                            <div className="mt-3">
+                              <p className="caps-label mb-1">Location</p>
+                              <div
+                                className="tile rounded-lg border p-3"
+                                style={{ borderLeft: `2px solid ${cs.accent}` }}
+                              >
+                                <p
+                                  className="break-all font-mono text-xs leading-relaxed"
+                                  style={{ color: cs.accent }}
+                                >
+                                  {l.location}
+                                </p>
+                              </div>
+                            </div>
+                          )}
                           <div className="tile mt-3 rounded-lg border p-3">
+                            <p className="caps-label mb-1">Evidence</p>
                             <p className="muted break-all font-mono text-xs leading-relaxed">
                               {l.detail}
-                              {l.time ? ` at ${l.time}` : ''}
+                              {l.time ? ` · ${l.time}` : ''}
                             </p>
                           </div>
                         </div>

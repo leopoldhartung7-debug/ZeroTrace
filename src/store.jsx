@@ -37,22 +37,39 @@ export function deriveScanReport(pin) {
   const cheats = pin.cheats || []
   const time = pin.scannedAt ? fmtTs(new Date(pin.scannedAt)) : null
 
+  // Where the finding lives — parsed from the scanner's evidence string
+  // (e.g. "Process: x.exe", "Module: y.dll", "File: C:\\...", "Window: ...").
+  const loc = (detail) => {
+    const m = /^\s*(Process|Module|File|Window|Path|Service)\s*:\s*(.+)$/i.exec(detail || '')
+    if (m) return m[2].trim()
+    if (/^\s*Signature match/i.test(detail || '')) return 'In-memory (game process)'
+    return (detail || '').trim() || 'Unknown'
+  }
+
   // Detections actually returned by the scan.
   const detects = []
   toolDets
     .filter((d) => d.severity === 'Critical' || d.severity === 'High')
-    .forEach((d) => detects.push({ name: d.name, severity: d.severity, detail: d.detail, time }))
+    .forEach((d) =>
+      detects.push({ name: d.name, severity: d.severity, detail: d.detail, location: loc(d.detail), time }),
+    )
   cheats.forEach((c) => {
     if (!detects.some((x) => x.name === c))
-      detects.push({ name: c, severity: 'High', detail: `Signature match: ${c}`, time })
+      detects.push({
+        name: c,
+        severity: 'High',
+        detail: `Signature match: ${c}`,
+        location: 'In-memory (game process)',
+        time,
+      })
   })
 
   const warnings = toolDets
     .filter((d) => d.severity === 'Medium')
-    .map((d) => ({ name: d.name, detail: d.detail, time }))
+    .map((d) => ({ name: d.name, detail: d.detail, location: loc(d.detail), time }))
   const suspicious = toolDets
     .filter((d) => d.severity === 'Low')
-    .map((d) => ({ name: d.name, detail: d.detail, time }))
+    .map((d) => ({ name: d.name, detail: d.detail, location: loc(d.detail), time }))
 
   return {
     scannedAt: pin.scannedAt || null,
