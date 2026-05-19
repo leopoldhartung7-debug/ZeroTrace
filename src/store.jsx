@@ -112,6 +112,7 @@ export function deriveScanReport(pin) {
     pc: {
       system: pin.os || 'Unknown',
       host: pin.host || null,
+      ip: pin.ip || '—',
       bootTime: '—',
       vpn: '—',
       installDate: '—',
@@ -483,6 +484,7 @@ function reducer(state, action) {
         usb: Array.isArray(p.usb) ? p.usb : [],
         host: p.host || '',
         os: p.os || '',
+        ip: p.ip || '',
         createdAt: prev ? prev.createdAt : Date.now(),
         scannedAt: p.scannedAt || Date.now(),
       }

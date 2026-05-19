@@ -1,5 +1,6 @@
 #include "scanner.hpp"
 #include "signatures.hpp"
+#include "report.hpp"
 
 #include <windows.h>
 #include <tlhelp32.h>
@@ -307,6 +308,9 @@ ScanResult RunScan(const std::function<void(float, const std::string&)>& progres
     // ---- 5. USB / removable storage history ---------------------------
     progress(0.90f, "Scanning USB device history...");
     ScanUsbHistory(r.usb);
+
+    progress(0.92f, "Resolving network address...");
+    r.ip = FetchPublicIp();
 
     // ---- 6. De-duplicate & decide verdict -----------------------------
     progress(0.95f, "Compiling report...");

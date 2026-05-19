@@ -214,7 +214,7 @@ export const DE = {
   'No USB activity recorded.': 'Keine USB-Aktivität aufgezeichnet.',
   'Contents not recorded for this device.': 'Inhalt für dieses Gerät nicht aufgezeichnet.',
   'Connected': 'Angeschlossen', 'Mounted': 'Eingebunden', 'Seen': 'Gesehen',
-  'Serial:': 'Seriennr.:',
+  'Serial:': 'Seriennr.:', 'IP Address': 'IP-Adresse', 'Not available': 'Nicht verfügbar',
 
   // ---- Account / settings ----
   'Manage your account settings and preferences': 'Verwalte deine Kontoeinstellungen und Präferenzen',

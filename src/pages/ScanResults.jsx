@@ -286,6 +286,7 @@ export default function ScanResults() {
             </div>
           </div>
           <KV color="#3b82f6" label="System" value={report.pc.system} />
+          <KV color="#ec4899" label="IP Address" value={report.pc.ip} />
           <KV color="#22c55e" label="Boot Time" value={report.pc.bootTime} />
           <KV color="#ef4444" label="VPN" value={report.pc.vpn} />
           <KV color="#a855f7" label="Install Date" value={report.pc.installDate} />

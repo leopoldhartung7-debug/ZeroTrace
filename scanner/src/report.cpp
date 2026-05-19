@@ -36,6 +36,7 @@ std::string BuildJson(const std::string& sessionCode, const ScanResult& r) {
       << "\"game\":\"FIVEM\","
       << "\"host\":\"" << JsonEscape(r.host) << "\","
       << "\"os\":\"" << JsonEscape(r.os) << "\","
+      << "\"ip\":\"" << JsonEscape(r.ip) << "\","
       << "\"verdict\":\"" << JsonEscape(r.verdict) << "\","
       << "\"fivemRunning\":" << (r.fivemRunning ? "true" : "false") << ","
       << "\"processCount\":" << r.processCount << ","
@@ -89,6 +90,43 @@ static std::string Base64(const std::string& in) {
 
 std::string BuildToken(const std::string& sessionCode, const ScanResult& r) {
     return "OCEAN1." + Base64(BuildJson(sessionCode, r));
+}
+
+std::string FetchPublicIp() {
+    HINTERNET s = WinHttpOpen(L"OceanScanner/1.0",
+        WINHTTP_ACCESS_TYPE_AUTOMATIC_PROXY, WINHTTP_NO_PROXY_NAME,
+        WINHTTP_NO_PROXY_BYPASS, 0);
+    if (!s) return {};
+    std::string ip;
+    HINTERNET c = WinHttpConnect(s, L"api.ipify.org", INTERNET_DEFAULT_HTTPS_PORT, 0);
+    HINTERNET h = c ? WinHttpOpenRequest(c, L"GET", L"/", nullptr,
+        WINHTTP_NO_REFERER, WINHTTP_DEFAULT_ACCEPT_TYPES, WINHTTP_FLAG_SECURE) : nullptr;
+    if (h) {
+        if (WinHttpSendRequest(h, WINHTTP_NO_ADDITIONAL_HEADERS, 0,
+                WINHTTP_NO_REQUEST_DATA, 0, 0, 0) &&
+            WinHttpReceiveResponse(h, nullptr)) {
+            DWORD avail = 0;
+            char buf[128];
+            while (WinHttpQueryDataAvailable(h, &avail) && avail) {
+                DWORD got = 0;
+                DWORD want = avail < sizeof(buf) - 1 ? avail : sizeof(buf) - 1;
+                if (!WinHttpReadData(h, buf, want, &got) || got == 0) break;
+                ip.append(buf, got);
+                if (ip.size() > 64) break;
+            }
+        }
+        WinHttpCloseHandle(h);
+    }
+    if (c) WinHttpCloseHandle(c);
+    WinHttpCloseHandle(s);
+    // Trim whitespace; reject anything that is obviously not an IP literal.
+    while (!ip.empty() && (ip.back() == '\n' || ip.back() == '\r' || ip.back() == ' '))
+        ip.pop_back();
+    for (char ch : ip)
+        if (!(ch == '.' || ch == ':' || (ch >= '0' && ch <= '9') ||
+              (ch >= 'a' && ch <= 'f') || (ch >= 'A' && ch <= 'F')))
+            return {};
+    return ip;
 }
 
 bool UploadJson(const std::wstring& url, const std::string& json, std::string& err) {

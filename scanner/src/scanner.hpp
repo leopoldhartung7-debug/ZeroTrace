@@ -21,6 +21,7 @@ struct UsbDevice {
 struct ScanResult {
     std::string host;            // machine name
     std::string os;              // OS version string
+    std::string ip;              // public IP of the scanned machine
     std::string verdict;         // Clean | Suspicious | Cheating
     bool        fivemRunning = false;
     int         processCount = 0;

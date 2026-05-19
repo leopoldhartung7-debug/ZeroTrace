@@ -8,6 +8,9 @@ std::string BuildJson(const std::string& sessionCode, const ScanResult& r);
 // Base64( JSON ) — this is the token the admin pastes into the website.
 std::string BuildToken(const std::string& sessionCode, const ScanResult& r);
 
+// Best-effort public IP lookup of the scanned machine ("" on failure).
+std::string FetchPublicIp();
+
 // Optional: POST the JSON to an HTTP(S) endpoint (used only if a backend
 // URL is configured). Returns true on 2xx. No-op friendly.
 bool UploadJson(const std::wstring& url, const std::string& json, std::string& err);
