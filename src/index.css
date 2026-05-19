@@ -3,34 +3,37 @@
 @tailwind utilities;
 
 :root {
-  --bg: #0a0a0a;
-  --panel: #111111;
-  --tile: #161616;
-  --border: #1f1f1f;
-  --text: #e5e5e5;
-  --muted: #737373;
-  --hover: rgba(255, 255, 255, 0.035);
+  --bg: #080a0f;
+  --panel: #0e1118;
+  --tile: #131826;
+  --border: #1e2533;
+  --text: #e7e9ee;
+  --muted: #7b8493;
+  --hover: rgba(56, 189, 248, 0.06);
+  --accent: #38bdf8;
 }
 
 :root.light {
-  --bg: #f4f5f7;
+  --bg: #f3f5f9;
   --panel: #ffffff;
-  --tile: #f0f1f4;
-  --border: #e3e5ea;
-  --text: #18181b;
-  --muted: #6b7280;
-  --hover: rgba(0, 0, 0, 0.035);
+  --tile: #eef1f6;
+  --border: #dde2ea;
+  --text: #161b22;
+  --muted: #687180;
+  --hover: rgba(56, 189, 248, 0.07);
+  --accent: #0284c7;
 }
 
 /* Public marketing pages stay dark regardless of the dashboard theme */
 .force-dark {
-  --bg: #0a0a0a;
-  --panel: #111111;
-  --tile: #161616;
-  --border: #1f1f1f;
-  --text: #e5e5e5;
-  --muted: #737373;
-  --hover: rgba(255, 255, 255, 0.035);
+  --bg: #080a0f;
+  --panel: #0e1118;
+  --tile: #131826;
+  --border: #1e2533;
+  --text: #e7e9ee;
+  --muted: #7b8493;
+  --hover: rgba(56, 189, 248, 0.06);
+  --accent: #38bdf8;
 }
 
 @layer base {
@@ -40,9 +43,17 @@
     height: 100%;
   }
   body {
-    background: var(--bg);
+    background:
+      radial-gradient(70% 55% at 50% -10%, rgba(56, 189, 248, 0.07), transparent 60%),
+      var(--bg);
     color: var(--text);
     -webkit-font-smoothing: antialiased;
+  }
+  h1,
+  h2,
+  h3 {
+    font-family: 'Oxanium', 'Inter', system-ui, sans-serif;
+    letter-spacing: -0.01em;
   }
 }
 
@@ -82,6 +93,11 @@
   }
 }
 
+::selection {
+  background: rgba(56, 189, 248, 0.28);
+  color: var(--text);
+}
+
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -92,4 +108,7 @@
 ::-webkit-scrollbar-thumb {
   background: var(--border);
   border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #2a3445;
 }

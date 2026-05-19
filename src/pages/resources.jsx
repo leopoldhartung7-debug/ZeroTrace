@@ -528,19 +528,26 @@ export function DownloadPage() {
 /* ----------------------- Shared doc primitives ------------------------- */
 function HeroBanner({ title, subtitle, meta }) {
   return (
-    <div className="relative mb-10 overflow-hidden rounded-2xl border bd">
+    <div className="bd relative mb-10 overflow-hidden rounded-xl border">
       <div
-        className="absolute inset-0"
-        style={{ background: 'radial-gradient(60% 120% at 50% 0%, rgba(56,189,248,0.18), transparent 70%)' }}
+        className="absolute inset-0 opacity-[0.5]"
+        style={{
+          backgroundImage:
+            'linear-gradient(rgba(56,189,248,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(56,189,248,0.06) 1px, transparent 1px)',
+          backgroundSize: '34px 34px',
+          maskImage: 'radial-gradient(80% 100% at 10% 0%, #000 30%, transparent 75%)',
+        }}
       />
-      <div className="relative px-6 py-16 text-center">
-        <h1 className="bg-gradient-to-b from-sky-400 to-sky-600 bg-clip-text text-5xl font-extrabold tracking-tight text-transparent md:text-6xl">
-          {title}
-        </h1>
-        <p className="muted mx-auto mt-4 max-w-xl text-lg">{subtitle}</p>
+      <div className="absolute left-0 top-0 h-full w-1 bg-sky-500" />
+      <div className="relative px-7 py-12 md:px-10 md:py-14">
+        <p className="caps-label mb-3 flex items-center gap-2 text-sky-400">
+          <span className="h-px w-7 bg-sky-500" /> ZeroTrace
+        </p>
+        <h1 className="txt text-4xl font-extrabold tracking-tight md:text-5xl">{title}</h1>
+        <p className="muted mt-3 max-w-xl text-[15px] leading-relaxed">{subtitle}</p>
         {meta && (
-          <p className="muted mt-6 flex items-center justify-center gap-2 text-sm">
-            <FileText size={15} /> {meta}
+          <p className="bd muted mt-6 inline-flex items-center gap-2 rounded-md border px-3 py-1.5 text-xs">
+            <FileText size={14} /> {meta}
           </p>
         )}
       </div>

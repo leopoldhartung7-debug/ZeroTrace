@@ -113,9 +113,9 @@ export default function Sidebar() {
                             key={c.to}
                             to={c.to}
                             className={({ isActive }) =>
-                              `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                              `relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                                 isActive
-                                  ? 'bg-sky-600/15 text-sky-500 shadow-[inset_0_0_0_1px_rgba(56,189,248,0.18)]'
+                                  ? 'bg-sky-500/10 text-sky-400 before:absolute before:left-0 before:top-1/2 before:h-4 before:w-[3px] before:-translate-y-1/2 before:rounded-r-full before:bg-sky-400'
                                   : 'hoverable'
                               }`
                             }
@@ -138,9 +138,9 @@ export default function Sidebar() {
                   key={to}
                   to={to}
                   className={({ isActive }) =>
-                    `mb-1 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                    `relative mb-1 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
                       isActive
-                        ? 'bg-sky-600/15 text-sky-500 shadow-[inset_0_0_0_1px_rgba(56,189,248,0.18)]'
+                        ? 'bg-sky-500/10 text-sky-400 before:absolute before:left-0 before:top-1/2 before:h-5 before:w-[3px] before:-translate-y-1/2 before:rounded-r-full before:bg-sky-400'
                         : 'hoverable'
                     }`
                   }
