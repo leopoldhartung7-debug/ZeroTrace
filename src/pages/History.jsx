@@ -16,15 +16,22 @@ export default function History() {
   const { state } = useStore()
   const [kind, setKind] = useState('all')
 
+  const ownEvents = useMemo(() => {
+    const all = state.events || []
+    if (state.role === 'admin') return all
+    const uid = state.session?.userId
+    return all.filter((e) => e.ownerId == null || e.ownerId === uid)
+  }, [state.events, state.role, state.session])
+
   const rows = useMemo(
-    () => state.events.filter((e) => kind === 'all' || e.kind === kind),
-    [state.events, kind],
+    () => ownEvents.filter((e) => kind === 'all' || e.kind === kind),
+    [ownEvents, kind],
   )
 
   const exportCsv = () => {
     const csv = [
       'time,kind,title,detail',
-      ...state.events.map(
+      ...ownEvents.map(
         (e) =>
           `${new Date(e.time).toISOString()},${e.kind},"${e.title}","${(e.detail || '').replace(/"/g, "'")}"`,
       ),
@@ -36,7 +43,7 @@ export default function History() {
     URL.revokeObjectURL(a.href)
   }
 
-  const count = (k) => state.events.filter((e) => e.kind === k).length
+  const count = (k) => ownEvents.filter((e) => e.kind === k).length
 
   return (
     <div>
@@ -56,7 +63,7 @@ export default function History() {
       />
 
       <div className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatTile icon={Activity} label="Total Events" value={state.events.length} />
+        <StatTile icon={Activity} label="Total Events" value={ownEvents.length} />
         <StatTile icon={ScanLine} label="Scans" value={count('scan')} accent="text-sky-500" />
         <StatTile icon={Pin} label="Pin Actions" value={count('pin')} />
         <StatTile icon={Code2} label="Rule Changes" value={count('rule')} accent="text-yellow-500" />

@@ -283,9 +283,9 @@ function load() {
   }
 }
 
-function ev(state, kind, title, detail) {
+function ev(state, kind, title, detail, ownerId = null) {
   return [
-    { id: 'e' + Date.now() + Math.random().toString(16).slice(2, 6), kind, title, detail, time: Date.now() },
+    { id: 'e' + Date.now() + Math.random().toString(16).slice(2, 6), kind, title, detail, time: Date.now(), ownerId },
     ...state.events,
   ].slice(0, 300)
 }
@@ -328,7 +328,7 @@ function reducer(state, action) {
         licenseKeys: (state.licenseKeys || []).map((k) =>
           k.key === u.key ? { ...k, usedBy: u.id } : k,
         ),
-        events: ev(state, 'pin', 'Analyst registered', `${u.username} · ${u.email}`),
+        events: ev(state, 'pin', 'Analyst registered', `${u.username} · ${u.email}`, 'admin'),
         notifications: note(state, 'Analyst registered', `${u.username} bound to key ${u.key}`, 'admin'),
       }
     }
@@ -370,7 +370,7 @@ function reducer(state, action) {
       return {
         ...state,
         licenseKeys: [key, ...(state.licenseKeys || [])],
-        events: ev(state, 'pin', 'License key created', `${key.label} — ${key.plan}`),
+        events: ev(state, 'pin', 'License key created', `${key.label} — ${key.plan}`, 'admin'),
       }
     }
 
@@ -386,7 +386,7 @@ function reducer(state, action) {
       return {
         ...state,
         licenseKeys: (state.licenseKeys || []).filter((k) => k.id !== action.id),
-        events: ev(state, 'pin', 'License key deleted', action.key || ''),
+        events: ev(state, 'pin', 'License key deleted', action.key || '', 'admin'),
       }
 
     case 'save-strings': {
@@ -499,7 +499,7 @@ function reducer(state, action) {
       return {
         ...state,
         pins: [pin, ...state.pins],
-        events: ev(state, 'pin', 'Pin created', `${pin.pin} — ${pin.name}`),
+        events: ev(state, 'pin', 'Pin created', `${pin.pin} — ${pin.name}`, pin.ownerId),
         notifications: note(state, 'Pin created', `${pin.pin} — ${pin.name}`, pin.ownerId),
       }
     }
@@ -524,7 +524,7 @@ function reducer(state, action) {
           { id: 's' + Date.now(), date: new Date().toISOString().slice(0, 10), game: target?.game || 'HYTALE', result, detections },
           ...state.scans,
         ],
-        events: ev(state, 'scan', 'Scan finished', `${target?.pin} — ${result}`),
+        events: ev(state, 'scan', 'Scan finished', `${target?.pin} — ${result}`, target?.ownerId ?? null),
         notifications: note(state, 'Scan finished', `${target?.pin}: ${result}`, target?.ownerId ?? null),
       }
     }
@@ -536,7 +536,7 @@ function reducer(state, action) {
       return {
         ...state,
         pins: state.pins.filter((p) => p.id !== action.id),
-        events: ev(state, 'pin', 'Pin deleted', action.pin || ''),
+        events: ev(state, 'pin', 'Pin deleted', action.pin || '', target?.ownerId ?? null),
       }
     }
 
@@ -545,15 +545,17 @@ function reducer(state, action) {
       return {
         ...state,
         pins: state.pins.filter((p) => p.id !== action.id),
-        events: ev(state, 'pin', 'Pin deleted (admin)', action.pin || ''),
+        events: ev(state, 'pin', 'Pin deleted (admin)', action.pin || '', 'admin'),
       }
 
-    case 'update-pin':
+    case 'update-pin': {
+      const target = state.pins.find((p) => p.id === action.id)
       return {
         ...state,
         pins: state.pins.map((p) => (p.id === action.id ? { ...p, ...action.patch } : p)),
-        events: ev(state, 'pin', 'Pin updated', action.label || ''),
+        events: ev(state, 'pin', 'Pin updated', action.label || '', target?.ownerId ?? null),
       }
+    }
 
     case 'set-visibility':
       return {
@@ -576,7 +578,7 @@ function reducer(state, action) {
           { id: 'd' + Date.now(), clientName: action.clientName, fileName: action.fileName, size: action.size, mode: action.mode, signatures: action.signatures, addedAt: Date.now(), ownerId: action.ownerId ?? null },
           ...state.detectionFiles,
         ],
-        events: ev(state, 'file', 'Detection file added', `${action.clientName} (${action.fileName})`),
+        events: ev(state, 'file', 'Detection file added', `${action.clientName} (${action.fileName})`, action.ownerId ?? null),
       }
 
     case 'delete-detection-file':
@@ -590,7 +592,7 @@ function reducer(state, action) {
         yaraRules: existing
           ? state.yaraRules.map((r) => (r.name === action.name ? { ...r, source: action.source } : r))
           : [rule, ...state.yaraRules],
-        events: ev(state, 'rule', 'YARA rule saved', action.name),
+        events: ev(state, 'rule', 'YARA rule saved', action.name, state.session?.userId || (state.role === 'admin' ? 'admin' : null)),
       }
     }
 
@@ -604,7 +606,7 @@ function reducer(state, action) {
           { id: 'sf' + Date.now(), fileName: action.fileName, size: action.size, matches: action.matches, scannedAt: Date.now(), ownerId: action.ownerId ?? null },
           ...state.suspiciousFiles,
         ],
-        events: ev(state, 'scan', 'File scanned', `${action.fileName} — ${action.matches.length} match(es)`),
+        events: ev(state, 'scan', 'File scanned', `${action.fileName} — ${action.matches.length} match(es)`, action.ownerId ?? null),
       }
 
     case 'import-scan': {
@@ -646,7 +648,7 @@ function reducer(state, action) {
           { id: 's' + Date.now(), date: new Date().toISOString().slice(0, 10), game, result, detections: dets.length },
           ...state.scans,
         ],
-        events: ev(state, 'scan', 'Scan result imported', `${p.code} — ${result} (${dets.length} detections)`),
+        events: ev(state, 'scan', 'Scan result imported', `${p.code} — ${result} (${dets.length} detections)`, prev?.ownerId ?? null),
         notifications: note(state, 'Scan result imported', `${p.code}: ${result}`, prev?.ownerId ?? null),
       }
     }
@@ -663,7 +665,7 @@ function reducer(state, action) {
       return {
         ...state,
         customCheats: [{ id: 'c' + Date.now(), builtin: false, ...action.cheat }, ...state.customCheats],
-        events: ev(state, 'db', 'Cheat added', action.cheat.name),
+        events: ev(state, 'db', 'Cheat added', action.cheat.name, 'admin'),
       }
 
     case 'delete-cheat':
@@ -673,7 +675,7 @@ function reducer(state, action) {
       return {
         ...state,
         tickets: [{ id: 'T-' + Date.now().toString().slice(-6), ...action.ticket, status: 'Open', createdAt: Date.now() }, ...state.tickets],
-        events: ev(state, 'support', 'Ticket opened', action.ticket.subject),
+        events: ev(state, 'support', 'Ticket opened', action.ticket.subject, state.session?.userId || (state.role === 'admin' ? 'admin' : null)),
         notifications: note(state, 'Ticket opened', action.ticket.subject, state.session?.userId || (state.role === 'admin' ? 'admin' : null)),
       }
 
