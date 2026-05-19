@@ -94,6 +94,26 @@ export function deriveScanReport(pin) {
   }))
   const execution = allFindings.map((d) => ({ path: d.location }))
 
+  // Discord servers the scanned account is in — classify reselling / cheat
+  // servers by name keywords. Only the servers the scanner actually found.
+  const CHEAT_KW = ['cheat', 'hack', 'spoofer', 'loader', 'menu', 'modmenu', 'mod menu',
+    'aimbot', ' esp', 'unlock', 'crack', 'leak', 'bypass', 'inject', 'exploit', 'ggez', 'rage']
+  const RESELL_KW = ['resell', 'reseller', 'reselling', 'shop', 'store', 'market',
+    'sellix', '.gg/buy', 'sales', 'verkauf', 'sellauth', 'plug', 'services']
+  const classify = (name) => {
+    const n = (name || '').toLowerCase()
+    if (CHEAT_KW.some((k) => n.includes(k))) return 'cheat'
+    if (RESELL_KW.some((k) => n.includes(k))) return 'reselling'
+    return 'clean'
+  }
+  const discordServers = (Array.isArray(pin.discordServers) ? pin.discordServers : [])
+    .filter((g) => g && g.name)
+    .map((g) => ({
+      name: String(g.name).trim(),
+      id: (g.id || '').trim() || '—',
+      flag: classify(g.name),
+    }))
+
   // USB / removable storage activity — only what the scanner reported.
   const usb = (Array.isArray(pin.usb) ? pin.usb : [])
     .filter((u) => u && (u.device || u.serial))
@@ -143,6 +163,7 @@ export function deriveScanReport(pin) {
     mft: [],
     execution,
     usb,
+    discordServers,
     screenshot: null,
   }
 }
@@ -482,6 +503,7 @@ function reducer(state, action) {
         cheats,
         scanDetections: dets,
         usb: Array.isArray(p.usb) ? p.usb : [],
+        discordServers: Array.isArray(p.discordServers) ? p.discordServers : [],
         host: p.host || '',
         os: p.os || '',
         ip: p.ip || '',

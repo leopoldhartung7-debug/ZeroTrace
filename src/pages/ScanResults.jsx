@@ -4,7 +4,7 @@ import {
   ArrowLeft, Copy, ShieldAlert, Download, Flag, Gauge, Monitor, Cpu,
   AlertTriangle, CheckCircle2, Eye, Sparkles, Search, ChevronLeft,
   ChevronRight, Shield, MessageSquare, Video, Gamepad2, Database, Activity,
-  Clock, Play, ImageOff, Usb, FileText,
+  Clock, Play, ImageOff, Usb, FileText, Server,
 } from 'lucide-react'
 import { Card } from '../components/kit.jsx'
 import { Modal, Select, useToast } from '../components/ui.jsx'
@@ -553,6 +553,62 @@ export default function ScanResults() {
           )}
         </Card>
       </div>
+
+      <Card className="p-6">
+        <p className="caps-label">Discord Server</p>
+        <h2 className="txt mt-1 flex items-center gap-2 text-lg font-semibold">
+          <Server size={18} /> Discord Server ({report.discordServers.length})
+        </h2>
+        <p className="muted mt-1 text-sm">
+          Servers the scanned Discord account is in — reselling and cheat servers are flagged
+        </p>
+        <p className="muted mb-4 mt-1 text-xs">
+          {report.discordServers.filter((g) => g.flag !== 'clean').length} flagged ·{' '}
+          {report.discordServers.length} total
+        </p>
+        {report.discordServers.length === 0 ? (
+          <p className="muted py-12 text-center text-sm">No Discord servers found</p>
+        ) : (
+          <div className="space-y-2">
+            {[...report.discordServers]
+              .sort((a, b) => (a.flag === 'clean' ? 1 : 0) - (b.flag === 'clean' ? 1 : 0))
+              .map((g, i) => {
+                const tone =
+                  g.flag === 'cheat'
+                    ? 'border-red-600/40 bg-red-600/15 text-red-500'
+                    : g.flag === 'reselling'
+                      ? 'border-orange-500/40 bg-orange-500/15 text-orange-400'
+                      : 'bd muted'
+                const tag =
+                  g.flag === 'cheat'
+                    ? 'Cheat Discord'
+                    : g.flag === 'reselling'
+                      ? 'Reselling Discord'
+                      : 'Member'
+                return (
+                  <div
+                    key={i}
+                    className="tile flex flex-wrap items-center justify-between gap-3 rounded-lg border px-4 py-3"
+                    style={g.flag !== 'clean' ? { borderLeft: '3px solid currentColor' } : undefined}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-600/15 text-blue-400">
+                        <Server size={15} />
+                      </span>
+                      <div>
+                        <p className="txt text-sm font-medium">{g.name}</p>
+                        <p className="muted font-mono text-xs">ID: {g.id}</p>
+                      </div>
+                    </div>
+                    <span className={`rounded-md border px-2.5 py-1 text-[11px] font-semibold ${tone}`}>
+                      {tag}
+                    </span>
+                  </div>
+                )
+              })}
+          </div>
+        )}
+      </Card>
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card className="p-6">

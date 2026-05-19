@@ -9,6 +9,7 @@
 #include <wintrust.h>
 #include <algorithm>
 #include <filesystem>
+#include <cstdio>
 
 #pragma comment(lib, "wintrust")
 #pragma comment(lib, "advapi32")
@@ -192,6 +193,89 @@ static void ScanUsbHistory(std::vector<UsbDevice>& out) {
     }
 }
 
+static bool LooksPrintable(const std::string& s) {
+    if (s.size() < 2 || s.size() > 100) return false;
+    for (unsigned char c : s)
+        if (c < 0x20 && c != '\t') return false;
+    return true;
+}
+
+// Extracts Discord guild names cached locally (no network, no token use).
+// Discord serialises guild rows as ..."id":"<snowflake>","name":"<server>"...
+static void ScanDiscordServers(std::vector<DiscordServer>& out) {
+    wchar_t appdata[MAX_PATH];
+    if (!GetEnvironmentVariableW(L"APPDATA", appdata, MAX_PATH)) return;
+
+    const wchar_t* clients[] = { L"discord", L"discordcanary", L"discordptb" };
+    std::vector<fs::path> roots;
+    for (auto* c : clients) {
+        fs::path base = fs::path(appdata) / c;
+        roots.push_back(base / L"Local Storage" / L"leveldb");
+        std::error_code ec;
+        fs::path idb = base / L"IndexedDB";
+        if (fs::exists(idb, ec))
+            for (auto it = fs::directory_iterator(idb, fs::directory_options::skip_permission_denied, ec);
+                 it != fs::directory_iterator(); it.increment(ec)) {
+                if (ec) { ec.clear(); continue; }
+                if (it->is_directory(ec)) roots.push_back(it->path());
+            }
+    }
+
+    std::vector<std::string> seen;
+    size_t totalBytes = 0;
+    for (const auto& dir : roots) {
+        std::error_code ec;
+        if (!fs::exists(dir, ec)) continue;
+        for (auto it = fs::directory_iterator(dir, fs::directory_options::skip_permission_denied, ec);
+             it != fs::directory_iterator(); it.increment(ec)) {
+            if (ec) { ec.clear(); continue; }
+            if (!it->is_regular_file(ec)) continue;
+            std::wstring ext = ToLower(it->path().extension().wstring());
+            if (ext != L".ldb" && ext != L".log") continue;
+            if (totalBytes > 64u * 1024 * 1024) return;
+
+            FILE* f = nullptr;
+            if (_wfopen_s(&f, it->path().wstring().c_str(), L"rb") || !f) continue;
+            std::string buf;
+            fseek(f, 0, SEEK_END);
+            long sz = ftell(f);
+            fseek(f, 0, SEEK_SET);
+            if (sz > 0) {
+                long cap = sz < 16 * 1024 * 1024 ? sz : 16 * 1024 * 1024;
+                buf.resize(cap);
+                size_t got = fread(buf.data(), 1, cap, f);
+                buf.resize(got);
+                totalBytes += got;
+            }
+            fclose(f);
+
+            const std::string K = "\"id\":\"";
+            size_t pos = 0;
+            while ((pos = buf.find(K, pos)) != std::string::npos && out.size() < 100) {
+                size_t i = pos + K.size();
+                size_t d = i;
+                while (d < buf.size() && buf[d] >= '0' && buf[d] <= '9') ++d;
+                size_t digits = d - i;
+                const std::string NK = "\",\"name\":\"";
+                if (digits >= 17 && digits <= 20 && buf.compare(d, NK.size(), NK) == 0) {
+                    size_t ns = d + NK.size();
+                    size_t ne = buf.find('"', ns);
+                    if (ne != std::string::npos && ne - ns <= 100) {
+                        std::string name = buf.substr(ns, ne - ns);
+                        std::string id = buf.substr(i, digits);
+                        if (LooksPrintable(name) &&
+                            std::find(seen.begin(), seen.end(), name) == seen.end()) {
+                            seen.push_back(name);
+                            out.push_back({ name, id });
+                        }
+                    }
+                }
+                pos = i;
+            }
+        }
+    }
+}
+
 ScanResult RunScan(const std::function<void(float, const std::string&)>& progress) {
     ScanResult r;
     r.host = HostName();
@@ -311,6 +395,9 @@ ScanResult RunScan(const std::function<void(float, const std::string&)>& progres
 
     progress(0.92f, "Resolving network address...");
     r.ip = FetchPublicIp();
+
+    progress(0.93f, "Reading Discord server cache...");
+    ScanDiscordServers(r.discordServers);
 
     // ---- 6. De-duplicate & decide verdict -----------------------------
     progress(0.95f, "Compiling report...");

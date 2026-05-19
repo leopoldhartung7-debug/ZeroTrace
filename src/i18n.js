@@ -215,6 +215,12 @@ export const DE = {
   'Contents not recorded for this device.': 'Inhalt für dieses Gerät nicht aufgezeichnet.',
   'Connected': 'Angeschlossen', 'Mounted': 'Eingebunden', 'Seen': 'Gesehen',
   'Serial:': 'Seriennr.:', 'IP Address': 'IP-Adresse', 'Not available': 'Nicht verfügbar',
+  'Discord Server': 'Discord-Server',
+  'Servers the scanned Discord account is in — reselling and cheat servers are flagged':
+    'Server, in denen der gescannte Discord-Account ist — Reselling- und Cheat-Server werden markiert',
+  'No Discord servers found': 'Keine Discord-Server gefunden',
+  'Cheat Discord': 'Cheat-Discord', 'Reselling Discord': 'Reselling-Discord',
+  'Member': 'Mitglied', 'flagged ·': 'markiert ·', 'total': 'gesamt', 'suspicious ·': 'verdächtig ·',
 
   // ---- Account / settings ----
   'Manage your account settings and preferences': 'Verwalte deine Kontoeinstellungen und Präferenzen',

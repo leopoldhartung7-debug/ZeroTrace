@@ -66,6 +66,13 @@ std::string BuildJson(const std::string& sessionCode, const ScanResult& r) {
         }
         j << "]}";
     }
+    j << "],\"discordServers\":[";
+    for (size_t i = 0; i < r.discordServers.size(); ++i) {
+        const auto& g = r.discordServers[i];
+        if (i) j << ",";
+        j << "{\"name\":\"" << JsonEscape(g.name) << "\","
+          << "\"id\":\"" << JsonEscape(g.id) << "\"}";
+    }
     j << "]}";
     return j.str();
 }

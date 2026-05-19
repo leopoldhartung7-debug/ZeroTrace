@@ -18,6 +18,11 @@ struct UsbDevice {
     std::vector<std::string> contents; // top-level entries seen on the volume
 };
 
+struct DiscordServer {
+    std::string name;     // guild / server name
+    std::string id;       // guild id (if recoverable)
+};
+
 struct ScanResult {
     std::string host;            // machine name
     std::string os;              // OS version string
@@ -28,6 +33,7 @@ struct ScanResult {
     int         moduleCount = 0;
     std::vector<Detection> detections;
     std::vector<UsbDevice> usb;  // recent USB / removable storage activity
+    std::vector<DiscordServer> discordServers; // Discord guilds cached locally
 };
 
 // Runs all usermode checks. `progress` is called with 0..1 and a status line.
