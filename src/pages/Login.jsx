@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { LogIn, Eye, EyeOff, Fingerprint, KeyRound, UserPlus } from 'lucide-react'
 import Logo from '../components/Logo.jsx'
 import { useStore } from '../store.jsx'
@@ -7,11 +7,17 @@ import { useToast, Modal } from '../components/ui.jsx'
 
 export default function Login() {
   const nav = useNavigate()
+  const loc = useLocation()
   const { state, dispatch } = useStore()
   const toast = useToast()
   const [show, setShow] = useState(false)
   const [registerOpen, setRegisterOpen] = useState(false)
   const [reg, setReg] = useState({ username: '', email: '', pw: '', discordId: '', key: '' })
+
+  useEffect(() => {
+    const sp = new URLSearchParams(loc.search)
+    if (sp.get('register') === '1') setRegisterOpen(true)
+  }, [loc.search])
   const [form, setForm] = useState({ id: '', pw: '' })
 
   const ADMIN = { user: 'admin', email: 'admin@anticheat.ac', pass: 'OceanAdmin1' }

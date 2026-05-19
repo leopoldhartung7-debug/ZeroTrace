@@ -252,7 +252,7 @@ export default function Landing() {
               <button onClick={() => nav('/login')} className="text-sm text-neutral-300 transition-colors hover:text-white">
                 Login
               </button>
-              <button onClick={() => nav('/login')} className="rounded-lg bg-sky-600 px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-sky-500">
+              <button onClick={() => nav('/login?register=1')} className="rounded-lg bg-sky-600 px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-sky-500">
                 Sign Up
               </button>
             </>
