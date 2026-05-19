@@ -3,6 +3,7 @@ import { Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom'
 import { Menu, X } from 'lucide-react'
 import { StoreProvider, useStore } from './store.jsx'
 import { AutoI18n } from './i18n.js'
+import { ScanWebhookNotifier } from './lib/webhook.js'
 import { ToastProvider } from './components/ui.jsx'
 import CommandPalette from './components/CommandPalette.jsx'
 import Sidebar from './components/Sidebar.jsx'
@@ -82,6 +83,7 @@ export default function App() {
     <StoreProvider>
       <ToastProvider>
         <AutoI18n />
+        <ScanWebhookNotifier />
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
