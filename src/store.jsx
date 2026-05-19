@@ -232,9 +232,18 @@ function seed() {
     auth: false,
     role: null,
     licenseKeys: [],
+    users: [],
     savedStrings: [],
     connections: [],
-    integrations: { discordWebhook: '', virusTotalKey: '', discordBotUrl: '', discordBotKey: '' },
+    integrations: {
+      discordWebhook: '',
+      virusTotalKey: '',
+      discordBotUrl: '',
+      discordBotKey: '',
+      emailJsServiceId: '',
+      emailJsTemplateId: '',
+      emailJsPublicKey: '',
+    },
     security: { twoFA: false, passkeys: [] },
     session: null,
     otherSessions: [],
@@ -299,6 +308,7 @@ function reducer(state, action) {
         session: {
           id: 'sess_' + Math.random().toString(16).slice(2, 14),
           role,
+          userId: action.userId || null,
           createdAt: Date.now(),
         },
       }
@@ -306,6 +316,41 @@ function reducer(state, action) {
 
     case 'logout':
       return { ...state, auth: false, role: null, session: null }
+
+    case 'register-user': {
+      const u = action.user
+      return {
+        ...state,
+        users: [...(state.users || []), u],
+        licenseKeys: (state.licenseKeys || []).map((k) =>
+          k.key === u.key ? { ...k, usedBy: u.id } : k,
+        ),
+        events: ev(state, 'pin', 'Analyst registered', `${u.username} · ${u.email}`),
+        notifications: note(state, 'Analyst registered', `${u.username} bound to key ${u.key}`),
+      }
+    }
+
+    case 'add-notification':
+      return {
+        ...state,
+        notifications: note(state, action.title || '', action.body || ''),
+      }
+
+    case 'mark-key-reminder-sent':
+      return {
+        ...state,
+        licenseKeys: (state.licenseKeys || []).map((k) =>
+          k.id === action.id ? { ...k, reminderSent: true } : k,
+        ),
+      }
+
+    case 'mark-key-expired-notified':
+      return {
+        ...state,
+        licenseKeys: (state.licenseKeys || []).map((k) =>
+          k.id === action.id ? { ...k, expiredNotified: true } : k,
+        ),
+      }
 
     case 'create-key': {
       const days = Number(action.durationDays) || 0

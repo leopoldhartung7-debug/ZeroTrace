@@ -100,6 +100,9 @@ export default function Account() {
   const [vt, setVt] = useState(state.integrations?.virusTotalKey || '')
   const [botUrl, setBotUrl] = useState(state.integrations?.discordBotUrl || '')
   const [botKey, setBotKey] = useState(state.integrations?.discordBotKey || '')
+  const [ejsSvc, setEjsSvc] = useState(state.integrations?.emailJsServiceId || '')
+  const [ejsTpl, setEjsTpl] = useState(state.integrations?.emailJsTemplateId || '')
+  const [ejsPub, setEjsPub] = useState(state.integrations?.emailJsPublicKey || '')
   const [showHook, setShowHook] = useState(false)
   const [showVt, setShowVt] = useState(false)
   const [showBotKey, setShowBotKey] = useState(false)
@@ -530,6 +533,35 @@ export default function Account() {
                 {state.integrations.discordBotUrl && (
                   <button onClick={() => { dispatch({ type: 'set-integration', key: 'discordBotUrl', value: '' }); dispatch({ type: 'set-integration', key: 'discordBotKey', value: '' }); setBotUrl(''); setBotKey(''); toast({ type: 'success', title: 'Removed' }) }} className="bd txt mt-3 flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm hover:border-red-500"><Trash2 size={14} /> Remove</button>
                 )}
+              </div>
+
+              <div className="tile rounded-xl border p-5">
+                <div className="flex items-center gap-3">
+                  <Zap size={18} className="text-sky-500" />
+                  <h4 className="txt text-lg font-bold">Email (EmailJS)</h4>
+                  {state.integrations.emailJsServiceId && state.integrations.emailJsTemplateId && state.integrations.emailJsPublicKey && (
+                    <span className="flex items-center gap-1 rounded-md border border-green-600/40 bg-green-600/15 px-2 py-0.5 text-[11px] font-bold text-green-500"><Check size={11} /> CONNECTED</span>
+                  )}
+                </div>
+                <p className="muted mt-1 text-sm">Sends the 24h-before-expiry notice to the analyst's email. Set up a free template at emailjs.com — the template needs the params <code className="txt">to_email</code>, <code className="txt">subject</code>, <code className="txt">message</code>.</p>
+                <Field label="Service ID">
+                  <div className="flex gap-2">
+                    <input value={ejsSvc} onChange={(e) => setEjsSvc(e.target.value)} placeholder="service_xxxxxxx" className={inputCls} />
+                    <button onClick={() => { dispatch({ type: 'set-integration', key: 'emailJsServiceId', value: ejsSvc.trim() }); toast({ type: 'success', title: 'Saved' }) }} className="rounded-lg bg-sky-600 px-4 text-sm font-semibold text-white hover:bg-sky-500">Save</button>
+                  </div>
+                </Field>
+                <Field label="Template ID">
+                  <div className="flex gap-2">
+                    <input value={ejsTpl} onChange={(e) => setEjsTpl(e.target.value)} placeholder="template_xxxxxxx" className={inputCls} />
+                    <button onClick={() => { dispatch({ type: 'set-integration', key: 'emailJsTemplateId', value: ejsTpl.trim() }); toast({ type: 'success', title: 'Saved' }) }} className="rounded-lg bg-sky-600 px-4 text-sm font-semibold text-white hover:bg-sky-500">Save</button>
+                  </div>
+                </Field>
+                <Field label="Public Key">
+                  <div className="flex gap-2">
+                    <input value={ejsPub} onChange={(e) => setEjsPub(e.target.value)} placeholder="EmailJS public key" className={inputCls} />
+                    <button onClick={() => { dispatch({ type: 'set-integration', key: 'emailJsPublicKey', value: ejsPub.trim() }); toast({ type: 'success', title: 'Saved' }) }} className="rounded-lg bg-sky-600 px-4 text-sm font-semibold text-white hover:bg-sky-500">Save</button>
+                  </div>
+                </Field>
               </div>
             </div>
           )}
