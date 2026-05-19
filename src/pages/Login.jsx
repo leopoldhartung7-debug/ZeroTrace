@@ -175,6 +175,7 @@ export default function Login() {
         type: 'add-notification',
         title: 'Login blocked — key expired',
         body: `${user.username} tried to sign in with an expired/revoked key (${user.key}).`,
+        ownerId: 'admin',
       })
       if (key) dispatch({ type: 'mark-key-expired-notified', id: key.id })
       return

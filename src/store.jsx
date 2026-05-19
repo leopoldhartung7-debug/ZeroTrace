@@ -290,8 +290,11 @@ function ev(state, kind, title, detail) {
   ].slice(0, 300)
 }
 
-function note(state, title, body) {
-  return [{ id: 'n' + Date.now(), title, body, time: Date.now(), read: false }, ...state.notifications].slice(0, 100)
+function note(state, title, body, ownerId = null) {
+  return [
+    { id: 'n' + Date.now() + Math.random().toString(16).slice(2, 6), title, body, time: Date.now(), read: false, ownerId },
+    ...state.notifications,
+  ].slice(0, 100)
 }
 
 function reducer(state, action) {
@@ -326,14 +329,14 @@ function reducer(state, action) {
           k.key === u.key ? { ...k, usedBy: u.id } : k,
         ),
         events: ev(state, 'pin', 'Analyst registered', `${u.username} · ${u.email}`),
-        notifications: note(state, 'Analyst registered', `${u.username} bound to key ${u.key}`),
+        notifications: note(state, 'Analyst registered', `${u.username} bound to key ${u.key}`, 'admin'),
       }
     }
 
     case 'add-notification':
       return {
         ...state,
-        notifications: note(state, action.title || '', action.body || ''),
+        notifications: note(state, action.title || '', action.body || '', action.ownerId ?? null),
       }
 
     case 'mark-key-reminder-sent':
@@ -475,7 +478,7 @@ function reducer(state, action) {
         ...state,
         pins: [pin, ...state.pins],
         events: ev(state, 'pin', 'Pin created', `${pin.pin} — ${pin.name}`),
-        notifications: note(state, 'Pin created', `${pin.pin} — ${pin.name}`),
+        notifications: note(state, 'Pin created', `${pin.pin} — ${pin.name}`, pin.ownerId),
       }
     }
 
@@ -500,7 +503,7 @@ function reducer(state, action) {
           ...state.scans,
         ],
         events: ev(state, 'scan', 'Scan finished', `${target?.pin} — ${result}`),
-        notifications: note(state, 'Scan finished', `${target?.pin}: ${result}`),
+        notifications: note(state, 'Scan finished', `${target?.pin}: ${result}`, target?.ownerId ?? null),
       }
     }
 
@@ -622,7 +625,7 @@ function reducer(state, action) {
           ...state.scans,
         ],
         events: ev(state, 'scan', 'Scan result imported', `${p.code} — ${result} (${dets.length} detections)`),
-        notifications: note(state, 'Scan result imported', `${p.code}: ${result}`),
+        notifications: note(state, 'Scan result imported', `${p.code}: ${result}`, prev?.ownerId ?? null),
       }
     }
 
@@ -649,14 +652,23 @@ function reducer(state, action) {
         ...state,
         tickets: [{ id: 'T-' + Date.now().toString().slice(-6), ...action.ticket, status: 'Open', createdAt: Date.now() }, ...state.tickets],
         events: ev(state, 'support', 'Ticket opened', action.ticket.subject),
-        notifications: note(state, 'Ticket opened', action.ticket.subject),
+        notifications: note(state, 'Ticket opened', action.ticket.subject, state.session?.userId || (state.role === 'admin' ? 'admin' : null)),
       }
 
     case 'update-ticket':
       return { ...state, tickets: state.tickets.map((t) => (t.id === action.id ? { ...t, status: action.status } : t)) }
 
-    case 'mark-notifications-read':
-      return { ...state, notifications: state.notifications.map((n) => ({ ...n, read: true })) }
+    case 'mark-notifications-read': {
+      const isVisible = (n) => {
+        if (n.ownerId == null) return true
+        if (action.role === 'admin') return n.ownerId === 'admin'
+        return n.ownerId === action.userId
+      }
+      return {
+        ...state,
+        notifications: state.notifications.map((n) => (isVisible(n) ? { ...n, read: true } : n)),
+      }
+    }
 
     case 'clear-notifications':
       return { ...state, notifications: [] }

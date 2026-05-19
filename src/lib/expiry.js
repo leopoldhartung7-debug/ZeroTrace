@@ -84,6 +84,7 @@ export function KeyExpiryWatcher() {
             type: 'add-notification',
             title: 'License key expires in 24h',
             body: `${user.username} (${user.email}) — ${key.key}`,
+            ownerId: user.id,
           })
           sendWebhookNotice(webhook, {
             title: 'License key expires in 24 hours',
@@ -114,6 +115,7 @@ export function KeyExpiryWatcher() {
             type: 'add-notification',
             title: 'License key expired',
             body: `${user.username} (${user.email}) — ${key.key}`,
+            ownerId: user.id,
           })
           sendWebhookNotice(webhook, {
             title: 'License key expired',

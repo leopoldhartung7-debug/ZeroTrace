@@ -36,7 +36,12 @@ export default function Sidebar() {
   const [panel, setPanel] = useState(null)
   const [resOpen, setResOpen] = useState(false)
   const dark = state.settings.theme === 'dark'
-  const unread = state.notifications.filter((n) => !n.read).length
+  const visibleNotifications = (state.notifications || []).filter((n) => {
+    if (n.ownerId == null) return true
+    if (state.role === 'admin') return n.ownerId === 'admin'
+    return n.ownerId === state.session?.userId
+  })
+  const unread = visibleNotifications.filter((n) => !n.read).length
 
   const groups = [
     {
@@ -198,13 +203,13 @@ export default function Sidebar() {
           <Popover open={panel === 'n'} onClose={() => setPanel(null)} className="bottom-10 left-0 w-72">
             <div className="bd flex items-center justify-between border-b px-4 py-3">
               <p className="txt text-sm font-semibold">Notifications</p>
-              <button className="muted hover:txt text-xs" onClick={() => dispatch({ type: 'mark-notifications-read' })}>
+              <button className="muted hover:txt text-xs" onClick={() => dispatch({ type: 'mark-notifications-read', role: state.role, userId: state.session?.userId })}>
                 Mark all read
               </button>
             </div>
             <div className="max-h-72 overflow-y-auto">
-              {state.notifications.length === 0 && <p className="muted px-4 py-6 text-center text-sm">No notifications</p>}
-              {state.notifications.map((n) => (
+              {visibleNotifications.length === 0 && <p className="muted px-4 py-6 text-center text-sm">No notifications</p>}
+              {visibleNotifications.map((n) => (
                 <div key={n.id} className="bd border-b px-4 py-3 last:border-0">
                   <div className="flex items-center gap-2">
                     {!n.read && <span className="h-2 w-2 rounded-full bg-sky-500" />}
@@ -214,7 +219,7 @@ export default function Sidebar() {
                 </div>
               ))}
             </div>
-            {state.notifications.length > 0 && (
+            {visibleNotifications.length > 0 && (
               <button
                 className="muted hover:txt bd flex w-full items-center justify-center gap-2 border-t py-2.5 text-xs"
                 onClick={() => dispatch({ type: 'clear-notifications' })}
