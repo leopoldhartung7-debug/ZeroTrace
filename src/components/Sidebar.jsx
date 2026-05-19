@@ -33,7 +33,7 @@ export default function Sidebar() {
   const t = useT()
   const navTo = useNavigate()
   const [panel, setPanel] = useState(null)
-  const [resOpen, setResOpen] = useState(true)
+  const [resOpen, setResOpen] = useState(false)
   const dark = state.settings.theme === 'dark'
   const unread = state.notifications.filter((n) => !n.read).length
 
