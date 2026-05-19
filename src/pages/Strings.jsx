@@ -223,20 +223,25 @@ function StringExtractor() {
                 .slice(0, 3000)
                 .map((v, i) => (
                   <div
-                    key={i}
-                    className="bd flex items-start gap-3 border-b px-3 py-1.5 last:border-0"
+                    key={v}
+                    className="bd flex items-center gap-3 border-b px-3 py-1.5 last:border-0"
                   >
                     <span className="muted w-6 shrink-0">{i + 1}</span>
-                    <span className="txt break-all">{v}</span>
+                    <span className="txt min-w-0 flex-1 break-all">{v}</span>
                     <button
-                      onClick={() => {
+                      type="button"
+                      aria-label="Delete this string"
+                      title="Delete this string"
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
                         dispatch({ type: 'remove-saved-string', value: v })
                         toast({ type: 'success', title: 'String deleted', body: v.slice(0, 60) })
                       }}
-                      title="Delete this string"
-                      className="muted ml-auto shrink-0 rounded p-1 hover:bg-red-600/15 hover:text-red-500"
+                      className="ml-auto flex shrink-0 items-center gap-1.5 rounded-md border border-red-600/30 bg-red-600/10 px-3 py-1.5 text-red-500 hover:bg-red-600/20"
                     >
-                      <Trash2 size={14} />
+                      <Trash2 size={15} />
+                      <span className="text-[11px] font-semibold">Delete</span>
                     </button>
                   </div>
                 ))}

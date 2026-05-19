@@ -151,6 +151,8 @@ function seed() {
     toolStyle: defaultToolStyle(),
     auth: false,
     savedStrings: [],
+    connections: [],
+    integrations: { discordWebhook: '', virusTotalKey: '' },
   }
 }
 
@@ -225,6 +227,24 @@ function reducer(state, action) {
 
     case 'clear-saved-strings':
       return { ...state, savedStrings: [] }
+
+    case 'connect-account':
+      return {
+        ...state,
+        connections: [
+          { id: action.account.id, name: action.account.name, connectedAt: Date.now() },
+          ...state.connections.filter((c) => c.id !== action.account.id),
+        ],
+      }
+
+    case 'disconnect-account':
+      return { ...state, connections: state.connections.filter((c) => c.id !== action.id) }
+
+    case 'set-integration':
+      return {
+        ...state,
+        integrations: { ...state.integrations, [action.key]: action.value },
+      }
 
     case 'set-tool-style':
       return { ...state, toolStyle: { ...state.toolStyle, ...action.patch } }
