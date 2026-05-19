@@ -245,14 +245,27 @@ export default function Sidebar() {
         </div>
 
         <div className="relative">
+          {(() => {
+            const sessionUser = state.session?.userId
+              ? (state.users || []).find((u) => u.id === state.session.userId)
+              : null
+            const displayName = sessionUser
+              ? sessionUser.username
+              : state.role === 'admin' ? 'Admin' : 'Analyst'
+            const displayEmail = sessionUser
+              ? sessionUser.email
+              : state.role === 'admin' ? 'admin@anticheat.ac' : 'analyst@anticheat.ac'
+            const initial = (displayName || '?').trim().charAt(0).toUpperCase()
+            return (
+          <>
           <button
             onClick={() => setPanel(panel === 'user' ? null : 'user')}
             className="hoverable flex w-full items-center gap-3 rounded-lg px-2 py-2"
           >
-            <div className="tile txt flex h-9 w-9 items-center justify-center rounded-lg border text-sm font-semibold">H</div>
-            <div className="flex-1 text-left">
-              <p className="txt text-sm font-medium leading-tight">Ham</p>
-              <p className="muted text-xs">ham@anticheat.ac</p>
+            <div className="tile txt flex h-9 w-9 items-center justify-center rounded-lg border text-sm font-semibold">{initial}</div>
+            <div className="min-w-0 flex-1 text-left">
+              <p className="txt truncate text-sm font-medium leading-tight">{displayName}</p>
+              <p className="muted truncate text-xs">{displayEmail}</p>
             </div>
             <ChevronsUpDown size={16} className="muted" />
           </button>
@@ -263,8 +276,8 @@ export default function Sidebar() {
             className="bottom-full left-0 right-0 mb-2 py-1"
           >
             <div className="bd border-b px-4 py-3">
-              <p className="txt text-sm font-semibold">Ham</p>
-              <p className="muted truncate text-xs">ham@anticheat.ac</p>
+              <p className="txt truncate text-sm font-semibold">{displayName}</p>
+              <p className="muted truncate text-xs">{displayEmail}</p>
             </div>
             <button
               onClick={() => {
@@ -285,6 +298,9 @@ export default function Sidebar() {
               <LogOut size={16} /> Logout
             </button>
           </Popover>
+          </>
+            )
+          })()}
         </div>
       </div>
     </aside>
