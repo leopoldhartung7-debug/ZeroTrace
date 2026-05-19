@@ -430,6 +430,38 @@ function reducer(state, action) {
       }
     }
 
+    case 'delete-user': {
+      const user = (state.users || []).find((u) => u.id === action.id)
+      if (!user) return state
+      const tomb = [
+        { username: user.username, email: user.email, key: user.key, deletedAt: Date.now() },
+        ...(state.deletedAccounts || []),
+      ].slice(0, 100)
+      return {
+        ...state,
+        users: state.users.filter((u) => u.id !== user.id),
+        licenseKeys: (state.licenseKeys || []).map((k) =>
+          k.key === user.key ? { ...k, usedBy: null } : k,
+        ),
+        pins: state.pins.filter((p) => p.ownerId !== user.id),
+        events: ev(
+          { ...state, events: state.events.filter((e) => e.ownerId !== user.id) },
+          'pin',
+          'Login deleted',
+          `${user.username} · ${user.email}`,
+          'admin',
+        ),
+        notifications: state.notifications.filter((n) => n.ownerId !== user.id),
+        savedStrings: (state.savedStrings || []).filter((s) => {
+          const e = typeof s === 'string' ? { value: s, ownerId: null } : s
+          return e.ownerId !== user.id
+        }),
+        detectionFiles: (state.detectionFiles || []).filter((f) => f.ownerId !== user.id),
+        suspiciousFiles: (state.suspiciousFiles || []).filter((f) => f.ownerId !== user.id),
+        deletedAccounts: tomb,
+      }
+    }
+
     case 'save-strings': {
       const owner = action.ownerId ?? null
       // Normalize existing entries (legacy plain strings → {value, ownerId:null}).

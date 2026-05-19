@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { KeyRound, Copy, Trash2, ShieldOff, ShieldCheck, Plus, User as UserIcon, ChevronRight } from 'lucide-react'
+import { KeyRound, Copy, Trash2, ShieldOff, ShieldCheck, Plus, User as UserIcon, ChevronRight, AtSign, MessageSquare } from 'lucide-react'
 import { PageHeader, Card, Field, Input } from '../components/kit.jsx'
-import { Select, useToast } from '../components/ui.jsx'
+import { Select, Modal, useToast } from '../components/ui.jsx'
 import { useStore, generateLicenseKey } from '../store.jsx'
 
 const PLANS = [
@@ -30,6 +30,7 @@ export default function KeyGenerator() {
   const [label, setLabel] = useState('')
   const [plan, setPlan] = useState('Personal')
   const [duration, setDuration] = useState('30')
+  const [deletingUser, setDeletingUser] = useState(null)
 
   const keys = state.licenseKeys || []
 
@@ -181,6 +182,80 @@ export default function KeyGenerator() {
           </div>
         )}
       </Card>
+
+      <Card className="mt-6 p-6">
+        <h3 className="txt mb-1 flex items-center gap-2 text-lg font-semibold">
+          <UserIcon size={18} /> Logins ({(state.users || []).length})
+        </h3>
+        <p className="muted mb-4 text-sm">
+          All registered analyst accounts. Read-only — admins can only remove a login.
+        </p>
+        {(state.users || []).length === 0 ? (
+          <p className="muted py-12 text-center text-sm">No accounts registered yet.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="caps-label bd border-b">
+                  <th className="px-3 py-3">Username</th>
+                  <th className="px-3 py-3">Email</th>
+                  <th className="px-3 py-3">Discord ID</th>
+                  <th className="px-3 py-3">Key</th>
+                  <th className="px-3 py-3">Registered</th>
+                  <th className="px-3 py-3" />
+                </tr>
+              </thead>
+              <tbody>
+                {(state.users || []).map((u) => (
+                  <tr key={u.id} className="bd border-b last:border-0">
+                    <td className="txt px-3 py-3 font-medium">{u.username}</td>
+                    <td className="muted px-3 py-3 break-all text-xs"><span className="inline-flex items-center gap-1.5"><AtSign size={11} />{u.email}</span></td>
+                    <td className="muted px-3 py-3 font-mono text-xs"><span className="inline-flex items-center gap-1.5"><MessageSquare size={11} />{u.discordId}</span></td>
+                    <td className="muted px-3 py-3 break-all font-mono text-xs">{u.key}</td>
+                    <td className="muted px-3 py-3 text-xs">{fmt(u.createdAt)}</td>
+                    <td className="px-3 py-3 text-right">
+                      <button
+                        onClick={() => setDeletingUser(u)}
+                        className="bd inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs text-red-500 hover:border-red-500"
+                      >
+                        <Trash2 size={13} /> Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
+
+      <Modal
+        open={!!deletingUser}
+        onClose={() => setDeletingUser(null)}
+        title="Delete login"
+        footer={
+          deletingUser && (
+            <button
+              onClick={() => {
+                dispatch({ type: 'delete-user', id: deletingUser.id })
+                toast({ type: 'success', title: 'Login deleted', body: deletingUser.username })
+                setDeletingUser(null)
+              }}
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-red-600 px-4 py-3 text-sm font-semibold text-white hover:bg-red-500"
+            >
+              <Trash2 size={16} /> Delete login
+            </button>
+          )
+        }
+      >
+        {deletingUser && (
+          <div className="space-y-3 text-sm">
+            <p className="muted leading-relaxed">
+              This removes the login for <span className="txt font-semibold">{deletingUser.username}</span> ({deletingUser.email}) and all of their data (pins, activity, strings). The license key <span className="txt font-mono">{deletingUser.key}</span> stays and becomes free to bind again. This cannot be undone.
+            </p>
+          </div>
+        )}
+      </Modal>
     </div>
   )
 }

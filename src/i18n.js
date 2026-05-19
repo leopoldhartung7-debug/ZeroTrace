@@ -290,6 +290,12 @@ export const DE = {
   'All activity-log entries this user has produced.':
     'Alle Aktivitäts-Einträge, die dieser Nutzer erzeugt hat.',
   'No activity recorded for this user.': 'Keine Aktivität für diesen Nutzer aufgezeichnet.',
+  'Logins': 'Logins',
+  'All registered analyst accounts. Read-only — admins can only remove a login.':
+    'Alle registrierten Analyst-Konten. Schreibgeschützt — Admins können Logins nur entfernen.',
+  'No accounts registered yet.': 'Noch keine Konten registriert.',
+  'Delete login': 'Login löschen', 'Login deleted': 'Login gelöscht',
+  'Registered': 'Registriert',
   'Your account was removed by an admin': 'Dein Konto wurde von einem Admin entfernt',
   'The license key tied to this account was deleted. You can register a new account with the same details, but you will need a new key from an admin.':
     'Der zu diesem Konto gehörende Lizenz-Key wurde gelöscht. Du kannst ein neues Konto mit denselben Daten anlegen, brauchst dafür aber einen neuen Key von einem Admin.',
