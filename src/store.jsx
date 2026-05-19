@@ -233,6 +233,7 @@ function seed() {
     role: null,
     licenseKeys: [],
     users: [],
+    deletedAccounts: [],
     savedStrings: [],
     connections: [],
     integrations: {
@@ -382,12 +383,52 @@ function reducer(state, action) {
         ),
       }
 
-    case 'delete-key':
+    case 'delete-key': {
+      const key = (state.licenseKeys || []).find((k) => k.id === action.id)
+      const user = key
+        ? (state.users || []).find((u) => u.id === key.usedBy || u.key === key.key)
+        : null
+      const uid = user?.id || null
+      const tombstone = user
+        ? [
+            { username: user.username, email: user.email, key: user.key, deletedAt: Date.now() },
+            ...(state.deletedAccounts || []),
+          ].slice(0, 100)
+        : state.deletedAccounts || []
       return {
         ...state,
         licenseKeys: (state.licenseKeys || []).filter((k) => k.id !== action.id),
-        events: ev(state, 'pin', 'License key deleted', action.key || '', 'admin'),
+        users: uid
+          ? (state.users || []).filter((u) => u.id !== uid)
+          : (state.users || []),
+        pins: uid ? state.pins.filter((p) => p.ownerId !== uid) : state.pins,
+        events: ev(
+          state.events && uid
+            ? { ...state, events: state.events.filter((e) => e.ownerId !== uid) }
+            : state,
+          'pin',
+          'License key deleted',
+          user ? `${action.key || ''} · ${user.username}` : action.key || '',
+          'admin',
+        ),
+        notifications: uid
+          ? state.notifications.filter((n) => n.ownerId !== uid)
+          : state.notifications,
+        savedStrings: uid
+          ? (state.savedStrings || []).filter((s) => {
+              const e = typeof s === 'string' ? { value: s, ownerId: null } : s
+              return e.ownerId !== uid
+            })
+          : state.savedStrings,
+        detectionFiles: uid
+          ? (state.detectionFiles || []).filter((f) => f.ownerId !== uid)
+          : state.detectionFiles,
+        suspiciousFiles: uid
+          ? (state.suspiciousFiles || []).filter((f) => f.ownerId !== uid)
+          : state.suspiciousFiles,
+        deletedAccounts: tombstone,
       }
+    }
 
     case 'save-strings': {
       const owner = action.ownerId ?? null

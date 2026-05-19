@@ -155,11 +155,22 @@ export default function Login() {
       isEmail ? (u.email || '').toLowerCase() === id : (u.username || '').toLowerCase() === id,
     )
     if (!user) {
-      toast({
-        type: 'error',
-        title: isEmail ? 'Email not found' : 'Username not found',
-        body: 'No account is registered with these details.',
-      })
+      const wasDeleted = (state.deletedAccounts || []).some((d) =>
+        isEmail ? (d.email || '').toLowerCase() === id : (d.username || '').toLowerCase() === id,
+      )
+      if (wasDeleted) {
+        toast({
+          type: 'error',
+          title: 'Your account was removed by an admin',
+          body: 'The license key tied to this account was deleted. You can register a new account with the same details, but you will need a new key from an admin.',
+        })
+      } else {
+        toast({
+          type: 'error',
+          title: isEmail ? 'Email not found' : 'Username not found',
+          body: 'No account is registered with these details.',
+        })
+      }
       return
     }
     if (user.pass !== form.pw) {
