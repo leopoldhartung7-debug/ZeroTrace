@@ -68,15 +68,22 @@ export default function Pins() {
     visibility: 'Private',
   })
 
+  // Each analyst only sees the pins they own; admins see everything.
+  const ownPins = useMemo(() => {
+    if (state.role === 'admin') return state.pins
+    const uid = state.session?.userId
+    return state.pins.filter((p) => p.ownerId && p.ownerId === uid)
+  }, [state.pins, state.role, state.session])
+
   const filtered = useMemo(() => {
     if (tab === 'shared') return []
-    return state.pins.filter((p) => {
+    return ownPins.filter((p) => {
       if (query && !`${p.pin} ${p.name}`.toLowerCase().includes(query.toLowerCase())) return false
       if (statusFilter !== 'all' && p.status !== statusFilter) return false
       if (gameFilter !== 'all' && p.game !== gameFilter) return false
       return true
     })
-  }, [state.pins, query, statusFilter, gameFilter, tab])
+  }, [ownPins, query, statusFilter, gameFilter, tab])
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize))
   const pageRows = filtered.slice((page - 1) * pageSize, page * pageSize)
@@ -95,14 +102,21 @@ export default function Pins() {
     const name = form.name.trim()
     const discordId = form.discordId.trim()
 
-    const prior = state.pins.find(
+    const prior = ownPins.find(
       (p) =>
         p.discordId &&
         p.discordId === discordId &&
         (p.status === 'Finished' || p.result),
     )
 
-    dispatch({ type: 'add-pin', ...form, name, discordId, code })
+    dispatch({
+      type: 'add-pin',
+      ...form,
+      name,
+      discordId,
+      code,
+      ownerId: state.session?.userId || (state.role === 'admin' ? 'admin' : null),
+    })
     const createdAt = Date.now()
     setCreated({ pin: code, name, discordId, game: form.game, visibility: form.visibility, createdAt })
     toast({ type: 'success', title: 'Pin Created', body: `Your pin ${code} has been created successfully.` })
@@ -195,25 +209,19 @@ export default function Pins() {
       <div className="mt-8">
         <Tabs
           tabs={[
-            { label: `My Pins (${state.pins.length})`, key: 'mine' },
+            { label: `My Pins (${ownPins.length})`, key: 'mine' },
             { label: 'Shared with Me (0)', key: 'shared' },
           ].map((x) => x.label)}
-          active={tab === 'mine' ? `My Pins (${state.pins.length})` : 'Shared with Me (0)'}
+          active={tab === 'mine' ? `My Pins (${ownPins.length})` : 'Shared with Me (0)'}
           onChange={(l) => setTab(l.startsWith('My') ? 'mine' : 'shared')}
         />
       </div>
 
-      <div className="mt-8 grid grid-cols-2 gap-4 lg:grid-cols-5">
-        <PinStatCard icon={CalendarCheck} label="Daily Pins" value="1/1" valueClass="text-red-500">
-          <button className="mt-2 flex items-center gap-1.5 text-xs font-medium text-sky-500 hover:text-sky-400">
-            <Link2 size={13} />
-            Link Discord for more
-          </button>
-        </PinStatCard>
-        <PinStatCard icon={MessageSquare} label="Total Pins" value={stats.totalPins} />
-        <PinStatCard icon={Clock} label="Pending" value={stats.pending} />
-        <PinStatCard icon={CheckCircle2} label="Finished" value={stats.finished} />
-        <PinStatCard icon={AlertCircle} label="Expired" value={stats.expired} />
+      <div className="mt-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <PinStatCard icon={MessageSquare} label="Total Pins" value={ownPins.length} />
+        <PinStatCard icon={Clock} label="Pending" value={ownPins.filter((p) => p.status === 'Pending').length} />
+        <PinStatCard icon={CheckCircle2} label="Finished" value={ownPins.filter((p) => p.status === 'Finished').length} />
+        <PinStatCard icon={AlertCircle} label="Expired" value={ownPins.filter((p) => p.status === 'Expired').length} />
       </div>
 
       <div className="panel mt-8 rounded-2xl border p-5">

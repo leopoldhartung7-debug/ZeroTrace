@@ -120,7 +120,11 @@ export default function ScanResults() {
   const nav = useNavigate()
   const { state, dispatch } = useStore()
   const toast = useToast()
-  const pin = state.pins.find((p) => p.id === id)
+  const raw = state.pins.find((p) => p.id === id)
+  const pin =
+    raw && (state.role === 'admin' || raw.ownerId === state.session?.userId)
+      ? raw
+      : null
   const [cat, setCat] = useState(null)
   const [risk, setRisk] = useState(false)
 

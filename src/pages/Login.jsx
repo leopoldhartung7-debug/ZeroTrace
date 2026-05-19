@@ -43,33 +43,38 @@ export default function Login() {
       enterDashboard('analyst', null)
       return
     }
-    const user = (state.users || []).find(
-      (u) => (u.username || '').toLowerCase() === id || (u.email || '').toLowerCase() === id,
+    const isEmail = id.includes('@')
+    const user = (state.users || []).find((u) =>
+      isEmail ? (u.email || '').toLowerCase() === id : (u.username || '').toLowerCase() === id,
     )
-    if (user && user.pass === form.pw) {
-      const key = (state.licenseKeys || []).find((k) => k.key === user.key)
-      const expired = !key || key.status === 'Revoked' ||
-        (key.expiresAt && Date.now() > key.expiresAt)
-      if (expired) {
-        toast({
-          type: 'error',
-          title: 'License key expired',
-          body: 'Contact an admin for a new key.',
-        })
-        dispatch({
-          type: 'add-notification',
-          title: 'Login blocked — key expired',
-          body: `${user.username} tried to sign in with an expired/revoked key (${user.key}).`,
-        })
-        if (key) dispatch({ type: 'mark-key-expired-notified', id: key.id })
-        return
-      }
-      dispatch({ type: 'login', role: 'analyst', userId: user.id })
-      toast({ type: 'success', title: 'Welcome back', body: `Signed in as ${user.username}` })
-      nav('/dashboard')
+    if (!user) {
+      toast({
+        type: 'error',
+        title: isEmail ? 'Email not found' : 'Username not found',
+        body: 'No account is registered with these details.',
+      })
       return
     }
-    toast({ type: 'error', title: 'Invalid credentials', body: 'Wrong username or password.' })
+    if (user.pass !== form.pw) {
+      toast({ type: 'error', title: 'Wrong password', body: 'The password does not match this account.' })
+      return
+    }
+    const key = (state.licenseKeys || []).find((k) => k.key === user.key)
+    const expired = !key || key.status === 'Revoked' ||
+      (key.expiresAt && Date.now() > key.expiresAt)
+    if (expired) {
+      toast({ type: 'error', title: 'License key expired', body: 'Contact an admin for a new key.' })
+      dispatch({
+        type: 'add-notification',
+        title: 'Login blocked — key expired',
+        body: `${user.username} tried to sign in with an expired/revoked key (${user.key}).`,
+      })
+      if (key) dispatch({ type: 'mark-key-expired-notified', id: key.id })
+      return
+    }
+    dispatch({ type: 'login', role: 'analyst', userId: user.id })
+    toast({ type: 'success', title: 'Welcome back', body: `Signed in as ${user.username}` })
+    nav('/dashboard')
   }
 
   const signIn = (method) => enterDashboard('analyst', method)
