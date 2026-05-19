@@ -5,24 +5,9 @@ import {
   ChevronDown, ChevronRight, Monitor, Shield, Ticket, ExternalLink,
   AlertCircle, CheckCircle2, Activity, Code2,
 } from 'lucide-react'
-import { Card, StatTile } from '../components/kit.jsx'
+import { PageHeader, Card, StatTile } from '../components/kit.jsx'
 import { useStats, useStore } from '../store.jsx'
 import { useToast } from '../components/ui.jsx'
-
-/* Shared boxed page header (same style as the Legal page) */
-function ResourceHeader({ icon: Icon, title, subtitle }) {
-  return (
-    <Card className="mb-8 flex items-start gap-4 p-6 md:p-8">
-      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 text-white">
-        <Icon size={22} />
-      </span>
-      <div>
-        <h1 className="txt text-2xl font-bold md:text-3xl">{title}</h1>
-        {subtitle && <p className="muted mt-1.5 text-sm">{subtitle}</p>}
-      </div>
-    </Card>
-  )
-}
 
 /* ----------------------------- Leaderboard ----------------------------- */
 export function Leaderboard() {
@@ -34,8 +19,9 @@ export function Leaderboard() {
   const medal = ['#facc15', '#cbd5e1', '#f59e0b']
   return (
     <div>
-      <ResourceHeader
+      <PageHeader
         icon={Trophy}
+        kicker="Top detections across your games"
         title="Leaderboard"
         subtitle="Ranking is computed live from your own scan data."
       />
@@ -214,13 +200,7 @@ export function Documentation() {
   const matches = (label) => !q || label.toLowerCase().includes(q.toLowerCase())
 
   return (
-    <div>
-      <ResourceHeader
-        icon={BookOpen}
-        title="Documentation"
-        subtitle="Guides, references and API details for Ocean."
-      />
-      <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
+    <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
       <Card className="h-fit p-4 lg:sticky lg:top-6">
         <div className="relative mb-4">
           <Search size={15} className="muted absolute left-3 top-1/2 -translate-y-1/2" />
@@ -282,7 +262,7 @@ export function Documentation() {
       </Card>
 
       <div>
-        <h2 className="txt text-3xl font-bold tracking-tight">{doc.title}</h2>
+        <h1 className="txt text-4xl font-bold tracking-tight">{doc.title}</h1>
         <div className="mt-6 space-y-6">
           {doc.blocks.map((b, i) => (
             <div key={i}>
@@ -305,7 +285,6 @@ export function Documentation() {
             </div>
           ))}
         </div>
-      </div>
       </div>
     </div>
   )
@@ -345,11 +324,6 @@ export function Pricing() {
 
   return (
     <div>
-      <ResourceHeader
-        icon={Ticket}
-        title="Pricing"
-        subtitle="Plans &amp; limits — pick the plan that fits your community."
-      />
       <button
         onClick={() => toast({ type: 'info', title: 'Claim license', body: 'No pending licenses on this account.' })}
         className="muted hover:txt mx-auto mb-8 flex items-center gap-2 text-sm"
@@ -487,13 +461,19 @@ export function DownloadPage() {
   const toast = useToast()
   return (
     <div>
-      <ResourceHeader
-        icon={Download}
-        title="Start Detecting"
-        subtitle="Download Ocean for your platform — available for Windows & Linux."
-      />
+      <div className="flex flex-col items-center py-8 text-center">
+        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-blue-700 font-mono text-xl font-bold text-white shadow-lg shadow-blue-600/25">
+          {'(*>'}
+        </div>
+        <p className="caps-label mt-5">Downloads</p>
+        <h1 className="txt mt-2 text-4xl font-bold tracking-tight">Start Detecting</h1>
+        <p className="muted mt-2">Download Ocean for your platform.</p>
+        <p className="muted mt-4 flex items-center gap-2 text-sm">
+          <Download size={15} /> Available for Windows &amp; Linux
+        </p>
+      </div>
 
-      <div className="grid gap-5 lg:grid-cols-3">
+      <div className="mt-6 grid gap-5 lg:grid-cols-3">
         <DownloadCard icon={Monitor} name="Windows" tagTone="#ef4444" accent="#dc2626"
           desc="Advanced cheat detection" hint="Enter your 8-character PIN."
           pins={state.pins} toast={toast} />
@@ -547,11 +527,34 @@ export function DownloadPage() {
 
 
 /* ----------------------- Shared doc primitives ------------------------- */
-function TocDoc({ header, preface, sections }) {
+function HeroBanner({ title, subtitle, meta }) {
+  return (
+    <div className="relative mb-10 overflow-hidden rounded-2xl border bd">
+      <div
+        className="absolute inset-0"
+        style={{ background: 'radial-gradient(60% 120% at 50% 0%, rgba(59,130,246,0.18), transparent 70%)' }}
+      />
+      <div className="relative px-6 py-16 text-center">
+        <h1 className="bg-gradient-to-b from-blue-400 to-blue-600 bg-clip-text text-5xl font-extrabold tracking-tight text-transparent md:text-6xl">
+          {title}
+        </h1>
+        <p className="muted mx-auto mt-4 max-w-xl text-lg">{subtitle}</p>
+        {meta && (
+          <p className="muted mt-6 flex items-center justify-center gap-2 text-sm">
+            <FileText size={15} /> {meta}
+          </p>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function TocDoc({ hero, header, preface, sections }) {
   const refs = useRef({})
   const goto = (id) => refs.current[id]?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   return (
     <div>
+      {hero}
       <div className="grid gap-6 lg:grid-cols-[300px_1fr]">
         <Card className="h-fit p-5 lg:sticky lg:top-6">
           <h3 className="txt mb-4 flex items-center gap-2 text-base font-semibold">
@@ -651,11 +654,15 @@ export function Terms() {
   return (
     <TocDoc
       header={
-        <ResourceHeader
-          icon={Scale}
-          title="Legal Agreement"
-          subtitle="Terms and conditions governing the use of Ocean Anti-Cheat services"
-        />
+        <Card className="flex items-start gap-4 p-6 md:p-8">
+          <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 text-white">
+            <Scale size={22} />
+          </span>
+          <div>
+            <h1 className="txt text-2xl font-bold">Legal Agreement</h1>
+            <p className="muted mt-1 text-sm">Terms and conditions governing the use of Ocean Anti-Cheat services</p>
+          </div>
+        </Card>
       }
       preface={
         <Card className="muted space-y-4 p-6 text-sm leading-relaxed md:p-8">
@@ -750,11 +757,15 @@ export function Privacy() {
   return (
     <TocDoc
       header={
-        <ResourceHeader
-          icon={FileText}
-          title="Privacy Policy"
-          subtitle="How Ocean Anti-Cheat collects, uses and protects data"
-        />
+        <Card className="flex items-start gap-4 p-6 md:p-8">
+          <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 text-white">
+            <FileText size={22} />
+          </span>
+          <div>
+            <h1 className="txt text-2xl font-bold">Privacy Policy</h1>
+            <p className="muted mt-1 text-sm">How Ocean Anti-Cheat collects, uses and protects data</p>
+          </div>
+        </Card>
       }
       preface={
         <Card className="p-5">
@@ -809,12 +820,17 @@ const LEGAL_NOTICE = [
 export function Legal() {
   return (
     <TocDoc
+      hero={<HeroBanner title="Legal Notice" subtitle="Impressum & company information" meta="Last updated  14 Apr, 2026" />}
       header={
-        <ResourceHeader
-          icon={Scale}
-          title="Legal Notice"
-          subtitle="Impressum, transparency & company information for Ocean Anti-Cheat"
-        />
+        <Card className="flex items-start gap-4 p-6 md:p-8">
+          <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 text-white">
+            <Scale size={22} />
+          </span>
+          <div>
+            <h1 className="txt text-2xl font-bold">Legal Information</h1>
+            <p className="muted mt-1 text-sm">Transparency, company details, and regulatory disclosures for Ocean Anti-Cheat</p>
+          </div>
+        </Card>
       }
       sections={LEGAL_NOTICE.map((s, i) => ({
         n: String(i + 1),
@@ -854,10 +870,10 @@ export function Changelogs() {
   const goto = (v) => refs.current[v]?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   return (
     <div>
-      <ResourceHeader
-        icon={History}
+      <HeroBanner
         title="Changelog"
-        subtitle={`Stay up to date with the latest updates — ${VERSIONS.length} versions published.`}
+        subtitle="Stay up to date with the latest updates, improvements and new features of Ocean"
+        meta={`${VERSIONS.length} versions published`}
       />
       <div className="grid gap-6 lg:grid-cols-[260px_1fr]">
         <Card className="h-fit p-5 lg:sticky lg:top-6">
