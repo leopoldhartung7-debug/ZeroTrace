@@ -682,6 +682,17 @@ function reducer(state, action) {
     case 'update-ticket':
       return { ...state, tickets: state.tickets.map((t) => (t.id === action.id ? { ...t, status: action.status } : t)) }
 
+    case 'clear-events': {
+      // Removes the activity-log entries the current viewer is allowed to
+      // see — admins can clear everything, analysts only their own.
+      const keepIfNotVisible = (e) => {
+        if (action.role === 'admin') return false
+        if (e.ownerId == null) return true
+        return e.ownerId !== action.userId
+      }
+      return { ...state, events: state.events.filter(keepIfNotVisible) }
+    }
+
     case 'mark-notifications-read': {
       const isVisible = (n) => {
         if (n.ownerId == null) return true

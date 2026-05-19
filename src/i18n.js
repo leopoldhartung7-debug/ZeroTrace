@@ -280,6 +280,12 @@ export const DE = {
   'User not found': 'Nutzer nicht gefunden',
   'Back to Key Generator': 'Zurück zum Key-Generator',
   'Cheating · Susp · Clean': 'Cheating · Verdächtig · Sauber',
+  'Clear list': 'Liste leeren', 'Clear activity list': 'Aktivitäts-Liste leeren',
+  'Activity cleared': 'Aktivität gelöscht',
+  'This removes all activity-log entries for everyone. This cannot be undone.':
+    'Dies löscht alle Aktivitäts-Einträge für alle. Das kann nicht rückgängig gemacht werden.',
+  'This removes only your own activity-log entries. This cannot be undone.':
+    'Dies löscht nur deine eigenen Aktivitäts-Einträge. Das kann nicht rückgängig gemacht werden.',
   'Verdict': 'Urteil',
   'Verify your email': 'E-Mail bestätigen', 'Verify & finish': 'Bestätigen & fertigstellen',
   'Resend code': 'Code erneut senden', 'Checking email…': 'E-Mail wird geprüft…',

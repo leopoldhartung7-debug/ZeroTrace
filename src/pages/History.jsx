@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react'
 import {
   History as HistoryIcon, Pin, ScanLine, FileText, Code2, Database,
-  LifeBuoy, Download, Activity,
+  LifeBuoy, Download, Activity, Trash2,
 } from 'lucide-react'
 import { PageHeader, Card, EmptyState, StatTile } from '../components/kit.jsx'
-import { Select } from '../components/ui.jsx'
+import { Select, Modal, useToast } from '../components/ui.jsx'
 import { useStore } from '../store.jsx'
 
 const ICONS = {
@@ -13,8 +13,10 @@ const ICONS = {
 }
 
 export default function History() {
-  const { state } = useStore()
+  const { state, dispatch } = useStore()
+  const toast = useToast()
   const [kind, setKind] = useState('all')
+  const [clearOpen, setClearOpen] = useState(false)
 
   const ownEvents = useMemo(() => {
     const all = state.events || []
@@ -53,12 +55,21 @@ export default function History() {
         title="Activity Log"
         subtitle="Every pin, scan, rule and database change is recorded locally."
         actions={
-          <button
-            onClick={exportCsv}
-            className="bd txt flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium"
-          >
-            <Download size={16} /> Export CSV
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={exportCsv}
+              className="bd txt flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium"
+            >
+              <Download size={16} /> Export CSV
+            </button>
+            <button
+              onClick={() => setClearOpen(true)}
+              disabled={ownEvents.length === 0}
+              className="bd txt flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium hover:border-red-500 disabled:opacity-40"
+            >
+              <Trash2 size={16} /> Clear list
+            </button>
+          </div>
         }
       />
 
@@ -108,6 +119,30 @@ export default function History() {
           </ol>
         )}
       </Card>
+
+      <Modal
+        open={clearOpen}
+        onClose={() => setClearOpen(false)}
+        title="Clear activity list"
+        footer={
+          <button
+            onClick={() => {
+              dispatch({ type: 'clear-events', role: state.role, userId: state.session?.userId })
+              setClearOpen(false)
+              toast({ type: 'success', title: 'Activity cleared' })
+            }}
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-red-600 px-4 py-3 text-sm font-semibold text-white hover:bg-red-500"
+          >
+            <Trash2 size={16} /> Clear {ownEvents.length} entries
+          </button>
+        }
+      >
+        <p className="muted text-sm leading-relaxed">
+          {state.role === 'admin'
+            ? 'This removes all activity-log entries for everyone. This cannot be undone.'
+            : 'This removes only your own activity-log entries. This cannot be undone.'}
+        </p>
+      </Modal>
     </div>
   )
 }
