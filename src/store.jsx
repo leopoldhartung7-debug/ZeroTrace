@@ -218,7 +218,12 @@ function seed() {
     })
   }
   return {
-    settings: { theme: 'dark', lang: 'en', defaultGame: 'HYTALE' },
+    settings: {
+      theme: 'dark', lang: 'en', defaultGame: 'HYTALE',
+      riskWeights: { detect: 8, warn: 2, susp: 5 },
+      gameProfiles: {},
+      weeklyReport: { enabled: false, lastSentAt: 0 },
+    },
     notifications: [
       { id: 'n1', title: 'Scan finished', body: 'Pin F1T5F8C0 returned: Cheating', time: now - 3600000, read: false },
       { id: 'n2', title: 'Welcome to ZeroTrace', body: 'Your anti-cheat dashboard is ready.', time: now - 7200000, read: false },
@@ -257,8 +262,9 @@ function seed() {
       emailJsTemplateId: '',
       emailJsPublicKey: '',
       webhookCustom: { username: 'ZeroTrace Anti-Cheat', color: '#38bdf8', footer: 'ZeroTrace Anti-Cheat' },
+      discordWebhooks: [],
     },
-    security: { twoFA: false, passkeys: [] },
+    security: { twoFA: false, passkeys: [], lockout: { maxAttempts: 5, lockMinutes: 15 }, attempts: {} },
     session: null,
     otherSessions: [],
   }
@@ -832,6 +838,105 @@ function reducer(state, action) {
       return {
         ...state,
         security: { ...state.security, twoFA: !!action.secret, totpSecret: action.secret || '' },
+      }
+
+    case 'set-pin-status':
+      return {
+        ...state,
+        pins: state.pins.map((p) =>
+          p.id === action.id
+            ? { ...p, caseStatus: action.status, caseResolution: action.resolution || p.caseResolution }
+            : p,
+        ),
+      }
+
+    case 'set-pin-steamid':
+      return {
+        ...state,
+        pins: state.pins.map((p) => (p.id === action.id ? { ...p, steamId: action.steamId } : p)),
+      }
+
+    case 'set-pin-geo':
+      return {
+        ...state,
+        pins: state.pins.map((p) => (p.id === action.id ? { ...p, geo: action.geo } : p)),
+      }
+
+    case 'set-risk-weights':
+      return {
+        ...state,
+        settings: { ...state.settings, riskWeights: { ...action.weights } },
+      }
+
+    case 'set-game-profiles':
+      return {
+        ...state,
+        settings: { ...state.settings, gameProfiles: { ...(state.settings.gameProfiles || {}), ...action.profiles } },
+      }
+
+    case 'set-weekly-report':
+      return {
+        ...state,
+        settings: { ...state.settings, weeklyReport: { ...(state.settings.weeklyReport || {}), ...action.value } },
+      }
+
+    case 'set-login-lockout':
+      return {
+        ...state,
+        security: { ...state.security, lockout: { ...(state.security.lockout || {}), ...action.value } },
+      }
+
+    case 'record-login-attempt': {
+      const map = { ...((state.security && state.security.attempts) || {}) }
+      const cur = map[action.id] || { count: 0, first: 0, lockedUntil: 0 }
+      const now = Date.now()
+      if (cur.first && now - cur.first > 10 * 60000) {
+        cur.count = 0
+        cur.first = 0
+      }
+      if (action.kind === 'success') {
+        delete map[action.id]
+      } else {
+        cur.count += 1
+        if (!cur.first) cur.first = now
+        const max = state.security?.lockout?.maxAttempts ?? 5
+        const dur = state.security?.lockout?.lockMinutes ?? 15
+        if (cur.count >= max) cur.lockedUntil = now + dur * 60000
+        map[action.id] = cur
+      }
+      return { ...state, security: { ...state.security, attempts: map } }
+    }
+
+    case 'add-discord-webhook':
+      return {
+        ...state,
+        integrations: {
+          ...state.integrations,
+          discordWebhooks: [
+            ...(state.integrations.discordWebhooks || []),
+            { id: 'wh' + Date.now(), label: action.label || 'Webhook', url: action.url, enabled: true },
+          ],
+        },
+      }
+
+    case 'update-discord-webhook':
+      return {
+        ...state,
+        integrations: {
+          ...state.integrations,
+          discordWebhooks: (state.integrations.discordWebhooks || []).map((w) =>
+            w.id === action.id ? { ...w, ...action.patch } : w,
+          ),
+        },
+      }
+
+    case 'delete-discord-webhook':
+      return {
+        ...state,
+        integrations: {
+          ...state.integrations,
+          discordWebhooks: (state.integrations.discordWebhooks || []).filter((w) => w.id !== action.id),
+        },
       }
 
     case 'mark-webhook-sent':

@@ -1,9 +1,13 @@
 import { useRef, useState } from 'react'
-import { Settings as Cog, Sun, Moon, Download, Upload, Trash2, RotateCcw, SlidersHorizontal, Wand2 } from 'lucide-react'
+import {
+  Settings as Cog, Sun, Moon, Download, Upload, Trash2, RotateCcw,
+  SlidersHorizontal, Wand2, ShieldAlert, Gamepad2, CalendarCheck, ShieldCheck, KeyRound,
+} from 'lucide-react'
 import { PageHeader, Card } from '../components/kit.jsx'
 import Tabs from '../components/Tabs.jsx'
 import { Select, useToast } from '../components/ui.jsx'
-import { useStore, ALL_GAMES } from '../store.jsx'
+import { useStore, ALL_GAMES, deriveScanReport } from '../store.jsx'
+import { sendScanSummary } from '../lib/webhook.js'
 import ToolDesigner from './ToolDesigner.jsx'
 
 function Row({ title, desc, children }) {
@@ -127,7 +131,7 @@ function General() {
       <Card className="mt-6 p-6">
         <h3 className="txt mb-3 text-lg font-semibold">About</h3>
         <div className="muted grid gap-2 text-sm sm:grid-cols-3">
-          <p>Version <span className="txt">2.0.0</span></p>
+          <p>Version <span className="txt">2.1.0</span></p>
           <p>Build <span className="txt">client-side SPA</span></p>
           <p>Storage <span className="txt">localStorage</span></p>
         </div>
@@ -136,21 +140,249 @@ function General() {
   )
 }
 
+function RiskScoreTab() {
+  const { state, dispatch } = useStore()
+  const toast = useToast()
+  const w = state.settings?.riskWeights || { detect: 8, warn: 2, susp: 5 }
+  const [detect, setDetect] = useState(w.detect)
+  const [warn, setWarn] = useState(w.warn)
+  const [susp, setSusp] = useState(w.susp)
+  const save = () => {
+    dispatch({ type: 'set-risk-weights', weights: { detect: Number(detect) || 0, warn: Number(warn) || 0, susp: Number(susp) || 0 } })
+    toast({ type: 'success', title: 'Risk weights saved' })
+  }
+  return (
+    <Card className="p-6">
+      <h3 className="txt mb-1 flex items-center gap-2 text-lg font-semibold">
+        <ShieldAlert size={18} /> Risk Score Formula
+      </h3>
+      <p className="muted mb-4 text-sm">
+        Tune how the risk score is computed. Final score = detects × A + warnings × B + suspicious × C, capped at 100.
+      </p>
+      <div className="grid gap-4 sm:grid-cols-3">
+        <div>
+          <p className="caps-label mb-1">A — Detect weight</p>
+          <input type="number" min="0" value={detect} onChange={(e) => setDetect(e.target.value)} className="bd tile txt w-full rounded-lg border px-3 py-2 text-sm focus:outline-none" />
+        </div>
+        <div>
+          <p className="caps-label mb-1">B — Warning weight</p>
+          <input type="number" min="0" value={warn} onChange={(e) => setWarn(e.target.value)} className="bd tile txt w-full rounded-lg border px-3 py-2 text-sm focus:outline-none" />
+        </div>
+        <div>
+          <p className="caps-label mb-1">C — Suspicious weight</p>
+          <input type="number" min="0" value={susp} onChange={(e) => setSusp(e.target.value)} className="bd tile txt w-full rounded-lg border px-3 py-2 text-sm focus:outline-none" />
+        </div>
+      </div>
+      <div className="mt-4 flex justify-end">
+        <button onClick={save} className="rounded-lg bg-sky-600 px-5 py-2 text-sm font-semibold text-white hover:bg-sky-500">Save</button>
+      </div>
+    </Card>
+  )
+}
+
+function GameProfilesTab() {
+  const { state, dispatch } = useStore()
+  const toast = useToast()
+  const profiles = state.settings?.gameProfiles || {}
+  const webhooks = state.integrations?.discordWebhooks || []
+  return (
+    <Card className="p-6">
+      <h3 className="txt mb-1 flex items-center gap-2 text-lg font-semibold">
+        <Gamepad2 size={18} /> Per-Game Profiles
+      </h3>
+      <p className="muted mb-4 text-sm">
+        Default settings used when creating a pin for a given game.
+      </p>
+      <div className="overflow-x-auto">
+        <table className="w-full text-left text-sm">
+          <thead>
+            <tr className="caps-label bd border-b">
+              <th className="px-3 py-3">Game</th>
+              <th className="px-3 py-3">Default visibility</th>
+              <th className="px-3 py-3">Default webhook</th>
+            </tr>
+          </thead>
+          <tbody>
+            {ALL_GAMES.map((g) => {
+              const p = profiles[g] || {}
+              return (
+                <tr key={g} className="bd border-b last:border-0">
+                  <td className="txt px-3 py-3 font-medium">{g}</td>
+                  <td className="px-3 py-3">
+                    <Select
+                      value={p.visibility || 'Private'}
+                      onChange={(v) => {
+                        dispatch({ type: 'set-game-profiles', profiles: { [g]: { ...p, visibility: v } } })
+                        toast({ type: 'success', title: 'Saved' })
+                      }}
+                      options={[
+                        { value: 'Private', label: 'Private' },
+                        { value: 'Public', label: 'Public' },
+                      ]}
+                    />
+                  </td>
+                  <td className="px-3 py-3">
+                    <Select
+                      value={p.webhookId || ''}
+                      onChange={(v) => {
+                        dispatch({ type: 'set-game-profiles', profiles: { [g]: { ...p, webhookId: v } } })
+                        toast({ type: 'success', title: 'Saved' })
+                      }}
+                      options={[
+                        { value: '', label: '— default —' },
+                        ...webhooks.map((w) => ({ value: w.id, label: w.label || w.url.slice(0, 40) })),
+                      ]}
+                    />
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+    </Card>
+  )
+}
+
+function WeeklyReportTab() {
+  const { state, dispatch } = useStore()
+  const toast = useToast()
+  const wr = state.settings?.weeklyReport || { enabled: false, lastSentAt: 0 }
+  const sendNow = async () => {
+    const webhook = state.integrations?.discordWebhook || ''
+    const week = Date.now() - 7 * 86400000
+    const recent = (state.pins || []).filter((p) => (p.scannedAt || p.createdAt || 0) >= week)
+    const cheats = recent.filter((p) => p.result === 'Cheating').length
+    const susp = recent.filter((p) => p.result === 'Suspicious').length
+    const clean = recent.filter((p) => p.result === 'Clean').length
+    const top = {}
+    recent.forEach((p) => (p.cheats || []).forEach((c) => (top[c] = (top[c] || 0) + 1)))
+    const topList = Object.entries(top)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([k, v]) => `${k} ×${v}`)
+      .join(', ') || '—'
+    if (webhook) {
+      try {
+        await fetch(webhook, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username: 'ZeroTrace Weekly',
+            embeds: [
+              {
+                title: 'ZeroTrace — Weekly summary',
+                color: 0x38bdf8,
+                fields: [
+                  { name: 'Total scans (7d)', value: String(recent.length), inline: true },
+                  { name: 'Cheating', value: String(cheats), inline: true },
+                  { name: 'Suspicious', value: String(susp), inline: true },
+                  { name: 'Clean', value: String(clean), inline: true },
+                  { name: 'Top cheats', value: topList },
+                ],
+                timestamp: new Date().toISOString(),
+              },
+            ],
+          }),
+        })
+      } catch { /* ignore */ }
+    }
+    dispatch({ type: 'set-weekly-report', value: { lastSentAt: Date.now() } })
+    toast({ type: 'success', title: 'Weekly summary sent' })
+  }
+  return (
+    <Card className="p-6">
+      <h3 className="txt mb-1 flex items-center gap-2 text-lg font-semibold">
+        <CalendarCheck size={18} /> Weekly Report
+      </h3>
+      <p className="muted mb-4 text-sm">
+        Posts a weekly summary (7-day stats) to the configured Discord webhook.
+      </p>
+      <Row title="Auto-send every 7 days" desc="When enabled, the dashboard sends one summary per week while it's open.">
+        <button
+          onClick={() => {
+            dispatch({ type: 'set-weekly-report', value: { enabled: !wr.enabled } })
+            toast({ type: 'success', title: wr.enabled ? 'Auto-send disabled' : 'Auto-send enabled' })
+          }}
+          className={`flex w-full items-center justify-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-medium ${wr.enabled ? 'border-green-600/40 bg-green-600/15 text-green-500' : 'bd txt'}`}
+        >
+          {wr.enabled ? 'Enabled' : 'Disabled'}
+        </button>
+      </Row>
+      <Row title="Send now" desc={`Last sent: ${wr.lastSentAt ? new Date(wr.lastSentAt).toLocaleString() : 'never'}`}>
+        <button onClick={sendNow} className="rounded-lg bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-sky-500">
+          Send weekly summary
+        </button>
+      </Row>
+    </Card>
+  )
+}
+
+function SecuritySettingsTab() {
+  const { state, dispatch } = useStore()
+  const toast = useToast()
+  const lo = state.security?.lockout || { maxAttempts: 5, lockMinutes: 15 }
+  const [maxA, setMaxA] = useState(lo.maxAttempts)
+  const [lockM, setLockM] = useState(lo.lockMinutes)
+  return (
+    <Card className="p-6">
+      <h3 className="txt mb-1 flex items-center gap-2 text-lg font-semibold">
+        <ShieldCheck size={18} /> Login Lockout
+      </h3>
+      <p className="muted mb-4 text-sm">
+        Block sign-in for a while after too many wrong passwords.
+      </p>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div>
+          <p className="caps-label mb-1">Max attempts (in 10 min)</p>
+          <input type="number" min="1" value={maxA} onChange={(e) => setMaxA(e.target.value)} className="bd tile txt w-full rounded-lg border px-3 py-2 text-sm focus:outline-none" />
+        </div>
+        <div>
+          <p className="caps-label mb-1">Lock duration (minutes)</p>
+          <input type="number" min="1" value={lockM} onChange={(e) => setLockM(e.target.value)} className="bd tile txt w-full rounded-lg border px-3 py-2 text-sm focus:outline-none" />
+        </div>
+      </div>
+      <div className="mt-4 flex justify-end">
+        <button
+          onClick={() => {
+            dispatch({ type: 'set-login-lockout', value: { maxAttempts: Number(maxA) || 5, lockMinutes: Number(lockM) || 15 } })
+            toast({ type: 'success', title: 'Saved' })
+          }}
+          className="rounded-lg bg-sky-600 px-5 py-2 text-sm font-semibold text-white hover:bg-sky-500"
+        >
+          Save
+        </button>
+      </div>
+    </Card>
+  )
+}
+
 export default function SettingsPage() {
   const [tab, setTab] = useState('General')
+  const { state } = useStore()
+  const isAdmin = state.role === 'admin'
   return (
     <div>
       <PageHeader icon={Cog} kicker="Preferences & data" title="Settings" subtitle="Configure the dashboard, manage data, and design the scanner GUI." />
       <Tabs
         tabs={[
           { label: 'General', icon: SlidersHorizontal },
+          { label: 'Risk Score', icon: ShieldAlert },
+          ...(isAdmin ? [{ label: 'Game Profiles', icon: Gamepad2 }] : []),
+          ...(isAdmin ? [{ label: 'Weekly Report', icon: CalendarCheck }] : []),
+          ...(isAdmin ? [{ label: 'Security', icon: ShieldCheck }] : []),
           { label: 'Tool Designer', icon: Wand2 },
         ]}
         active={tab}
         onChange={setTab}
       />
       <div className="mt-8">
-        {tab === 'General' ? <General /> : <ToolDesigner embedded />}
+        {tab === 'General' && <General />}
+        {tab === 'Risk Score' && <RiskScoreTab />}
+        {tab === 'Game Profiles' && isAdmin && <GameProfilesTab />}
+        {tab === 'Weekly Report' && isAdmin && <WeeklyReportTab />}
+        {tab === 'Security' && isAdmin && <SecuritySettingsTab />}
+        {tab === 'Tool Designer' && <ToolDesigner embedded />}
       </div>
     </div>
   )

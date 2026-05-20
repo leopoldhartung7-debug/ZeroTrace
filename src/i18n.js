@@ -861,6 +861,59 @@ export const DE = {
 
   // ---- PageHeader kickers / misc ----
   'Admin only': 'Nur Admin',
+
+  // ---- Settings tabs ----
+  'Risk Score': 'Risiko-Score', 'Game Profiles': 'Spiele-Profile',
+  'Weekly Report': 'Wochenbericht', 'Security': 'Sicherheit',
+  'Risk Score Formula': 'Risiko-Score-Formel',
+  'Tune how the risk score is computed. Final score = detects × A + warnings × B + suspicious × C, capped at 100.':
+    'Stelle ein, wie der Risiko-Score berechnet wird. Endformel = Erkennungen × A + Warnungen × B + Verdächtig × C, max. 100.',
+  'A — Detect weight': 'A — Gewicht Erkennung',
+  'B — Warning weight': 'B — Gewicht Warnung',
+  'C — Suspicious weight': 'C — Gewicht Verdächtig',
+  'Risk weights saved': 'Risiko-Gewichte gespeichert',
+  'Per-Game Profiles': 'Profile pro Spiel',
+  'Default settings used when creating a pin for a given game.':
+    'Standard-Einstellungen, wenn ein Pin für ein Spiel erstellt wird.',
+  'Default visibility': 'Standard-Sichtbarkeit', 'Default webhook': 'Standard-Webhook',
+  '— default —': '— Standard —',
+  'Auto-send every 7 days': 'Alle 7 Tage automatisch senden',
+  "When enabled, the dashboard sends one summary per week while it's open.":
+    'Wenn aktiviert, sendet das Dashboard wöchentlich eine Übersicht, solange es geöffnet ist.',
+  'Enabled': 'Aktiviert', 'Disabled': 'Deaktiviert',
+  'Send now': 'Jetzt senden', 'Send weekly summary': 'Wochenübersicht senden',
+  'Weekly summary sent': 'Wochenübersicht gesendet',
+  'Auto-send enabled': 'Auto-Versand aktiviert',
+  'Auto-send disabled': 'Auto-Versand deaktiviert',
+  'Posts a weekly summary (7-day stats) to the configured Discord webhook.':
+    'Postet einmal pro Woche eine 7-Tage-Übersicht an den hinterlegten Discord-Webhook.',
+  'Login Lockout': 'Login-Sperre',
+  'Block sign-in for a while after too many wrong passwords.':
+    'Blockiert die Anmeldung kurzzeitig nach zu vielen falschen Passwörtern.',
+  'Max attempts (in 10 min)': 'Max. Versuche (in 10 Min.)',
+  'Lock duration (minutes)': 'Sperr-Dauer (Minuten)',
+  'Too many attempts': 'Zu viele Versuche',
+  'This account is locked for': 'Dieses Konto ist gesperrt für',
+  'more minute(s).': 'weitere Minute(n).',
+
+  // ---- Case status / Steam / extra webhooks ----
+  'Case status': 'Fall-Status', 'Open': 'Offen', 'In Review': 'In Bearbeitung', 'Resolved': 'Abgeschlossen',
+  'Track how this scan moves from open → in review → resolved.':
+    'Verfolge den Fall: offen → in Bearbeitung → abgeschlossen.',
+  'Action taken': 'Ergriffene Maßnahme', 'Reason': 'Grund',
+  'Banned': 'Gebannt', 'Cleared': 'Freigesprochen', 'No action': 'Keine Maßnahme',
+  'Save resolution': 'Auflösung speichern', 'Resolution saved': 'Auflösung gespeichert',
+  'Short justification': 'Kurze Begründung',
+  'Steam ID': 'Steam-ID', 'Steam ID saved': 'Steam-ID gespeichert',
+  'Additional webhooks': 'Weitere Webhooks',
+  'Add more Discord webhooks — scan summaries are mirrored to all enabled ones.':
+    'Weitere Discord-Webhooks hinzufügen — Scan-Übersichten werden an alle aktiven gespiegelt.',
+  'Webhook added': 'Webhook hinzugefügt', 'Invalid URL': 'Ungültige URL',
+  'On': 'An', 'Off': 'Aus', 'Add': 'Hinzufügen',
+  'Label (Team A)': 'Bezeichnung (z. B. Team A)',
+
+  // ---- Misc ----
+  'Bot lookup failed — using scan data': 'Bot-Abfrage fehlgeschlagen — nutze Scan-Daten',
 }
 
 // Dynamic patterns (computed strings)

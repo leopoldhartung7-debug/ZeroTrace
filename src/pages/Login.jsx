@@ -146,7 +146,22 @@ export default function Login() {
 
   const submitCredentials = () => {
     const id = form.id.trim().toLowerCase()
+    const att = state.security?.attempts?.[id]
+    if (att && att.lockedUntil && Date.now() < att.lockedUntil) {
+      const minLeft = Math.ceil((att.lockedUntil - Date.now()) / 60000)
+      toast({
+        type: 'error',
+        title: 'Too many attempts',
+        body: `This account is locked for ${minLeft} more minute(s).`,
+      })
+      return
+    }
+    const wrong = () =>
+      dispatch({ type: 'record-login-attempt', id, kind: 'fail' })
+    const ok = () =>
+      dispatch({ type: 'record-login-attempt', id, kind: 'success' })
     if ((id === ADMIN.user || id === ADMIN.email) && form.pw === ADMIN.pass) {
+      ok()
       const secret = state.security?.totpSecret
       if (secret) {
         setPendingLogin({ role: 'admin' })
@@ -158,6 +173,7 @@ export default function Login() {
       return
     }
     if ((id === ANALYST.user || id === ANALYST.email) && form.pw === ANALYST.pass) {
+      ok()
       enterDashboard('analyst', null)
       return
     }
@@ -169,6 +185,7 @@ export default function Login() {
       const wasDeleted = (state.deletedAccounts || []).some((d) =>
         isEmail ? (d.email || '').toLowerCase() === id : (d.username || '').toLowerCase() === id,
       )
+      wrong()
       if (wasDeleted) {
         toast({
           type: 'error',
@@ -185,9 +202,11 @@ export default function Login() {
       return
     }
     if (user.pass !== form.pw) {
+      wrong()
       toast({ type: 'error', title: 'Wrong password', body: 'The password does not match this account.' })
       return
     }
+    ok()
     const key = (state.licenseKeys || []).find((k) => k.key === user.key)
     const expired = !key || key.status === 'Revoked' ||
       (key.expiresAt && Date.now() > key.expiresAt)

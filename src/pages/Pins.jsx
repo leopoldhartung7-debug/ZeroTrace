@@ -527,7 +527,10 @@ export default function Pins() {
             <label className="muted mb-1.5 block text-sm">Game</label>
             <Select
               value={form.game}
-              onChange={(v) => setForm({ ...form, game: v })}
+              onChange={(v) => {
+                const gp = state.settings?.gameProfiles?.[v]
+                setForm({ ...form, game: v, visibility: gp?.visibility || form.visibility })
+              }}
               options={GAMES.map((g) => ({ value: g, label: g }))}
             />
           </div>

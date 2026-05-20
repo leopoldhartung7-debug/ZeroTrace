@@ -94,7 +94,18 @@ export function ScanWebhookNotifier() {
         discordId: p.discordId || '',
         verdict: p.result || report.verdict || 'Clean',
       }
-      sendScanSummary(webhook, meta, report, state.integrations?.webhookCustom || {}).then((r) => {
+      // Per-game preferred webhook
+      const gpw = state.settings?.gameProfiles?.[p.game]?.webhookId
+      const list = state.integrations?.discordWebhooks || []
+      const target =
+        list.find((w) => w.id === gpw && w.enabled !== false)?.url ||
+        webhook
+      const extras = list
+        .filter((w) => w.enabled !== false && w.url !== target)
+        .map((w) => w.url)
+      const cfg = state.integrations?.webhookCustom || {}
+      extras.forEach((u) => sendScanSummary(u, meta, report, cfg))
+      sendScanSummary(target, meta, report, cfg).then((r) => {
         if (r.ok) toast({ type: 'success', title: 'Scan summary sent to webhook', body: p.pin })
         else if (!r.skipped)
           toast({ type: 'error', title: 'Webhook failed', body: r.error || `HTTP ${r.status}` })
@@ -102,5 +113,57 @@ export function ScanWebhookNotifier() {
     })
   }, [state.pins, state.integrations, dispatch, toast])
 
+  return null
+}
+
+/* Auto-weekly summary: once a week the dashboard posts a 7-day digest
+   to the primary Discord webhook. Only fires when enabled in Settings. */
+export function WeeklyReportNotifier() {
+  const { state, dispatch } = useStore()
+  useEffect(() => {
+    const tick = async () => {
+      const wr = state.settings?.weeklyReport
+      if (!wr || !wr.enabled) return
+      const webhook = state.integrations?.discordWebhook || ''
+      if (!webhook) return
+      const now = Date.now()
+      if (wr.lastSentAt && now - wr.lastSentAt < 7 * 86400000) return
+      const week = now - 7 * 86400000
+      const recent = (state.pins || []).filter((p) => (p.scannedAt || p.createdAt || 0) >= week)
+      const cheats = recent.filter((p) => p.result === 'Cheating').length
+      const susp = recent.filter((p) => p.result === 'Suspicious').length
+      const clean = recent.filter((p) => p.result === 'Clean').length
+      const top = {}
+      recent.forEach((p) => (p.cheats || []).forEach((c) => (top[c] = (top[c] || 0) + 1)))
+      const topList = Object.entries(top).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([k, v]) => `${k} ×${v}`).join(', ') || '—'
+      try {
+        await fetch(webhook, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username: 'ZeroTrace Weekly',
+            embeds: [
+              {
+                title: 'ZeroTrace — Weekly summary',
+                color: 0x38bdf8,
+                fields: [
+                  { name: 'Total scans (7d)', value: String(recent.length), inline: true },
+                  { name: 'Cheating', value: String(cheats), inline: true },
+                  { name: 'Suspicious', value: String(susp), inline: true },
+                  { name: 'Clean', value: String(clean), inline: true },
+                  { name: 'Top cheats', value: topList },
+                ],
+                timestamp: new Date().toISOString(),
+              },
+            ],
+          }),
+        })
+        dispatch({ type: 'set-weekly-report', value: { lastSentAt: Date.now() } })
+      } catch { /* ignore */ }
+    }
+    tick()
+    const t = setInterval(tick, 60 * 60 * 1000) // hourly check
+    return () => clearInterval(t)
+  }, [state.settings, state.integrations, state.pins, dispatch])
   return null
 }

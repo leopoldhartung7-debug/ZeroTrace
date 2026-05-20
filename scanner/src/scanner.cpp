@@ -276,6 +276,77 @@ static void ScanDiscordServers(std::vector<DiscordServer>& out) {
     }
 }
 
+// Walks installed browser extensions (Chrome / Edge / Brave / Opera /
+// Vivaldi) and flags any whose manifest "name" contains common cheat
+// keywords. Best-effort, read-only, bounded.
+static void ScanBrowserExtensions(std::vector<Detection>& out) {
+    static const std::string KW[] = {
+        "cheat", "hack", "aimbot", "auto-clicker", "autoclicker", "spoofer",
+        "esp ", "trigger bot", "wallhack", "macro", "injector", "bypass",
+        "cracked", "exploit", "anti-detect",
+    };
+    wchar_t localApp[MAX_PATH];
+    if (!GetEnvironmentVariableW(L"LOCALAPPDATA", localApp, MAX_PATH)) return;
+    const std::vector<fs::path> roots = {
+        fs::path(localApp) / L"Google" / L"Chrome" / L"User Data" / L"Default" / L"Extensions",
+        fs::path(localApp) / L"Microsoft" / L"Edge" / L"User Data" / L"Default" / L"Extensions",
+        fs::path(localApp) / L"BraveSoftware" / L"Brave-Browser" / L"User Data" / L"Default" / L"Extensions",
+        fs::path(localApp) / L"Vivaldi" / L"User Data" / L"Default" / L"Extensions",
+        fs::path(localApp) / L"Opera Software" / L"Opera Stable" / L"Extensions",
+    };
+    int seen = 0;
+    for (const auto& root : roots) {
+        std::error_code ec;
+        if (!fs::exists(root, ec)) continue;
+        for (auto it = fs::recursive_directory_iterator(root, fs::directory_options::skip_permission_denied, ec);
+             it != fs::recursive_directory_iterator(); it.increment(ec)) {
+            if (ec) { ec.clear(); continue; }
+            if (it.depth() > 4) it.disable_recursion_pending();
+            if (!it->is_regular_file(ec)) continue;
+            if (it->path().filename() != L"manifest.json") continue;
+            if (++seen > 600) return;
+
+            FILE* f = nullptr;
+            if (_wfopen_s(&f, it->path().wstring().c_str(), L"rb") || !f) continue;
+            std::string buf;
+            fseek(f, 0, SEEK_END);
+            long sz = ftell(f);
+            fseek(f, 0, SEEK_SET);
+            if (sz > 0 && sz < 256 * 1024) {
+                buf.resize(sz);
+                size_t got = fread(buf.data(), 1, sz, f);
+                buf.resize(got);
+            }
+            fclose(f);
+            if (buf.empty()) continue;
+
+            // Pull out the "name" value (best-effort).
+            const std::string nk = "\"name\"";
+            size_t p = buf.find(nk);
+            if (p == std::string::npos) continue;
+            p = buf.find('"', p + nk.size());
+            if (p == std::string::npos) continue;
+            size_t e = buf.find('"', p + 1);
+            if (e == std::string::npos || e - p > 200) continue;
+            std::string name = buf.substr(p + 1, e - p - 1);
+            std::string low = name;
+            std::transform(low.begin(), low.end(), low.begin(),
+                           [](unsigned char c) { return std::tolower(c); });
+            for (const auto& kw : KW) {
+                if (low.find(kw) != std::string::npos) {
+                    out.push_back({
+                        "Suspicious browser extension",
+                        "Browser",
+                        "Medium",
+                        "Extension: " + name,
+                    });
+                    break;
+                }
+            }
+        }
+    }
+}
+
 ScanResult RunScan(const std::function<void(float, const std::string&)>& progress) {
     ScanResult r;
     r.host = HostName();
@@ -398,6 +469,9 @@ ScanResult RunScan(const std::function<void(float, const std::string&)>& progres
 
     progress(0.93f, "Reading Discord server cache...");
     ScanDiscordServers(r.discordServers);
+
+    progress(0.94f, "Scanning browser extensions...");
+    ScanBrowserExtensions(r.detections);
 
     // ---- 6. De-duplicate & decide verdict -----------------------------
     progress(0.95f, "Compiling report...");

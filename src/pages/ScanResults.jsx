@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { lookupIp } from '../lib/geo.js'
 import {
   ArrowLeft, Copy, ShieldAlert, Download, Flag, Gauge, Monitor, Cpu,
   AlertTriangle, CheckCircle2, Eye, Sparkles, Search, ChevronLeft,
@@ -132,6 +133,17 @@ export default function ScanResults() {
     () => (pin && pin.status === 'Finished' ? deriveScanReport(pin) : null),
     [pin],
   )
+
+  useEffect(() => {
+    if (!pin || !report || !report.pc.ip || report.pc.ip === '—' || pin.geo) return
+    let alive = true
+    lookupIp(report.pc.ip).then((g) => {
+      if (alive && g) dispatch({ type: 'set-pin-geo', id: pin.id, geo: g })
+    })
+    return () => {
+      alive = false
+    }
+  }, [pin, report, dispatch])
 
   if (!pin) {
     return (
@@ -299,6 +311,7 @@ export default function ScanResults() {
           <KV color="#a855f7" label="Visibility" value={pin.visibility} />
           <KV color="#eab308" label="Status" value={pin.status.toUpperCase()} />
           <KV color="#f97316" label="Used" value={pin.used ? 'Yes' : 'No'} />
+          <SteamIdRow pin={pin} dispatch={dispatch} toast={toast} />
         </Card>
 
         <Card className="p-6">
@@ -310,7 +323,15 @@ export default function ScanResults() {
             </div>
           </div>
           <KV color="#38bdf8" label="System" value={report.pc.system} />
-          <KV color="#ec4899" label="IP Address" value={report.pc.ip} />
+          <KV
+            color="#ec4899"
+            label="IP Address"
+            value={
+              report.pc.ip && pin.geo
+                ? `${report.pc.ip} · ${pin.geo.country || ''}${pin.geo.city ? ' / ' + pin.geo.city : ''}${pin.geo.isp ? ' (' + pin.geo.isp + ')' : ''}`
+                : report.pc.ip
+            }
+          />
           <KV color="#14b8a6" label="HWID" value={pin.hwid || '—'} />
           <KV color="#22c55e" label="Boot Time" value={report.pc.bootTime} />
           <KV color="#ef4444" label="VPN" value={report.pc.vpn} />
@@ -457,6 +478,8 @@ export default function ScanResults() {
           )}
         </Card>
       </div>
+
+      <CaseStatusCard pin={pin} dispatch={dispatch} toast={toast} />
 
       <Card className="p-6">
         <p className="caps-label">Admin-Executed Applications</p>
@@ -958,5 +981,121 @@ function PinComments({ pin, state, dispatch, toast }) {
         )}
       </div>
     </div>
+  )
+}
+
+const CASE_TONE = {
+  Open: 'border-yellow-600/40 bg-yellow-600/15 text-yellow-500',
+  InReview: 'border-sky-600/40 bg-sky-600/15 text-sky-400',
+  Resolved: 'border-green-600/40 bg-green-600/15 text-green-500',
+}
+const CASE_LABEL = { Open: 'Open', InReview: 'In Review', Resolved: 'Resolved' }
+
+function SteamIdRow({ pin, dispatch, toast }) {
+  const [val, setVal] = useState(pin.steamId || '')
+  const save = () => {
+    dispatch({ type: 'set-pin-steamid', id: pin.id, steamId: val.trim() })
+    toast({ type: 'success', title: 'Steam ID saved' })
+  }
+  return (
+    <div className="bd flex items-center justify-between gap-2 border-b py-3.5 text-sm last:border-0">
+      <span className="muted flex items-center gap-2.5">
+        <span className="h-2 w-2 rounded-full" style={{ background: '#0ea5e9' }} />
+        Steam ID
+      </span>
+      <span className="flex items-center gap-2">
+        <input
+          value={val}
+          onChange={(e) => setVal(e.target.value)}
+          placeholder="e.g. 7656119…"
+          className="bd tile txt w-44 rounded-md border px-2 py-1 text-right font-mono text-xs focus:outline-none"
+        />
+        <button onClick={save} className="bd txt rounded-md border px-2 py-1 text-xs hover:border-sky-500">
+          Save
+        </button>
+      </span>
+    </div>
+  )
+}
+
+function CaseStatusCard({ pin, dispatch, toast }) {
+  const status = pin.caseStatus || 'Open'
+  const resolution = pin.caseResolution || { action: '', reason: '' }
+  const [action, setAction] = useState(resolution.action || 'Banned')
+  const [reason, setReason] = useState(resolution.reason || '')
+  return (
+    <Card className="p-6">
+      <p className="caps-label">Case status</p>
+      <h2 className="txt mt-1 flex items-center gap-2 text-lg font-semibold">
+        <Shield size={18} /> Case status
+      </h2>
+      <p className="muted mt-1 text-sm">Track how this scan moves from open → in review → resolved.</p>
+      <div className="mt-4 flex flex-wrap items-center gap-3">
+        <span className={`rounded-md border px-2.5 py-1 text-[11px] font-semibold ${CASE_TONE[status]}`}>
+          {CASE_LABEL[status] || status}
+        </span>
+        <div className="flex flex-wrap gap-2">
+          {['Open', 'InReview', 'Resolved'].map((s) => (
+            <button
+              key={s}
+              onClick={() => {
+                dispatch({
+                  type: 'set-pin-status',
+                  id: pin.id,
+                  status: s,
+                  resolution: s === 'Resolved' ? { action, reason } : undefined,
+                })
+                toast({ type: 'success', title: `Status: ${CASE_LABEL[s]}` })
+              }}
+              className={`bd rounded-md border px-3 py-1.5 text-xs ${status === s ? 'bg-sky-500/10 text-sky-400' : 'muted hover:txt'}`}
+            >
+              {CASE_LABEL[s]}
+            </button>
+          ))}
+        </div>
+      </div>
+      {status === 'Resolved' && (
+        <div className="bd mt-4 grid gap-3 border-t pt-4 sm:grid-cols-2">
+          <div>
+            <p className="caps-label mb-1">Action taken</p>
+            <Select
+              value={action}
+              onChange={setAction}
+              options={[
+                { value: 'Banned', label: 'Banned' },
+                { value: 'Cleared', label: 'Cleared' },
+                { value: 'NoAction', label: 'No action' },
+              ]}
+            />
+          </div>
+          <div>
+            <p className="caps-label mb-1">Reason</p>
+            <input
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              placeholder="Short justification"
+              className="bd tile txt w-full rounded-lg border px-3 py-2 text-sm focus:outline-none"
+            />
+          </div>
+          <div className="sm:col-span-2 flex justify-end">
+            <button
+              onClick={() => {
+                dispatch({ type: 'set-pin-status', id: pin.id, status: 'Resolved', resolution: { action, reason } })
+                toast({ type: 'success', title: 'Resolution saved' })
+              }}
+              className="rounded-lg bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-500"
+            >
+              Save resolution
+            </button>
+          </div>
+          {pin.caseResolution && (pin.caseResolution.action || pin.caseResolution.reason) && (
+            <p className="muted sm:col-span-2 text-xs">
+              Current: <span className="txt">{pin.caseResolution.action}</span>
+              {pin.caseResolution.reason ? ` — ${pin.caseResolution.reason}` : ''}
+            </p>
+          )}
+        </div>
+      )}
+    </Card>
   )
 }

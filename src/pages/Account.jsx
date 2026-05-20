@@ -485,6 +485,11 @@ export default function Account() {
                 {state.integrations.discordWebhook && (
                   <button onClick={() => { dispatch({ type: 'set-integration', key: 'discordWebhook', value: '' }); setHook(''); toast({ type: 'success', title: 'Webhook removed' }) }} className="bd txt mt-3 flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm hover:border-red-500"><Trash2 size={14} /> Remove</button>
                 )}
+
+                {state.role === 'admin' && (
+                  <ExtraWebhooks state={state} dispatch={dispatch} toast={toast} />
+                )}
+
                 {state.integrations.discordWebhook && (
                   <div className="bd mt-4 border-t pt-4">
                     <p className="caps-label mb-3">Embed customization</p>
@@ -717,6 +722,61 @@ export default function Account() {
           </div>
         </div>
       </Modal>
+    </div>
+  )
+}
+
+function ExtraWebhooks({ state, dispatch, toast }) {
+  const [url, setUrl] = useState('')
+  const [label, setLabel] = useState('')
+  const list = state.integrations?.discordWebhooks || []
+  const add = () => {
+    if (!url.trim() || !/^https?:\/\//.test(url.trim())) {
+      toast({ type: 'error', title: 'Invalid URL' })
+      return
+    }
+    dispatch({ type: 'add-discord-webhook', url: url.trim(), label: label.trim() || 'Webhook' })
+    setUrl('')
+    setLabel('')
+    toast({ type: 'success', title: 'Webhook added' })
+  }
+  return (
+    <div className="bd mt-4 border-t pt-4">
+      <p className="caps-label mb-3">Additional webhooks</p>
+      <p className="muted mb-3 text-xs">
+        Add more Discord webhooks — scan summaries are mirrored to all enabled ones.
+      </p>
+      <div className="grid gap-2 sm:grid-cols-[1fr_2fr_auto]">
+        <input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Label (Team A)" className="bd tile txt rounded-lg border px-3 py-2 text-sm focus:outline-none" />
+        <input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://discord.com/api/webhooks/..." className="bd tile txt rounded-lg border px-3 py-2 text-sm focus:outline-none" />
+        <button onClick={add} className="rounded-lg bg-sky-600 px-4 text-sm font-semibold text-white hover:bg-sky-500">Add</button>
+      </div>
+      {list.length > 0 && (
+        <div className="mt-4 space-y-2">
+          {list.map((w) => (
+            <div key={w.id} className="tile flex flex-wrap items-center justify-between gap-3 rounded-lg border px-4 py-3 text-sm">
+              <div className="min-w-0 flex-1">
+                <p className="txt font-medium">{w.label}</p>
+                <p className="muted truncate font-mono text-xs">{w.url}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => dispatch({ type: 'update-discord-webhook', id: w.id, patch: { enabled: !(w.enabled !== false) } })}
+                  className={`bd rounded-md border px-2 py-1 text-[11px] font-semibold ${w.enabled !== false ? 'border-green-600/40 bg-green-600/15 text-green-500' : 'muted'}`}
+                >
+                  {w.enabled !== false ? 'On' : 'Off'}
+                </button>
+                <button
+                  onClick={() => dispatch({ type: 'delete-discord-webhook', id: w.id })}
+                  className="bd rounded-md border px-2 py-1 text-[11px] text-red-500 hover:border-red-500"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
