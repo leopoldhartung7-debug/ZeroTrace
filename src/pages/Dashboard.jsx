@@ -1,11 +1,50 @@
 import { useState } from 'react'
-import { Activity, Pin, ScanLine, Eye, ShieldAlert, Users, Globe2 } from 'lucide-react'
+import {
+  Activity, Pin, ScanLine, Eye, ShieldAlert, Users, Globe2,
+  Megaphone, Info, CheckCircle2, AlertTriangle, XCircle,
+} from 'lucide-react'
 import {
   PieChart, Pie, Cell, ResponsiveContainer, AreaChart, Area, XAxis, YAxis,
   CartesianGrid, Tooltip, BarChart, Bar, Legend,
 } from 'recharts'
 import Tabs from '../components/Tabs.jsx'
-import { useStats, useT } from '../store.jsx'
+import { useStats, useT, useStore } from '../store.jsx'
+
+const TONE_STYLES = {
+  info: { box: 'border-sky-500/40 bg-sky-500/10', icon: 'text-sky-400', Icon: Info },
+  success: { box: 'border-green-600/40 bg-green-600/10', icon: 'text-green-500', Icon: CheckCircle2 },
+  warning: { box: 'border-yellow-500/40 bg-yellow-500/10', icon: 'text-yellow-400', Icon: AlertTriangle },
+  danger: { box: 'border-red-600/40 bg-red-600/10', icon: 'text-red-500', Icon: XCircle },
+}
+
+function AnnouncementCard() {
+  const { state } = useStore()
+  const a = state.announcement || {}
+  if (!a.enabled || !a.text?.trim()) return null
+  const tone = TONE_STYLES[a.tone] || TONE_STYLES.info
+  const Icon = tone.Icon
+  return (
+    <div className={`mt-6 rounded-2xl border p-5 ${tone.box}`}>
+      <div className="flex items-start gap-3">
+        <div className="tile flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border">
+          <Megaphone size={18} className={tone.icon} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <Icon size={14} className={tone.icon} />
+            <p className="caps-label">Announcement</p>
+          </div>
+          <p className="txt mt-2 break-words text-sm leading-relaxed">{a.text}</p>
+          {a.updatedAt > 0 && (
+            <p className="muted mt-3 text-[11px]">
+              Posted {new Date(a.updatedAt).toLocaleString()}
+            </p>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
 
 const accentMap = {
   neutral: 'muted',
@@ -220,6 +259,8 @@ export default function Dashboard() {
           </div>
         )}
       </div>
+
+      <AnnouncementCard />
     </div>
   )
 }
