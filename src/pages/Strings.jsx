@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from 'react'
 import {
   FileText, ShieldCheck, Search, Upload as UploadIcon, Info, Code2,
   FileWarning, ScanLine, Shield, Download, Copy, Trash2, CheckCircle2, XCircle,
+  ShieldAlert,
 } from 'lucide-react'
 import Tabs from '../components/Tabs.jsx'
 import { Select, useToast } from '../components/ui.jsx'
@@ -759,6 +760,270 @@ function SuspiciousDetection() {
   )
 }
 
+async function sha256OfFile(file) {
+  const buf = await file.arrayBuffer()
+  const digest = await crypto.subtle.digest('SHA-256', buf)
+  return Array.from(new Uint8Array(digest))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('')
+}
+
+function VtVerdict({ stats, permalink }) {
+  if (!stats) return null
+  const m = stats.malicious || 0
+  const s = stats.suspicious || 0
+  const h = stats.harmless || 0
+  const u = stats.undetected || 0
+  const total = m + s + h + u
+  let tone, label
+  if (m > 0) { tone = 'border-red-600/40 bg-red-600/15 text-red-500'; label = 'MALICIOUS' }
+  else if (s > 0) { tone = 'border-yellow-500/40 bg-yellow-500/15 text-yellow-400'; label = 'SUSPICIOUS' }
+  else { tone = 'border-green-600/40 bg-green-600/15 text-green-500'; label = 'CLEAN' }
+  return (
+    <div className={`rounded-lg border px-4 py-3 ${tone}`}>
+      <div className="flex items-center justify-between gap-3">
+        <span className="text-sm font-bold">{label}</span>
+        <span className="font-mono text-sm">{m}/{total} malicious</span>
+      </div>
+      <div className="muted mt-2 grid grid-cols-4 gap-2 text-[11px]">
+        <div><span className="text-red-400">●</span> {m} malicious</div>
+        <div><span className="text-yellow-400">●</span> {s} suspicious</div>
+        <div><span className="text-green-400">●</span> {h} harmless</div>
+        <div><span className="muted">●</span> {u} undetected</div>
+      </div>
+      {permalink && (
+        <a href={permalink} target="_blank" rel="noreferrer" className="mt-3 inline-block text-xs text-sky-400 underline">
+          Open full report on VirusTotal →
+        </a>
+      )}
+    </div>
+  )
+}
+
+function VirusTotalScanTab() {
+  const { state } = useStore()
+  const toast = useToast()
+  const apiKey = state.integrations?.virusTotalKey || ''
+  const [file, setFile] = useState(null)
+  const [hash, setHash] = useState('')
+  const [status, setStatus] = useState('idle') // idle | hashing | lookup | unknown | uploading | polling | done | error
+  const [error, setError] = useState('')
+  const [vt, setVt] = useState(null) // { stats, permalink, vendors[], firstSeen, lastSeen }
+
+  const reset = () => {
+    setFile(null); setHash(''); setStatus('idle'); setError(''); setVt(null)
+  }
+
+  const fetchHashReport = async (h) => {
+    const r = await fetch(`https://www.virustotal.com/api/v3/files/${h}`, {
+      headers: { 'x-apikey': apiKey },
+    })
+    if (r.status === 404) return { unknown: true }
+    if (!r.ok) return { error: `HTTP ${r.status}` }
+    const j = await r.json()
+    const a = j?.data?.attributes || {}
+    const stats = a.last_analysis_stats || {}
+    const results = a.last_analysis_results || {}
+    const vendors = Object.entries(results)
+      .filter(([, v]) => v.category === 'malicious' || v.category === 'suspicious')
+      .map(([name, v]) => ({ name, category: v.category, result: v.result }))
+      .slice(0, 30)
+    return {
+      stats,
+      vendors,
+      permalink: `https://www.virustotal.com/gui/file/${h}`,
+      firstSeen: a.first_submission_date ? new Date(a.first_submission_date * 1000).toLocaleDateString() : null,
+      lastSeen: a.last_analysis_date ? new Date(a.last_analysis_date * 1000).toLocaleDateString() : null,
+      size: a.size,
+      type: a.type_description,
+      names: a.names || [],
+    }
+  }
+
+  const pollAnalysis = async (analysisId, h) => {
+    for (let i = 0; i < 40; i++) {
+      await new Promise((r) => setTimeout(r, 3000))
+      const r = await fetch(`https://www.virustotal.com/api/v3/analyses/${analysisId}`, {
+        headers: { 'x-apikey': apiKey },
+      })
+      if (!r.ok) continue
+      const j = await r.json()
+      const st = j?.data?.attributes?.status
+      if (st === 'completed') {
+        return await fetchHashReport(h)
+      }
+    }
+    return { error: 'Polling timed out (>2 min). Try again later.' }
+  }
+
+  const upload = async (f) => {
+    setStatus('uploading')
+    const form = new FormData()
+    form.append('file', f)
+    const r = await fetch('https://www.virustotal.com/api/v3/files', {
+      method: 'POST',
+      headers: { 'x-apikey': apiKey },
+      body: form,
+    })
+    if (!r.ok) {
+      setError(`Upload failed (HTTP ${r.status})`)
+      setStatus('error')
+      return
+    }
+    const j = await r.json()
+    const analysisId = j?.data?.id
+    if (!analysisId) {
+      setError('No analysis ID returned')
+      setStatus('error')
+      return
+    }
+    setStatus('polling')
+    const res = await pollAnalysis(analysisId, hash)
+    if (res.error) {
+      setError(res.error); setStatus('error'); return
+    }
+    setVt(res); setStatus('done')
+    toast({ type: 'success', title: 'Scan complete' })
+  }
+
+  const handleFile = async (f) => {
+    if (!apiKey) {
+      toast({ type: 'error', title: 'VirusTotal API key required', body: 'Set one in Account → Integrations.' })
+      return
+    }
+    if (f.size > 200 * 1024 * 1024) {
+      toast({ type: 'error', title: 'File too large', body: 'Max 200 MB' })
+      return
+    }
+    reset()
+    setFile(f)
+    setStatus('hashing')
+    try {
+      const h = await sha256OfFile(f)
+      setHash(h)
+      setStatus('lookup')
+      const res = await fetchHashReport(h)
+      if (res.error) {
+        setError(res.error); setStatus('error'); return
+      }
+      if (res.unknown) {
+        setStatus('unknown')
+        return
+      }
+      setVt(res); setStatus('done')
+      toast({ type: 'success', title: 'Already in VirusTotal' })
+    } catch (e) {
+      setError(e.message); setStatus('error')
+    }
+  }
+
+  return (
+    <div className="mt-8 space-y-6">
+      {!apiKey && (
+        <div className="rounded-lg border border-yellow-500/40 bg-yellow-500/10 px-4 py-3 text-sm text-yellow-200">
+          <p className="font-semibold">VirusTotal API key required</p>
+          <p className="muted mt-1 text-yellow-100">
+            Add your free API key in <span className="font-semibold">Account → Integrations → VirusTotal API</span>. Get one
+            at virustotal.com (free tier: 4 lookups/minute, 500/day).
+          </p>
+        </div>
+      )}
+
+      <Dropzone
+        onFile={handleFile}
+        hint="Drop any file (max 200 MB). We compute its SHA-256 locally, then ask VirusTotal."
+        accept="*"
+      />
+
+      {file && (
+        <div className="panel rounded-xl border p-5">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0">
+              <p className="caps-label">Selected file</p>
+              <p className="txt mt-1 break-all text-sm font-semibold">{file.name}</p>
+              <p className="muted mt-1 text-xs">{formatBytes(file.size)} · {file.type || 'unknown type'}</p>
+              {hash && <p className="muted mt-2 break-all font-mono text-[11px]">SHA-256: {hash}</p>}
+            </div>
+            <button
+              onClick={reset}
+              className="bd muted shrink-0 rounded-lg border px-3 py-1.5 text-xs hover:border-sky-500"
+            >
+              <Trash2 size={12} className="inline" /> Clear
+            </button>
+          </div>
+
+          {status === 'hashing' && <p className="muted mt-4 text-sm">Computing SHA-256…</p>}
+          {status === 'lookup' && <p className="muted mt-4 text-sm">Asking VirusTotal…</p>}
+          {status === 'uploading' && <p className="muted mt-4 text-sm">Uploading file to VirusTotal…</p>}
+          {status === 'polling' && <p className="muted mt-4 text-sm">VirusTotal is scanning the file. This can take up to 2 minutes…</p>}
+          {status === 'error' && (
+            <div className="mt-4 rounded-lg border border-red-600/40 bg-red-600/10 px-4 py-2 text-sm text-red-400">
+              {error}
+            </div>
+          )}
+
+          {status === 'unknown' && (
+            <div className="mt-4 space-y-3">
+              <div className="rounded-lg border border-sky-500/40 bg-sky-500/10 px-4 py-3 text-sm text-sky-200">
+                This file is <span className="font-semibold">not in the VirusTotal database</span> yet. You can upload it for analysis (the file will leave your device).
+              </div>
+              <button
+                onClick={() => upload(file)}
+                className="rounded-lg bg-sky-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-sky-500"
+              >
+                <UploadIcon size={14} className="mr-2 inline" /> Upload & scan
+              </button>
+            </div>
+          )}
+
+          {status === 'done' && vt && (
+            <div className="mt-5 space-y-4">
+              <VtVerdict stats={vt.stats} permalink={vt.permalink} />
+              <div className="grid grid-cols-2 gap-3 text-xs sm:grid-cols-4">
+                <div className="tile rounded-md border p-2">
+                  <p className="caps-label">First seen</p>
+                  <p className="txt mt-1">{vt.firstSeen || '—'}</p>
+                </div>
+                <div className="tile rounded-md border p-2">
+                  <p className="caps-label">Last analysis</p>
+                  <p className="txt mt-1">{vt.lastSeen || '—'}</p>
+                </div>
+                <div className="tile rounded-md border p-2">
+                  <p className="caps-label">VT-reported size</p>
+                  <p className="txt mt-1">{vt.size ? formatBytes(vt.size) : '—'}</p>
+                </div>
+                <div className="tile rounded-md border p-2">
+                  <p className="caps-label">File type</p>
+                  <p className="txt mt-1 break-all">{vt.type || '—'}</p>
+                </div>
+              </div>
+              {vt.vendors?.length > 0 && (
+                <div>
+                  <p className="caps-label mb-2">Flagged by ({vt.vendors.length})</p>
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                    {vt.vendors.map((v) => (
+                      <div key={v.name} className="bd flex items-center justify-between rounded-md border px-3 py-1.5 text-xs">
+                        <span className="txt font-mono">{v.name}</span>
+                        <span className={v.category === 'malicious' ? 'text-red-400' : 'text-yellow-400'}>{v.result}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {vt.names?.length > 0 && (
+                <div>
+                  <p className="caps-label mb-1">Known file names</p>
+                  <p className="muted break-all text-xs">{vt.names.slice(0, 15).join(' · ')}</p>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function Strings() {
   const t = useT()
   const [mode, setMode] = useState('String Extractor')
@@ -774,6 +1039,7 @@ export default function Strings() {
             { label: 'String Extractor', icon: FileText },
             { label: 'Presence Detection', icon: ShieldCheck },
             { label: 'Suspicious Detection', icon: Search },
+            { label: 'VirusTotal Scan', icon: ShieldAlert },
           ]}
           active={mode}
           onChange={setMode}
@@ -783,6 +1049,7 @@ export default function Strings() {
       {mode === 'String Extractor' && <StringExtractor />}
       {mode === 'Presence Detection' && <PresenceDetection />}
       {mode === 'Suspicious Detection' && <SuspiciousDetection />}
+      {mode === 'VirusTotal Scan' && <VirusTotalScanTab />}
     </div>
   )
 }
