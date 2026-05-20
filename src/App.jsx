@@ -29,6 +29,9 @@ import SettingsPage from './pages/Settings.jsx'
 import Account from './pages/Account.jsx'
 import KeyGenerator from './pages/KeyGenerator.jsx'
 import UserDetails from './pages/UserDetails.jsx'
+import Scoreboard from './pages/Scoreboard.jsx'
+import PlayerProfile from './pages/PlayerProfile.jsx'
+import Compare from './pages/Compare.jsx'
 
 function AdminRoute({ children }) {
   const { state } = useStore()
@@ -127,6 +130,9 @@ export default function App() {
             <Route path="/resources/changelogs" element={<Changelogs />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/account" element={<Account />} />
+            <Route path="/scoreboard" element={<Scoreboard />} />
+            <Route path="/players/:id" element={<PlayerProfile />} />
+            <Route path="/compare" element={<Compare />} />
             <Route
               path="/keys"
               element={

@@ -8,12 +8,19 @@ function field(name, value, inline = true) {
   return { name, value: String(value == null || value === '' ? '—' : value).slice(0, 1024), inline }
 }
 
-export function buildScanEmbed(meta, report) {
+function hexToInt(hex) {
+  const m = String(hex || '').match(/#?([0-9a-fA-F]{6})/)
+  return m ? parseInt(m[1], 16) : null
+}
+
+export function buildScanEmbed(meta, report, custom = {}) {
   const c = report.counts
   const risk = Math.min(100, c.detects * 8 + c.warnings * 2 + c.suspicious * 5)
   const flagged = report.discordServers.filter((s) => s.flag !== 'clean')
-  const color =
+  const verdictColor =
     meta.verdict === 'Cheating' ? 0xdc2626 : meta.verdict === 'Suspicious' ? 0xf59e0b : 0x22c55e
+  const accent = hexToInt(custom.color)
+  const color = accent != null ? accent : verdictColor
   const serverList = flagged.length
     ? flagged.map((s) => `• ${s.name} (${s.flag})`).join('\n').slice(0, 1024)
     : 'None'
@@ -32,20 +39,20 @@ export function buildScanEmbed(meta, report) {
       field('USB devices', report.usb.length),
       field(`Flagged Discord servers (${flagged.length})`, serverList, false),
     ],
-    footer: { text: 'ZeroTrace Anti-Cheat — Scan Report' },
+    footer: { text: custom.footer || 'ZeroTrace Anti-Cheat — Scan Report' },
     timestamp: new Date().toISOString(),
   }
 }
 
-export async function sendScanSummary(webhook, meta, report) {
+export async function sendScanSummary(webhook, meta, report, custom = {}) {
   if (!webhook) return { ok: false, skipped: true }
   try {
     const resp = await fetch(webhook, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        username: 'ZeroTrace Anti-Cheat',
-        embeds: [buildScanEmbed(meta, report)],
+        username: custom.username || 'ZeroTrace Anti-Cheat',
+        embeds: [buildScanEmbed(meta, report, custom)],
       }),
     })
     return { ok: resp.ok || resp.status === 204, status: resp.status }
@@ -87,7 +94,7 @@ export function ScanWebhookNotifier() {
         discordId: p.discordId || '',
         verdict: p.result || report.verdict || 'Clean',
       }
-      sendScanSummary(webhook, meta, report).then((r) => {
+      sendScanSummary(webhook, meta, report, state.integrations?.webhookCustom || {}).then((r) => {
         if (r.ok) toast({ type: 'success', title: 'Scan summary sent to webhook', body: p.pin })
         else if (!r.skipped)
           toast({ type: 'error', title: 'Webhook failed', body: r.error || `HTTP ${r.status}` })

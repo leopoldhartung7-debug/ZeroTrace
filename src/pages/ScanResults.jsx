@@ -243,6 +243,9 @@ export default function ScanResults() {
           <button onClick={exportReport} className="bd txt flex items-center gap-2 rounded-lg border px-4 py-2 text-sm hover:border-sky-500">
             <Download size={15} /> Export
           </button>
+          <button onClick={() => window.print()} className="bd txt flex items-center gap-2 rounded-lg border px-4 py-2 text-sm hover:border-sky-500">
+            <FileText size={15} /> Print / PDF
+          </button>
           <button
             onClick={() => toast({ type: 'success', title: 'Scan reported', body: pin.pin })}
             className="bd txt flex items-center gap-2 rounded-lg border px-4 py-2 text-sm hover:border-sky-500"
@@ -251,6 +254,23 @@ export default function ScanResults() {
           </button>
         </div>
       </div>
+
+      {(() => {
+        if (!pin.hwid) return null
+        const alt = state.pins.find(
+          (x) => x.id !== pin.id && x.hwid === pin.hwid && x.discordId && pin.discordId && x.discordId !== pin.discordId,
+        )
+        if (!alt) return null
+        return (
+          <div className="mb-6 rounded-xl border border-orange-500/40 bg-orange-500/10 p-4 text-sm">
+            <p className="text-orange-300">
+              <span className="font-semibold">Possible alt account detected.</span>{' '}
+              The same HWID <span className="font-mono">{pin.hwid}</span> was previously scanned under
+              Discord ID <span className="font-mono">{alt.discordId}</span> (pin <span className="font-mono">{alt.pin}</span>).
+            </p>
+          </div>
+        )
+      })()}
 
       <div className="grid gap-4 lg:grid-cols-2">
         <div className={`flex items-center justify-center rounded-2xl border py-6 ${verdictTone.box}`}>
@@ -291,6 +311,7 @@ export default function ScanResults() {
           </div>
           <KV color="#38bdf8" label="System" value={report.pc.system} />
           <KV color="#ec4899" label="IP Address" value={report.pc.ip} />
+          <KV color="#14b8a6" label="HWID" value={pin.hwid || '—'} />
           <KV color="#22c55e" label="Boot Time" value={report.pc.bootTime} />
           <KV color="#ef4444" label="VPN" value={report.pc.vpn} />
           <KV color="#a855f7" label="Install Date" value={report.pc.installDate} />
@@ -810,6 +831,24 @@ export default function ScanResults() {
       </Card>
 
       <Card className="p-6">
+        <p className="caps-label">Reviewer Notes</p>
+        <h2 className="txt mt-1 flex items-center gap-2 text-lg font-semibold">
+          <FileText size={18} /> Reviewer Notes
+        </h2>
+        <p className="muted mt-1 text-sm">Internal notes about this scan. Saved automatically when you tap Save.</p>
+        <ReviewerNotes pin={pin} dispatch={dispatch} toast={toast} />
+      </Card>
+
+      <Card className="p-6">
+        <p className="caps-label">Team Comments</p>
+        <h2 className="txt mt-1 flex items-center gap-2 text-lg font-semibold">
+          <MessageSquare size={18} /> Team Comments ({(pin.comments || []).length})
+        </h2>
+        <p className="muted mb-4 mt-1 text-sm">Discuss this scan with other analysts.</p>
+        <PinComments pin={pin} state={state} dispatch={dispatch} toast={toast} />
+      </Card>
+
+      <Card className="p-6">
         <p className="caps-label">Screenshot</p>
         <h2 className="txt mt-1 flex items-center gap-2 text-lg font-semibold">
           <ImageOff size={18} /> Screenshot
@@ -835,6 +874,89 @@ export default function ScanResults() {
           </p>
         </div>
       </Modal>
+    </div>
+  )
+}
+
+function ReviewerNotes({ pin, dispatch, toast }) {
+  const [val, setVal] = useState(pin.note || '')
+  return (
+    <div className="mt-3">
+      <textarea
+        value={val}
+        onChange={(e) => setVal(e.target.value)}
+        rows={5}
+        placeholder="e.g. Cheater confirmed — KillAura in memory, Vape loader on USB."
+        className="bd tile txt w-full rounded-lg border p-3 text-sm focus:outline-none"
+      />
+      <div className="mt-2 flex justify-end">
+        <button
+          onClick={() => {
+            dispatch({ type: 'set-pin-note', id: pin.id, note: val })
+            toast({ type: 'success', title: 'Note saved' })
+          }}
+          className="rounded-lg bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-500"
+        >
+          Save
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function PinComments({ pin, state, dispatch, toast }) {
+  const [text, setText] = useState('')
+  const me = state.session?.userId
+    ? (state.users || []).find((u) => u.id === state.session.userId)?.username
+    : state.role === 'admin'
+      ? 'Admin'
+      : 'Analyst'
+  const submit = () => {
+    if (!text.trim()) return
+    dispatch({ type: 'add-pin-comment', id: pin.id, author: me, text: text.trim() })
+    setText('')
+    toast({ type: 'success', title: 'Comment added' })
+  }
+  return (
+    <div>
+      <div className="flex flex-col gap-2 sm:flex-row">
+        <input
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && submit()}
+          placeholder="Write a comment…"
+          className="bd tile txt w-full rounded-lg border px-3 py-2.5 text-sm focus:outline-none"
+        />
+        <button
+          onClick={submit}
+          className="rounded-lg bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-sky-500"
+        >
+          Add
+        </button>
+      </div>
+      <div className="mt-4 space-y-2">
+        {(pin.comments || []).length === 0 ? (
+          <p className="muted py-6 text-center text-xs">No comments yet.</p>
+        ) : (
+          (pin.comments || []).map((c) => (
+            <div key={c.id} className="tile rounded-lg border p-3">
+              <div className="flex items-center justify-between text-xs">
+                <span className="txt font-semibold">{c.author}</span>
+                <span className="muted">{new Date(c.time).toLocaleString()}</span>
+              </div>
+              <p className="muted mt-1 text-sm">{c.text}</p>
+              <div className="mt-1 flex justify-end">
+                <button
+                  onClick={() => dispatch({ type: 'delete-pin-comment', id: pin.id, commentId: c.id })}
+                  className="text-[11px] text-red-500 hover:underline"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
     </div>
   )
 }

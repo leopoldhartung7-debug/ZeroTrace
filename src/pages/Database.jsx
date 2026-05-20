@@ -14,6 +14,8 @@ export default function CheatDatabase() {
   const [game, setGame] = useState('all')
   const [sev, setSev] = useState('all')
   const [open, setOpen] = useState(false)
+  const [bulkOpen, setBulkOpen] = useState(false)
+  const [bulkText, setBulkText] = useState('')
   const [form, setForm] = useState({
     name: '', type: 'Free Client', game: 'MINECRAFT', severity: 'Medium', signatures: '', notes: '',
   })
@@ -55,12 +57,22 @@ export default function CheatDatabase() {
         title="Cheat Database"
         subtitle="Searchable catalogue of known cheat clients with detection signatures."
         actions={
-          <button
-            onClick={() => setOpen(true)}
-            className="flex items-center gap-2 rounded-xl bg-sky-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-sky-500"
-          >
-            <Plus size={18} /> Add Entry
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            {state.role === 'admin' && (
+              <button
+                onClick={() => setBulkOpen(true)}
+                className="bd txt flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium hover:border-sky-500"
+              >
+                <Plus size={16} /> Bulk Import
+              </button>
+            )}
+            <button
+              onClick={() => setOpen(true)}
+              className="flex items-center gap-2 rounded-xl bg-sky-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-sky-500"
+            >
+              <Plus size={18} /> Add Entry
+            </button>
+          </div>
         }
       />
 
@@ -190,6 +202,61 @@ export default function CheatDatabase() {
           <Field label="Notes">
             <Input value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Detection guidance" />
           </Field>
+        </div>
+      </Modal>
+
+      <Modal
+        open={bulkOpen}
+        onClose={() => setBulkOpen(false)}
+        title="Bulk import cheats"
+        footer={
+          <button
+            onClick={() => {
+              try {
+                const parsed = JSON.parse(bulkText)
+                const arr = Array.isArray(parsed) ? parsed : [parsed]
+                const cheats = arr
+                  .filter((c) => c && c.name)
+                  .map((c) => ({
+                    name: String(c.name),
+                    type: c.type || 'Custom',
+                    game: c.game || 'FIVEM',
+                    severity: c.severity || 'Medium',
+                    signatures: Array.isArray(c.signatures) ? c.signatures : String(c.signatures || '').split(',').map((s) => s.trim()).filter(Boolean),
+                    notes: c.notes || '',
+                  }))
+                if (cheats.length === 0) {
+                  toast({ type: 'error', title: 'Nothing to import', body: 'JSON had no usable entries.' })
+                  return
+                }
+                dispatch({ type: 'bulk-add-cheats', cheats })
+                toast({ type: 'success', title: 'Imported', body: `${cheats.length} cheats added` })
+                setBulkText('')
+                setBulkOpen(false)
+              } catch (e) {
+                toast({ type: 'error', title: 'Invalid JSON', body: e.message })
+              }
+            }}
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-sky-600 px-4 py-3 text-sm font-semibold text-white hover:bg-sky-500"
+          >
+            Import
+          </button>
+        }
+      >
+        <div className="space-y-3 text-sm">
+          <p className="muted">
+            Paste a JSON array. Each item needs at least <code className="txt">name</code>; supports{' '}
+            <code className="txt">type</code>, <code className="txt">game</code>,{' '}
+            <code className="txt">severity</code>, <code className="txt">signatures</code> (array or comma-separated string),{' '}
+            <code className="txt">notes</code>.
+          </p>
+          <textarea
+            value={bulkText}
+            onChange={(e) => setBulkText(e.target.value)}
+            rows={12}
+            placeholder='[{"name":"Vape V5","type":"Paid Client","game":"MINECRAFT","severity":"Critical","signatures":["vape.gg","v5_loader"],"notes":""}]'
+            className="bd tile txt w-full rounded-lg border p-3 font-mono text-xs focus:outline-none"
+          />
         </div>
       </Modal>
     </div>

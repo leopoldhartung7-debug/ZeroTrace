@@ -5,7 +5,7 @@ import {
   LayoutGrid, Pin, FileText, Database, Wrench, History,
   LifeBuoy, BookOpen, Settings, Wifi, Bell, Globe, Moon, Sun,
   ChevronsUpDown, Trash2, Check, Command, Trophy, ShoppingCart,
-  Download, Scale, ChevronDown, ChevronRight, LogOut, KeyRound,
+  Download, Scale, ChevronDown, ChevronRight, LogOut, KeyRound, GitCompareArrows,
 } from 'lucide-react'
 import { useStore, useT } from '../store.jsx'
 
@@ -52,6 +52,8 @@ export default function Sidebar() {
         { to: '/strings', label: t('nav.strings'), icon: FileText },
         { to: '/database', label: t('nav.database'), icon: Database },
         { to: '/tools', label: t('nav.tools'), icon: Wrench },
+        { to: '/scoreboard', label: 'Scoreboard', icon: Trophy },
+        { to: '/compare', label: 'Compare', icon: GitCompareArrows },
         ...(state.role === 'admin'
           ? [{ to: '/keys', label: t('nav.keys'), icon: KeyRound }]
           : []),

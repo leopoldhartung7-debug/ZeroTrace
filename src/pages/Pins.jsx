@@ -475,6 +475,28 @@ export default function Pins() {
         }
       >
         <div className="space-y-4">
+          {(state.pinTemplates || []).length > 0 && (
+            <div>
+              <label className="muted mb-1.5 block text-sm">Template</label>
+              <div className="flex gap-2">
+                <Select
+                  className="flex-1"
+                  value=""
+                  onChange={(v) => {
+                    const tpl = (state.pinTemplates || []).find((t) => t.id === v)
+                    if (tpl) setForm({ ...form, name: tpl.name || form.name, game: tpl.game || form.game, visibility: tpl.visibility || form.visibility })
+                  }}
+                  options={[
+                    { value: '', label: '— pick a template —' },
+                    ...(state.pinTemplates || []).map((t) => ({
+                      value: t.id,
+                      label: `${t.label} (${t.game})`,
+                    })),
+                  ]}
+                />
+              </div>
+            </div>
+          )}
           <div>
             <label className="muted mb-1.5 block text-sm">Name</label>
             <input
@@ -490,13 +512,16 @@ export default function Pins() {
             <label className="muted mb-1.5 block text-sm">Discord ID</label>
             <input
               value={form.discordId}
-              onChange={(e) => setForm({ ...form, discordId: e.target.value.replace(/[^0-9]/g, '') })}
+              onChange={(e) => {
+                const raw = e.target.value
+                const m = raw.match(/(\d{17,20})/)
+                setForm({ ...form, discordId: m ? m[1] : raw.replace(/[^0-9]/g, '') })
+              }}
               onKeyDown={(e) => e.key === 'Enter' && submitCreate()}
-              placeholder="e.g. 145481082291945490"
-              inputMode="numeric"
+              placeholder="ID or paste a Discord profile link"
               className="bd tile txt w-full rounded-lg border px-4 py-2.5 font-mono text-sm focus:outline-none"
             />
-            <p className="muted mt-1 text-xs">Discord ID of the scanned user. Saved with the results.</p>
+            <p className="muted mt-1 text-xs">Discord ID or a profile URL — the ID is extracted automatically.</p>
           </div>
           <div>
             <label className="muted mb-1.5 block text-sm">Game</label>
@@ -516,6 +541,22 @@ export default function Pins() {
                 { value: 'Public', label: 'Public' },
               ]}
             />
+          </div>
+          <div className="bd flex items-center justify-between border-t pt-3 text-xs">
+            <span className="muted">Reuse these settings as a quick template</span>
+            <button
+              onClick={() => {
+                const label = (form.name || form.game || 'Template').trim()
+                dispatch({
+                  type: 'add-pin-template',
+                  template: { label, game: form.game, visibility: form.visibility, name: form.name },
+                })
+                toast({ type: 'success', title: 'Template saved', body: label })
+              }}
+              className="bd txt rounded-md border px-2.5 py-1 hover:border-sky-500"
+            >
+              Save as template
+            </button>
           </div>
         </div>
       </Modal>

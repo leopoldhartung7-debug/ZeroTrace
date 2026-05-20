@@ -5,6 +5,7 @@ import Logo from '../components/Logo.jsx'
 import { useStore } from '../store.jsx'
 import { useToast, Modal } from '../components/ui.jsx'
 import { verifyHtml, welcomeHtml } from '../lib/emailTemplates.js'
+import { verifyTotp } from '../lib/totp.js'
 
 export default function Login() {
   const nav = useNavigate()
@@ -14,6 +15,9 @@ export default function Login() {
   const [show, setShow] = useState(false)
   const [registerOpen, setRegisterOpen] = useState(false)
   const [reg, setReg] = useState({ username: '', email: '', pw: '', discordId: '', key: '' })
+  const [totpOpen, setTotpOpen] = useState(false)
+  const [totpCode, setTotpCode] = useState('')
+  const [pendingLogin, setPendingLogin] = useState(null)
   const [verifyStep, setVerifyStep] = useState('form')
   const [pendingUser, setPendingUser] = useState(null)
   const [sentCode, setSentCode] = useState('')
@@ -143,6 +147,13 @@ export default function Login() {
   const submitCredentials = () => {
     const id = form.id.trim().toLowerCase()
     if ((id === ADMIN.user || id === ADMIN.email) && form.pw === ADMIN.pass) {
+      const secret = state.security?.totpSecret
+      if (secret) {
+        setPendingLogin({ role: 'admin' })
+        setTotpCode('')
+        setTotpOpen(true)
+        return
+      }
       enterDashboard('admin', null)
       return
     }
@@ -510,6 +521,43 @@ export default function Login() {
             </div>
           </div>
         )}
+      </Modal>
+
+      <Modal
+        open={totpOpen}
+        onClose={() => { setTotpOpen(false); setTotpCode(''); setPendingLogin(null) }}
+        title="Two-Factor code"
+        footer={
+          <button
+            onClick={async () => {
+              const ok = await verifyTotp(state.security?.totpSecret || '', totpCode)
+              if (!ok) {
+                toast({ type: 'error', title: 'Wrong code', body: 'The code does not match.' })
+                return
+              }
+              const role = pendingLogin?.role || 'admin'
+              setTotpOpen(false)
+              setTotpCode('')
+              setPendingLogin(null)
+              enterDashboard(role, null)
+            }}
+            disabled={totpCode.length < 6}
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-sky-600 px-4 py-3 text-sm font-semibold text-white hover:bg-sky-500 disabled:opacity-60"
+          >
+            Verify &amp; sign in
+          </button>
+        }
+      >
+        <div className="space-y-3 text-sm">
+          <p className="muted">Enter the 6-digit code from your authenticator app.</p>
+          <input
+            autoFocus
+            value={totpCode}
+            onChange={(e) => setTotpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+            placeholder="123456"
+            className="bd tile txt w-full rounded-lg border px-3 py-3 text-center font-mono text-lg tracking-[0.4em] focus:outline-none"
+          />
+        </div>
       </Modal>
     </div>
   )

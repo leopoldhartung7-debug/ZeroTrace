@@ -9,6 +9,7 @@ import {
 import { PageHeader, Card } from '../components/kit.jsx'
 import { Select, Menu, Modal, useToast } from '../components/ui.jsx'
 import { useStore, deriveScanReport } from '../store.jsx'
+import { generateBase32Secret, verifyTotp, otpauthUrl } from '../lib/totp.js'
 
 function ago(ts) {
   if (!ts) return 'just now'
@@ -118,7 +119,8 @@ export default function Account() {
     })
 
   const device = useMemo(detectDevice, [])
-  const tfaSecret = useMemo(() => randBase32(32), [tfaOpen])
+  const tfaSecret = useMemo(() => generateBase32Secret(20), [tfaOpen])
+  const [tfaCode, setTfaCode] = useState('')
   const sess = state.session
 
   const exportData = () => {
@@ -246,7 +248,7 @@ export default function Account() {
                 {state.security.twoFA ? (
                   <button
                     onClick={() => {
-                      dispatch({ type: 'set-2fa', value: false })
+                      dispatch({ type: 'set-totp-secret', secret: '' })
                       toast({ type: 'success', title: '2FA disabled' })
                     }}
                     className="flex items-center gap-2 rounded-lg border border-red-600/30 bg-red-600/10 px-5 py-2.5 text-sm font-medium text-red-500"
@@ -483,6 +485,37 @@ export default function Account() {
                 {state.integrations.discordWebhook && (
                   <button onClick={() => { dispatch({ type: 'set-integration', key: 'discordWebhook', value: '' }); setHook(''); toast({ type: 'success', title: 'Webhook removed' }) }} className="bd txt mt-3 flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm hover:border-red-500"><Trash2 size={14} /> Remove</button>
                 )}
+                {state.integrations.discordWebhook && (
+                  <div className="bd mt-4 border-t pt-4">
+                    <p className="caps-label mb-3">Embed customization</p>
+                    <div className="grid gap-3 sm:grid-cols-3">
+                      <Field label="Username">
+                        <input
+                          value={state.integrations.webhookCustom?.username || ''}
+                          onChange={(e) => dispatch({ type: 'set-webhook-custom', value: { username: e.target.value } })}
+                          placeholder="ZeroTrace Anti-Cheat"
+                          className={inputCls}
+                        />
+                      </Field>
+                      <Field label="Accent color (hex)">
+                        <input
+                          value={state.integrations.webhookCustom?.color || '#38bdf8'}
+                          onChange={(e) => dispatch({ type: 'set-webhook-custom', value: { color: e.target.value } })}
+                          placeholder="#38bdf8"
+                          className={inputCls}
+                        />
+                      </Field>
+                      <Field label="Footer text">
+                        <input
+                          value={state.integrations.webhookCustom?.footer || ''}
+                          onChange={(e) => dispatch({ type: 'set-webhook-custom', value: { footer: e.target.value } })}
+                          placeholder="ZeroTrace Anti-Cheat"
+                          className={inputCls}
+                        />
+                      </Field>
+                    </div>
+                  </div>
+                )}
               </div>
               <div className="tile rounded-xl border p-5">
                 <div className="flex items-center gap-3">
@@ -636,28 +669,34 @@ export default function Account() {
 
       <Modal
         open={tfaOpen}
-        onClose={() => setTfaOpen(false)}
+        onClose={() => { setTfaOpen(false); setTfaCode('') }}
         title="Set up Two-Factor Authentication"
         footer={
-          <>
-            <button onClick={() => setTfaOpen(false)} className="bd txt rounded-lg border px-4 py-2 text-sm">Cancel</button>
-            <button
-              onClick={() => {
-                dispatch({ type: 'set-2fa', value: true })
-                setTfaOpen(false)
-                toast({ type: 'success', title: '2FA enabled' })
-              }}
-              className="rounded-lg bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-500"
-            >
-              Enable 2FA
-            </button>
-          </>
+          <button
+            onClick={async () => {
+              const ok = await verifyTotp(tfaSecret, tfaCode)
+              if (!ok) {
+                toast({ type: 'error', title: 'Wrong code', body: 'Code does not match — try again.' })
+                return
+              }
+              dispatch({ type: 'set-totp-secret', secret: tfaSecret })
+              setTfaOpen(false)
+              setTfaCode('')
+              toast({ type: 'success', title: '2FA enabled' })
+            }}
+            disabled={tfaCode.length < 6}
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-sky-600 px-4 py-3 text-sm font-semibold text-white hover:bg-sky-500 disabled:opacity-60"
+          >
+            Verify &amp; enable 2FA
+          </button>
         }
       >
-        <div className="space-y-3">
-          <p className="muted text-sm">Add this secret to your authenticator app (TOTP):</p>
+        <div className="space-y-3 text-sm">
+          <p className="muted">
+            Add this secret to your authenticator app (Google Authenticator / 1Password / Authy) and enter the current 6-digit code to verify.
+          </p>
           <div className="tile flex items-center justify-between gap-3 rounded-lg border p-3">
-            <code className="txt break-all font-mono text-sm">{tfaSecret}</code>
+            <code className="txt break-all font-mono">{tfaSecret}</code>
             <button
               onClick={() => { navigator.clipboard?.writeText(tfaSecret); toast({ type: 'success', title: 'Secret copied' }) }}
               className="bd txt shrink-0 rounded-md border px-2.5 py-1.5 text-xs hover:border-sky-500"
@@ -665,7 +704,17 @@ export default function Account() {
               Copy
             </button>
           </div>
-          <p className="muted break-all text-xs">otpauth://totp/ZeroTrace:{profile.email}?secret={tfaSecret}&amp;issuer=ZeroTrace</p>
+          <p className="muted break-all text-[11px]">{otpauthUrl(tfaSecret, profile.email || profile.name || 'user')}</p>
+          <div>
+            <label className="txt mb-1 block text-xs font-medium">Verification code</label>
+            <input
+              autoFocus
+              value={tfaCode}
+              onChange={(e) => setTfaCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+              placeholder="123456"
+              className="bd tile txt w-full rounded-lg border px-3 py-3 text-center font-mono text-lg tracking-[0.4em] focus:outline-none"
+            />
+          </div>
         </div>
       </Modal>
     </div>

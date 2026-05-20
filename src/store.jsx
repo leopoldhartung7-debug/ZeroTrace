@@ -19,6 +19,18 @@ export function generateLicenseKey() {
   return `ZT-${block()}-${block()}-${block()}-${block()}`
 }
 
+// Stable lightweight fingerprint (FNV-1a 32-bit) used for HWID matching.
+export function hwidOf(host, os, ip) {
+  const s = `${(host || '').trim()}|${(os || '').trim()}|${(ip || '').trim()}`.toLowerCase()
+  if (!s.replace(/\|/g, '')) return ''
+  let h = 0x811c9dc5
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i)
+    h = (h + ((h << 1) + (h << 4) + (h << 7) + (h << 8) + (h << 24))) >>> 0
+  }
+  return ('00000000' + h.toString(16)).slice(-8).toUpperCase()
+}
+
 const GAMES = ['HYTALE', 'MINECRAFT', 'CS2', 'VALORANT', 'RUST', 'FIVEM']
 const CHEATS = [
   'KillAura', 'Reach', 'Velocity', 'AutoClicker', 'Aimbot', 'Wallhack',
@@ -234,6 +246,8 @@ function seed() {
     licenseKeys: [],
     users: [],
     deletedAccounts: [],
+    pinTemplates: [],
+    lastWeeklyReportAt: 0,
     savedStrings: [],
     connections: [],
     integrations: {
@@ -242,6 +256,7 @@ function seed() {
       emailJsServiceId: '',
       emailJsTemplateId: '',
       emailJsPublicKey: '',
+      webhookCustom: { username: 'ZeroTrace Anti-Cheat', color: '#38bdf8', footer: 'ZeroTrace Anti-Cheat' },
     },
     security: { twoFA: false, passkeys: [] },
     session: null,
@@ -705,6 +720,7 @@ function reducer(state, action) {
         host: p.host || '',
         os: p.os || '',
         ip: p.ip || '',
+        hwid: hwidOf(p.host, p.os, p.ip),
         createdAt: prev ? prev.createdAt : Date.now(),
         scannedAt: p.scannedAt || Date.now(),
       }
@@ -712,6 +728,20 @@ function reducer(state, action) {
         idx >= 0
           ? state.pins.map((x, i) => (i === idx ? { ...x, ...merged } : x))
           : [{ id: 'p' + Date.now(), ...merged }, ...state.pins]
+      // Alt-account detection: same hwid seen under a different Discord ID.
+      const altMatch = merged.hwid
+        ? state.pins.find(
+            (x) => x.hwid === merged.hwid && x.discordId && prev && x.discordId !== prev.discordId,
+          )
+        : null
+      const extraNotes = altMatch
+        ? note(
+            state,
+            'Possible alt account detected',
+            `HWID ${merged.hwid} previously seen under ${altMatch.discordId} (pin ${altMatch.pin}).`,
+            'admin',
+          )
+        : null
       return {
         ...state,
         pins,
@@ -720,9 +750,89 @@ function reducer(state, action) {
           ...state.scans,
         ],
         events: ev(state, 'scan', 'Scan result imported', `${p.code} — ${result} (${dets.length} detections)`, prev?.ownerId ?? null),
-        notifications: note(state, 'Scan result imported', `${p.code}: ${result}`, prev?.ownerId ?? null),
+        notifications: extraNotes
+          ? note({ ...state, notifications: extraNotes }, 'Scan result imported', `${p.code}: ${result}`, prev?.ownerId ?? null)
+          : note(state, 'Scan result imported', `${p.code}: ${result}`, prev?.ownerId ?? null),
       }
     }
+
+    case 'set-pin-note':
+      return {
+        ...state,
+        pins: state.pins.map((p) => (p.id === action.id ? { ...p, note: action.note } : p)),
+      }
+
+    case 'add-pin-comment':
+      return {
+        ...state,
+        pins: state.pins.map((p) =>
+          p.id === action.id
+            ? {
+                ...p,
+                comments: [
+                  ...(p.comments || []),
+                  { id: 'c' + Date.now(), author: action.author, text: action.text, time: Date.now() },
+                ],
+              }
+            : p,
+        ),
+      }
+
+    case 'delete-pin-comment':
+      return {
+        ...state,
+        pins: state.pins.map((p) =>
+          p.id === action.id
+            ? { ...p, comments: (p.comments || []).filter((c) => c.id !== action.commentId) }
+            : p,
+        ),
+      }
+
+    case 'add-pin-template':
+      return {
+        ...state,
+        pinTemplates: [
+          { id: 't' + Date.now(), ...action.template },
+          ...(state.pinTemplates || []),
+        ],
+      }
+
+    case 'delete-pin-template':
+      return {
+        ...state,
+        pinTemplates: (state.pinTemplates || []).filter((t) => t.id !== action.id),
+      }
+
+    case 'bulk-add-cheats': {
+      const items = (action.cheats || []).map((c, i) => ({
+        id: 'cb' + Date.now() + '_' + i,
+        builtin: false,
+        ...c,
+      }))
+      return {
+        ...state,
+        customCheats: [...items, ...state.customCheats],
+        events: ev(state, 'db', 'Cheats bulk-imported', `${items.length} entries`, 'admin'),
+      }
+    }
+
+    case 'set-last-weekly-report':
+      return { ...state, lastWeeklyReportAt: action.time || Date.now() }
+
+    case 'set-webhook-custom':
+      return {
+        ...state,
+        integrations: {
+          ...state.integrations,
+          webhookCustom: { ...(state.integrations.webhookCustom || {}), ...action.value },
+        },
+      }
+
+    case 'set-totp-secret':
+      return {
+        ...state,
+        security: { ...state.security, twoFA: !!action.secret, totpSecret: action.secret || '' },
+      }
 
     case 'mark-webhook-sent':
       return {

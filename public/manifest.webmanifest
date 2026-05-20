@@ -1,0 +1,14 @@
+{
+  "name": "ZeroTrace Anti-Cheat",
+  "short_name": "ZeroTrace",
+  "description": "ZeroTrace forensic anti-cheat dashboard.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#1a1b1e",
+  "theme_color": "#38bdf8",
+  "orientation": "any",
+  "icons": [
+    { "src": "favicon.svg", "type": "image/svg+xml", "sizes": "any", "purpose": "any maskable" }
+  ]
+}
