@@ -77,13 +77,17 @@ export default function Pins() {
 
   const filtered = useMemo(() => {
     if (tab === 'shared') return []
-    return ownPins.filter((p) => {
+    const uid = state.session?.userId
+    const source = tab === 'assigned'
+      ? state.pins.filter((p) => p.assignedTo === uid)
+      : ownPins
+    return source.filter((p) => {
       if (query && !`${p.pin} ${p.name}`.toLowerCase().includes(query.toLowerCase())) return false
       if (statusFilter !== 'all' && p.status !== statusFilter) return false
       if (gameFilter !== 'all' && p.game !== gameFilter) return false
       return true
     })
-  }, [ownPins, query, statusFilter, gameFilter, tab])
+  }, [ownPins, state.pins, state.session, query, statusFilter, gameFilter, tab])
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize))
   const pageRows = filtered.slice((page - 1) * pageSize, page * pageSize)
@@ -207,14 +211,29 @@ export default function Pins() {
       </div>
 
       <div className="mt-8">
-        <Tabs
-          tabs={[
-            { label: `My Pins (${ownPins.length})`, key: 'mine' },
-            { label: 'Shared with Me (0)', key: 'shared' },
-          ].map((x) => x.label)}
-          active={tab === 'mine' ? `My Pins (${ownPins.length})` : 'Shared with Me (0)'}
-          onChange={(l) => setTab(l.startsWith('My') ? 'mine' : 'shared')}
-        />
+        {(() => {
+          const uid = state.session?.userId
+          const assignedCount = uid
+            ? state.pins.filter((p) => p.assignedTo === uid).length
+            : 0
+          const labels = [
+            `My Pins (${ownPins.length})`,
+            `Assigned to Me (${assignedCount})`,
+            'Shared with Me (0)',
+          ]
+          const labelByKey = { mine: labels[0], assigned: labels[1], shared: labels[2] }
+          return (
+            <Tabs
+              tabs={labels}
+              active={labelByKey[tab] || labels[0]}
+              onChange={(l) => {
+                if (l.startsWith('My')) setTab('mine')
+                else if (l.startsWith('Assigned')) setTab('assigned')
+                else setTab('shared')
+              }}
+            />
+          )
+        })()}
       </div>
 
       <div className="mt-8 grid grid-cols-2 gap-4 lg:grid-cols-4">

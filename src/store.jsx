@@ -223,6 +223,9 @@ function seed() {
       riskWeights: { detect: 8, warn: 2, susp: 5 },
       gameProfiles: {},
       weeklyReport: { enabled: false, lastSentAt: 0 },
+      approvalRequired: false,
+      digestFrequency: 'off',
+      lastDigestAt: 0,
     },
     notifications: [
       { id: 'n1', title: 'Scan finished', body: 'Pin F1T5F8C0 returned: Cheating', time: now - 3600000, read: false },
@@ -263,6 +266,8 @@ function seed() {
       emailJsPublicKey: '',
       webhookCustom: { username: 'ZeroTrace Anti-Cheat', color: '#38bdf8', footer: 'ZeroTrace Anti-Cheat' },
       discordWebhooks: [],
+      slackWebhook: '',
+      slackWebhooks: [],
     },
     security: { twoFA: false, passkeys: [], lockout: { maxAttempts: 5, lockMinutes: 15 }, attempts: {} },
     session: null,
@@ -271,6 +276,7 @@ function seed() {
     blacklists: { hwids: [], discordIds: [], emailDomains: [] },
     adminAuditLog: [],
     webhookHealth: {},
+    maintenance: { enabled: false, message: '', updatedAt: 0 },
   }
 }
 
@@ -772,21 +778,34 @@ function reducer(state, action) {
         pins: state.pins.map((p) => (p.id === action.id ? { ...p, note: action.note } : p)),
       }
 
-    case 'add-pin-comment':
+    case 'add-pin-comment': {
+      const mentions = Array.from(String(action.text || '').matchAll(/@([\w.\-]+)/g)).map((m) => m[1].toLowerCase())
+      const mentionedUsers = (state.users || []).filter((u) => mentions.includes((u.username || '').toLowerCase()))
+      let notifs = state.notifications
+      mentionedUsers.forEach((u) => {
+        notifs = note(
+          { ...state, notifications: notifs },
+          'You were mentioned',
+          `${action.author} mentioned you in pin ${action.id}: ${String(action.text).slice(0, 80)}`,
+          u.id,
+        )
+      })
       return {
         ...state,
+        notifications: notifs,
         pins: state.pins.map((p) =>
           p.id === action.id
             ? {
                 ...p,
                 comments: [
                   ...(p.comments || []),
-                  { id: 'c' + Date.now(), author: action.author, text: action.text, time: Date.now() },
+                  { id: 'c' + Date.now(), author: action.author, text: action.text, time: Date.now(), mentions: mentionedUsers.map((u) => u.id) },
                 ],
               }
             : p,
         ),
       }
+    }
 
     case 'delete-pin-comment':
       return {
@@ -1032,6 +1051,102 @@ function reducer(state, action) {
     case 'clear-audit-log':
       return { ...state, adminAuditLog: [] }
 
+    case 'set-maintenance':
+      return {
+        ...state,
+        maintenance: { ...(state.maintenance || {}), ...action.value, updatedAt: Date.now() },
+      }
+
+    case 'assign-pin': {
+      const pin = state.pins.find((p) => p.id === action.pinId)
+      let notifs = state.notifications
+      if (action.userId && pin) {
+        notifs = note(
+          state,
+          'Pin assigned to you',
+          `Pin ${pin.pin || action.pinId} — ${pin.name || pin.game || 'scan'}`,
+          action.userId,
+        )
+      }
+      return {
+        ...state,
+        notifications: notifs,
+        pins: state.pins.map((p) =>
+          p.id === action.pinId ? { ...p, assignedTo: action.userId || null } : p,
+        ),
+      }
+    }
+
+    case 'set-pin-approval':
+      return {
+        ...state,
+        pins: state.pins.map((p) =>
+          p.id === action.pinId
+            ? {
+                ...p,
+                approvalStatus: action.status,
+                approvalBy: action.by || null,
+                approvalAt: Date.now(),
+                approvalReason: action.reason || '',
+              }
+            : p,
+        ),
+      }
+
+    case 'add-slack-webhook':
+      return {
+        ...state,
+        integrations: {
+          ...state.integrations,
+          slackWebhooks: [
+            { id: 'sw' + Date.now() + Math.random().toString(16).slice(2, 6), ...action.value, enabled: true, createdAt: Date.now() },
+            ...(state.integrations?.slackWebhooks || []),
+          ],
+        },
+      }
+
+    case 'update-slack-webhook':
+      return {
+        ...state,
+        integrations: {
+          ...state.integrations,
+          slackWebhooks: (state.integrations?.slackWebhooks || []).map((w) =>
+            w.id === action.id ? { ...w, ...action.value } : w,
+          ),
+        },
+      }
+
+    case 'delete-slack-webhook':
+      return {
+        ...state,
+        integrations: {
+          ...state.integrations,
+          slackWebhooks: (state.integrations?.slackWebhooks || []).filter((w) => w.id !== action.id),
+        },
+      }
+
+    case 'set-slack-webhook':
+      return {
+        ...state,
+        integrations: { ...state.integrations, slackWebhook: action.value },
+      }
+
+    case 'set-user-digest':
+      return {
+        ...state,
+        users: (state.users || []).map((u) =>
+          u.id === action.userId ? { ...u, digestFrequency: action.value } : u,
+        ),
+      }
+
+    case 'mark-digest-sent':
+      return {
+        ...state,
+        users: (state.users || []).map((u) =>
+          u.id === action.userId ? { ...u, lastDigestAt: Date.now() } : u,
+        ),
+      }
+
     case 'add-audit-log': {
       const entry = {
         id: 'a' + Date.now() + Math.random().toString(16).slice(2, 6),
@@ -1249,7 +1364,7 @@ const DICT = {
     'nav.gameProfiles': 'Game Profiles',
     'nav.analytics': 'System Analytics', 'nav.blacklists': 'Blacklists',
     'nav.webhookHealth': 'Webhook Health', 'nav.announcement': 'Announcement',
-    'nav.audit': 'Audit Log',
+    'nav.audit': 'Audit Log', 'nav.maintenance': 'Maintenance',
     'cat.services': 'Services', 'cat.activity': 'Activity', 'cat.support': 'Support', 'cat.others': 'Others',
     'cat.admin': 'Admin Access', 'cat.preferences': 'My Preferences',
     'dash.kicker': 'View statistics, events, and announcements on the ZeroTrace.',
@@ -1269,7 +1384,7 @@ const DICT = {
     'nav.gameProfiles': 'Spielprofile',
     'nav.analytics': 'System-Analytics', 'nav.blacklists': 'Sperrlisten',
     'nav.webhookHealth': 'Webhook-Status', 'nav.announcement': 'Ankündigung',
-    'nav.audit': 'Audit-Log',
+    'nav.audit': 'Audit-Log', 'nav.maintenance': 'Wartung',
     'cat.services': 'Dienste', 'cat.activity': 'Aktivität', 'cat.support': 'Hilfe', 'cat.others': 'Sonstiges',
     'cat.admin': 'Admin-Bereich', 'cat.preferences': 'Meine Einstellungen',
     'dash.kicker': 'Statistiken, Ereignisse und Ankündigungen im Überblick.',

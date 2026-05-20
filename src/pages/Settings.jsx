@@ -325,36 +325,61 @@ function SecuritySettingsTab() {
   const lo = state.security?.lockout || { maxAttempts: 5, lockMinutes: 15 }
   const [maxA, setMaxA] = useState(lo.maxAttempts)
   const [lockM, setLockM] = useState(lo.lockMinutes)
+  const approval = !!state.settings?.approvalRequired
   return (
-    <Card className="p-6">
-      <h3 className="txt mb-1 flex items-center gap-2 text-lg font-semibold">
-        <ShieldCheck size={18} /> Login Lockout
-      </h3>
-      <p className="muted mb-4 text-sm">
-        Block sign-in for a while after too many wrong passwords.
-      </p>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div>
-          <p className="caps-label mb-1">Max attempts (in 10 min)</p>
-          <input type="number" min="1" value={maxA} onChange={(e) => setMaxA(e.target.value)} className="bd tile txt w-full rounded-lg border px-3 py-2 text-sm focus:outline-none" />
+    <div className="space-y-6">
+      <Card className="p-6">
+        <h3 className="txt mb-1 flex items-center gap-2 text-lg font-semibold">
+          <ShieldCheck size={18} /> Login Lockout
+        </h3>
+        <p className="muted mb-4 text-sm">
+          Block sign-in for a while after too many wrong passwords.
+        </p>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <p className="caps-label mb-1">Max attempts (in 10 min)</p>
+            <input type="number" min="1" value={maxA} onChange={(e) => setMaxA(e.target.value)} className="bd tile txt w-full rounded-lg border px-3 py-2 text-sm focus:outline-none" />
+          </div>
+          <div>
+            <p className="caps-label mb-1">Lock duration (minutes)</p>
+            <input type="number" min="1" value={lockM} onChange={(e) => setLockM(e.target.value)} className="bd tile txt w-full rounded-lg border px-3 py-2 text-sm focus:outline-none" />
+          </div>
         </div>
-        <div>
-          <p className="caps-label mb-1">Lock duration (minutes)</p>
-          <input type="number" min="1" value={lockM} onChange={(e) => setLockM(e.target.value)} className="bd tile txt w-full rounded-lg border px-3 py-2 text-sm focus:outline-none" />
+        <div className="mt-4 flex justify-end">
+          <button
+            onClick={() => {
+              dispatch({ type: 'set-login-lockout', value: { maxAttempts: Number(maxA) || 5, lockMinutes: Number(lockM) || 15 } })
+              toast({ type: 'success', title: 'Saved' })
+            }}
+            className="rounded-lg bg-sky-600 px-5 py-2 text-sm font-semibold text-white hover:bg-sky-500"
+          >
+            Save
+          </button>
         </div>
-      </div>
-      <div className="mt-4 flex justify-end">
-        <button
-          onClick={() => {
-            dispatch({ type: 'set-login-lockout', value: { maxAttempts: Number(maxA) || 5, lockMinutes: Number(lockM) || 15 } })
-            toast({ type: 'success', title: 'Saved' })
-          }}
-          className="rounded-lg bg-sky-600 px-5 py-2 text-sm font-semibold text-white hover:bg-sky-500"
-        >
-          Save
-        </button>
-      </div>
-    </Card>
+      </Card>
+
+      <Card className="p-6">
+        <h3 className="txt mb-1 flex items-center gap-2 text-lg font-semibold">
+          <ShieldCheck size={18} /> Cheating Verdict Approval
+        </h3>
+        <p className="muted mb-4 text-sm">
+          Require an admin to approve every Cheating verdict before the webhook is fired. Analysts can still mark scans, but
+          public-facing alerts hold until you sign off.
+        </p>
+        <label className="flex items-center gap-3">
+          <input
+            type="checkbox"
+            checked={approval}
+            onChange={(e) => {
+              dispatch({ type: 'set-setting', key: 'approvalRequired', value: e.target.checked })
+              toast({ type: 'success', title: e.target.checked ? 'Approval workflow ON' : 'Approval workflow OFF' })
+            }}
+            className="h-4 w-4"
+          />
+          <span className="txt text-sm">Hold Cheating verdicts until admin approval</span>
+        </label>
+      </Card>
+    </div>
   )
 }
 

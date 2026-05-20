@@ -44,6 +44,55 @@ export function buildScanEmbed(meta, report, custom = {}) {
   }
 }
 
+export async function sendSlackSummary(webhook, meta, report, dispatch = null) {
+  if (!webhook) return { ok: false, skipped: true }
+  const t0 = performance.now()
+  const verdict = (meta.verdict || 'Clean').toUpperCase()
+  const emoji = verdict === 'CHEATING' ? ':no_entry:' : verdict === 'SUSPICIOUS' ? ':warning:' : ':white_check_mark:'
+  try {
+    const resp = await fetch(webhook, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        text: `${emoji} *ZeroTrace scan — ${verdict}*  •  ${meta.code} (${meta.game})`,
+        blocks: [
+          {
+            type: 'section',
+            text: { type: 'mrkdwn', text: `${emoji} *ZeroTrace scan — ${verdict}*\n*Pin:* \`${meta.code}\`  *Game:* ${meta.game}  *Discord:* \`${meta.discordId || '—'}\`` },
+          },
+          {
+            type: 'section',
+            fields: [
+              { type: 'mrkdwn', text: `*Detections:*\n${report?.counts?.detects ?? 0}` },
+              { type: 'mrkdwn', text: `*Warnings:*\n${report?.counts?.warnings ?? 0}` },
+              { type: 'mrkdwn', text: `*Suspicious:*\n${report?.counts?.suspicious ?? 0}` },
+              { type: 'mrkdwn', text: `*Risk:*\n${meta.risk ?? '—'}` },
+            ],
+          },
+        ],
+      }),
+    })
+    const latencyMs = Math.round(performance.now() - t0)
+    const ok = resp.ok
+    if (dispatch) {
+      dispatch({
+        type: 'webhook-health-record',
+        url: webhook,
+        success: ok,
+        latencyMs,
+        error: ok ? '' : `HTTP ${resp.status}`,
+      })
+    }
+    return { ok, status: resp.status, latencyMs }
+  } catch (e) {
+    const latencyMs = Math.round(performance.now() - t0)
+    if (dispatch) {
+      dispatch({ type: 'webhook-health-record', url: webhook, success: false, latencyMs, error: e.message })
+    }
+    return { ok: false, error: e.message, latencyMs }
+  }
+}
+
 export async function sendScanSummary(webhook, meta, report, custom = {}, dispatch = null) {
   if (!webhook) return { ok: false, skipped: true }
   const t0 = performance.now()
@@ -93,9 +142,13 @@ export function ScanWebhookNotifier() {
   const initialized = useRef(false)
 
   useEffect(() => {
-    const pending = state.pins.filter(
-      (p) => p.status === 'Finished' && !p.webhookNotified,
-    )
+    const approvalRequired = state.settings?.approvalRequired
+    const pending = state.pins.filter((p) => {
+      if (p.status !== 'Finished' || p.webhookNotified) return false
+      // Hold off when admin approval is required for Cheating verdicts.
+      if (approvalRequired && p.result === 'Cheating' && p.approvalStatus !== 'approved') return false
+      return true
+    })
     if (pending.length === 0) return
 
     if (!initialized.current) {
@@ -132,6 +185,14 @@ export function ScanWebhookNotifier() {
         else if (!r.skipped)
           toast({ type: 'error', title: 'Webhook failed', body: r.error || `HTTP ${r.status}` })
       })
+
+      // Slack fan-out (primary + extras)
+      const slackPrimary = state.integrations?.slackWebhook || ''
+      const slackExtras = (state.integrations?.slackWebhooks || [])
+        .filter((w) => w.enabled !== false)
+        .map((w) => w.url)
+      const slackTargets = [slackPrimary, ...slackExtras].filter(Boolean)
+      slackTargets.forEach((url) => sendSlackSummary(url, meta, report, dispatch))
     })
   }, [state.pins, state.integrations, dispatch, toast])
 

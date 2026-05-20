@@ -522,6 +522,11 @@ export default function Account() {
                   </div>
                 )}
               </div>
+
+              <SlackWebhooksTile state={state} dispatch={dispatch} toast={toast} inputCls={inputCls} />
+
+              <DigestSubscriptionTile state={state} dispatch={dispatch} toast={toast} />
+
               <div className="tile rounded-xl border p-5">
                 <div className="flex items-center gap-3">
                   <Shield size={18} className="text-sky-500" />
@@ -776,6 +781,110 @@ function ExtraWebhooks({ state, dispatch, toast }) {
             </div>
           ))}
         </div>
+      )}
+    </div>
+  )
+}
+
+function SlackWebhooksTile({ state, dispatch, toast, inputCls }) {
+  const isAdmin = state.role === 'admin'
+  const [hook, setHook] = useState(state.integrations?.slackWebhook || '')
+  if (!isAdmin) return null
+  return (
+    <div className="tile rounded-xl border p-5">
+      <div className="flex items-center gap-3">
+        <Zap size={18} className="text-sky-500" />
+        <h4 className="txt text-lg font-bold">Slack Webhook</h4>
+        {state.integrations?.slackWebhook && (
+          <span className="flex items-center gap-1 rounded-md border border-green-600/40 bg-green-600/15 px-2 py-0.5 text-[11px] font-bold text-green-500">
+            <Check size={11} /> CONNECTED
+          </span>
+        )}
+      </div>
+      <p className="muted mt-1 text-sm">
+        Send scan summaries to Slack alongside Discord. Use an Incoming Webhook URL from your Slack workspace.
+      </p>
+      <Field label="Slack Incoming Webhook URL">
+        <div className="flex gap-2">
+          <input
+            value={hook}
+            onChange={(e) => setHook(e.target.value)}
+            placeholder="https://hooks.slack.com/services/T…/B…/…"
+            className={inputCls}
+          />
+          <button
+            onClick={() => {
+              dispatch({ type: 'set-slack-webhook', value: hook.trim() })
+              toast({ type: 'success', title: 'Slack webhook saved' })
+            }}
+            className="rounded-lg bg-sky-600 px-4 text-sm font-semibold text-white hover:bg-sky-500"
+          >
+            Save
+          </button>
+        </div>
+      </Field>
+      {state.integrations?.slackWebhook && (
+        <button
+          onClick={() => {
+            dispatch({ type: 'set-slack-webhook', value: '' })
+            setHook('')
+            toast({ type: 'success', title: 'Slack webhook removed' })
+          }}
+          className="bd txt mt-3 flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm hover:border-red-500"
+        >
+          <Trash2 size={14} /> Remove
+        </button>
+      )}
+    </div>
+  )
+}
+
+function DigestSubscriptionTile({ state, dispatch, toast }) {
+  const me = state.session?.userId
+    ? (state.users || []).find((u) => u.id === state.session.userId)
+    : null
+  if (!me) {
+    return (
+      <div className="tile rounded-xl border p-5">
+        <h4 className="txt text-lg font-bold">Email Digest</h4>
+        <p className="muted mt-2 text-sm">
+          Sign in with a registered analyst account to subscribe to a personal scan digest.
+        </p>
+      </div>
+    )
+  }
+  const cur = me.digestFrequency || 'off'
+  const set = (v) => {
+    dispatch({ type: 'set-user-digest', userId: me.id, value: v })
+    toast({ type: 'success', title: v === 'off' ? 'Digest disabled' : `Digest set to ${v}` })
+  }
+  return (
+    <div className="tile rounded-xl border p-5">
+      <h4 className="txt text-lg font-bold">Email Digest</h4>
+      <p className="muted mt-1 text-sm">
+        Get a personal email summary of your scan activity. Requires EmailJS to be configured by an admin.
+      </p>
+      <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-3">
+        {[
+          { v: 'off', label: 'Off' },
+          { v: 'daily', label: 'Daily' },
+          { v: 'weekly', label: 'Weekly' },
+        ].map((o) => (
+          <button
+            key={o.v}
+            onClick={() => set(o.v)}
+            className={`rounded-lg border px-3 py-2.5 text-sm font-semibold ${
+              cur === o.v ? 'border-sky-500 bg-sky-500/15 text-sky-400' : 'bd muted hover:border-sky-500'
+            }`}
+          >
+            {o.label}
+          </button>
+        ))}
+      </div>
+      {me.lastDigestAt > 0 && (
+        <p className="muted mt-3 text-[11px]">
+          Last digest {new Date(me.lastDigestAt).toLocaleString()}
+        </p>
       )}
     </div>
   )

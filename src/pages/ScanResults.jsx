@@ -312,6 +312,7 @@ export default function ScanResults() {
           <KV color="#eab308" label="Status" value={pin.status.toUpperCase()} />
           <KV color="#f97316" label="Used" value={pin.used ? 'Yes' : 'No'} />
           <SteamIdRow pin={pin} dispatch={dispatch} toast={toast} />
+          <AssignmentRow pin={pin} state={state} dispatch={dispatch} toast={toast} />
         </Card>
 
         <Card className="p-6">
@@ -480,6 +481,7 @@ export default function ScanResults() {
       </div>
 
       <CaseStatusCard pin={pin} dispatch={dispatch} toast={toast} />
+      <ApprovalCard pin={pin} state={state} dispatch={dispatch} toast={toast} />
 
       <Card className="p-6">
         <p className="caps-label">Admin-Executed Applications</p>
@@ -720,21 +722,31 @@ export default function ScanResults() {
           <Database size={18} /> Executable List
         </h2>
         <p className="muted mb-4 mt-1 text-sm">Processes executed during the scan</p>
-        <PaginatedTable
-          columns={['Executable Path', 'Timestamp', 'Status', 'Verified']}
-          rows={report.executables}
-          searchKeys={['path', 'timestamp']}
-          placeholder="Search executable path, timestamp..."
-          empty="No executables recorded."
-          render={(r) => (
-            <>
-              <td className="txt break-all px-3 py-3 font-mono text-xs">{r.path}</td>
-              <td className="muted px-3 py-3 text-xs">{r.timestamp}</td>
-              <td className="px-3 py-3">{r.status ? <span className="text-green-500">✓</span> : <span className="text-red-500">✕</span>}</td>
-              <td className="px-3 py-3">{r.verified ? <span className="text-green-500">✓</span> : <span className="text-red-500">✕</span>}</td>
-            </>
-          )}
-        />
+        <ProcessTabs report={report} pin={pin} />
+      </Card>
+
+      <Card className="p-6">
+        <h2 className="txt flex items-center gap-2 text-lg font-semibold">
+          <Database size={18} /> Loaded Drivers
+        </h2>
+        <p className="muted mb-4 mt-1 text-sm">Kernel drivers loaded at scan time. Unsigned and known cheat drivers are highlighted.</p>
+        <DriversList drivers={pin.drivers || report.drivers || []} />
+      </Card>
+
+      <Card className="p-6">
+        <h2 className="txt flex items-center gap-2 text-lg font-semibold">
+          <Database size={18} /> Virtual Machine Detection
+        </h2>
+        <p className="muted mb-4 mt-1 text-sm">Cheaters often run scans inside a VM to hide identity. We flag VMware, VirtualBox, Hyper-V and Sandboxie.</p>
+        <VmDetection vm={pin.vm || report.vm || null} />
+      </Card>
+
+      <Card className="p-6">
+        <h2 className="txt flex items-center gap-2 text-lg font-semibold">
+          <Database size={18} /> VirusTotal Lookup
+        </h2>
+        <p className="muted mb-4 mt-1 text-sm">Query VirusTotal for the SHA-256 of every suspicious file. Requires an API key in Account → Integrations.</p>
+        <VirusTotalLookup hashes={(report.suspiciousFiles || []).map((f) => f.sha256).filter(Boolean)} />
       </Card>
 
       <div className="grid gap-4 lg:grid-cols-2">
@@ -927,27 +939,57 @@ function ReviewerNotes({ pin, dispatch, toast }) {
   )
 }
 
+function renderCommentBody(text, users) {
+  const parts = String(text).split(/(@[\w.\-]+)/g)
+  return parts.map((part, i) => {
+    if (part.startsWith('@')) {
+      const username = part.slice(1).toLowerCase()
+      const hit = users.find((u) => (u.username || '').toLowerCase() === username)
+      if (hit) {
+        return (
+          <span key={i} className="rounded-md bg-sky-500/15 px-1 font-semibold text-sky-400">
+            {part}
+          </span>
+        )
+      }
+    }
+    return <span key={i}>{part}</span>
+  })
+}
+
 function PinComments({ pin, state, dispatch, toast }) {
   const [text, setText] = useState('')
+  const [showSuggest, setShowSuggest] = useState(false)
   const me = state.session?.userId
     ? (state.users || []).find((u) => u.id === state.session.userId)?.username
     : state.role === 'admin'
       ? 'Admin'
       : 'Analyst'
+  const lastAt = text.lastIndexOf('@')
+  const suggestQuery = lastAt >= 0 && !/\s/.test(text.slice(lastAt)) ? text.slice(lastAt + 1).toLowerCase() : null
+  const suggestions = suggestQuery != null
+    ? (state.users || []).filter((u) => (u.username || '').toLowerCase().startsWith(suggestQuery)).slice(0, 5)
+    : []
   const submit = () => {
     if (!text.trim()) return
     dispatch({ type: 'add-pin-comment', id: pin.id, author: me, text: text.trim() })
     setText('')
+    setShowSuggest(false)
     toast({ type: 'success', title: 'Comment added' })
+  }
+  const pickSuggestion = (u) => {
+    setText(text.slice(0, lastAt) + '@' + u.username + ' ')
+    setShowSuggest(false)
   }
   return (
     <div>
-      <div className="flex flex-col gap-2 sm:flex-row">
+      <div className="relative flex flex-col gap-2 sm:flex-row">
         <input
           value={text}
-          onChange={(e) => setText(e.target.value)}
+          onChange={(e) => { setText(e.target.value); setShowSuggest(true) }}
           onKeyDown={(e) => e.key === 'Enter' && submit()}
-          placeholder="Write a comment…"
+          onFocus={() => setShowSuggest(true)}
+          placeholder="Write a comment… use @username to mention"
           className="bd tile txt w-full rounded-lg border px-3 py-2.5 text-sm focus:outline-none"
         />
         <button
@@ -956,6 +998,23 @@ function PinComments({ pin, state, dispatch, toast }) {
         >
           Add
         </button>
+        {showSuggest && suggestions.length > 0 && (
+          <div className="panel absolute left-0 right-0 top-full z-20 mt-1 max-h-48 overflow-auto rounded-lg border shadow-xl sm:right-auto sm:w-72">
+            {suggestions.map((u) => (
+              <button
+                key={u.id}
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => pickSuggestion(u)}
+                className="hoverable txt flex w-full items-center gap-2 px-3 py-2 text-left text-sm"
+              >
+                <span className="tile flex h-6 w-6 items-center justify-center rounded-full border text-[10px] font-semibold">
+                  {(u.username || '?').charAt(0).toUpperCase()}
+                </span>
+                <span>@{u.username}</span>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
       <div className="mt-4 space-y-2">
         {(pin.comments || []).length === 0 ? (
@@ -967,7 +1026,9 @@ function PinComments({ pin, state, dispatch, toast }) {
                 <span className="txt font-semibold">{c.author}</span>
                 <span className="muted">{new Date(c.time).toLocaleString()}</span>
               </div>
-              <p className="muted mt-1 text-sm">{c.text}</p>
+              <p className="muted mt-1 break-words text-sm">
+                {renderCommentBody(c.text, state.users || [])}
+              </p>
               <div className="mt-1 flex justify-end">
                 <button
                   onClick={() => dispatch({ type: 'delete-pin-comment', id: pin.id, commentId: c.id })}
@@ -1097,5 +1158,345 @@ function CaseStatusCard({ pin, dispatch, toast }) {
         </div>
       )}
     </Card>
+  )
+}
+
+function AssignmentRow({ pin, state, dispatch, toast }) {
+  const [val, setVal] = useState(pin.assignedTo || '')
+  const save = () => {
+    dispatch({ type: 'assign-pin', pinId: pin.id, userId: val || null })
+    toast({ type: 'success', title: val ? 'Pin assigned' : 'Assignment cleared' })
+  }
+  const assignee = (state.users || []).find((u) => u.id === pin.assignedTo)
+  return (
+    <div className="bd flex items-center justify-between gap-2 border-b py-3.5 text-sm last:border-0">
+      <span className="muted flex items-center gap-2.5">
+        <span className="h-2 w-2 rounded-full" style={{ background: '#8b5cf6' }} />
+        Assigned to
+      </span>
+      <span className="flex flex-wrap items-center justify-end gap-2">
+        {assignee && (
+          <span className="bd rounded-md border px-2 py-0.5 font-mono text-[11px] text-sky-400">
+            @{assignee.username}
+          </span>
+        )}
+        <select
+          value={val}
+          onChange={(e) => setVal(e.target.value)}
+          className="bd tile txt rounded-md border px-2 py-1 text-xs"
+        >
+          <option value="">— unassigned —</option>
+          {(state.users || []).map((u) => (
+            <option key={u.id} value={u.id}>{u.username}</option>
+          ))}
+        </select>
+        <button
+          onClick={save}
+          className="bd rounded-md border px-2 py-1 text-xs hover:border-sky-500"
+        >
+          Save
+        </button>
+      </span>
+    </div>
+  )
+}
+
+function ApprovalCard({ pin, state, dispatch, toast }) {
+  const required = state.settings?.approvalRequired
+  if (!required || pin.result !== 'Cheating') return null
+  const status = pin.approvalStatus || 'pending'
+  const isAdmin = state.role === 'admin'
+  const [reason, setReason] = useState('')
+  const decide = (s) => {
+    dispatch({
+      type: 'set-pin-approval',
+      pinId: pin.id,
+      status: s,
+      by: 'admin',
+      reason,
+    })
+    toast({
+      type: s === 'approved' ? 'success' : 'info',
+      title: s === 'approved' ? 'Verdict approved' : 'Verdict rejected',
+    })
+    setReason('')
+  }
+  const TONE = {
+    pending: 'border-yellow-500/40 bg-yellow-500/10 text-yellow-200',
+    approved: 'border-green-600/40 bg-green-600/10 text-green-200',
+    rejected: 'border-red-600/40 bg-red-600/10 text-red-200',
+  }
+  return (
+    <Card className="mt-6 p-6">
+      <h3 className="txt mb-3 flex items-center gap-2 text-lg font-semibold">
+        Verdict approval
+      </h3>
+      <div className={`mb-4 rounded-lg border px-4 py-3 text-sm ${TONE[status]}`}>
+        {status === 'pending' && 'This Cheating verdict is awaiting admin approval. The Discord webhook will only fire once approved.'}
+        {status === 'approved' && (
+          <>Approved{pin.approvalAt ? ` on ${new Date(pin.approvalAt).toLocaleString()}` : ''}{pin.approvalReason ? ` — ${pin.approvalReason}` : ''}.</>
+        )}
+        {status === 'rejected' && (
+          <>Rejected{pin.approvalAt ? ` on ${new Date(pin.approvalAt).toLocaleString()}` : ''}{pin.approvalReason ? ` — ${pin.approvalReason}` : ''}.</>
+        )}
+      </div>
+      {isAdmin && status === 'pending' && (
+        <div className="space-y-3">
+          <input
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            placeholder="Reason / note (optional)"
+            className="bd tile txt w-full rounded-lg border px-3 py-2 text-sm"
+          />
+          <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+            <button
+              onClick={() => decide('rejected')}
+              className="bd rounded-lg border border-red-600/40 px-4 py-2 text-sm font-semibold text-red-400 hover:bg-red-600/10"
+            >
+              Reject
+            </button>
+            <button
+              onClick={() => decide('approved')}
+              className="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-500"
+            >
+              Approve & fire webhook
+            </button>
+          </div>
+        </div>
+      )}
+      {isAdmin && status !== 'pending' && (
+        <button
+          onClick={() => decide('pending')}
+          className="bd rounded-lg border px-4 py-2 text-xs hover:border-sky-500"
+        >
+          Reset to pending
+        </button>
+      )}
+    </Card>
+  )
+}
+
+function ProcessTabs({ report, pin }) {
+  const [view, setView] = useState('flat')
+  // Synthesize parent-PID relationships if the scanner didn't provide them:
+  // group by name prefix, mark first occurrence of a name as root, rest as children.
+  const processes = (pin.processes || report.processes || report.executables || []).map((p, i) => ({
+    pid: p.pid != null ? p.pid : (1000 + i),
+    parentPid: p.parentPid != null ? p.parentPid : null,
+    name: p.name || (p.path ? p.path.split(/[\\/]/).pop() : '<unknown>'),
+    path: p.path || '',
+  }))
+  return (
+    <div>
+      <div className="mb-3 inline-flex rounded-lg border border-line p-0.5 text-xs">
+        <button
+          onClick={() => setView('flat')}
+          className={`rounded-md px-3 py-1 ${view === 'flat' ? 'bg-sky-500/15 text-sky-400' : 'muted'}`}
+        >
+          Flat list
+        </button>
+        <button
+          onClick={() => setView('tree')}
+          className={`rounded-md px-3 py-1 ${view === 'tree' ? 'bg-sky-500/15 text-sky-400' : 'muted'}`}
+        >
+          Process tree
+        </button>
+      </div>
+      {view === 'flat' ? (
+        <PaginatedTable
+          columns={['Executable Path', 'Timestamp', 'Status', 'Verified']}
+          rows={report.executables}
+          searchKeys={['path', 'timestamp']}
+          placeholder="Search executable path, timestamp..."
+          empty="No executables recorded."
+          render={(r) => (
+            <>
+              <td className="txt break-all px-3 py-3 font-mono text-xs">{r.path}</td>
+              <td className="muted px-3 py-3 text-xs">{r.timestamp}</td>
+              <td className="px-3 py-3">{r.status ? <span className="text-green-500">✓</span> : <span className="text-red-500">✕</span>}</td>
+              <td className="px-3 py-3">{r.verified ? <span className="text-green-500">✓</span> : <span className="text-red-500">✕</span>}</td>
+            </>
+          )}
+        />
+      ) : (
+        <ProcessTree processes={processes} />
+      )}
+    </div>
+  )
+}
+
+function ProcessTree({ processes }) {
+  if (!processes?.length) return <p className="muted py-6 text-center text-xs">No processes captured.</p>
+  // Build child map; treat any orphan as root.
+  const byPid = new Map()
+  processes.forEach((p) => byPid.set(p.pid, { ...p, children: [] }))
+  const roots = []
+  byPid.forEach((node) => {
+    const parent = node.parentPid != null ? byPid.get(node.parentPid) : null
+    if (parent) parent.children.push(node)
+    else roots.push(node)
+  })
+  const Node = ({ node, depth }) => (
+    <div>
+      <div
+        className="bd flex items-center justify-between gap-2 border-b py-1.5 text-xs last:border-0"
+        style={{ paddingLeft: depth * 18 }}
+      >
+        <span className="txt break-all font-mono">
+          {depth > 0 && <span className="muted">└─ </span>}
+          {node.name || '<unknown>'}
+        </span>
+        <span className="muted shrink-0 font-mono">PID {node.pid}</span>
+      </div>
+      {node.children.map((c) => (
+        <Node key={c.pid} node={c} depth={depth + 1} />
+      ))}
+    </div>
+  )
+  return (
+    <div>
+      {roots.map((r) => <Node key={r.pid} node={r} depth={0} />)}
+    </div>
+  )
+}
+
+function DriversList({ drivers }) {
+  if (!drivers?.length) return <p className="muted py-6 text-center text-xs">No drivers reported.</p>
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-left text-xs">
+        <thead>
+          <tr className="caps-label bd border-b">
+            <th className="px-3 py-2">Driver</th>
+            <th className="px-3 py-2">Publisher</th>
+            <th className="px-3 py-2">Signature</th>
+            <th className="px-3 py-2">Note</th>
+          </tr>
+        </thead>
+        <tbody>
+          {drivers.map((d, i) => (
+            <tr key={i} className="bd border-b last:border-0 align-top">
+              <td className="txt px-3 py-2 break-all font-mono">{d.name}</td>
+              <td className="muted px-3 py-2 break-all">{d.publisher || '—'}</td>
+              <td className="px-3 py-2">
+                {d.signed ? (
+                  <span className="rounded-md border border-green-600/40 bg-green-600/15 px-1.5 py-0.5 text-[10px] font-semibold text-green-500">signed</span>
+                ) : (
+                  <span className="rounded-md border border-red-600/40 bg-red-600/15 px-1.5 py-0.5 text-[10px] font-semibold text-red-500">unsigned</span>
+                )}
+                {d.cheatKnown && (
+                  <span className="ml-1 rounded-md border border-red-600/40 bg-red-600/15 px-1.5 py-0.5 text-[10px] font-semibold text-red-500">known cheat</span>
+                )}
+              </td>
+              <td className="muted px-3 py-2 break-words">{d.note || '—'}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+function VmDetection({ vm }) {
+  if (!vm) return <p className="muted py-6 text-center text-xs">No VM checks recorded.</p>
+  return (
+    <div className="space-y-2 text-sm">
+      <div className="bd flex items-center justify-between rounded-lg border px-4 py-3">
+        <span className="muted">Running inside a virtual machine?</span>
+        {vm.detected ? (
+          <span className="rounded-md border border-red-600/40 bg-red-600/15 px-2 py-0.5 text-xs font-semibold text-red-500">
+            YES · {vm.vendor || 'Unknown'}
+          </span>
+        ) : (
+          <span className="rounded-md border border-green-600/40 bg-green-600/15 px-2 py-0.5 text-xs font-semibold text-green-500">
+            NO
+          </span>
+        )}
+      </div>
+      {vm.signals?.length > 0 && (
+        <ul className="muted ml-4 list-disc space-y-1 text-xs">
+          {vm.signals.map((s, i) => <li key={i}>{s}</li>)}
+        </ul>
+      )}
+    </div>
+  )
+}
+
+async function vtLookup(hash, apiKey) {
+  try {
+    const r = await fetch(`https://www.virustotal.com/api/v3/files/${hash}`, {
+      headers: { 'x-apikey': apiKey },
+    })
+    if (!r.ok) return { ok: false, status: r.status }
+    const j = await r.json()
+    const stats = j?.data?.attributes?.last_analysis_stats || {}
+    return {
+      ok: true,
+      malicious: stats.malicious || 0,
+      suspicious: stats.suspicious || 0,
+      harmless: stats.harmless || 0,
+      undetected: stats.undetected || 0,
+      total: (stats.malicious || 0) + (stats.suspicious || 0) + (stats.harmless || 0) + (stats.undetected || 0),
+      permalink: `https://www.virustotal.com/gui/file/${hash}`,
+    }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
+
+function VirusTotalLookup({ hashes }) {
+  const { state } = useStore()
+  const apiKey = state.integrations?.virusTotalKey || ''
+  const [results, setResults] = useState({})
+  const [busy, setBusy] = useState({})
+  if (!hashes?.length) return <p className="muted py-6 text-center text-xs">No file hashes available.</p>
+  if (!apiKey) {
+    return (
+      <p className="muted py-6 text-center text-xs">
+        Set a VirusTotal API key in Account → Integrations to enable lookups.
+      </p>
+    )
+  }
+  const check = async (h) => {
+    setBusy((b) => ({ ...b, [h]: true }))
+    const r = await vtLookup(h, apiKey)
+    setResults((rs) => ({ ...rs, [h]: r }))
+    setBusy((b) => ({ ...b, [h]: false }))
+  }
+  return (
+    <div className="space-y-2 text-xs">
+      {hashes.map((h) => {
+        const r = results[h]
+        return (
+          <div key={h} className="bd flex flex-wrap items-center justify-between gap-2 rounded-lg border px-3 py-2">
+            <code className="txt break-all font-mono">{h}</code>
+            <div className="flex items-center gap-2">
+              {r?.ok && (
+                <span className={`rounded-md border px-2 py-0.5 font-semibold ${
+                  r.malicious > 0 ? 'border-red-600/40 bg-red-600/15 text-red-500' :
+                  r.suspicious > 0 ? 'border-yellow-500/40 bg-yellow-500/15 text-yellow-400' :
+                  'border-green-600/40 bg-green-600/15 text-green-500'
+                }`}>
+                  {r.malicious}/{r.total} malicious
+                </span>
+              )}
+              {r?.permalink && (
+                <a href={r.permalink} target="_blank" rel="noreferrer" className="text-sky-400 underline">VT</a>
+              )}
+              {r && !r.ok && (
+                <span className="text-red-400">err {r.status || r.error}</span>
+              )}
+              <button
+                onClick={() => check(h)}
+                disabled={busy[h]}
+                className="bd rounded-md border px-2 py-0.5 text-[11px] hover:border-sky-500 disabled:opacity-50"
+              >
+                {busy[h] ? '…' : 'Lookup'}
+              </button>
+            </div>
+          </div>
+        )
+      })}
+    </div>
   )
 }

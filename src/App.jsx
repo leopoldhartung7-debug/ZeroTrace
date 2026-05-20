@@ -5,6 +5,7 @@ import { StoreProvider, useStore } from './store.jsx'
 import { AutoI18n } from './i18n.js'
 import { ScanWebhookNotifier, WeeklyReportNotifier } from './lib/webhook.js'
 import { KeyExpiryWatcher } from './lib/expiry.js'
+import { DigestNotifier } from './lib/digest.js'
 import { ToastProvider } from './components/ui.jsx'
 import CommandPalette from './components/CommandPalette.jsx'
 import Sidebar from './components/Sidebar.jsx'
@@ -37,6 +38,8 @@ import AdminBlacklists from './pages/AdminBlacklists.jsx'
 import AdminWebhooks from './pages/AdminWebhooks.jsx'
 import AdminAnalytics from './pages/AdminAnalytics.jsx'
 import AdminAnnouncement from './pages/AdminAnnouncement.jsx'
+import AdminMaintenance from './pages/AdminMaintenance.jsx'
+import MaintenanceScreen from './pages/MaintenanceScreen.jsx'
 import { AnnouncementBanner, ImpersonationBanner } from './components/Banners.jsx'
 
 function AdminRoute({ children }) {
@@ -55,6 +58,9 @@ function DashboardLayout() {
   }, [loc.pathname])
 
   if (!state.auth) return <Navigate to="/login" replace />
+  if (state.maintenance?.enabled && state.role !== 'admin') {
+    return <MaintenanceScreen />
+  }
   return (
     <div className="app-bg flex h-screen overflow-hidden">
       {/* Desktop / tablet sidebar */}
@@ -106,6 +112,7 @@ export default function App() {
         <ScanWebhookNotifier />
         <KeyExpiryWatcher />
         <WeeklyReportNotifier />
+        <DigestNotifier />
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
@@ -163,6 +170,7 @@ export default function App() {
             <Route path="/admin/webhooks" element={<AdminRoute><AdminWebhooks /></AdminRoute>} />
             <Route path="/admin/analytics" element={<AdminRoute><AdminAnalytics /></AdminRoute>} />
             <Route path="/admin/announcement" element={<AdminRoute><AdminAnnouncement /></AdminRoute>} />
+            <Route path="/admin/maintenance" element={<AdminRoute><AdminMaintenance /></AdminRoute>} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
