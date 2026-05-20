@@ -66,19 +66,10 @@ export default function Sidebar() {
       label: t('cat.support'),
       items: [{ to: '/support', label: t('nav.support'), icon: LifeBuoy }],
     },
-    {
-      label: t('cat.preferences'),
-      items: [
-        { to: '/settings?tab=security', label: t('nav.security'), icon: ShieldCheck },
-        { to: '/settings?tab=weekly', label: t('nav.weeklyReport'), icon: Mail },
-        { to: '/settings?tab=games', label: t('nav.gameProfiles'), icon: Wrench },
-      ],
-    },
     ...(isAdmin
       ? [
           {
             label: t('cat.admin'),
-            adminBadge: true,
             items: [
               { to: '/keys', label: t('nav.keys'), icon: KeyRound },
             ],
