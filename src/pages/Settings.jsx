@@ -1,4 +1,5 @@
-import { useRef, useState } from 'react'
+import { useRef, useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import {
   Settings as Cog, Sun, Moon, Download, Upload, Trash2, RotateCcw,
   SlidersHorizontal, Wand2, ShieldAlert, Gamepad2, CalendarCheck, ShieldCheck, KeyRound,
@@ -357,10 +358,25 @@ function SecuritySettingsTab() {
   )
 }
 
+const TAB_FROM_QUERY = {
+  general: 'General',
+  risk: 'Risk Score',
+  games: 'Game Profiles',
+  weekly: 'Weekly Report',
+  security: 'Security',
+  designer: 'Tool Designer',
+}
+
 export default function SettingsPage() {
-  const [tab, setTab] = useState('General')
+  const [params] = useSearchParams()
+  const initial = TAB_FROM_QUERY[params.get('tab')] || 'General'
+  const [tab, setTab] = useState(initial)
   const { state } = useStore()
   const isAdmin = state.role === 'admin'
+  useEffect(() => {
+    const t = TAB_FROM_QUERY[params.get('tab')]
+    if (t) setTab(t)
+  }, [params])
   return (
     <div>
       <PageHeader icon={Cog} kicker="Preferences & data" title="Settings" subtitle="Configure the dashboard, manage data, and design the scanner GUI." />

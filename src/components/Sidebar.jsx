@@ -6,10 +6,19 @@ import {
   LifeBuoy, BookOpen, Settings, Wifi, Bell, Globe, Moon, Sun,
   ChevronsUpDown, Trash2, Check, Command, Trophy, ShoppingCart,
   Download, Scale, ChevronDown, ChevronRight, LogOut, KeyRound, GitCompareArrows,
+  ShieldCheck, Mail,
 } from 'lucide-react'
 import { useStore, useT } from '../store.jsx'
 
-function SectionLabel({ children }) {
+function SectionLabel({ children, admin }) {
+  if (admin) {
+    return (
+      <div className="mb-2 mt-5 flex items-center gap-2 px-3">
+        <ShieldCheck size={12} className="text-sky-400" />
+        <p className="caps-label text-sky-400">{children}</p>
+      </div>
+    )
+  }
   return <p className="caps-label mb-2 mt-5 px-3">{children}</p>
 }
 
@@ -43,6 +52,7 @@ export default function Sidebar() {
   })
   const unread = visibleNotifications.filter((n) => !n.read).length
 
+  const isAdmin = state.role === 'admin'
   const groups = [
     {
       label: t('cat.services'),
@@ -52,11 +62,8 @@ export default function Sidebar() {
         { to: '/strings', label: t('nav.strings'), icon: FileText },
         { to: '/database', label: t('nav.database'), icon: Database },
         { to: '/tools', label: t('nav.tools'), icon: Wrench },
-        { to: '/scoreboard', label: 'Scoreboard', icon: Trophy },
-        { to: '/compare', label: 'Compare', icon: GitCompareArrows },
-        ...(state.role === 'admin'
-          ? [{ to: '/keys', label: t('nav.keys'), icon: KeyRound }]
-          : []),
+        { to: '/scoreboard', label: t('nav.scoreboard'), icon: Trophy },
+        { to: '/compare', label: t('nav.compare'), icon: GitCompareArrows },
       ],
     },
     {
@@ -67,6 +74,20 @@ export default function Sidebar() {
       label: t('cat.support'),
       items: [{ to: '/support', label: t('nav.support'), icon: LifeBuoy }],
     },
+    ...(isAdmin
+      ? [
+          {
+            label: t('cat.admin'),
+            adminBadge: true,
+            items: [
+              { to: '/keys', label: t('nav.keys'), icon: KeyRound },
+              { to: '/settings?tab=security', label: t('nav.security'), icon: ShieldCheck },
+              { to: '/settings?tab=weekly', label: t('nav.weeklyReport'), icon: Mail },
+              { to: '/settings?tab=games', label: t('nav.gameProfiles'), icon: Wrench },
+            ],
+          },
+        ]
+      : []),
     {
       label: t('cat.others'),
       items: [
@@ -97,8 +118,8 @@ export default function Sidebar() {
 
       <nav className="flex-1 overflow-y-auto px-3 pb-2">
         {groups.map((g) => (
-          <div key={g.label}>
-            <SectionLabel>{g.label}</SectionLabel>
+          <div key={g.label} className={g.adminBadge ? 'mt-2 rounded-xl border border-sky-500/20 bg-sky-500/[0.04] p-2' : ''}>
+            <SectionLabel admin={g.adminBadge}>{g.label}</SectionLabel>
             {g.items.map((item) => {
               const { to, label, icon: Icon, children } = item
               if (children) {
