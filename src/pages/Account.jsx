@@ -167,7 +167,7 @@ export default function Account() {
       <PageHeader icon={UserCog} kicker="Manage your account settings and preferences" title="Account Settings" />
 
       <div className="grid gap-6 lg:grid-cols-[230px_1fr]">
-        <Card className="h-fit p-2">
+        <Card className="h-fit min-w-0 p-2">
           {TABS.map((t) => (
             <button
               key={t.id}
@@ -181,7 +181,7 @@ export default function Account() {
           ))}
         </Card>
 
-        <Card className="p-6 md:p-8">
+        <Card className="min-w-0 overflow-hidden p-4 sm:p-6 md:p-8">
           {tab === 'general' && (
             <div className="space-y-5">
               <div>
@@ -464,9 +464,9 @@ export default function Account() {
               <div className="tile flex items-center gap-3 rounded-xl border px-4 py-3">
                 <Lock size={16} className="muted" /><span className="txt text-sm">Keys are encrypted.</span>
               </div>
-              <div className="tile rounded-xl border p-5">
-                <div className="flex items-center gap-3">
-                  <Zap size={18} className="text-sky-500" />
+              <div className="tile overflow-hidden rounded-xl border p-4 sm:p-5">
+                <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                  <Zap size={18} className="shrink-0 text-sky-500" />
                   <h4 className="txt text-lg font-bold">Discord Webhook</h4>
                   {state.integrations.discordWebhook && (
                     <span className="flex items-center gap-1 rounded-md border border-green-600/40 bg-green-600/15 px-2 py-0.5 text-[11px] font-bold text-green-500"><Check size={11} /> CONNECTED</span>
@@ -474,12 +474,12 @@ export default function Account() {
                 </div>
                 <p className="muted mt-1 text-sm">Discord notifications</p>
                 <Field label="Webhook URL">
-                  <div className="flex gap-2">
-                    <div className="relative flex-1">
-                      <input type={showHook ? 'text' : 'password'} value={hook} onChange={(e) => setHook(e.target.value)} placeholder="https://discord.com/api/webhooks/..." className={inputCls} />
+                  <div className="flex flex-col gap-2 sm:flex-row">
+                    <div className="relative min-w-0 flex-1">
+                      <input type={showHook ? 'text' : 'password'} value={hook} onChange={(e) => setHook(e.target.value)} placeholder="https://discord.com/api/webhooks/..." className={`${inputCls} pr-10`} />
                       <button onClick={() => setShowHook((s) => !s)} className="muted hover:txt absolute right-3 top-1/2 -translate-y-1/2">{showHook ? <EyeOff size={16} /> : <Eye size={16} />}</button>
                     </div>
-                    <button onClick={() => { dispatch({ type: 'set-integration', key: 'discordWebhook', value: hook.trim() }); toast({ type: 'success', title: 'Webhook saved' }) }} className="rounded-lg bg-sky-600 px-4 text-sm font-semibold text-white hover:bg-sky-500">Save</button>
+                    <button onClick={() => { dispatch({ type: 'set-integration', key: 'discordWebhook', value: hook.trim() }); toast({ type: 'success', title: 'Webhook saved' }) }} className="shrink-0 rounded-lg bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-sky-500">Save</button>
                   </div>
                 </Field>
                 {state.integrations.discordWebhook && (
@@ -527,9 +527,9 @@ export default function Account() {
 
               <DigestSubscriptionTile state={state} dispatch={dispatch} toast={toast} />
 
-              <div className="tile rounded-xl border p-5">
-                <div className="flex items-center gap-3">
-                  <Shield size={18} className="text-sky-500" />
+              <div className="tile overflow-hidden rounded-xl border p-4 sm:p-5">
+                <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                  <Shield size={18} className="shrink-0 text-sky-500" />
                   <h4 className="txt text-lg font-bold">VirusTotal API</h4>
                   {state.integrations.virusTotalKey && (
                     <span className="flex items-center gap-1 rounded-md border border-green-600/40 bg-green-600/15 px-2 py-0.5 text-[11px] font-bold text-green-500"><Check size={11} /> CONNECTED</span>
@@ -537,19 +537,19 @@ export default function Account() {
                 </div>
                 <p className="muted mt-1 text-sm">VirusTotal intelligence</p>
                 <Field label="API Key">
-                  <div className="flex gap-2">
-                    <div className="relative flex-1">
-                      <input type={showVt ? 'text' : 'password'} value={vt} onChange={(e) => setVt(e.target.value)} placeholder="Enter VirusTotal API key" className={inputCls} />
+                  <div className="flex flex-col gap-2 sm:flex-row">
+                    <div className="relative min-w-0 flex-1">
+                      <input type={showVt ? 'text' : 'password'} value={vt} onChange={(e) => setVt(e.target.value)} placeholder="Enter VirusTotal API key" className={`${inputCls} pr-10`} />
                       <button onClick={() => setShowVt((s) => !s)} className="muted hover:txt absolute right-3 top-1/2 -translate-y-1/2">{showVt ? <EyeOff size={16} /> : <Eye size={16} />}</button>
                     </div>
-                    <button onClick={() => { dispatch({ type: 'set-integration', key: 'virusTotalKey', value: vt.trim() }); toast({ type: 'success', title: 'API key saved' }) }} className="rounded-lg bg-sky-600 px-4 text-sm font-semibold text-white hover:bg-sky-500">Save</button>
+                    <button onClick={() => { dispatch({ type: 'set-integration', key: 'virusTotalKey', value: vt.trim() }); toast({ type: 'success', title: 'API key saved' }) }} className="shrink-0 rounded-lg bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-sky-500">Save</button>
                   </div>
                 </Field>
               </div>
               {state.role === 'admin' && (
-              <div className="tile rounded-xl border p-5">
-                <div className="flex items-center gap-3">
-                  <Zap size={18} className="text-sky-500" />
+              <div className="tile overflow-hidden rounded-xl border p-4 sm:p-5">
+                <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                  <Zap size={18} className="shrink-0 text-sky-500" />
                   <h4 className="txt text-lg font-bold">Email (EmailJS)</h4>
                   {state.integrations.emailJsServiceId && state.integrations.emailJsTemplateId && state.integrations.emailJsPublicKey && (
                     <span className="flex items-center gap-1 rounded-md border border-green-600/40 bg-green-600/15 px-2 py-0.5 text-[11px] font-bold text-green-500"><Check size={11} /> CONNECTED</span>
@@ -557,21 +557,21 @@ export default function Account() {
                 </div>
                 <p className="muted mt-1 text-sm">Sends verification, welcome and expiry emails in the ZeroTrace design. Set up a free template at emailjs.com — its content can be just <code className="txt">{'{{{message_html}}}'}</code> (triple braces so HTML renders); subject uses <code className="txt">{'{{subject}}'}</code>; the recipient field uses <code className="txt">{'{{to_email}}'}</code>.</p>
                 <Field label="Service ID">
-                  <div className="flex gap-2">
-                    <input value={ejsSvc} onChange={(e) => setEjsSvc(e.target.value)} placeholder="service_xxxxxxx" className={inputCls} />
-                    <button onClick={() => { dispatch({ type: 'set-integration', key: 'emailJsServiceId', value: ejsSvc.trim() }); toast({ type: 'success', title: 'Saved' }) }} className="rounded-lg bg-sky-600 px-4 text-sm font-semibold text-white hover:bg-sky-500">Save</button>
+                  <div className="flex flex-col gap-2 sm:flex-row">
+                    <input value={ejsSvc} onChange={(e) => setEjsSvc(e.target.value)} placeholder="service_xxxxxxx" className={`${inputCls} min-w-0 flex-1`} />
+                    <button onClick={() => { dispatch({ type: 'set-integration', key: 'emailJsServiceId', value: ejsSvc.trim() }); toast({ type: 'success', title: 'Saved' }) }} className="shrink-0 rounded-lg bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-sky-500">Save</button>
                   </div>
                 </Field>
                 <Field label="Template ID">
-                  <div className="flex gap-2">
-                    <input value={ejsTpl} onChange={(e) => setEjsTpl(e.target.value)} placeholder="template_xxxxxxx" className={inputCls} />
-                    <button onClick={() => { dispatch({ type: 'set-integration', key: 'emailJsTemplateId', value: ejsTpl.trim() }); toast({ type: 'success', title: 'Saved' }) }} className="rounded-lg bg-sky-600 px-4 text-sm font-semibold text-white hover:bg-sky-500">Save</button>
+                  <div className="flex flex-col gap-2 sm:flex-row">
+                    <input value={ejsTpl} onChange={(e) => setEjsTpl(e.target.value)} placeholder="template_xxxxxxx" className={`${inputCls} min-w-0 flex-1`} />
+                    <button onClick={() => { dispatch({ type: 'set-integration', key: 'emailJsTemplateId', value: ejsTpl.trim() }); toast({ type: 'success', title: 'Saved' }) }} className="shrink-0 rounded-lg bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-sky-500">Save</button>
                   </div>
                 </Field>
                 <Field label="Public Key">
-                  <div className="flex gap-2">
-                    <input value={ejsPub} onChange={(e) => setEjsPub(e.target.value)} placeholder="EmailJS public key" className={inputCls} />
-                    <button onClick={() => { dispatch({ type: 'set-integration', key: 'emailJsPublicKey', value: ejsPub.trim() }); toast({ type: 'success', title: 'Saved' }) }} className="rounded-lg bg-sky-600 px-4 text-sm font-semibold text-white hover:bg-sky-500">Save</button>
+                  <div className="flex flex-col gap-2 sm:flex-row">
+                    <input value={ejsPub} onChange={(e) => setEjsPub(e.target.value)} placeholder="EmailJS public key" className={`${inputCls} min-w-0 flex-1`} />
+                    <button onClick={() => { dispatch({ type: 'set-integration', key: 'emailJsPublicKey', value: ejsPub.trim() }); toast({ type: 'success', title: 'Saved' }) }} className="shrink-0 rounded-lg bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-sky-500">Save</button>
                   </div>
                 </Field>
               </div>
@@ -791,9 +791,9 @@ function SlackWebhooksTile({ state, dispatch, toast, inputCls }) {
   const [hook, setHook] = useState(state.integrations?.slackWebhook || '')
   if (!isAdmin) return null
   return (
-    <div className="tile rounded-xl border p-5">
-      <div className="flex items-center gap-3">
-        <Zap size={18} className="text-sky-500" />
+    <div className="tile overflow-hidden rounded-xl border p-4 sm:p-5">
+      <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+        <Zap size={18} className="shrink-0 text-sky-500" />
         <h4 className="txt text-lg font-bold">Slack Webhook</h4>
         {state.integrations?.slackWebhook && (
           <span className="flex items-center gap-1 rounded-md border border-green-600/40 bg-green-600/15 px-2 py-0.5 text-[11px] font-bold text-green-500">
@@ -805,19 +805,19 @@ function SlackWebhooksTile({ state, dispatch, toast, inputCls }) {
         Send scan summaries to Slack alongside Discord. Use an Incoming Webhook URL from your Slack workspace.
       </p>
       <Field label="Slack Incoming Webhook URL">
-        <div className="flex gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row">
           <input
             value={hook}
             onChange={(e) => setHook(e.target.value)}
             placeholder="https://hooks.slack.com/services/T…/B…/…"
-            className={inputCls}
+            className={`${inputCls} min-w-0 flex-1`}
           />
           <button
             onClick={() => {
               dispatch({ type: 'set-slack-webhook', value: hook.trim() })
               toast({ type: 'success', title: 'Slack webhook saved' })
             }}
-            className="rounded-lg bg-sky-600 px-4 text-sm font-semibold text-white hover:bg-sky-500"
+            className="shrink-0 rounded-lg bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-sky-500"
           >
             Save
           </button>
@@ -859,7 +859,7 @@ function DigestSubscriptionTile({ state, dispatch, toast }) {
     toast({ type: 'success', title: v === 'off' ? 'Digest disabled' : `Digest set to ${v}` })
   }
   return (
-    <div className="tile rounded-xl border p-5">
+    <div className="tile overflow-hidden rounded-xl border p-4 sm:p-5">
       <h4 className="txt text-lg font-bold">Email Digest</h4>
       <p className="muted mt-1 text-sm">
         Get a personal email summary of your scan activity. Requires EmailJS to be configured by an admin.
