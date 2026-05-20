@@ -44,8 +44,9 @@ export function buildScanEmbed(meta, report, custom = {}) {
   }
 }
 
-export async function sendScanSummary(webhook, meta, report, custom = {}) {
+export async function sendScanSummary(webhook, meta, report, custom = {}, dispatch = null) {
   if (!webhook) return { ok: false, skipped: true }
+  const t0 = performance.now()
   try {
     const resp = await fetch(webhook, {
       method: 'POST',
@@ -55,9 +56,30 @@ export async function sendScanSummary(webhook, meta, report, custom = {}) {
         embeds: [buildScanEmbed(meta, report, custom)],
       }),
     })
-    return { ok: resp.ok || resp.status === 204, status: resp.status }
+    const latencyMs = Math.round(performance.now() - t0)
+    const ok = resp.ok || resp.status === 204
+    if (dispatch) {
+      dispatch({
+        type: 'webhook-health-record',
+        url: webhook,
+        success: ok,
+        latencyMs,
+        error: ok ? '' : `HTTP ${resp.status}`,
+      })
+    }
+    return { ok, status: resp.status, latencyMs }
   } catch (e) {
-    return { ok: false, error: e.message }
+    const latencyMs = Math.round(performance.now() - t0)
+    if (dispatch) {
+      dispatch({
+        type: 'webhook-health-record',
+        url: webhook,
+        success: false,
+        latencyMs,
+        error: e.message,
+      })
+    }
+    return { ok: false, error: e.message, latencyMs }
   }
 }
 
@@ -104,8 +126,8 @@ export function ScanWebhookNotifier() {
         .filter((w) => w.enabled !== false && w.url !== target)
         .map((w) => w.url)
       const cfg = state.integrations?.webhookCustom || {}
-      extras.forEach((u) => sendScanSummary(u, meta, report, cfg))
-      sendScanSummary(target, meta, report, cfg).then((r) => {
+      extras.forEach((u) => sendScanSummary(u, meta, report, cfg, dispatch))
+      sendScanSummary(target, meta, report, cfg, dispatch).then((r) => {
         if (r.ok) toast({ type: 'success', title: 'Scan summary sent to webhook', body: p.pin })
         else if (!r.skipped)
           toast({ type: 'error', title: 'Webhook failed', body: r.error || `HTTP ${r.status}` })

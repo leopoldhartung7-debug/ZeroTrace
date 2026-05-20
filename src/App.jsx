@@ -32,6 +32,12 @@ import UserDetails from './pages/UserDetails.jsx'
 import Scoreboard from './pages/Scoreboard.jsx'
 import PlayerProfile from './pages/PlayerProfile.jsx'
 import Compare from './pages/Compare.jsx'
+import AdminAuditLog from './pages/AdminAuditLog.jsx'
+import AdminBlacklists from './pages/AdminBlacklists.jsx'
+import AdminWebhooks from './pages/AdminWebhooks.jsx'
+import AdminAnalytics from './pages/AdminAnalytics.jsx'
+import AdminAnnouncement from './pages/AdminAnnouncement.jsx'
+import { AnnouncementBanner, ImpersonationBanner } from './components/Banners.jsx'
 
 function AdminRoute({ children }) {
   const { state } = useStore()
@@ -80,6 +86,8 @@ function DashboardLayout() {
         </div>
 
         <main id="app-main" className="flex-1 overflow-y-auto overflow-x-hidden">
+          <ImpersonationBanner />
+          <AnnouncementBanner />
           <div className="mx-auto w-full max-w-6xl min-w-0 px-4 py-6 sm:px-6 md:px-10 md:py-10">
             <Outlet />
           </div>
@@ -150,6 +158,11 @@ export default function App() {
                 </AdminRoute>
               }
             />
+            <Route path="/admin/audit" element={<AdminRoute><AdminAuditLog /></AdminRoute>} />
+            <Route path="/admin/blacklists" element={<AdminRoute><AdminBlacklists /></AdminRoute>} />
+            <Route path="/admin/webhooks" element={<AdminRoute><AdminWebhooks /></AdminRoute>} />
+            <Route path="/admin/analytics" element={<AdminRoute><AdminAnalytics /></AdminRoute>} />
+            <Route path="/admin/announcement" element={<AdminRoute><AdminAnnouncement /></AdminRoute>} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

@@ -267,6 +267,10 @@ function seed() {
     security: { twoFA: false, passkeys: [], lockout: { maxAttempts: 5, lockMinutes: 15 }, attempts: {} },
     session: null,
     otherSessions: [],
+    announcement: { enabled: false, text: '', tone: 'info', dismissable: true, updatedAt: 0 },
+    blacklists: { hwids: [], discordIds: [], emailDomains: [] },
+    adminAuditLog: [],
+    webhookHealth: {},
   }
 }
 
@@ -994,6 +998,145 @@ function reducer(state, action) {
     case 'clear-notifications':
       return { ...state, notifications: [] }
 
+    case 'set-announcement':
+      return {
+        ...state,
+        announcement: { ...(state.announcement || {}), ...action.value, updatedAt: Date.now() },
+      }
+
+    case 'add-blacklist': {
+      const list = action.list
+      const cur = (state.blacklists || {})[list] || []
+      if (cur.find((e) => e.value === action.value)) return state
+      return {
+        ...state,
+        blacklists: {
+          ...(state.blacklists || {}),
+          [list]: [{ value: action.value, reason: action.reason || '', addedAt: Date.now() }, ...cur],
+        },
+      }
+    }
+
+    case 'remove-blacklist': {
+      const list = action.list
+      const cur = (state.blacklists || {})[list] || []
+      return {
+        ...state,
+        blacklists: {
+          ...(state.blacklists || {}),
+          [list]: cur.filter((e) => e.value !== action.value),
+        },
+      }
+    }
+
+    case 'clear-audit-log':
+      return { ...state, adminAuditLog: [] }
+
+    case 'add-audit-log': {
+      const entry = {
+        id: 'a' + Date.now() + Math.random().toString(16).slice(2, 6),
+        time: Date.now(),
+        adminId: action.adminId || 'admin',
+        adminName: action.adminName || 'Admin',
+        action: action.action,
+        target: action.target || '',
+        detail: action.detail || '',
+      }
+      return {
+        ...state,
+        adminAuditLog: [entry, ...(state.adminAuditLog || [])].slice(0, 1000),
+      }
+    }
+
+    case 'webhook-health-record': {
+      const cur = (state.webhookHealth || {})[action.url] || { ok: 0, fail: 0, lastError: '', lastTime: 0, autoDisabled: false }
+      const next = {
+        ...cur,
+        lastTime: Date.now(),
+        lastLatencyMs: action.latencyMs || 0,
+        lastSuccess: !!action.success,
+        ok: cur.ok + (action.success ? 1 : 0),
+        fail: cur.fail + (action.success ? 0 : 1),
+        lastError: action.success ? '' : (action.error || cur.lastError || ''),
+      }
+      // Auto-disable after 5 consecutive failures
+      if (!action.success && cur.fail >= 4) next.autoDisabled = true
+      if (action.success) next.autoDisabled = false
+      return {
+        ...state,
+        webhookHealth: { ...(state.webhookHealth || {}), [action.url]: next },
+      }
+    }
+
+    case 'suspend-user':
+      return {
+        ...state,
+        users: (state.users || []).map((u) =>
+          u.id === action.id ? { ...u, suspended: !u.suspended } : u,
+        ),
+      }
+
+    case 'set-user-force-flag':
+      return {
+        ...state,
+        users: (state.users || []).map((u) =>
+          u.id === action.id ? { ...u, [action.flag]: !!action.value } : u,
+        ),
+      }
+
+    case 'clear-user-force-flag':
+      return {
+        ...state,
+        users: (state.users || []).map((u) =>
+          u.id === action.id ? { ...u, [action.flag]: false } : u,
+        ),
+      }
+
+    case 'impersonate-user':
+      return {
+        ...state,
+        role: 'analyst',
+        session: {
+          ...(state.session || {}),
+          userId: action.userId,
+          impersonatedFrom: state.role === 'admin' ? 'admin' : (state.session?.userId || null),
+          impersonatedFromRole: state.role,
+          createdAt: Date.now(),
+          id: 's' + Date.now() + Math.random().toString(16).slice(2, 6),
+        },
+      }
+
+    case 'stop-impersonating':
+      return {
+        ...state,
+        role: state.session?.impersonatedFromRole || 'admin',
+        session: state.session
+          ? {
+              ...state.session,
+              userId: null,
+              impersonatedFrom: null,
+              impersonatedFromRole: null,
+            }
+          : null,
+      }
+
+    case 'bulk-create-keys': {
+      const newKeys = (action.keys || []).map((k) => ({
+        id: 'k' + Date.now() + Math.random().toString(16).slice(2, 8),
+        key: k.key,
+        label: k.label || '',
+        plan: k.plan || 'Personal',
+        durationDays: k.durationDays || 30,
+        createdAt: Date.now(),
+        expiresAt: k.durationDays > 0 ? Date.now() + k.durationDays * 86400000 : null,
+        status: 'Active',
+      }))
+      return {
+        ...state,
+        licenseKeys: [...newKeys, ...(state.licenseKeys || [])],
+      }
+    }
+
     case 'import-state':
       return { ...seed(), ...action.state }
 
@@ -1104,6 +1247,9 @@ const DICT = {
     'nav.scoreboard': 'Scoreboard', 'nav.compare': 'Compare',
     'nav.logins': 'Logins', 'nav.security': 'Security', 'nav.weeklyReport': 'Weekly Report',
     'nav.gameProfiles': 'Game Profiles',
+    'nav.analytics': 'System Analytics', 'nav.blacklists': 'Blacklists',
+    'nav.webhookHealth': 'Webhook Health', 'nav.announcement': 'Announcement',
+    'nav.audit': 'Audit Log',
     'cat.services': 'Services', 'cat.activity': 'Activity', 'cat.support': 'Support', 'cat.others': 'Others',
     'cat.admin': 'Admin Access', 'cat.preferences': 'My Preferences',
     'dash.kicker': 'View statistics, events, and announcements on the ZeroTrace.',
@@ -1121,6 +1267,9 @@ const DICT = {
     'nav.scoreboard': 'Bestenliste', 'nav.compare': 'Vergleich',
     'nav.logins': 'Logins', 'nav.security': 'Sicherheit', 'nav.weeklyReport': 'Wochenbericht',
     'nav.gameProfiles': 'Spielprofile',
+    'nav.analytics': 'System-Analytics', 'nav.blacklists': 'Sperrlisten',
+    'nav.webhookHealth': 'Webhook-Status', 'nav.announcement': 'Ankündigung',
+    'nav.audit': 'Audit-Log',
     'cat.services': 'Dienste', 'cat.activity': 'Aktivität', 'cat.support': 'Hilfe', 'cat.others': 'Sonstiges',
     'cat.admin': 'Admin-Bereich', 'cat.preferences': 'Meine Einstellungen',
     'dash.kicker': 'Statistiken, Ereignisse und Ankündigungen im Überblick.',
@@ -1130,6 +1279,53 @@ const DICT = {
     'strings.kicker': 'Dateien hochladen und auf Strings analysieren.',
     'strings.title': 'String-Analyse',
   },
+}
+
+export function isBlocked(state, { hwid, discordId, email } = {}) {
+  const bl = state.blacklists || { hwids: [], discordIds: [], emailDomains: [] }
+  if (hwid && bl.hwids?.some((e) => e.value === hwid)) return { kind: 'hwid', reason: bl.hwids.find((e) => e.value === hwid).reason }
+  if (discordId && bl.discordIds?.some((e) => e.value === discordId)) return { kind: 'discord', reason: bl.discordIds.find((e) => e.value === discordId).reason }
+  if (email) {
+    const domain = String(email).toLowerCase().split('@')[1] || ''
+    const hit = bl.emailDomains?.find((e) => {
+      const v = String(e.value).toLowerCase()
+      if (v.startsWith('*.')) return domain.endsWith(v.slice(2))
+      return domain === v
+    })
+    if (hit) return { kind: 'email', reason: hit.reason }
+  }
+  return null
+}
+
+export function logAdminAction(dispatch, state, action, target = '', detail = '') {
+  dispatch({
+    type: 'add-audit-log',
+    adminId: state.session?.userId || 'admin',
+    adminName: state.role === 'admin' ? 'Admin' : (state.session?.userId || 'system'),
+    action,
+    target,
+    detail,
+  })
+}
+
+export function exportUserData(state, userId) {
+  const user = (state.users || []).find((u) => u.id === userId)
+  if (!user) return null
+  const key = (state.licenseKeys || []).find((k) => k.key === user.key) || null
+  const pins = (state.pins || []).filter((p) => p.ownerId === userId)
+  const events = (state.events || []).filter((e) => e.ownerId === userId)
+  const notifications = (state.notifications || []).filter((n) => n.ownerId === userId)
+  const savedStrings = (state.savedStrings || []).filter((s) => s.ownerId === userId)
+  return {
+    exportedAt: new Date().toISOString(),
+    schemaVersion: 1,
+    user,
+    licenseKey: key,
+    pins,
+    events,
+    notifications,
+    savedStrings,
+  }
 }
 
 export function useT() {

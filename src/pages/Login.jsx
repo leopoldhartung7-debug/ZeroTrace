@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { LogIn, Eye, EyeOff, Fingerprint, KeyRound, UserPlus } from 'lucide-react'
 import Logo from '../components/Logo.jsx'
-import { useStore } from '../store.jsx'
+import { useStore, isBlocked } from '../store.jsx'
 import { useToast, Modal } from '../components/ui.jsx'
 import { verifyHtml, welcomeHtml } from '../lib/emailTemplates.js'
 import { verifyTotp } from '../lib/totp.js'
@@ -206,6 +206,15 @@ export default function Login() {
       toast({ type: 'error', title: 'Wrong password', body: 'The password does not match this account.' })
       return
     }
+    if (user.suspended) {
+      wrong()
+      toast({
+        type: 'error',
+        title: 'Account suspended',
+        body: 'Your account has been suspended by an administrator. Contact support.',
+      })
+      return
+    }
     ok()
     const key = (state.licenseKeys || []).find((k) => k.key === user.key)
     const expired = !key || key.status === 'Revoked' ||
@@ -223,6 +232,24 @@ export default function Login() {
     }
     dispatch({ type: 'login', role: 'analyst', userId: user.id })
     toast({ type: 'success', title: 'Welcome back', body: `Signed in as ${user.username}` })
+    if (user.force2FASetup) {
+      toast({
+        type: 'info',
+        title: '2FA setup required',
+        body: 'Your administrator requires you to enable 2FA. Redirecting to settings…',
+      })
+      nav('/settings?tab=security')
+      return
+    }
+    if (user.forceResetPassword) {
+      toast({
+        type: 'info',
+        title: 'Password change required',
+        body: 'Please update your password in the account settings.',
+      })
+      nav('/account')
+      return
+    }
     nav('/dashboard')
   }
 
@@ -241,6 +268,14 @@ export default function Login() {
     if (!/^\d{17,20}$/.test(discordId))
       return toast({ type: 'error', title: 'Invalid Discord ID', body: '17–20 digits.' })
     if (!keyCode) return toast({ type: 'error', title: 'License key required' })
+    const blocked = isBlocked(state, { discordId, email })
+    if (blocked) {
+      return toast({
+        type: 'error',
+        title: 'Registration blocked',
+        body: `Blocked by ${blocked.kind} blacklist${blocked.reason ? ` — ${blocked.reason}` : ''}.`,
+      })
+    }
     if ((state.users || []).some(
       (u) => u.email.toLowerCase() === email || u.username.toLowerCase() === username.toLowerCase(),
     )) {

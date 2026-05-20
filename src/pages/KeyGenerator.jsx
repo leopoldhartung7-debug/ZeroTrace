@@ -1,9 +1,14 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { KeyRound, Copy, Trash2, ShieldOff, ShieldCheck, Plus, User as UserIcon, ChevronRight, AtSign, MessageSquare } from 'lucide-react'
+import {
+  KeyRound, Copy, Trash2, ShieldOff, ShieldCheck, Plus, User as UserIcon,
+  ChevronRight, AtSign, MessageSquare, Layers, Pause, Play, UserCog,
+  Lock, KeyRound as KeyIcon, Download,
+} from 'lucide-react'
 import { PageHeader, Card, Field, Input } from '../components/kit.jsx'
 import { Select, Modal, useToast } from '../components/ui.jsx'
-import { useStore, generateLicenseKey } from '../store.jsx'
+import { useStore, generateLicenseKey, logAdminAction, exportUserData } from '../store.jsx'
+import BulkKeyModal from '../components/BulkKeyModal.jsx'
 
 const PLANS = [
   { value: 'Trial', label: 'Trial' },
@@ -31,6 +36,8 @@ export default function KeyGenerator() {
   const [plan, setPlan] = useState('Personal')
   const [duration, setDuration] = useState('30')
   const [deletingUser, setDeletingUser] = useState(null)
+  const [bulkOpen, setBulkOpen] = useState(false)
+  const [confirmAction, setConfirmAction] = useState(null)
 
   const keys = state.licenseKeys || []
 
@@ -43,9 +50,52 @@ export default function KeyGenerator() {
       plan,
       durationDays: Number(duration),
     })
+    logAdminAction(dispatch, state, 'key-created', key, `${plan} / ${duration}d / ${label || 'no label'}`)
     navigator.clipboard?.writeText(key).catch(() => {})
     toast({ type: 'success', title: 'Key created & copied', body: key })
     setLabel('')
+  }
+
+  const suspendUser = (u) => {
+    dispatch({ type: 'suspend-user', id: u.id })
+    logAdminAction(dispatch, state, u.suspended ? 'user-unsuspend' : 'user-suspend', u.username, u.email)
+    toast({
+      type: 'success',
+      title: u.suspended ? 'User unsuspended' : 'User suspended',
+      body: u.username,
+    })
+  }
+
+  const impersonate = (u) => {
+    dispatch({ type: 'impersonate-user', userId: u.id })
+    logAdminAction(dispatch, state, 'impersonate-start', u.username, u.email)
+    toast({ type: 'success', title: 'Now viewing as', body: u.username })
+    nav('/dashboard')
+  }
+
+  const setForceFlag = (u, flag) => {
+    const current = !!u[flag]
+    dispatch({ type: 'set-user-force-flag', id: u.id, flag, value: !current })
+    logAdminAction(dispatch, state, current ? `clear-${flag}` : `set-${flag}`, u.username)
+    toast({
+      type: 'success',
+      title: current ? 'Flag cleared' : 'Flag set',
+      body: `${u.username} · ${flag}`,
+    })
+  }
+
+  const exportUser = (u) => {
+    const data = exportUserData(state, u.id)
+    if (!data) return
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `zerotrace-userdata-${u.username}-${new Date().toISOString().slice(0, 10)}.json`
+    a.click()
+    URL.revokeObjectURL(url)
+    logAdminAction(dispatch, state, 'gdpr-export', u.username, u.email)
+    toast({ type: 'success', title: 'User data exported', body: u.username })
   }
 
   const copyKey = (k) => {
@@ -71,6 +121,14 @@ export default function KeyGenerator() {
         kicker="Admin only"
         title="Key Generator"
         subtitle="Create and manage license keys. Choose a plan and how long the key stays valid."
+        actions={
+          <button
+            onClick={() => setBulkOpen(true)}
+            className="bd txt flex items-center gap-2 rounded-lg border px-4 py-2 text-sm hover:border-sky-500"
+          >
+            <Layers size={14} /> Bulk generate
+          </button>
+        }
       />
 
       <Card className="p-6">
@@ -207,19 +265,64 @@ export default function KeyGenerator() {
               </thead>
               <tbody>
                 {(state.users || []).map((u) => (
-                  <tr key={u.id} className="bd border-b last:border-0">
-                    <td className="txt px-3 py-3 font-medium">{u.username}</td>
+                  <tr key={u.id} className="bd border-b align-top last:border-0">
+                    <td className="txt px-3 py-3 font-medium">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span>{u.username}</span>
+                        {u.suspended && <span className="rounded-md border border-yellow-500/40 bg-yellow-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-yellow-500">suspended</span>}
+                        {u.force2FASetup && <span className="rounded-md border border-sky-500/40 bg-sky-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-sky-400">2FA req</span>}
+                        {u.forceResetPassword && <span className="rounded-md border border-sky-500/40 bg-sky-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-sky-400">PW reset</span>}
+                      </div>
+                    </td>
                     <td className="muted px-3 py-3 break-all text-xs"><span className="inline-flex items-center gap-1.5"><AtSign size={11} />{u.email}</span></td>
                     <td className="muted px-3 py-3 font-mono text-xs"><span className="inline-flex items-center gap-1.5"><MessageSquare size={11} />{u.discordId}</span></td>
                     <td className="muted px-3 py-3 break-all font-mono text-xs">{u.key}</td>
                     <td className="muted px-3 py-3 text-xs">{fmt(u.createdAt)}</td>
-                    <td className="px-3 py-3 text-right">
-                      <button
-                        onClick={() => setDeletingUser(u)}
-                        className="bd inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs text-red-500 hover:border-red-500"
-                      >
-                        <Trash2 size={13} /> Delete
-                      </button>
+                    <td className="px-3 py-3">
+                      <div className="flex flex-wrap justify-end gap-1.5">
+                        <button
+                          onClick={() => suspendUser(u)}
+                          title={u.suspended ? 'Unsuspend' : 'Suspend'}
+                          className="bd inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs hover:border-sky-500"
+                        >
+                          {u.suspended ? <Play size={11} /> : <Pause size={11} />}
+                          <span className="hidden sm:inline">{u.suspended ? 'Unsuspend' : 'Suspend'}</span>
+                        </button>
+                        <button
+                          onClick={() => impersonate(u)}
+                          title="View as this user"
+                          className="bd inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs hover:border-sky-500"
+                        >
+                          <UserCog size={11} /><span className="hidden sm:inline">View as</span>
+                        </button>
+                        <button
+                          onClick={() => setForceFlag(u, 'force2FASetup')}
+                          title="Force 2FA setup on next login"
+                          className="bd inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs hover:border-sky-500"
+                        >
+                          <ShieldCheck size={11} /><span className="hidden md:inline">{u.force2FASetup ? '2FA off' : 'Force 2FA'}</span>
+                        </button>
+                        <button
+                          onClick={() => setForceFlag(u, 'forceResetPassword')}
+                          title="Force password reset on next login"
+                          className="bd inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs hover:border-sky-500"
+                        >
+                          <Lock size={11} /><span className="hidden md:inline">{u.forceResetPassword ? 'PW off' : 'Force PW'}</span>
+                        </button>
+                        <button
+                          onClick={() => exportUser(u)}
+                          title="Export user data (GDPR)"
+                          className="bd inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs hover:border-sky-500"
+                        >
+                          <Download size={11} /><span className="hidden md:inline">Export</span>
+                        </button>
+                        <button
+                          onClick={() => setDeletingUser(u)}
+                          className="bd inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs text-red-500 hover:border-red-500"
+                        >
+                          <Trash2 size={11} /><span className="hidden sm:inline">Delete</span>
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -228,6 +331,8 @@ export default function KeyGenerator() {
           </div>
         )}
       </Card>
+
+      <BulkKeyModal open={bulkOpen} onClose={() => setBulkOpen(false)} />
 
       <Modal
         open={!!deletingUser}
@@ -238,6 +343,7 @@ export default function KeyGenerator() {
             <button
               onClick={() => {
                 dispatch({ type: 'delete-user', id: deletingUser.id })
+                logAdminAction(dispatch, state, 'user-delete', deletingUser.username, deletingUser.email)
                 toast({ type: 'success', title: 'Login deleted', body: deletingUser.username })
                 setDeletingUser(null)
               }}
