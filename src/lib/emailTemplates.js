@@ -68,50 +68,55 @@ function shell({ title, lead, inner, footer }) {
 export function verifyHtml({ username, code }, lang = 'en') {
   const de = lang === 'de'
   return shell({
-    title: de ? 'E-Mail bestätigen' : 'Verify your email',
+    title: de ? 'Nur noch ein Schritt' : 'Just one more step',
     lead: de
-      ? `Hallo ${username}, bitte bestätige deine E-Mail-Adresse, um dein ZeroTrace-Konto zu aktivieren.`
-      : `Hi ${username}, please verify your email address to activate your ZeroTrace account.`,
+      ? `Schön, dass du dabei bist${username ? `, ${username}` : ''}. Bestätige kurz deine E-Mail-Adresse — dann ist dein ZeroTrace-Konto einsatzbereit.`
+      : `Great to have you${username ? `, ${username}` : ''}. Confirm your email below and your ZeroTrace account is ready to go.`,
     inner: `
       <div style="background:${BG};border:1px solid ${BORDER};border-radius:12px;padding:22px;text-align:center">
-        <p style="margin:0;color:${MUTED};font-size:13px">${de ? 'Dein Bestätigungscode:' : 'Your verification code:'}</p>
+        <p style="margin:0;color:${MUTED};font-size:13px">${de ? 'Dein Bestätigungscode' : 'Your verification code'}</p>
         <p style="margin:14px 0 0;font-family:'Courier New',monospace;font-size:34px;font-weight:700;letter-spacing:.5em;color:${ACCENT}">${code}</p>
-        <p style="margin:14px 0 0;color:${MUTED};font-size:12px">${de ? 'Dieser Code läuft in 15 Minuten ab.' : 'This code expires in 15 minutes.'}</p>
+        <p style="margin:14px 0 0;color:${MUTED};font-size:12px">${de ? 'Gültig für 15 Minuten — danach einfach einen neuen anfordern.' : 'Valid for 15 minutes — request a new one anytime.'}</p>
       </div>
       <p style="margin:18px 0 0;color:${MUTED};font-size:13px">
         ${de
-          ? 'Falls du diese Registrierung nicht angefordert hast, ignoriere bitte diese Nachricht.'
-          : 'If you did not request this registration, you can safely ignore this email.'}
+          ? 'Du hast diese Registrierung nicht ausgelöst? Dann kannst du diese E-Mail einfach ignorieren — es passiert nichts weiter.'
+          : "Didn't ask to sign up? You can ignore this email — no further action will be taken on your address."}
       </p>`,
     footer: de
-      ? 'Dies ist eine automatisierte Nachricht von ZeroTrace. Bitte nicht antworten.'
-      : "This is an automated message from ZeroTrace. Please do not reply.",
+      ? 'Automatische Nachricht von ZeroTrace · keine Antwort möglich.'
+      : 'Automated message from ZeroTrace · replies are not monitored.',
   })
 }
 
 export function welcomeHtml({ username }, lang = 'en') {
   const de = lang === 'de'
   return shell({
-    title: de ? `Willkommen, ${username}!` : `Welcome, ${username}!`,
+    title: de ? `Willkommen an Bord, ${username}` : `Welcome aboard, ${username}`,
     lead: de
-      ? 'Vielen Dank, dass du dich für ZeroTrace entschieden hast — wir freuen uns, dich an Bord zu haben.'
-      : 'Thank you for choosing ZeroTrace — we are glad to have you on board.',
+      ? 'Schön, dass du dich für ZeroTrace entschieden hast. Wir freuen uns, dass du dabei bist.'
+      : "Thanks for picking ZeroTrace — we're excited to have you on the team.",
     inner: `
       <div style="background:${BG};border:1px solid ${BORDER};border-radius:12px;padding:22px">
-        <p style="margin:0;color:${TEXT};font-size:15px;line-height:1.6">
+        <p style="margin:0;color:${TEXT};font-size:15px;line-height:1.65">
           ${de
-            ? 'Dein Konto wurde erfolgreich erstellt und mit deinem Lizenz-Key verknüpft. Du kannst dich jetzt im Dashboard anmelden und sofort loslegen — Pins erstellen, Scans auswerten und verdächtige Discord-Server erkennen.'
-            : 'Your account has been created and bound to your license key. You can sign in to the dashboard right away — create pins, review scans and surface suspicious Discord servers.'}
+            ? 'Dein Konto ist eingerichtet und mit deinem Lizenz-Key verknüpft. Du kannst dich direkt im Dashboard anmelden und loslegen — Pins erstellen, Scan-Ergebnisse auswerten, verdächtige Discord-Server entlarven und alle Forensik-Werkzeuge nutzen.'
+            : 'Your account is set up and linked to your license key. Sign in to the dashboard whenever you like and dive straight in — generate pins, work through scan results, expose suspicious Discord servers and use the full forensic toolset.'}
+        </p>
+        <p style="margin:14px 0 0;color:${TEXT};font-size:15px;line-height:1.65">
+          ${de
+            ? 'Ein paar Tipps zum Start: lege deinen ersten Pin an, hinterlege im Webhook deine Discord-Benachrichtigungen und wirf einen Blick in die Dokumentation, wenn du mehr aus ZeroTrace herausholen möchtest.'
+            : 'A couple of quick tips: create your first pin, drop a Discord webhook in to get instant alerts, and skim the documentation when you want to push ZeroTrace further.'}
         </p>
       </div>
       <p style="margin:18px 0 0;color:${MUTED};font-size:13px">
         ${de
-          ? 'Bei Fragen oder Problemen melde dich gerne über die Support-Seite im Dashboard.'
-          : 'Need a hand? Reach out via the Support page inside the dashboard.'}
+          ? 'Brauchst du Hilfe oder hast Feedback? Wir sind über die Support-Seite im Dashboard für dich da.'
+          : 'Questions or feedback? We are one ticket away on the Support page inside the dashboard.'}
       </p>`,
     footer: de
-      ? 'Dies ist eine automatisierte Nachricht von ZeroTrace. Bitte nicht antworten.'
-      : 'This is an automated message from ZeroTrace. Please do not reply.',
+      ? 'Automatische Nachricht von ZeroTrace · keine Antwort möglich.'
+      : 'Automated message from ZeroTrace · replies are not monitored.',
   })
 }
 
@@ -120,14 +125,14 @@ export function expiryHtml({ username, key, expiresAt, expired }, lang = 'en') {
   const when = expiresAt ? new Date(expiresAt).toLocaleString() : '—'
   const title = expired
     ? (de ? 'Dein Lizenz-Key ist abgelaufen' : 'Your license key has expired')
-    : (de ? 'Dein Lizenz-Key läuft bald ab' : 'Your license key expires soon')
+    : (de ? 'Dein Lizenz-Key läuft bald ab' : 'Heads up — your license key expires soon')
   const lead = expired
     ? (de
-        ? `Hallo ${username}, dein ZeroTrace-Lizenz-Key ist abgelaufen.`
-        : `Hi ${username}, your ZeroTrace license key has expired.`)
+        ? `Hallo ${username}, dein ZeroTrace-Lizenz-Key ist soeben abgelaufen. Damit du wieder loslegen kannst, brauchst du nur einen neuen Key von deinem Admin.`
+        : `Hi ${username}, your ZeroTrace license key has just expired. To get back in you only need a fresh key from your admin.`)
     : (de
-        ? `Hallo ${username}, dein ZeroTrace-Lizenz-Key läuft in weniger als 24 Stunden ab.`
-        : `Hi ${username}, your ZeroTrace license key expires in less than 24 hours.`)
+        ? `Hallo ${username}, dein ZeroTrace-Lizenz-Key läuft in weniger als 24 Stunden ab — perfekt, um rechtzeitig einen neuen einzuholen.`
+        : `Hi ${username}, your ZeroTrace license key expires in less than 24 hours — a good moment to line up a renewal.`)
   return shell({
     title,
     lead,
@@ -140,11 +145,15 @@ export function expiryHtml({ username, key, expiresAt, expired }, lang = 'en') {
       </div>
       <p style="margin:18px 0 0;color:${MUTED};font-size:13px">
         ${expired
-          ? (de ? 'Du kannst dich erst wieder anmelden, sobald ein Admin dir einen neuen Key ausstellt.' : 'You will not be able to sign in again until an admin issues a new key.')
-          : (de ? 'Wende dich rechtzeitig an einen Admin, um deinen Key zu erneuern.' : 'Please contact an admin in time to renew your key.')}
+          ? (de
+              ? 'Sobald dein Admin einen neuen Key ausgestellt hat, registrierst du dich einfach erneut — deine bisherigen Daten kannst du wiederverwenden.'
+              : 'As soon as your admin issues a new key you can register again — feel free to reuse your existing details.')
+          : (de
+              ? 'Bitte melde dich rechtzeitig bei deinem Admin, damit der Zugriff nahtlos weiterläuft.'
+              : 'Please reach out to your admin in time so your access keeps running smoothly.')}
       </p>`,
     footer: de
-      ? 'Dies ist eine automatisierte Nachricht von ZeroTrace. Bitte nicht antworten.'
-      : 'This is an automated message from ZeroTrace. Please do not reply.',
+      ? 'Automatische Nachricht von ZeroTrace · keine Antwort möglich.'
+      : 'Automated message from ZeroTrace · replies are not monitored.',
   })
 }
