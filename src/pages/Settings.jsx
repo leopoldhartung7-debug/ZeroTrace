@@ -371,8 +371,6 @@ export default function SettingsPage() {
   const [params] = useSearchParams()
   const initial = TAB_FROM_QUERY[params.get('tab')] || 'General'
   const [tab, setTab] = useState(initial)
-  const { state } = useStore()
-  const isAdmin = state.role === 'admin'
   useEffect(() => {
     const t = TAB_FROM_QUERY[params.get('tab')]
     if (t) setTab(t)
@@ -384,9 +382,9 @@ export default function SettingsPage() {
         tabs={[
           { label: 'General', icon: SlidersHorizontal },
           { label: 'Risk Score', icon: ShieldAlert },
-          ...(isAdmin ? [{ label: 'Game Profiles', icon: Gamepad2 }] : []),
-          ...(isAdmin ? [{ label: 'Weekly Report', icon: CalendarCheck }] : []),
-          ...(isAdmin ? [{ label: 'Security', icon: ShieldCheck }] : []),
+          { label: 'Game Profiles', icon: Gamepad2 },
+          { label: 'Weekly Report', icon: CalendarCheck },
+          { label: 'Security', icon: ShieldCheck },
           { label: 'Tool Designer', icon: Wand2 },
         ]}
         active={tab}
@@ -395,9 +393,9 @@ export default function SettingsPage() {
       <div className="mt-8">
         {tab === 'General' && <General />}
         {tab === 'Risk Score' && <RiskScoreTab />}
-        {tab === 'Game Profiles' && isAdmin && <GameProfilesTab />}
-        {tab === 'Weekly Report' && isAdmin && <WeeklyReportTab />}
-        {tab === 'Security' && isAdmin && <SecuritySettingsTab />}
+        {tab === 'Game Profiles' && <GameProfilesTab />}
+        {tab === 'Weekly Report' && <WeeklyReportTab />}
+        {tab === 'Security' && <SecuritySettingsTab />}
         {tab === 'Tool Designer' && <ToolDesigner embedded />}
       </div>
     </div>

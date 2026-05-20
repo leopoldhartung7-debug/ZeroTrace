@@ -10,15 +10,7 @@ import {
 } from 'lucide-react'
 import { useStore, useT } from '../store.jsx'
 
-function SectionLabel({ children, admin }) {
-  if (admin) {
-    return (
-      <div className="mb-2 mt-5 flex items-center gap-2 px-3">
-        <ShieldCheck size={12} className="text-sky-400" />
-        <p className="caps-label text-sky-400">{children}</p>
-      </div>
-    )
-  }
+function SectionLabel({ children }) {
   return <p className="caps-label mb-2 mt-5 px-3">{children}</p>
 }
 
@@ -74,6 +66,14 @@ export default function Sidebar() {
       label: t('cat.support'),
       items: [{ to: '/support', label: t('nav.support'), icon: LifeBuoy }],
     },
+    {
+      label: t('cat.preferences'),
+      items: [
+        { to: '/settings?tab=security', label: t('nav.security'), icon: ShieldCheck },
+        { to: '/settings?tab=weekly', label: t('nav.weeklyReport'), icon: Mail },
+        { to: '/settings?tab=games', label: t('nav.gameProfiles'), icon: Wrench },
+      ],
+    },
     ...(isAdmin
       ? [
           {
@@ -81,9 +81,6 @@ export default function Sidebar() {
             adminBadge: true,
             items: [
               { to: '/keys', label: t('nav.keys'), icon: KeyRound },
-              { to: '/settings?tab=security', label: t('nav.security'), icon: ShieldCheck },
-              { to: '/settings?tab=weekly', label: t('nav.weeklyReport'), icon: Mail },
-              { to: '/settings?tab=games', label: t('nav.gameProfiles'), icon: Wrench },
             ],
           },
         ]
@@ -118,8 +115,8 @@ export default function Sidebar() {
 
       <nav className="flex-1 overflow-y-auto px-3 pb-2">
         {groups.map((g) => (
-          <div key={g.label} className={g.adminBadge ? 'mt-2 rounded-xl border border-sky-500/20 bg-sky-500/[0.04] p-2' : ''}>
-            <SectionLabel admin={g.adminBadge}>{g.label}</SectionLabel>
+          <div key={g.label}>
+            <SectionLabel>{g.label}</SectionLabel>
             {g.items.map((item) => {
               const { to, label, icon: Icon, children } = item
               if (children) {
