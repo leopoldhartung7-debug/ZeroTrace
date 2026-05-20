@@ -239,8 +239,6 @@ function seed() {
     integrations: {
       discordWebhook: '',
       virusTotalKey: '',
-      discordBotUrl: '',
-      discordBotKey: '',
       emailJsServiceId: '',
       emailJsTemplateId: '',
       emailJsPublicKey: '',

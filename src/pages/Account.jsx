@@ -98,14 +98,11 @@ export default function Account() {
   const [tfaOpen, setTfaOpen] = useState(false)
   const [hook, setHook] = useState(state.integrations?.discordWebhook || '')
   const [vt, setVt] = useState(state.integrations?.virusTotalKey || '')
-  const [botUrl, setBotUrl] = useState(state.integrations?.discordBotUrl || '')
-  const [botKey, setBotKey] = useState(state.integrations?.discordBotKey || '')
   const [ejsSvc, setEjsSvc] = useState(state.integrations?.emailJsServiceId || '')
   const [ejsTpl, setEjsTpl] = useState(state.integrations?.emailJsTemplateId || '')
   const [ejsPub, setEjsPub] = useState(state.integrations?.emailJsPublicKey || '')
   const [showHook, setShowHook] = useState(false)
   const [showVt, setShowVt] = useState(false)
-  const [showBotKey, setShowBotKey] = useState(false)
   const [fmt, setFmt] = useState('json')
   const [sel, setSel] = useState({ profile: true, pins: true, scans: false, activity: false, all: false, security: false })
   const toggleSel = (key) =>
@@ -506,36 +503,7 @@ export default function Account() {
                   </div>
                 </Field>
               </div>
-              {state.role === 'admin' && (<>
-              <div className="tile rounded-xl border p-5">
-                <div className="flex items-center gap-3">
-                  <Zap size={18} className="text-sky-500" />
-                  <h4 className="txt text-lg font-bold">Discord Server Bot</h4>
-                  {state.integrations.discordBotUrl && (
-                    <span className="flex items-center gap-1 rounded-md border border-green-600/40 bg-green-600/15 px-2 py-0.5 text-[11px] font-bold text-green-500"><Check size={11} /> CONNECTED</span>
-                  )}
-                </div>
-                <p className="muted mt-1 text-sm">Live server / role lookup by Discord ID (see bot/README.md)</p>
-                <Field label="Bot API URL">
-                  <div className="flex gap-2">
-                    <input value={botUrl} onChange={(e) => setBotUrl(e.target.value)} placeholder="https://yourhost.example" className={inputCls} />
-                    <button onClick={() => { dispatch({ type: 'set-integration', key: 'discordBotUrl', value: botUrl.trim().replace(/\/$/, '') }); toast({ type: 'success', title: 'Saved' }) }} className="rounded-lg bg-sky-600 px-4 text-sm font-semibold text-white hover:bg-sky-500">Save</button>
-                  </div>
-                </Field>
-                <Field label="API Key">
-                  <div className="flex gap-2">
-                    <div className="relative flex-1">
-                      <input type={showBotKey ? 'text' : 'password'} value={botKey} onChange={(e) => setBotKey(e.target.value)} placeholder="Bot API key" className={inputCls} />
-                      <button onClick={() => setShowBotKey((s) => !s)} className="muted hover:txt absolute right-3 top-1/2 -translate-y-1/2">{showBotKey ? <EyeOff size={16} /> : <Eye size={16} />}</button>
-                    </div>
-                    <button onClick={() => { dispatch({ type: 'set-integration', key: 'discordBotKey', value: botKey.trim() }); toast({ type: 'success', title: 'API key saved' }) }} className="rounded-lg bg-sky-600 px-4 text-sm font-semibold text-white hover:bg-sky-500">Save</button>
-                  </div>
-                </Field>
-                {state.integrations.discordBotUrl && (
-                  <button onClick={() => { dispatch({ type: 'set-integration', key: 'discordBotUrl', value: '' }); dispatch({ type: 'set-integration', key: 'discordBotKey', value: '' }); setBotUrl(''); setBotKey(''); toast({ type: 'success', title: 'Removed' }) }} className="bd txt mt-3 flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm hover:border-red-500"><Trash2 size={14} /> Remove</button>
-                )}
-              </div>
-
+              {state.role === 'admin' && (
               <div className="tile rounded-xl border p-5">
                 <div className="flex items-center gap-3">
                   <Zap size={18} className="text-sky-500" />
@@ -564,7 +532,7 @@ export default function Account() {
                   </div>
                 </Field>
               </div>
-              </>)}
+              )}
             </div>
           )}
 
