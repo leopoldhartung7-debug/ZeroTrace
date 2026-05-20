@@ -16,14 +16,29 @@ const accentMap = {
 
 function StatCard({ icon: Icon, label, value, accent = 'neutral' }) {
   return (
-    <div className="panel rounded-xl border p-5">
-      <div className="flex items-start gap-4">
-        <div className="tile flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border">
-          <Icon size={18} className={accentMap[accent]} />
+    <div className="panel overflow-hidden rounded-xl border p-3 sm:p-4 md:p-5">
+      <div className="flex items-start gap-2 sm:gap-3">
+        <div className="tile flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border sm:h-9 sm:w-9 md:h-10 md:w-10">
+          <Icon size={16} className={accentMap[accent]} />
         </div>
-        <div className="min-w-0">
-          <p className="caps-label">{label}</p>
-          <p className="txt mt-1 text-2xl font-bold">{value}</p>
+        <div className="min-w-0 flex-1">
+          <p
+            className="caps-label leading-snug"
+            style={{
+              letterSpacing: '0.06em',
+              overflowWrap: 'anywhere',
+              wordBreak: 'break-word',
+              hyphens: 'auto',
+            }}
+          >
+            {label}
+          </p>
+          <p
+            className="txt mt-1 text-lg font-bold leading-tight sm:text-xl md:text-2xl"
+            style={{ overflowWrap: 'anywhere' }}
+          >
+            {value}
+          </p>
         </div>
       </div>
     </div>
@@ -83,27 +98,27 @@ export default function Dashboard() {
       ]
 
   return (
-    <div>
+    <div className="w-full min-w-0">
       <p className="caps-label">{t('dash.kicker')}</p>
-      <h1 className="txt mt-3 text-4xl font-bold tracking-tight">{t('dash.welcome')}</h1>
+      <h1 className="txt mt-3 break-words text-3xl font-bold tracking-tight sm:text-4xl">{t('dash.welcome')}</h1>
 
       <div className="mt-8">
         <Tabs tabs={['My Statistics', 'Platform']} active={topTab} onChange={setTopTab} />
       </div>
 
-      <div className="panel mt-8 rounded-2xl border p-6 md:p-8">
+      <div className="panel mt-8 w-full min-w-0 overflow-hidden rounded-2xl border p-4 sm:p-6 md:p-8">
         <p className="caps-label">Overview of your scan activity and detection results</p>
-        <div className="mt-2 flex items-center justify-between">
-          <h2 className="txt flex items-center gap-2 text-xl font-semibold">
-            <Activity size={20} className="text-sky-500" />
-            {platform ? 'Platform Statistics' : 'Your Statistics'}
+        <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+          <h2 className="txt flex items-center gap-2 text-lg font-semibold sm:text-xl">
+            <Activity size={20} className="shrink-0 text-sky-500" />
+            <span className="break-words">{platform ? 'Platform Statistics' : 'Your Statistics'}</span>
           </h2>
-          <span className="bd txt rounded-md border px-3 py-1.5 text-xs font-semibold tracking-wide">
+          <span className="bd txt shrink-0 rounded-md border px-3 py-1.5 text-xs font-semibold tracking-wide">
             {stats.totalScans} TOTAL SCANS
           </span>
         </div>
 
-        <div className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <div className="mt-6 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
           {cards.map((c) => (
             <StatCard key={c.label} {...c} />
           ))}

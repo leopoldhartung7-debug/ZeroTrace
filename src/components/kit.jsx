@@ -61,19 +61,27 @@ export function EmptyState({ icon: Icon, title, hint }) {
 
 export function StatTile({ icon: Icon, label, value, accent = 'muted', sub }) {
   return (
-    <div className="panel group rounded-xl border p-5 transition-transform hover:-translate-y-0.5">
-      <div className="flex items-start gap-4">
-        <div className="tile flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border">
-          <Icon size={18} className={accent} />
+    <div className="panel group overflow-hidden rounded-xl border p-3 transition-transform hover:-translate-y-0.5 sm:p-4 md:p-5">
+      <div className="flex items-start gap-2 sm:gap-3">
+        <div className="tile flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border sm:h-9 sm:w-9 md:h-10 md:w-10">
+          <Icon size={16} className={accent} />
         </div>
         <div className="min-w-0 flex-1">
           <p
             className="caps-label whitespace-normal leading-snug"
-            style={{ overflowWrap: 'anywhere', wordBreak: 'break-word', letterSpacing: '0.1em' }}
+            style={{
+              overflowWrap: 'anywhere',
+              wordBreak: 'break-word',
+              hyphens: 'auto',
+              letterSpacing: '0.06em',
+            }}
           >
             {label}
           </p>
-          <p className="txt mt-1 text-2xl font-bold leading-tight" style={{ overflowWrap: 'anywhere' }}>
+          <p
+            className="txt mt-1 text-lg font-bold leading-tight sm:text-xl md:text-2xl"
+            style={{ overflowWrap: 'anywhere' }}
+          >
             {value}
           </p>
           {sub && (
