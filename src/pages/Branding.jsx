@@ -165,7 +165,7 @@ export default function Branding() {
 
       {/* 02 Color */}
       <Section n="02" label="PALETTE" title="Color" desc="A base of grays and black; teal as an accent.">
-        <div className="grid w-full grid-cols-3 gap-6">
+        <div className="grid w-full grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {COLORS.map((c) => (
             <button key={c.hex} onClick={() => copy(c)} className="text-left">
               <div className="h-44 w-full rounded-sm" style={{ background: c.hex }} />
@@ -182,7 +182,7 @@ export default function Branding() {
           <p className="text-8xl font-medium leading-none">Aa</p>
           <p className="mt-6 text-2xl text-neutral-300">ZeroTrace Anticheat - antcheat.ac</p>
           <div className="my-8 h-px w-full bg-white/10" />
-          <div className="grid grid-cols-2 gap-x-12 gap-y-8">
+          <div className="grid grid-cols-1 gap-x-12 gap-y-8 sm:grid-cols-2">
             {WEIGHTS.map((x) => (
               <div key={x.w}>
                 <p className={`text-2xl text-white ${x.c}`}>{x.w}</p>
@@ -239,7 +239,7 @@ export default function Branding() {
 
       {/* 06 Naming */}
       <Section n="06" label="VOICE" title="Naming" desc="Use the name consistently in communications and on products.">
-        <div className="grid w-full grid-cols-2 gap-10">
+        <div className="grid w-full grid-cols-1 gap-10 sm:grid-cols-2">
           <div>
             <p className="mb-6 text-xs font-semibold tracking-[0.3em] text-neutral-600">CORRECT</p>
             <ul className="space-y-6 text-2xl">

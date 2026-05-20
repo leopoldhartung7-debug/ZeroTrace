@@ -374,10 +374,10 @@ export default function Account() {
               <div>
                 <h3 className="txt text-xl font-bold">Current Session</h3>
                 <div className="bd mt-4 overflow-hidden rounded-xl border">
-                  <div className="caps-label bd grid grid-cols-[1.4fr_1.2fr_1fr_0.8fr] gap-2 border-b px-4 py-3">
+                  <div className="caps-label bd hidden grid-cols-[1.4fr_1.2fr_1fr_0.8fr] gap-2 border-b px-4 py-3 md:grid">
                     <span>Device Info</span><span>Session Details</span><span>Location</span><span>Status</span>
                   </div>
-                  <div className="grid grid-cols-[1.4fr_1.2fr_1fr_0.8fr] gap-2 px-4 py-4 text-sm">
+                  <div className="grid grid-cols-1 gap-3 px-4 py-4 text-sm md:grid-cols-[1.4fr_1.2fr_1fr_0.8fr] md:gap-2">
                     <div className="space-y-1">
                       <p className="txt flex items-center gap-2 font-medium"><DeviceIcon kind={device.kind} /> {device.kind}</p>
                       <p className="muted text-xs">{device.os}</p>
