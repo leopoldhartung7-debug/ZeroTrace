@@ -142,13 +142,9 @@ export function ScanWebhookNotifier() {
   const initialized = useRef(false)
 
   useEffect(() => {
-    const approvalRequired = state.settings?.approvalRequired
-    const pending = state.pins.filter((p) => {
-      if (p.status !== 'Finished' || p.webhookNotified) return false
-      // Hold off when admin approval is required for Cheating verdicts.
-      if (approvalRequired && p.result === 'Cheating' && p.approvalStatus !== 'approved') return false
-      return true
-    })
+    const pending = state.pins.filter(
+      (p) => p.status === 'Finished' && !p.webhookNotified,
+    )
     if (pending.length === 0) return
 
     if (!initialized.current) {

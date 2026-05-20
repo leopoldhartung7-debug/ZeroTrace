@@ -481,7 +481,6 @@ export default function ScanResults() {
       </div>
 
       <CaseStatusCard pin={pin} dispatch={dispatch} toast={toast} />
-      <ApprovalCard pin={pin} state={state} dispatch={dispatch} toast={toast} />
 
       <Card className="p-6">
         <p className="caps-label">Admin-Executed Applications</p>
@@ -1198,81 +1197,6 @@ function AssignmentRow({ pin, state, dispatch, toast }) {
         </button>
       </span>
     </div>
-  )
-}
-
-function ApprovalCard({ pin, state, dispatch, toast }) {
-  const required = state.settings?.approvalRequired
-  if (!required || pin.result !== 'Cheating') return null
-  const status = pin.approvalStatus || 'pending'
-  const isAdmin = state.role === 'admin'
-  const [reason, setReason] = useState('')
-  const decide = (s) => {
-    dispatch({
-      type: 'set-pin-approval',
-      pinId: pin.id,
-      status: s,
-      by: 'admin',
-      reason,
-    })
-    toast({
-      type: s === 'approved' ? 'success' : 'info',
-      title: s === 'approved' ? 'Verdict approved' : 'Verdict rejected',
-    })
-    setReason('')
-  }
-  const TONE = {
-    pending: 'border-yellow-500/40 bg-yellow-500/10 text-yellow-200',
-    approved: 'border-green-600/40 bg-green-600/10 text-green-200',
-    rejected: 'border-red-600/40 bg-red-600/10 text-red-200',
-  }
-  return (
-    <Card className="mt-6 p-6">
-      <h3 className="txt mb-3 flex items-center gap-2 text-lg font-semibold">
-        Verdict approval
-      </h3>
-      <div className={`mb-4 rounded-lg border px-4 py-3 text-sm ${TONE[status]}`}>
-        {status === 'pending' && 'This Cheating verdict is awaiting admin approval. The Discord webhook will only fire once approved.'}
-        {status === 'approved' && (
-          <>Approved{pin.approvalAt ? ` on ${new Date(pin.approvalAt).toLocaleString()}` : ''}{pin.approvalReason ? ` — ${pin.approvalReason}` : ''}.</>
-        )}
-        {status === 'rejected' && (
-          <>Rejected{pin.approvalAt ? ` on ${new Date(pin.approvalAt).toLocaleString()}` : ''}{pin.approvalReason ? ` — ${pin.approvalReason}` : ''}.</>
-        )}
-      </div>
-      {isAdmin && status === 'pending' && (
-        <div className="space-y-3">
-          <input
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-            placeholder="Reason / note (optional)"
-            className="bd tile txt w-full rounded-lg border px-3 py-2 text-sm"
-          />
-          <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
-            <button
-              onClick={() => decide('rejected')}
-              className="bd rounded-lg border border-red-600/40 px-4 py-2 text-sm font-semibold text-red-400 hover:bg-red-600/10"
-            >
-              Reject
-            </button>
-            <button
-              onClick={() => decide('approved')}
-              className="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-500"
-            >
-              Approve & fire webhook
-            </button>
-          </div>
-        </div>
-      )}
-      {isAdmin && status !== 'pending' && (
-        <button
-          onClick={() => decide('pending')}
-          className="bd rounded-lg border px-4 py-2 text-xs hover:border-sky-500"
-        >
-          Reset to pending
-        </button>
-      )}
-    </Card>
   )
 }
 
