@@ -67,9 +67,20 @@ export function StatTile({ icon: Icon, label, value, accent = 'muted', sub }) {
           <Icon size={18} className={accent} />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="caps-label whitespace-normal break-words leading-snug">{label}</p>
-          <p className="txt mt-1 break-words text-2xl font-bold leading-tight">{value}</p>
-          {sub && <p className="muted mt-0.5 break-words text-xs">{sub}</p>}
+          <p
+            className="caps-label whitespace-normal leading-snug"
+            style={{ overflowWrap: 'anywhere', wordBreak: 'break-word', letterSpacing: '0.1em' }}
+          >
+            {label}
+          </p>
+          <p className="txt mt-1 text-2xl font-bold leading-tight" style={{ overflowWrap: 'anywhere' }}>
+            {value}
+          </p>
+          {sub && (
+            <p className="muted mt-0.5 text-xs" style={{ overflowWrap: 'anywhere' }}>
+              {sub}
+            </p>
+          )}
         </div>
       </div>
     </div>

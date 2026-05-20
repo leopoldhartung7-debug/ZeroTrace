@@ -773,6 +773,94 @@ export const DE = {
   'Scan complete': 'Scan abgeschlossen', 'Discord': 'Discord', 'Server': 'Server',
   'No tickets yet': 'Noch keine Tickets', 'No data': 'Keine Daten', 'Results': 'Ergebnisse',
   'Last Updated:': 'Zuletzt aktualisiert:',
+
+  // ---- Scoreboard ----
+  'Risk leaderboard': 'Risiko-Rangliste', 'Scoreboard': 'Scoreboard',
+  'All scanned Discord IDs sorted by their highest risk score.':
+    'Alle gescannten Discord-IDs, sortiert nach höchstem Risk Score.',
+  'Filter by name or Discord ID…': 'Nach Name oder Discord-ID filtern…',
+  'All': 'Alle', 'Risk': 'Risiko', 'Scans': 'Scans',
+  'Last verdict': 'Letztes Urteil', 'Last scan': 'Letzter Scan', 'Profile': 'Profil',
+  'No scans yet.': 'Noch keine Scans.',
+
+  // ---- Player profile ----
+  'Player profile': 'Spieler-Profil',
+  'Every scan, server and finding tied to this Discord account.':
+    'Jeder Scan, jeder Server und jeder Fund zu diesem Discord-Konto.',
+  'No scans found for this Discord ID.': 'Keine Scans für diese Discord-ID gefunden.',
+  'No Discord ID': 'Keine Discord-ID',
+  'Max Risk Score': 'Max. Risk Score', 'Servers': 'Server', 'USB devices': 'USB-Geräte',
+  'Risk score history': 'Risk-Score-Verlauf',
+  'Risk score across every recorded scan.': 'Risk Score über alle aufgezeichneten Scans.',
+  'Scan timeline': 'Scan-Zeitachse',
+  'Every scan tied to this ID, newest first.':
+    'Jeder Scan zu dieser ID, neueste zuerst.',
+  'Open': 'Öffnen',
+  'Discord servers': 'Discord-Server',
+  'Deduplicated list across all scans.': 'Dedup. Liste über alle Scans.',
+  'Cheats ever found': 'Gefundene Cheats',
+  'Back': 'Zurück',
+
+  // ---- Compare ----
+  'Side-by-side': 'Nebeneinander', 'Compare scans': 'Scans vergleichen',
+  'Pick two finished pins to see how they differ at a glance.':
+    'Wähle zwei abgeschlossene Pins, um sie auf einen Blick zu vergleichen.',
+  'Pin A': 'Pin A', 'Pin B': 'Pin B',
+  '— select a pin —': '— Pin wählen —',
+  'Pick a pin.': 'Pin wählen.',
+  'Detects · Warn · Susp': 'Erkennungen · Warn. · Verd.',
+  'USB': 'USB',
+  'Scanned': 'Gescannt',
+  'Cheats': 'Cheats', 'None': 'Keine',
+
+  // ---- ScanResults additions ----
+  'Reviewer Notes': 'Reviewer-Notizen',
+  'Internal notes about this scan. Saved automatically when you tap Save.':
+    'Interne Notizen zu diesem Scan. Werden beim Tippen auf Speichern automatisch gespeichert.',
+  'Team Comments': 'Team-Kommentare',
+  'Discuss this scan with other analysts.': 'Diskutiere diesen Scan mit anderen Analysten.',
+  'Note saved': 'Notiz gespeichert', 'Comment added': 'Kommentar hinzugefügt',
+  'No comments yet.': 'Noch keine Kommentare.',
+  'Write a comment…': 'Kommentar schreiben…',
+  'e.g. Cheater confirmed — KillAura in memory, Vape loader on USB.':
+    'z. B. Cheater bestätigt — KillAura im Speicher, Vape-Loader auf USB.',
+  'Possible alt account detected.': 'Möglicher Alt-Account erkannt.',
+  'The same HWID': 'Dieselbe HWID', 'was previously scanned under Discord ID': 'wurde zuvor unter Discord-ID gescannt',
+  'Print / PDF': 'Drucken / PDF', 'HWID': 'HWID',
+
+  // ---- Cheat-DB bulk import ----
+  'Bulk Import': 'Massen-Import', 'Bulk import cheats': 'Cheats massenhaft importieren',
+  'Paste a JSON array. Each item needs at least': 'Füge ein JSON-Array ein. Jeder Eintrag braucht mindestens',
+  '(array or comma-separated string),': '(Array oder kommagetrennter String),',
+  'Import': 'Importieren', 'Imported': 'Importiert',
+  'Nothing to import': 'Nichts zu importieren', 'JSON had no usable entries.': 'JSON enthielt keine nutzbaren Einträge.',
+  'Invalid JSON': 'Ungültiges JSON',
+
+  // ---- Pin templates + Profile URL ----
+  'Save as template': 'Als Vorlage speichern', 'Template saved': 'Vorlage gespeichert',
+  'Reuse these settings as a quick template': 'Diese Einstellungen als Schnell-Vorlage wiederverwenden',
+  'Template': 'Vorlage', '— pick a template —': '— Vorlage wählen —',
+  'ID or paste a Discord profile link': 'ID oder einen Discord-Profil-Link einfügen',
+  'Discord ID or a profile URL — the ID is extracted automatically.':
+    'Discord-ID oder Profil-URL — die ID wird automatisch extrahiert.',
+
+  // ---- TOTP 2FA ----
+  'Add this secret to your authenticator app (Google Authenticator / 1Password / Authy) and enter the current 6-digit code to verify.':
+    'Füge dieses Geheimnis in deine Authenticator-App (Google Authenticator / 1Password / Authy) ein und gib den aktuellen 6-stelligen Code ein.',
+  'Verify & enable 2FA': 'Bestätigen & 2FA aktivieren',
+  'Code does not match — try again.': 'Code stimmt nicht — bitte erneut versuchen.',
+  'Two-Factor code': '2FA-Code',
+  'Enter the 6-digit code from your authenticator app.':
+    'Gib den 6-stelligen Code aus deiner Authenticator-App ein.',
+  'Verify & sign in': 'Bestätigen & anmelden',
+  'The code does not match.': 'Der Code stimmt nicht.',
+
+  // ---- Webhook customizer ----
+  'Embed customization': 'Embed-Anpassung', 'Accent color (hex)': 'Akzent-Farbe (Hex)',
+  'Footer text': 'Footer-Text',
+
+  // ---- PageHeader kickers / misc ----
+  'Admin only': 'Nur Admin',
 }
 
 // Dynamic patterns (computed strings)
