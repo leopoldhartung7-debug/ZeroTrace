@@ -1353,6 +1353,77 @@ export function useStats() {
   }, [state])
 }
 
+export function usePlatformStats() {
+  const { state } = useStore()
+  return useMemo(() => {
+    const day = 86_400_000
+    const pins = state.pins || []
+    const finished = pins.filter((p) => p.status === 'Finished')
+    const detections = pins.reduce((a, p) => a + (p.detections || 0), 0)
+    const cheatSet = new Set()
+    pins.forEach((p) => (p.cheats || []).forEach((c) => cheatSet.add(c)))
+    const total = finished.length || 1
+    const cheating = finished.filter((p) => p.result === 'Cheating').length
+    const suspicious = finished.filter((p) => p.result === 'Suspicious').length
+    const legit = finished.filter((p) => p.result === 'Clean').length
+
+    const startOfToday = new Date()
+    startOfToday.setHours(0, 0, 0, 0)
+    const todayMs = startOfToday.getTime()
+    const scansToday = finished.filter((p) => (p.scannedAt || p.createdAt || 0) >= todayMs).length
+
+    // Active users = registered analysts that created a pin in the last 30 days,
+    // falling back to total registered users when no pin owners are tracked.
+    const cutoff = Date.now() - 30 * day
+    const recentOwners = new Set(
+      pins.filter((p) => (p.createdAt || 0) >= cutoff && p.ownerId).map((p) => p.ownerId),
+    )
+    const totalUsers = (state.users || []).length
+    const activeUsers = recentOwners.size || totalUsers
+
+    const gamesCovered = new Set(pins.map((p) => p.game).filter(Boolean)).size
+
+    const byGame = {}
+    pins.forEach((p) => {
+      byGame[p.game] = byGame[p.game] || { game: p.game, detections: 0, scans: 0 }
+      byGame[p.game].detections += p.detections || 0
+      byGame[p.game].scans += p.status === 'Finished' ? 1 : 0
+    })
+
+    const byDay = {}
+    finished.forEach((p) => {
+      const d = new Date(p.scannedAt || p.createdAt || Date.now()).toISOString().slice(0, 10)
+      byDay[d] = byDay[d] || { date: d, scans: 0, detections: 0 }
+      byDay[d].scans += 1
+      byDay[d].detections += p.detections || 0
+    })
+    const trend = Object.values(byDay).sort((a, b) => a.date.localeCompare(b.date)).slice(-14)
+
+    return {
+      totalUsers,
+      activeUsers,
+      scansToday,
+      gamesCovered,
+      totalPins: pins.length,
+      totalScans: finished.length,
+      detections,
+      uniqueCheats: cheatSet.size,
+      rates: {
+        cheating: Math.round((cheating / total) * 100),
+        suspicious: Math.round((suspicious / total) * 100),
+        legit: Math.round((legit / total) * 100),
+      },
+      distribution: [
+        { name: 'Cheating', value: cheating, color: '#dc2626' },
+        { name: 'Suspicious', value: suspicious, color: '#eab308' },
+        { name: 'Legit', value: legit, color: '#22c55e' },
+      ].filter((d) => d.value > 0),
+      byGame: Object.values(byGame),
+      trend,
+    }
+  }, [state])
+}
+
 const DICT = {
   en: {
     'nav.dashboard': 'Dashboard', 'nav.pins': 'Pins', 'nav.strings': 'Strings',

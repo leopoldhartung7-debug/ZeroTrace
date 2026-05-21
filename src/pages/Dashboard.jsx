@@ -8,7 +8,7 @@ import {
   CartesianGrid, Tooltip, BarChart, Bar, Legend,
 } from 'recharts'
 import Tabs from '../components/Tabs.jsx'
-import { useStats, useT, useStore } from '../store.jsx'
+import { useStats, usePlatformStats, useT, useStore } from '../store.jsx'
 
 const TONE_STYLES = {
   info: { box: 'border-sky-500/40 bg-sky-500/10', icon: 'text-sky-400', Icon: Info },
@@ -115,25 +115,32 @@ function ChartTooltip({ active, payload, label }) {
   )
 }
 
+function fmtNum(n) {
+  return typeof n === 'number' ? n.toLocaleString() : n
+}
+
 export default function Dashboard() {
   const t = useT()
-  const stats = useStats()
+  const myStats = useStats()
+  const platformStats = usePlatformStats()
   const [topTab, setTopTab] = useState('My Statistics')
   const [subTab, setSubTab] = useState('Overview')
 
   const platform = topTab === 'Platform'
+  // Charts + rates + distribution follow the selected scope.
+  const stats = platform ? platformStats : myStats
   const cards = platform
     ? [
-        { icon: Users, label: 'Active Users', value: '1,284' },
-        { icon: ScanLine, label: 'Scans Today', value: '342' },
-        { icon: Eye, label: 'Detections', value: '4,901', accent: 'red' },
-        { icon: Globe2, label: 'Games Covered', value: '6', accent: 'blue' },
+        { icon: Users, label: 'Active Users', value: fmtNum(platformStats.activeUsers) },
+        { icon: ScanLine, label: 'Scans Today', value: fmtNum(platformStats.scansToday) },
+        { icon: Eye, label: 'Detections', value: fmtNum(platformStats.detections), accent: 'red' },
+        { icon: Globe2, label: 'Games Covered', value: fmtNum(platformStats.gamesCovered), accent: 'blue' },
       ]
     : [
-        { icon: Pin, label: 'Total Pins', value: stats.totalPins },
-        { icon: ScanLine, label: 'Total Scans', value: stats.totalScans },
-        { icon: Eye, label: 'Detections', value: stats.detections, accent: 'red' },
-        { icon: ShieldAlert, label: 'Unique Cheats', value: stats.uniqueCheats, accent: 'yellow' },
+        { icon: Pin, label: 'Total Pins', value: fmtNum(myStats.totalPins) },
+        { icon: ScanLine, label: 'Total Scans', value: fmtNum(myStats.totalScans) },
+        { icon: Eye, label: 'Detections', value: fmtNum(myStats.detections), accent: 'red' },
+        { icon: ShieldAlert, label: 'Unique Cheats', value: fmtNum(myStats.uniqueCheats), accent: 'yellow' },
       ]
 
   return (
