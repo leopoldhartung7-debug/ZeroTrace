@@ -9,7 +9,7 @@ import { useToast } from '../components/ui.jsx'
 import { useStore, useWallet, generateLicenseKey } from '../store.jsx'
 
 const WHEEL_COLORS = ['#0ea5e9', '#1e293b', '#38bdf8', '#0f172a', '#0284c7', '#1e293b', '#38bdf8', '#0f172a', '#0ea5e9', '#1e293b']
-const WHEEL_MULT = 7 // hit your exact number → 7× your stake back
+const WHEEL_MULT = 5 // hit your exact number → 5× your stake back
 
 function polar(cx, cy, r, deg) {
   const rad = ((deg - 90) * Math.PI) / 180
@@ -332,12 +332,12 @@ function Blackjack({ wallet, dispatch, toast }) {
 /* ---------------- Shop ---------------- */
 
 const SHOP_ITEMS = [
-  { id: 'disc10', kind: 'discount', label: '10% discount code', cost: 800, desc: '10% off your next license purchase.' },
-  { id: 'disc25', kind: 'discount', label: '25% discount code', cost: 1800, desc: '25% off your next license purchase.' },
-  { id: 'disc50', kind: 'discount', label: '50% discount code', cost: 3500, desc: 'Half off your next license purchase.' },
-  { id: 'key7', kind: 'key', label: '7-day license key', cost: 6000, desc: 'A real 7-day ZeroTrace key.', days: 7 },
-  { id: 'key30', kind: 'key', label: '30-day license key', cost: 18000, desc: 'A real 30-day ZeroTrace key.', days: 30 },
-  { id: 'key365', kind: 'key', label: '1-year license key', cost: 120000, desc: 'A real 1-year ZeroTrace key.', days: 365 },
+  { id: 'disc10', kind: 'discount', label: '10% discount code', cost: 2500, desc: '10% off your next license purchase.' },
+  { id: 'disc25', kind: 'discount', label: '25% discount code', cost: 6000, desc: '25% off your next license purchase.' },
+  { id: 'disc50', kind: 'discount', label: '50% discount code', cost: 12000, desc: 'Half off your next license purchase.' },
+  { id: 'key7', kind: 'key', label: '7-day license key', cost: 25000, desc: 'A real 7-day ZeroTrace key.', days: 7 },
+  { id: 'key30', kind: 'key', label: '30-day license key', cost: 75000, desc: 'A real 30-day ZeroTrace key.', days: 30 },
+  { id: 'key365', kind: 'key', label: '1-year license key', cost: 500000, desc: 'A real 1-year ZeroTrace key.', days: 365 },
 ]
 
 function randCode(prefix) {
