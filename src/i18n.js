@@ -18,6 +18,8 @@ export const DE = {
   'ZeroTrace Coins': 'ZeroTrace Coins',
   'Every cheater you catch earns coins. Gamble them — or redeem them for discounts and license keys.': 'Jeder gefangene Cheater bringt Coins. Verzocke sie — oder löse sie gegen Rabatte und Lizenz-Keys ein.',
   'coins': 'Coins', 'Coins earned': 'Coins verdient',
+  'Coins granted': 'Coins vergeben', 'Coins removed': 'Coins entfernt',
+  'Give / remove coins': 'Coins geben / entfernen', 'Enter a valid number': 'Gültige Zahl eingeben',
   'Lucky Wheel': 'Glücksrad', 'Blackjack': 'Blackjack', 'Shop': 'Shop', 'History': 'Verlauf',
   'Your bet': 'Dein Einsatz', 'Pick a number': 'Wähle eine Zahl', 'Max': 'Max',
   'Bet on a number 0–9. Hit it and get': 'Wette auf eine Zahl 0–9. Triffst du sie, bekommst du',

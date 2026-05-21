@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import {
   KeyRound, Copy, Trash2, ShieldOff, ShieldCheck, Plus, User as UserIcon,
   ChevronRight, AtSign, MessageSquare, Layers, Pause, Play, UserCog,
-  Lock, KeyRound as KeyIcon, Download,
+  Lock, KeyRound as KeyIcon, Download, Coins,
 } from 'lucide-react'
 import { PageHeader, Card, Field, Input } from '../components/kit.jsx'
 import { Select, Modal, useToast } from '../components/ui.jsx'
@@ -82,6 +82,19 @@ export default function KeyGenerator() {
       title: current ? 'Flag cleared' : 'Flag set',
       body: `${u.username} · ${flag}`,
     })
+  }
+
+  const giveCoins = (u) => {
+    const input = prompt(`Give coins to ${u.username} (use a negative number to remove):`)
+    if (input == null) return
+    const amount = Math.floor(Number(input))
+    if (!amount || Number.isNaN(amount)) {
+      toast({ type: 'error', title: 'Enter a valid number' })
+      return
+    }
+    dispatch({ type: 'grant-coins', key: u.id, amount, detail: 'Admin grant', notifyOwnerId: u.id })
+    logAdminAction(dispatch, state, amount >= 0 ? 'coins-grant' : 'coins-remove', u.username, `${amount} coins`)
+    toast({ type: 'success', title: amount >= 0 ? 'Coins granted' : 'Coins removed', body: `${u.username}: ${amount > 0 ? '+' : ''}${amount}` })
   }
 
   const exportUser = (u) => {
@@ -269,6 +282,9 @@ export default function KeyGenerator() {
                     <td className="txt px-3 py-3 font-medium">
                       <div className="flex flex-wrap items-center gap-1.5">
                         <span>{u.username}</span>
+                        <span className="inline-flex items-center gap-1 rounded-md border border-yellow-500/30 bg-yellow-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-yellow-400">
+                          <Coins size={9} /> {(state.wallets?.[u.id]?.balance || 0).toLocaleString()}
+                        </span>
                         {u.suspended && <span className="rounded-md border border-yellow-500/40 bg-yellow-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-yellow-500">suspended</span>}
                         {u.force2FASetup && <span className="rounded-md border border-sky-500/40 bg-sky-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-sky-400">2FA req</span>}
                         {u.forceResetPassword && <span className="rounded-md border border-sky-500/40 bg-sky-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-sky-400">PW reset</span>}
@@ -308,6 +324,13 @@ export default function KeyGenerator() {
                           className="bd inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs hover:border-sky-500"
                         >
                           <Lock size={11} /><span className="hidden md:inline">{u.forceResetPassword ? 'PW off' : 'Force PW'}</span>
+                        </button>
+                        <button
+                          onClick={() => giveCoins(u)}
+                          title="Give / remove coins"
+                          className="bd inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs hover:border-yellow-500"
+                        >
+                          <Coins size={11} /><span className="hidden md:inline">Coins</span>
                         </button>
                         <button
                           onClick={() => exportUser(u)}

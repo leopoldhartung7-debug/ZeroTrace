@@ -1074,6 +1074,26 @@ function reducer(state, action) {
       }
     }
 
+    case 'grant-coins': {
+      const w = state.wallets?.[action.key] || { balance: 0, history: [] }
+      return {
+        ...state,
+        wallets: {
+          ...(state.wallets || {}),
+          [action.key]: {
+            balance: Math.max(0, w.balance + action.amount),
+            history: [
+              { id: 'tx' + Date.now() + Math.random().toString(16).slice(2, 6), time: Date.now(), type: action.amount >= 0 ? 'grant' : 'deduct', amount: action.amount, detail: action.detail || 'Admin adjustment' },
+              ...w.history,
+            ].slice(0, 200),
+          },
+        },
+        notifications: action.notifyOwnerId
+          ? note(state, action.amount >= 0 ? 'Coins granted' : 'Coins removed', `${action.amount >= 0 ? '+' : ''}${action.amount} coins by an admin`, action.notifyOwnerId)
+          : state.notifications,
+      }
+    }
+
     case 'award-coins': {
       const pin = state.pins.find((p) => p.id === action.pinId)
       if (!pin || pin.coinsAwarded) return state
