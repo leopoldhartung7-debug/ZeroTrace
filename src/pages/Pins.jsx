@@ -1,9 +1,9 @@
-import { useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useEffect, useMemo, useState } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
 import {
   Plus, Search, Filter, CalendarCheck, MessageSquare, Clock, CheckCircle2,
   AlertCircle, MoreHorizontal, ChevronLeft, ChevronRight, Link2,
-  Copy, Trash2, Download, Pencil, Users,
+  Copy, Trash2, Download, Pencil, Users, Star, Bookmark, X,
 } from 'lucide-react'
 import Tabs from '../components/Tabs.jsx'
 import { Modal, Menu, Select, useToast } from '../components/ui.jsx'
@@ -43,11 +43,16 @@ export default function Pins() {
   const t = useT()
   const toast = useToast()
   const nav = useNavigate()
+  const loc = useLocation()
 
   const [tab, setTab] = useState('mine')
   const [query, setQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [gameFilter, setGameFilter] = useState('all')
+  const [starOnly, setStarOnly] = useState(false)
+  const [selected, setSelected] = useState([])
+  const uid = state.session?.userId || null
+  const savedFilters = (state.savedFilters || []).filter((f) => f.ownerId === uid || (state.role === 'admin' && f.ownerId == null))
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
   const [createOpen, setCreateOpen] = useState(false)
@@ -81,9 +86,10 @@ export default function Pins() {
       if (query && !`${p.pin} ${p.name}`.toLowerCase().includes(query.toLowerCase())) return false
       if (statusFilter !== 'all' && p.status !== statusFilter) return false
       if (gameFilter !== 'all' && p.game !== gameFilter) return false
+      if (starOnly && !p.starred) return false
       return true
     })
-  }, [ownPins, query, statusFilter, gameFilter, tab])
+  }, [ownPins, query, statusFilter, gameFilter, starOnly, tab])
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize))
   const pageRows = filtered.slice((page - 1) * pageSize, page * pageSize)
@@ -184,6 +190,69 @@ export default function Pins() {
     toast({ type: 'success', title: 'Copied', body: pin })
   }
 
+  // Re-scan prefill: arrive from a scan result with player data, open create modal.
+  useEffect(() => {
+    const pre = loc.state?.prefill
+    if (pre) {
+      setForm((f) => ({ ...f, name: pre.name || '', discordId: pre.discordId || '', game: pre.game || f.game }))
+      setCreateOpen(true)
+      nav('/pins', { replace: true, state: null })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loc.state])
+
+  const toggleSelect = (id) =>
+    setSelected((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]))
+  const allOnPageSelected = pageRows.length > 0 && pageRows.every((r) => selected.includes(r.id))
+  const toggleSelectAllOnPage = () =>
+    setSelected((s) =>
+      allOnPageSelected
+        ? s.filter((id) => !pageRows.some((r) => r.id === id))
+        : [...new Set([...s, ...pageRows.map((r) => r.id)])],
+    )
+
+  const bulkDelete = () => {
+    if (!selected.length) return
+    if (!confirm(`Delete ${selected.length} selected pin(s)? This cannot be undone.`)) return
+    dispatch({ type: 'bulk-delete-pins', ids: selected })
+    toast({ type: 'success', title: `${selected.length} pins deleted` })
+    setSelected([])
+  }
+  const bulkStar = (value) => {
+    if (!selected.length) return
+    dispatch({ type: 'bulk-star-pins', ids: selected, value })
+    toast({ type: 'success', title: value ? 'Starred' : 'Unstarred', body: `${selected.length} pins` })
+  }
+  const bulkExport = () => {
+    if (!selected.length) return
+    const rows = state.pins.filter((p) => selected.includes(p.id))
+    const blob = new Blob([JSON.stringify(rows, null, 2)], { type: 'application/json' })
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(blob)
+    a.download = `zerotrace-pins-${new Date().toISOString().slice(0, 10)}.json`
+    a.click()
+    URL.revokeObjectURL(a.href)
+    toast({ type: 'success', title: `${selected.length} pins exported` })
+  }
+
+  const saveCurrentFilter = () => {
+    const name = prompt('Name this filter:')
+    if (!name?.trim()) return
+    dispatch({
+      type: 'add-saved-filter',
+      ownerId: uid,
+      filter: { name: name.trim(), query, statusFilter, gameFilter, starOnly },
+    })
+    toast({ type: 'success', title: 'Filter saved', body: name.trim() })
+  }
+  const applyFilter = (f) => {
+    setQuery(f.query || '')
+    setStatusFilter(f.statusFilter || 'all')
+    setGameFilter(f.gameFilter || 'all')
+    setStarOnly(!!f.starOnly)
+    setPage(1)
+  }
+
   return (
     <div>
       <p className="caps-label">{t('pins.kicker')}</p>
@@ -224,6 +293,32 @@ export default function Pins() {
         <PinStatCard icon={AlertCircle} label="Expired" value={ownPins.filter((p) => p.status === 'Expired').length} />
       </div>
 
+      {(() => {
+        const recent = (state.recentlyViewed || [])
+          .filter((r) => r.ownerId === uid)
+          .map((r) => ownPins.find((p) => p.id === r.pinId))
+          .filter(Boolean)
+          .slice(0, 6)
+        if (recent.length === 0) return null
+        return (
+          <div className="panel mt-6 rounded-2xl border p-4">
+            <p className="caps-label mb-2 flex items-center gap-2"><Clock size={12} /> Recently viewed</p>
+            <div className="flex flex-wrap gap-2">
+              {recent.map((p) => (
+                <button
+                  key={p.id}
+                  onClick={() => nav(`/scan/${p.id}`)}
+                  className="bd tile hoverable flex items-center gap-2 rounded-lg border px-3 py-1.5 text-xs"
+                >
+                  <span className="txt font-mono">{p.pin}</span>
+                  <span className="muted truncate max-w-[120px]">{p.name}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )
+      })()}
+
       <div className="panel mt-8 rounded-2xl border p-5">
         <div className="flex flex-col gap-3 sm:flex-row">
           <div className="relative flex-1">
@@ -262,10 +357,20 @@ export default function Pins() {
             options={[{ value: 'all', label: 'All Games' }, ...GAMES.map((g) => ({ value: g, label: g }))]}
           />
           <button
+            onClick={() => setStarOnly((s) => !s)}
+            className={`flex items-center gap-2 rounded-lg border px-4 py-2.5 text-sm ${
+              starOnly ? 'border-yellow-500/50 bg-yellow-500/10 text-yellow-400' : 'bd tile txt'
+            }`}
+          >
+            <Star size={15} className={starOnly ? 'fill-yellow-400 text-yellow-400' : 'muted'} />
+            Starred
+          </button>
+          <button
             onClick={() => {
               setQuery('')
               setStatusFilter('all')
               setGameFilter('all')
+              setStarOnly(false)
             }}
             className="bd tile txt flex items-center gap-2 rounded-lg border px-4 py-2.5 text-sm"
           >
@@ -274,20 +379,70 @@ export default function Pins() {
           </button>
         </div>
 
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <button
+            onClick={saveCurrentFilter}
+            className="bd muted flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs hover:border-sky-500"
+          >
+            <Bookmark size={12} /> Save filter
+          </button>
+          {savedFilters.map((f) => (
+            <span key={f.id} className="bd tile flex items-center gap-1 rounded-md border px-2.5 py-1 text-xs">
+              <button onClick={() => applyFilter(f)} className="txt hover:text-sky-400">{f.name}</button>
+              <button onClick={() => dispatch({ type: 'delete-saved-filter', id: f.id })} className="muted hover:text-red-500">
+                <X size={11} />
+              </button>
+            </span>
+          ))}
+        </div>
+
+        {selected.length > 0 && (
+          <div className="mt-4 flex flex-wrap items-center gap-2 rounded-lg border border-sky-500/40 bg-sky-500/10 px-4 py-2.5 text-sm">
+            <span className="txt font-semibold">{selected.length} selected</span>
+            <div className="flex flex-wrap gap-2 sm:ml-auto">
+              <button onClick={() => bulkStar(true)} className="bd flex items-center gap-1 rounded-md border px-2.5 py-1 text-xs hover:border-yellow-500">
+                <Star size={12} /> Star
+              </button>
+              <button onClick={() => bulkStar(false)} className="bd flex items-center gap-1 rounded-md border px-2.5 py-1 text-xs hover:border-sky-500">
+                Unstar
+              </button>
+              <button onClick={bulkExport} className="bd flex items-center gap-1 rounded-md border px-2.5 py-1 text-xs hover:border-sky-500">
+                <Download size={12} /> Export
+              </button>
+              <button onClick={bulkDelete} className="bd flex items-center gap-1 rounded-md border border-red-600/40 px-2.5 py-1 text-xs text-red-500 hover:bg-red-600/10">
+                <Trash2 size={12} /> Delete
+              </button>
+              <button onClick={() => setSelected([])} className="muted px-2 py-1 text-xs hover:text-sky-400">
+                Clear
+              </button>
+            </div>
+          </div>
+        )}
+
         <div className="mt-5">
           <table className="w-full table-fixed text-left">
             <colgroup>
+              <col className="w-[5%]" />
               <col className="w-[14%]" />
-              <col className="w-[17%]" />
-              <col className="w-[13%]" />
+              <col className="w-[16%]" />
+              <col className="w-[11%]" />
+              <col className="w-[11%]" />
+              <col className="w-[8%]" />
               <col className="w-[12%]" />
-              <col className="w-[9%]" />
-              <col className="w-[13%]" />
-              <col className="w-[13%]" />
-              <col className="w-[9%]" />
+              <col className="w-[12%]" />
+              <col className="w-[11%]" />
             </colgroup>
             <thead>
               <tr className="caps-label bd border-b">
+                <th className="px-2 py-3">
+                  <input
+                    type="checkbox"
+                    checked={allOnPageSelected}
+                    onChange={toggleSelectAllOnPage}
+                    className="h-3.5 w-3.5 align-middle"
+                    aria-label="Select all"
+                  />
+                </th>
                 {['Pin', 'Name', 'Game', 'Status', 'Used', 'Result', 'Visibility', ''].map(
                   (h, i) => (
                     <th key={i} className="px-2 py-3 font-semibold">
@@ -300,7 +455,7 @@ export default function Pins() {
             <tbody>
               {pageRows.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="muted px-2 py-12 text-center text-sm">
+                  <td colSpan={9} className="muted px-2 py-12 text-center text-sm">
                     {tab === 'shared' ? 'Nothing shared with you yet.' : 'No pins match your filters.'}
                   </td>
                 </tr>
@@ -309,8 +464,29 @@ export default function Pins() {
                 const scanned = r.used || r.status === 'Finished' || !!r.result
                 return (
                 <tr key={r.id} className="hoverable bd border-b align-middle text-sm">
+                  <td className="px-2 py-4">
+                    <input
+                      type="checkbox"
+                      checked={selected.includes(r.id)}
+                      onChange={() => toggleSelect(r.id)}
+                      className="h-3.5 w-3.5 align-middle"
+                      aria-label="Select pin"
+                    />
+                  </td>
                   <td className="txt truncate px-2 py-4 font-mono text-xs" title={r.pin}>
-                    {r.pin}
+                    <span className="flex items-center gap-1.5">
+                      <button
+                        onClick={() => dispatch({ type: 'toggle-pin-star', id: r.id })}
+                        title={r.starred ? 'Unstar' : 'Star'}
+                        className="shrink-0"
+                      >
+                        <Star
+                          size={13}
+                          className={r.starred ? 'fill-yellow-400 text-yellow-400' : 'muted hover:text-yellow-400'}
+                        />
+                      </button>
+                      <span className="truncate">{r.pin}</span>
+                    </span>
                   </td>
                   <td className="txt truncate px-2 py-4" title={r.name}>
                     {r.name}

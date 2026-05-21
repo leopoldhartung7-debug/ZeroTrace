@@ -13,6 +13,31 @@ const MONTHS = {
 }
 
 export const DE = {
+  // ---- Analyst batch (star, multi-select, saved filters, re-scan, etc.) ----
+  'Starred': 'Favoriten', 'Save filter': 'Filter speichern', 'Name this filter:': 'Filter benennen:',
+  'Filter saved': 'Filter gespeichert', 'selected': 'ausgewählt',
+  'Star': 'Favorit', 'Unstar': 'Favorit entfernen',
+  'Recently viewed': 'Zuletzt angesehen',
+  'Copy Verdict': 'Verdict kopieren', 'Verdict copied': 'Verdict kopiert',
+  'Paste it into Discord': 'In Discord einfügen',
+  'Re-scan': 'Erneut scannen', 'Watch player': 'Spieler beobachten', 'Watching': 'Beobachtet',
+  'Now watching': 'Beobachtung gestartet', 'Stopped watching': 'Beobachtung beendet',
+  'No Discord ID on this pin': 'Kein Discord-ID an diesem Pin',
+  'Watched player scanned again': 'Beobachteter Spieler erneut gescannt',
+  'Similar Cases': 'Ähnliche Fälle',
+  'Other scans that share at least one detected cheat with this one.': 'Andere Scans die mindestens einen Cheat mit diesem teilen.',
+  'Evidence Screenshots': 'Beweis-Screenshots',
+  'Attach proof images (gameplay clips, cheat menus, logs). Stored locally with this scan.': 'Beweisbilder anhängen (Gameplay, Cheat-Menüs, Logs). Lokal bei diesem Scan gespeichert.',
+  'Drag images here or click': 'Bilder hierher ziehen oder klicken',
+  'PNG / JPG, max 4 MB each': 'PNG / JPG, max. 4 MB pro Bild',
+  'Screenshot(s) added': 'Screenshot(s) hinzugefügt', 'Only images allowed': 'Nur Bilder erlaubt',
+  'Image too large': 'Bild zu groß', 'Max 4 MB each': 'Max. 4 MB pro Bild',
+  'How this score is calculated': 'So wird der Score berechnet',
+  'Total (capped at 100)': 'Gesamt (max. 100)',
+  'Weights are configurable in Settings → Risk Score.': 'Gewichtung einstellbar unter Einstellungen → Risk Score.',
+  'Suggested verdict': 'Vorgeschlagenes Verdict',
+  'pins deleted': 'Pins gelöscht', 'pins exported': 'Pins exportiert',
+
   // ---- Collaboration / detection / integrations batch ----
   'Assigned to': 'Zugewiesen an', 'Assigned to Me': 'Mir zugewiesen', '— unassigned —': '— nicht zugewiesen —',
   'Pin assigned': 'Pin zugewiesen', 'Assignment cleared': 'Zuweisung entfernt',

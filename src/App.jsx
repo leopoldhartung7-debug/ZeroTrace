@@ -6,6 +6,7 @@ import { AutoI18n } from './i18n.js'
 import { ScanWebhookNotifier, WeeklyReportNotifier } from './lib/webhook.js'
 import { KeyExpiryWatcher } from './lib/expiry.js'
 import { DigestNotifier } from './lib/digest.js'
+import { WatchlistNotifier } from './lib/watchlist.js'
 import { ToastProvider } from './components/ui.jsx'
 import CommandPalette from './components/CommandPalette.jsx'
 import Sidebar from './components/Sidebar.jsx'
@@ -113,6 +114,7 @@ export default function App() {
         <KeyExpiryWatcher />
         <WeeklyReportNotifier />
         <DigestNotifier />
+        <WatchlistNotifier />
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />

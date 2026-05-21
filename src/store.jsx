@@ -277,6 +277,9 @@ function seed() {
     adminAuditLog: [],
     webhookHealth: {},
     maintenance: { enabled: false, message: '', updatedAt: 0 },
+    savedFilters: [],
+    watchlist: [],
+    recentlyViewed: [],
   }
 }
 
@@ -1050,6 +1053,112 @@ function reducer(state, action) {
 
     case 'clear-audit-log':
       return { ...state, adminAuditLog: [] }
+
+    case 'toggle-pin-star':
+      return {
+        ...state,
+        pins: state.pins.map((p) =>
+          p.id === action.id ? { ...p, starred: !p.starred } : p,
+        ),
+      }
+
+    case 'bulk-delete-pins':
+      return {
+        ...state,
+        pins: state.pins.filter((p) => !action.ids.includes(p.id)),
+      }
+
+    case 'bulk-star-pins':
+      return {
+        ...state,
+        pins: state.pins.map((p) =>
+          action.ids.includes(p.id) ? { ...p, starred: action.value } : p,
+        ),
+      }
+
+    case 'add-pin-screenshot':
+      return {
+        ...state,
+        pins: state.pins.map((p) =>
+          p.id === action.id
+            ? { ...p, screenshots: [...(p.screenshots || []), action.shot] }
+            : p,
+        ),
+      }
+
+    case 'delete-pin-screenshot':
+      return {
+        ...state,
+        pins: state.pins.map((p) =>
+          p.id === action.id
+            ? { ...p, screenshots: (p.screenshots || []).filter((s) => s.id !== action.shotId) }
+            : p,
+        ),
+      }
+
+    case 'add-saved-filter':
+      return {
+        ...state,
+        savedFilters: [
+          { id: 'sf' + Date.now() + Math.random().toString(16).slice(2, 6), ownerId: action.ownerId || null, ...action.filter },
+          ...(state.savedFilters || []),
+        ],
+      }
+
+    case 'delete-saved-filter':
+      return {
+        ...state,
+        savedFilters: (state.savedFilters || []).filter((f) => f.id !== action.id),
+      }
+
+    case 'add-watchlist': {
+      const cur = state.watchlist || []
+      if (cur.find((w) => w.discordId === action.discordId && w.ownerId === (action.ownerId || null))) return state
+      return {
+        ...state,
+        watchlist: [
+          { id: 'wl' + Date.now() + Math.random().toString(16).slice(2, 6), discordId: action.discordId, note: action.note || '', ownerId: action.ownerId || null, addedAt: Date.now() },
+          ...cur,
+        ],
+      }
+    }
+
+    case 'remove-watchlist':
+      return {
+        ...state,
+        watchlist: (state.watchlist || []).filter((w) => w.id !== action.id),
+      }
+
+    case 'watchlist-notify': {
+      // Mark a watched pin as notified and push a notification to the watcher.
+      const entry = (state.watchlist || []).find((w) => w.id === action.watchId)
+      if (!entry) return state
+      return {
+        ...state,
+        watchlist: (state.watchlist || []).map((w) =>
+          w.id === action.watchId
+            ? { ...w, notifiedPins: [...(w.notifiedPins || []), action.pinId] }
+            : w,
+        ),
+        notifications: note(
+          state,
+          'Watched player scanned again',
+          `Discord ${entry.discordId} was scanned (pin ${action.pinCode}) — verdict: ${action.verdict || 'pending'}`,
+          entry.ownerId,
+        ),
+      }
+    }
+
+    case 'push-recent-pin': {
+      const cur = (state.recentlyViewed || []).filter((r) => r.pinId !== action.pinId || r.ownerId !== (action.ownerId || null))
+      return {
+        ...state,
+        recentlyViewed: [
+          { pinId: action.pinId, ownerId: action.ownerId || null, at: Date.now() },
+          ...cur,
+        ].slice(0, 40),
+      }
+    }
 
     case 'set-maintenance':
       return {

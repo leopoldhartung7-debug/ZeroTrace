@@ -5,7 +5,8 @@ import {
   ArrowLeft, Copy, ShieldAlert, Download, Flag, Gauge, Monitor, Cpu,
   AlertTriangle, CheckCircle2, Eye, Sparkles, Search, ChevronLeft,
   ChevronRight, Shield, MessageSquare, Video, Gamepad2, Database, Activity,
-  Clock, Play, ImageOff, Usb, FileText, Server,
+  Clock, Play, ImageOff, Usb, FileText, Server, RefreshCw, Image as ImageIcon,
+  Trash2, Eye as EyeIcon, Bell, Layers,
 } from 'lucide-react'
 import { Card } from '../components/kit.jsx'
 import { Modal, Select, useToast } from '../components/ui.jsx'
@@ -134,6 +135,11 @@ export default function ScanResults() {
     [pin],
   )
 
+  // Track recently viewed pins for the quick-access bar on the Pins page.
+  useEffect(() => {
+    if (pin) dispatch({ type: 'push-recent-pin', pinId: pin.id, ownerId: state.session?.userId || null })
+  }, [pin?.id, dispatch])
+
   useEffect(() => {
     if (!pin || !report || !report.pc.ip || report.pc.ip === '—' || pin.geo) return
     let alive = true
@@ -211,6 +217,52 @@ export default function ScanResults() {
     toast({ type: 'success', title: 'Report exported' })
   }
 
+  const watching = (state.watchlist || []).some(
+    (w) => w.discordId === pin.discordId && w.ownerId === (state.session?.userId || null),
+  )
+  const toggleWatch = () => {
+    if (!pin.discordId) {
+      toast({ type: 'error', title: 'No Discord ID on this pin' })
+      return
+    }
+    if (watching) {
+      const entry = (state.watchlist || []).find(
+        (w) => w.discordId === pin.discordId && w.ownerId === (state.session?.userId || null),
+      )
+      if (entry) dispatch({ type: 'remove-watchlist', id: entry.id })
+      toast({ type: 'success', title: 'Stopped watching', body: pin.discordId })
+    } else {
+      dispatch({ type: 'add-watchlist', discordId: pin.discordId, ownerId: state.session?.userId || null, note: pin.name || '' })
+      toast({ type: 'success', title: 'Now watching', body: pin.discordId })
+    }
+  }
+
+  const reScan = () => {
+    nav('/pins', { state: { prefill: { name: pin.name || '', discordId: pin.discordId || '', game: pin.game || 'HYTALE' } } })
+  }
+
+  const copyVerdict = () => {
+    const emoji = pin.result === 'Cheating' ? '❌' : pin.result === 'Suspicious' ? '⚠️' : '✅'
+    const cheats = (pin.cheats || []).join(', ') || '—'
+    const text =
+      `${emoji} ZeroTrace Scan — ${pin.result || 'Unknown'}\n` +
+      `Player: ${pin.name || '—'}${pin.discordId ? ` (Discord: ${pin.discordId})` : ''}\n` +
+      `Game: ${pin.game}\n` +
+      (report ? `Detections: ${report.counts.detects} · Warnings: ${report.counts.warnings} · Suspicious: ${report.counts.suspicious}\n` : '') +
+      `Cheats: ${cheats}\n` +
+      `Risk: ${riskScore}/100`
+    navigator.clipboard?.writeText(text).catch(() => {})
+    toast({ type: 'success', title: 'Verdict copied', body: 'Paste it into Discord' })
+  }
+
+  // Auto-suggested verdict from raw counts (independent of stored result).
+  const suggestedVerdict =
+    report && report.counts.detects > 0
+      ? 'Cheating'
+      : report && (report.counts.warnings > 0 || report.counts.suspicious >= 3)
+        ? 'Suspicious'
+        : 'Clean'
+
   const SignedBadge = ({ ok }) => (
     <span className={`bd inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-[11px] font-semibold ${ok ? 'text-green-500' : 'muted'}`}>
       <Shield size={11} /> {ok ? 'SIGNED' : 'UNSIGNED'}
@@ -248,21 +300,24 @@ export default function ScanResults() {
             </button>
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2 print:hidden">
           <button onClick={() => setRisk(true)} className="bd txt flex items-center gap-2 rounded-lg border px-4 py-2 text-sm hover:border-sky-500">
             <Gauge size={15} /> Check Risk Score
+          </button>
+          <button onClick={copyVerdict} className="bd txt flex items-center gap-2 rounded-lg border px-4 py-2 text-sm hover:border-sky-500">
+            <Copy size={15} /> Copy Verdict
+          </button>
+          <button onClick={reScan} className="bd txt flex items-center gap-2 rounded-lg border px-4 py-2 text-sm hover:border-sky-500">
+            <RefreshCw size={15} /> Re-scan
+          </button>
+          <button onClick={toggleWatch} className={`flex items-center gap-2 rounded-lg border px-4 py-2 text-sm ${watching ? 'border-sky-500/50 bg-sky-500/10 text-sky-400' : 'bd txt hover:border-sky-500'}`}>
+            <Bell size={15} /> {watching ? 'Watching' : 'Watch player'}
           </button>
           <button onClick={exportReport} className="bd txt flex items-center gap-2 rounded-lg border px-4 py-2 text-sm hover:border-sky-500">
             <Download size={15} /> Export
           </button>
           <button onClick={() => window.print()} className="bd txt flex items-center gap-2 rounded-lg border px-4 py-2 text-sm hover:border-sky-500">
             <FileText size={15} /> Print / PDF
-          </button>
-          <button
-            onClick={() => toast({ type: 'success', title: 'Scan reported', body: pin.pin })}
-            className="bd txt flex items-center gap-2 rounded-lg border px-4 py-2 text-sm hover:border-sky-500"
-          >
-            <Flag size={15} /> Report Scan
           </button>
         </div>
       </div>
@@ -296,6 +351,17 @@ export default function ScanResults() {
           </p>
         </div>
       </div>
+
+      {report && suggestedVerdict !== pin.result && (
+        <div className="flex items-start gap-3 rounded-xl border border-sky-500/40 bg-sky-500/10 p-4 text-sm print:hidden">
+          <Sparkles size={16} className="mt-0.5 shrink-0 text-sky-400" />
+          <p className="text-sky-100">
+            <span className="font-semibold">Suggested verdict: {suggestedVerdict}.</span>{' '}
+            Based on {report.counts.detects} detection(s), {report.counts.warnings} warning(s) and {report.counts.suspicious} suspicious log(s).
+            {pin.result ? ` Current verdict is "${pin.result}".` : ''}
+          </p>
+        </div>
+      )}
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card className="p-6">
@@ -882,16 +948,15 @@ export default function ScanResults() {
         <PinComments pin={pin} state={state} dispatch={dispatch} toast={toast} />
       </Card>
 
+      <SimilarCases pin={pin} state={state} nav={nav} />
+
       <Card className="p-6">
-        <p className="caps-label">Screenshot</p>
+        <p className="caps-label">Evidence Screenshots</p>
         <h2 className="txt mt-1 flex items-center gap-2 text-lg font-semibold">
-          <ImageOff size={18} /> Screenshot
+          <ImageIcon size={18} /> Evidence Screenshots ({(pin.screenshots || []).length})
         </h2>
-        <p className="muted mt-1 text-sm">No screenshot available</p>
-        <div className="bd tile mt-4 flex flex-col items-center justify-center rounded-xl border py-16">
-          <ImageOff size={32} className="muted" />
-          <p className="muted mt-3 text-sm">No screenshot available for this scan</p>
-        </div>
+        <p className="muted mb-4 mt-1 text-sm">Attach proof images (gameplay clips, cheat menus, logs). Stored locally with this scan.</p>
+        <Screenshots pin={pin} dispatch={dispatch} toast={toast} />
       </Card>
 
       <Modal open={risk} onClose={() => setRisk(false)} title="Risk Score">
@@ -902,11 +967,38 @@ export default function ScanResults() {
           <p className="txt mt-4 text-sm font-medium">
             {riskScore >= 60 ? 'High risk' : riskScore >= 30 ? 'Medium risk' : 'Low risk'}
           </p>
-          <p className="muted mt-1 text-xs">
-            Computed from {report.counts.detects} detects, {report.counts.warnings} warnings and{' '}
-            {report.counts.suspicious} suspicious logs.
-          </p>
         </div>
+        {(() => {
+          const w = state.settings?.riskWeights || { detect: 8, warn: 2, susp: 5 }
+          const rows = [
+            { label: 'Detections', n: report.counts.detects, w: w.detect },
+            { label: 'Warnings', n: report.counts.warnings, w: w.warn },
+            { label: 'Suspicious', n: report.counts.suspicious, w: w.susp },
+          ]
+          const raw = rows.reduce((a, r) => a + r.n * r.w, 0)
+          return (
+            <div className="mt-6">
+              <p className="caps-label mb-2">How this score is calculated</p>
+              <div className="bd overflow-hidden rounded-lg border text-sm">
+                {rows.map((r) => (
+                  <div key={r.label} className="bd flex items-center justify-between border-b px-3 py-2 last:border-0">
+                    <span className="muted">{r.label}</span>
+                    <span className="txt font-mono">
+                      {r.n} × {r.w} = <span className="font-semibold">{r.n * r.w}</span>
+                    </span>
+                  </div>
+                ))}
+                <div className="flex items-center justify-between bg-white/[0.03] px-3 py-2">
+                  <span className="txt font-semibold">Total (capped at 100)</span>
+                  <span className="txt font-mono font-bold">
+                    {raw} → {riskScore}
+                  </span>
+                </div>
+              </div>
+              <p className="muted mt-2 text-[11px]">Weights are configurable in Settings → Risk Score.</p>
+            </div>
+          )
+        })()}
       </Modal>
     </div>
   )
@@ -1422,5 +1514,127 @@ function VirusTotalLookup({ hashes }) {
         )
       })}
     </div>
+  )
+}
+
+function Screenshots({ pin, dispatch, toast }) {
+  const shots = pin.screenshots || []
+  const [preview, setPreview] = useState(null)
+  const onFiles = (files) => {
+    Array.from(files).forEach((f) => {
+      if (!f.type.startsWith('image/')) {
+        toast({ type: 'error', title: 'Only images allowed' })
+        return
+      }
+      if (f.size > 4 * 1024 * 1024) {
+        toast({ type: 'error', title: 'Image too large', body: 'Max 4 MB each' })
+        return
+      }
+      const reader = new FileReader()
+      reader.onload = () => {
+        dispatch({
+          type: 'add-pin-screenshot',
+          id: pin.id,
+          shot: { id: 's' + Date.now() + Math.random().toString(16).slice(2, 6), name: f.name, dataUrl: reader.result, at: Date.now() },
+        })
+      }
+      reader.readAsDataURL(f)
+    })
+    toast({ type: 'success', title: 'Screenshot(s) added' })
+  }
+  return (
+    <div>
+      <label
+        onDragOver={(e) => e.preventDefault()}
+        onDrop={(e) => { e.preventDefault(); onFiles(e.dataTransfer.files) }}
+        className="bd flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed py-10 text-center transition-colors hover:border-sky-500 print:hidden"
+      >
+        <input type="file" accept="image/*" multiple className="hidden" onChange={(e) => e.target.files.length && onFiles(e.target.files)} />
+        <ImageIcon size={28} className="muted" />
+        <p className="txt mt-3 text-sm font-medium">Drag images here or click</p>
+        <p className="muted mt-1 text-xs">PNG / JPG, max 4 MB each</p>
+      </label>
+
+      {shots.length > 0 && (
+        <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+          {shots.map((s) => (
+            <div key={s.id} className="group relative overflow-hidden rounded-lg border border-line">
+              <img
+                src={s.dataUrl}
+                alt={s.name}
+                className="aspect-video w-full cursor-pointer object-cover"
+                onClick={() => setPreview(s)}
+              />
+              <button
+                onClick={() => dispatch({ type: 'delete-pin-screenshot', id: pin.id, shotId: s.id })}
+                className="absolute right-1.5 top-1.5 rounded-md bg-black/60 p-1 text-white opacity-0 transition-opacity group-hover:opacity-100 print:hidden"
+                title="Delete"
+              >
+                <Trash2 size={13} />
+              </button>
+              <p className="muted truncate px-2 py-1 text-[10px]">{s.name}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {preview && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+          onClick={() => setPreview(null)}
+        >
+          <img src={preview.dataUrl} alt={preview.name} className="max-h-[90vh] max-w-full rounded-lg" />
+        </div>
+      )}
+    </div>
+  )
+}
+
+function SimilarCases({ pin, state, nav }) {
+  const cheats = pin.cheats || []
+  if (cheats.length === 0) return null
+  const visible = state.role === 'admin'
+    ? state.pins
+    : state.pins.filter((p) => p.ownerId === state.session?.userId)
+  const similar = visible
+    .filter((p) => p.id !== pin.id && (p.cheats || []).some((c) => cheats.includes(c)))
+    .map((p) => ({
+      pin: p,
+      shared: (p.cheats || []).filter((c) => cheats.includes(c)),
+    }))
+    .sort((a, b) => b.shared.length - a.shared.length)
+    .slice(0, 8)
+  if (similar.length === 0) return null
+  return (
+    <Card className="p-6">
+      <p className="caps-label">Similar Cases</p>
+      <h2 className="txt mt-1 flex items-center gap-2 text-lg font-semibold">
+        <Layers size={18} /> Similar Cases ({similar.length})
+      </h2>
+      <p className="muted mb-4 mt-1 text-sm">Other scans that share at least one detected cheat with this one.</p>
+      <div className="space-y-2">
+        {similar.map(({ pin: p, shared }) => (
+          <button
+            key={p.id}
+            onClick={() => nav(`/scan/${p.id}`)}
+            className="bd hoverable flex w-full items-center justify-between gap-3 rounded-lg border px-3 py-2.5 text-left text-sm"
+          >
+            <span className="min-w-0">
+              <span className="txt font-mono text-xs">{p.pin}</span>
+              <span className="muted ml-2">{p.name || '—'}</span>
+              {p.discordId && <span className="muted ml-2 font-mono text-xs">· {p.discordId}</span>}
+            </span>
+            <span className="flex shrink-0 flex-wrap items-center justify-end gap-1">
+              {shared.slice(0, 3).map((c) => (
+                <span key={c} className="rounded-md border border-red-600/40 bg-red-600/15 px-1.5 py-0.5 text-[10px] font-semibold text-red-400">
+                  {c}
+                </span>
+              ))}
+              {shared.length > 3 && <span className="muted text-[10px]">+{shared.length - 3}</span>}
+            </span>
+          </button>
+        ))}
+      </div>
+    </Card>
   )
 }

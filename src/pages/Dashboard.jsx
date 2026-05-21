@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import {
   Activity, Pin, ScanLine, Eye, ShieldAlert, Users, Globe2,
-  Megaphone, Info, CheckCircle2, AlertTriangle, XCircle,
+  Megaphone, Info, CheckCircle2, AlertTriangle, XCircle, Bell, X,
 } from 'lucide-react'
 import {
   PieChart, Pie, Cell, ResponsiveContainer, AreaChart, Area, XAxis, YAxis,
@@ -41,6 +41,45 @@ function AnnouncementCard() {
             </p>
           )}
         </div>
+      </div>
+    </div>
+  )
+}
+
+function WatchlistCard() {
+  const { state, dispatch } = useStore()
+  const uid = state.session?.userId || null
+  const mine = (state.watchlist || []).filter((w) => w.ownerId === uid)
+  if (mine.length === 0) return null
+  return (
+    <div className="panel mt-6 rounded-2xl border p-5">
+      <p className="caps-label mb-3 flex items-center gap-2"><Bell size={12} /> Watched players ({mine.length})</p>
+      <div className="space-y-2">
+        {mine.map((w) => {
+          const lastPin = (state.pins || [])
+            .filter((p) => p.discordId === w.discordId)
+            .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))[0]
+          return (
+            <div key={w.id} className="bd flex items-center justify-between gap-3 rounded-lg border px-3 py-2 text-sm">
+              <span className="min-w-0">
+                <span className="txt font-mono text-xs">{w.discordId}</span>
+                {w.note && <span className="muted ml-2 truncate">{w.note}</span>}
+              </span>
+              <span className="flex shrink-0 items-center gap-2">
+                {lastPin && (
+                  <span className="muted text-[11px]">last: {lastPin.result || lastPin.status}</span>
+                )}
+                <button
+                  onClick={() => dispatch({ type: 'remove-watchlist', id: w.id })}
+                  className="muted hover:text-red-500"
+                  title="Remove"
+                >
+                  <X size={14} />
+                </button>
+              </span>
+            </div>
+          )
+        })}
       </div>
     </div>
   )
@@ -268,6 +307,7 @@ export default function Dashboard() {
       </div>
 
       <AnnouncementCard />
+      <WatchlistCard />
     </div>
   )
 }
