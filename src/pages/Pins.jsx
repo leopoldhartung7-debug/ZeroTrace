@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import {
-  Plus, Search, Filter, CalendarCheck, MessageSquare, Clock, CheckCircle2,
+  Plus, Search, CalendarCheck, MessageSquare, Clock, CheckCircle2,
   AlertCircle, MoreHorizontal, ChevronLeft, ChevronRight, Link2,
   Copy, Trash2, Download, Pencil, Users, Star, Bookmark, X,
 } from 'lucide-react'
@@ -364,18 +364,6 @@ export default function Pins() {
           >
             <Star size={15} className={starOnly ? 'fill-yellow-400 text-yellow-400' : 'muted'} />
             Starred
-          </button>
-          <button
-            onClick={() => {
-              setQuery('')
-              setStatusFilter('all')
-              setGameFilter('all')
-              setStarOnly(false)
-            }}
-            className="bd tile txt flex items-center gap-2 rounded-lg border px-4 py-2.5 text-sm"
-          >
-            <Filter size={15} className="muted" />
-            Reset
           </button>
         </div>
 
