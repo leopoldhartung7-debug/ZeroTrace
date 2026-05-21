@@ -42,6 +42,7 @@ import AdminWebhooks from './pages/AdminWebhooks.jsx'
 import AdminAnalytics from './pages/AdminAnalytics.jsx'
 import AdminAnnouncement from './pages/AdminAnnouncement.jsx'
 import AdminMaintenance from './pages/AdminMaintenance.jsx'
+import AdminDiscounts from './pages/AdminDiscounts.jsx'
 import MaintenanceScreen from './pages/MaintenanceScreen.jsx'
 import { AnnouncementBanner, ImpersonationBanner } from './components/Banners.jsx'
 
@@ -177,6 +178,7 @@ export default function App() {
             <Route path="/admin/analytics" element={<AdminRoute><AdminAnalytics /></AdminRoute>} />
             <Route path="/admin/announcement" element={<AdminRoute><AdminAnnouncement /></AdminRoute>} />
             <Route path="/admin/maintenance" element={<AdminRoute><AdminMaintenance /></AdminRoute>} />
+            <Route path="/admin/discounts" element={<AdminRoute><AdminDiscounts /></AdminRoute>} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

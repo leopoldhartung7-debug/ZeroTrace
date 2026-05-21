@@ -282,6 +282,7 @@ function seed() {
     recentlyViewed: [],
     wallets: {},
     shopPurchases: [],
+    discountCodes: [],
   }
 }
 
@@ -1129,6 +1130,20 @@ function reducer(state, action) {
         time: Date.now(),
       }
       const extraKeys = action.licenseKey ? [action.licenseKey] : []
+      // Shop-won discount codes become real, usable codes.
+      const extraDiscounts = action.kind === 'discount' && action.percent
+        ? [{
+            id: 'dc' + Date.now() + Math.random().toString(16).slice(2, 6),
+            code: action.code,
+            percent: action.percent,
+            maxUses: 1,
+            uses: 0,
+            expiresAt: null,
+            active: true,
+            source: 'shop',
+            createdAt: Date.now(),
+          }]
+        : []
       return {
         ...state,
         wallets: {
@@ -1143,8 +1158,43 @@ function reducer(state, action) {
         },
         licenseKeys: [...extraKeys, ...(state.licenseKeys || [])],
         shopPurchases: [purchase, ...(state.shopPurchases || [])],
+        discountCodes: [...extraDiscounts, ...(state.discountCodes || [])],
       }
     }
+
+    case 'create-discount-code': {
+      const entry = {
+        id: 'dc' + Date.now() + Math.random().toString(16).slice(2, 6),
+        code: action.code,
+        percent: action.percent,
+        maxUses: action.maxUses || 0, // 0 = unlimited
+        uses: 0,
+        expiresAt: action.expiresAt || null,
+        active: true,
+        source: 'admin',
+        createdAt: Date.now(),
+      }
+      return { ...state, discountCodes: [entry, ...(state.discountCodes || [])] }
+    }
+
+    case 'delete-discount-code':
+      return { ...state, discountCodes: (state.discountCodes || []).filter((c) => c.id !== action.id) }
+
+    case 'toggle-discount-code':
+      return {
+        ...state,
+        discountCodes: (state.discountCodes || []).map((c) =>
+          c.id === action.id ? { ...c, active: !c.active } : c,
+        ),
+      }
+
+    case 'use-discount-code':
+      return {
+        ...state,
+        discountCodes: (state.discountCodes || []).map((c) =>
+          c.id === action.id ? { ...c, uses: (c.uses || 0) + 1 } : c,
+        ),
+      }
 
     case 'toggle-pin-star':
       return {
@@ -1636,7 +1686,7 @@ const DICT = {
     'nav.gameProfiles': 'Game Profiles',
     'nav.analytics': 'System Analytics', 'nav.blacklists': 'Blacklists',
     'nav.webhookHealth': 'Webhook Health', 'nav.announcement': 'Announcement',
-    'nav.audit': 'Audit Log', 'nav.maintenance': 'Maintenance',
+    'nav.audit': 'Audit Log', 'nav.maintenance': 'Maintenance', 'nav.discounts': 'Discount Codes',
     'cat.services': 'Services', 'cat.activity': 'Activity', 'cat.support': 'Support', 'cat.others': 'Others',
     'cat.admin': 'Admin Access', 'cat.preferences': 'My Preferences',
     'dash.kicker': 'View statistics, events, and announcements on the ZeroTrace.',
@@ -1656,7 +1706,7 @@ const DICT = {
     'nav.gameProfiles': 'Spielprofile',
     'nav.analytics': 'System-Analytics', 'nav.blacklists': 'Sperrlisten',
     'nav.webhookHealth': 'Webhook-Status', 'nav.announcement': 'Ankündigung',
-    'nav.audit': 'Audit-Log', 'nav.maintenance': 'Wartung',
+    'nav.audit': 'Audit-Log', 'nav.maintenance': 'Wartung', 'nav.discounts': 'Rabattcodes',
     'cat.services': 'Dienste', 'cat.activity': 'Aktivität', 'cat.support': 'Hilfe', 'cat.others': 'Sonstiges',
     'cat.admin': 'Admin-Bereich', 'cat.preferences': 'Meine Einstellungen',
     'dash.kicker': 'Statistiken, Ereignisse und Ankündigungen im Überblick.',
@@ -1717,6 +1767,17 @@ export function exportUserData(state, userId) {
 
 export function walletKeyOf(state) {
   return state.session?.userId || state.role || 'analyst'
+}
+
+export function validateDiscountCode(state, code) {
+  const c = (state.discountCodes || []).find(
+    (x) => x.code.toUpperCase() === String(code).trim().toUpperCase(),
+  )
+  if (!c) return { ok: false, reason: 'Unknown code' }
+  if (!c.active) return { ok: false, reason: 'Code is disabled' }
+  if (c.expiresAt && Date.now() > c.expiresAt) return { ok: false, reason: 'Code expired' }
+  if (c.maxUses > 0 && (c.uses || 0) >= c.maxUses) return { ok: false, reason: 'Code already fully used' }
+  return { ok: true, code: c }
 }
 
 export function useWallet() {

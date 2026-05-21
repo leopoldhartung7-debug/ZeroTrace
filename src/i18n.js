@@ -13,6 +13,21 @@ const MONTHS = {
 }
 
 export const DE = {
+  // ---- Discount codes ----
+  'Promotions': 'Aktionen', 'Discount Codes': 'Rabattcodes',
+  'Create discount codes analysts can apply to license-key purchases in the shop.': 'Erstelle Rabattcodes die Analysten beim Key-Kauf im Shop einlösen können.',
+  'Create a code': 'Code erstellen', 'Discount %': 'Rabatt %',
+  'Max uses (0 = ∞)': 'Max. Nutzungen (0 = ∞)', 'Expires in days (0 = never)': 'Läuft ab in Tagen (0 = nie)',
+  'Random': 'Zufällig', 'Create code': 'Code erstellen', 'Discount code created': 'Rabattcode erstellt',
+  'Code already exists': 'Code existiert bereits', 'Enter a code': 'Code eingeben',
+  'All codes': 'Alle Codes', 'No discount codes yet.': 'Noch keine Rabattcodes.',
+  'Discount': 'Rabatt', 'Uses': 'Nutzungen', 'Expires': 'Läuft ab', 'Source': 'Quelle',
+  'never': 'nie', 'used up': 'aufgebraucht', 'expired': 'abgelaufen',
+  'Have a discount code?': 'Hast du einen Rabattcode?',
+  'Enter discount code (applies to license keys)': 'Rabattcode eingeben (gilt für Lizenz-Keys)',
+  'Apply': 'Anwenden', 'Invalid code': 'Ungültiger Code', 'Unknown code': 'Unbekannter Code',
+  'Code is disabled': 'Code ist deaktiviert', 'Code expired': 'Code abgelaufen', 'Code already fully used': 'Code bereits aufgebraucht',
+
   // ---- Coins / Casino ----
   'Earn coins by catching cheaters': 'Verdiene Coins indem du Cheater fängst',
   'ZeroTrace Coins': 'ZeroTrace Coins',

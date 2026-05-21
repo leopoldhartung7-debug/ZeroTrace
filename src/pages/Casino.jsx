@@ -6,7 +6,7 @@ import {
 import { PageHeader, Card } from '../components/kit.jsx'
 import Tabs from '../components/Tabs.jsx'
 import { useToast } from '../components/ui.jsx'
-import { useStore, useWallet, generateLicenseKey } from '../store.jsx'
+import { useStore, useWallet, generateLicenseKey, validateDiscountCode } from '../store.jsx'
 
 const WHEEL_COLORS = ['#0ea5e9', '#1e293b', '#38bdf8', '#0f172a', '#0284c7', '#1e293b', '#38bdf8', '#0f172a', '#0ea5e9', '#1e293b']
 const WHEEL_MULT = 8 // hit your exact number → 8× your stake back
@@ -353,12 +353,33 @@ function randCode(prefix) {
 
 function Shop({ wallet, state, dispatch, toast }) {
   const [copied, setCopied] = useState(null)
+  const [codeInput, setCodeInput] = useState('')
+  const [applied, setApplied] = useState(null) // validated discount code object
   const myPurchases = (state.shopPurchases || []).filter((p) => p.ownerKey === wallet.key)
 
+  const priceFor = (item) => {
+    if (item.kind === 'key' && applied) {
+      return Math.max(0, Math.round(item.cost * (1 - applied.percent / 100)))
+    }
+    return item.cost
+  }
+
+  const applyCode = () => {
+    const res = validateDiscountCode(state, codeInput)
+    if (!res.ok) {
+      setApplied(null)
+      return toast({ type: 'error', title: 'Invalid code', body: res.reason })
+    }
+    setApplied(res.code)
+    toast({ type: 'success', title: `Code applied — ${res.code.percent}% off keys`, body: res.code.code })
+  }
+
   const buy = (item) => {
-    if (wallet.balance < item.cost) return toast({ type: 'error', title: 'Not enough coins' })
-    if (!confirm(`Redeem "${item.label}" for ${item.cost} coins?`)) return
-    let code, licenseKey = null
+    const cost = priceFor(item)
+    if (wallet.balance < cost) return toast({ type: 'error', title: 'Not enough coins' })
+    const usingDiscount = item.kind === 'key' && applied
+    if (!confirm(`Redeem "${item.label}" for ${cost.toLocaleString()} coins${usingDiscount ? ` (−${applied.percent}%)` : ''}?`)) return
+    let code, licenseKey = null, percent = null
     if (item.kind === 'key') {
       code = generateLicenseKey()
       licenseKey = {
@@ -373,8 +394,14 @@ function Shop({ wallet, state, dispatch, toast }) {
       }
     } else {
       code = randCode('ZT' + item.label.match(/\d+/)?.[0])
+      percent = Number(item.label.match(/\d+/)?.[0]) || null
     }
-    dispatch({ type: 'shop-redeem', key: wallet.key, cost: item.cost, label: item.label, code, kind: item.kind, licenseKey })
+    dispatch({ type: 'shop-redeem', key: wallet.key, cost, label: item.label, code, kind: item.kind, licenseKey, percent })
+    if (usingDiscount) {
+      dispatch({ type: 'use-discount-code', id: applied.id })
+      // single-use codes get cleared after use
+      if (applied.maxUses === 1) setApplied(null)
+    }
     toast({ type: 'success', title: 'Redeemed!', body: code })
   }
 
@@ -386,9 +413,35 @@ function Shop({ wallet, state, dispatch, toast }) {
 
   return (
     <div className="space-y-6">
+      <Card className="p-5">
+        <p className="caps-label mb-2">Have a discount code?</p>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <input
+            value={codeInput}
+            onChange={(e) => setCodeInput(e.target.value.toUpperCase())}
+            placeholder="Enter discount code (applies to license keys)"
+            className="bd tile txt min-w-0 flex-1 rounded-lg border px-3 py-2.5 font-mono text-sm focus:outline-none"
+          />
+          {applied ? (
+            <button onClick={() => { setApplied(null); setCodeInput('') }} className="bd txt rounded-lg border px-4 py-2.5 text-sm hover:border-red-500">
+              Remove ({applied.percent}% off)
+            </button>
+          ) : (
+            <button onClick={applyCode} className="shrink-0 rounded-lg bg-sky-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-sky-500">
+              Apply
+            </button>
+          )}
+        </div>
+        {applied && (
+          <p className="mt-2 text-xs text-green-400">Active: {applied.code} — {applied.percent}% off all license keys.</p>
+        )}
+      </Card>
+
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {SHOP_ITEMS.map((item) => {
-          const affordable = wallet.balance >= item.cost
+          const cost = priceFor(item)
+          const discounted = cost !== item.cost
+          const affordable = wallet.balance >= cost
           return (
             <Card key={item.id} className="flex flex-col p-5">
               <div className="flex items-center gap-2">
@@ -398,7 +451,9 @@ function Shop({ wallet, state, dispatch, toast }) {
               <p className="muted mt-1 flex-1 text-sm">{item.desc}</p>
               <div className="mt-4 flex items-center justify-between">
                 <span className="flex items-center gap-1.5 text-sm font-bold text-yellow-400">
-                  <Coins size={14} /> {item.cost.toLocaleString()}
+                  <Coins size={14} />
+                  {discounted && <span className="muted mr-1 text-xs line-through">{item.cost.toLocaleString()}</span>}
+                  {cost.toLocaleString()}
                 </span>
                 <button
                   onClick={() => buy(item)}
