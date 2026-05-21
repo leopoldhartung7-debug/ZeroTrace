@@ -4,8 +4,8 @@
 import { useEffect } from 'react'
 import { useStore } from '../store.jsx'
 
-export const COIN_BASE = 250 // base reward per cheater caught
-export const COIN_PER_DETECTION = 25
+export const COIN_BASE = 100 // base reward per cheater caught
+export const COIN_PER_DETECTION = 10
 
 export function coinsForPin(pin) {
   return COIN_BASE + (pin.detections || 0) * COIN_PER_DETECTION
