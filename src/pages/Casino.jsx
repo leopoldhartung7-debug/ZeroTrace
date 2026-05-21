@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react'
 import {
   Coins, Dices, Disc3, ShoppingBag, History as HistoryIcon, Copy, Check,
-  TrendingUp, TrendingDown, Sparkles,
+  TrendingUp, TrendingDown, Sparkles, Plus,
 } from 'lucide-react'
 import { PageHeader, Card } from '../components/kit.jsx'
 import Tabs from '../components/Tabs.jsx'
@@ -9,7 +9,7 @@ import { useToast } from '../components/ui.jsx'
 import { useStore, useWallet, generateLicenseKey } from '../store.jsx'
 
 const WHEEL_COLORS = ['#0ea5e9', '#1e293b', '#38bdf8', '#0f172a', '#0284c7', '#1e293b', '#38bdf8', '#0f172a', '#0ea5e9', '#1e293b']
-const WHEEL_MULT = 9 // hit your exact number → 9× your stake back
+const WHEEL_MULT = 7 // hit your exact number → 7× your stake back
 
 function polar(cx, cy, r, deg) {
   const rad = ((deg - 90) * Math.PI) / 180
@@ -451,10 +451,27 @@ export default function Casino() {
         title="ZeroTrace Coins"
         subtitle="Every cheater you catch earns coins. Gamble them — or redeem them for discounts and license keys."
         actions={
-          <div className="flex items-center gap-2 rounded-xl border border-yellow-500/40 bg-yellow-500/10 px-4 py-2">
-            <Coins size={18} className="text-yellow-400" />
-            <span className="text-lg font-bold text-yellow-300">{wallet.balance.toLocaleString()}</span>
-            <span className="muted text-xs">coins</span>
+          <div className="flex flex-wrap items-center gap-2">
+            {state.role === 'admin' && (
+              <button
+                onClick={() => {
+                  const input = prompt('Add coins to your own wallet (negative to remove):')
+                  if (input == null) return
+                  const amount = Math.floor(Number(input))
+                  if (!amount || Number.isNaN(amount)) return toast({ type: 'error', title: 'Enter a valid number' })
+                  dispatch({ type: 'grant-coins', key: wallet.key, amount, detail: 'Admin self-grant' })
+                  toast({ type: 'success', title: amount >= 0 ? 'Coins added' : 'Coins removed', body: `${amount > 0 ? '+' : ''}${amount}` })
+                }}
+                className="bd txt flex items-center gap-2 rounded-xl border px-3 py-2 text-sm hover:border-yellow-500"
+              >
+                <Plus size={15} /> Add coins
+              </button>
+            )}
+            <div className="flex items-center gap-2 rounded-xl border border-yellow-500/40 bg-yellow-500/10 px-4 py-2">
+              <Coins size={18} className="text-yellow-400" />
+              <span className="text-lg font-bold text-yellow-300">{wallet.balance.toLocaleString()}</span>
+              <span className="muted text-xs">coins</span>
+            </div>
           </div>
         }
       />

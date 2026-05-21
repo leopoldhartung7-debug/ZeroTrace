@@ -20,6 +20,7 @@ export const DE = {
   'coins': 'Coins', 'Coins earned': 'Coins verdient',
   'Coins granted': 'Coins vergeben', 'Coins removed': 'Coins entfernt',
   'Give / remove coins': 'Coins geben / entfernen', 'Enter a valid number': 'Gültige Zahl eingeben',
+  'Add coins': 'Coins hinzufügen', 'Coins added': 'Coins hinzugefügt',
   'Lucky Wheel': 'Glücksrad', 'Blackjack': 'Blackjack', 'Shop': 'Shop', 'History': 'Verlauf',
   'Your bet': 'Dein Einsatz', 'Pick a number': 'Wähle eine Zahl', 'Max': 'Max',
   'Bet on a number 0–9. Hit it and get': 'Wette auf eine Zahl 0–9. Triffst du sie, bekommst du',
