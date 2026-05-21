@@ -2,6 +2,14 @@ import { createContext, useContext, useEffect, useMemo, useReducer } from 'react
 
 const KEY = 'ocean-ac-state-v2'
 
+// Built-in EmailJS credentials so every browser can send registration,
+// welcome and expiry emails out of the box (these values are public by design).
+export const DEFAULT_EMAILJS = {
+  serviceId: 'service_yz2xn2b',
+  templateId: 'template_1hx0b4i',
+  publicKey: 'mbwGjDoImDd81sUvA',
+}
+
 function genPin() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
   let s = ''
@@ -261,9 +269,9 @@ function seed() {
     integrations: {
       discordWebhook: '',
       virusTotalKey: '',
-      emailJsServiceId: '',
-      emailJsTemplateId: '',
-      emailJsPublicKey: '',
+      emailJsServiceId: DEFAULT_EMAILJS.serviceId,
+      emailJsTemplateId: DEFAULT_EMAILJS.templateId,
+      emailJsPublicKey: DEFAULT_EMAILJS.publicKey,
       webhookCustom: { username: 'ZeroTrace Anti-Cheat', color: '#38bdf8', footer: 'ZeroTrace Anti-Cheat' },
       discordWebhooks: [],
       slackWebhook: '',
@@ -312,8 +320,17 @@ export function defaultToolStyle() {
 function load() {
   try {
     const raw = localStorage.getItem(KEY)
-    if (!raw) return seed()
-    return { ...seed(), ...JSON.parse(raw) }
+    const base = seed()
+    if (!raw) return base
+    const parsed = JSON.parse(raw)
+    const merged = { ...base, ...parsed }
+    // Deep-merge integrations and backfill the built-in EmailJS defaults so
+    // existing browsers (which saved empty fields) also get working email.
+    merged.integrations = { ...base.integrations, ...(parsed.integrations || {}) }
+    if (!merged.integrations.emailJsServiceId) merged.integrations.emailJsServiceId = DEFAULT_EMAILJS.serviceId
+    if (!merged.integrations.emailJsTemplateId) merged.integrations.emailJsTemplateId = DEFAULT_EMAILJS.templateId
+    if (!merged.integrations.emailJsPublicKey) merged.integrations.emailJsPublicKey = DEFAULT_EMAILJS.publicKey
+    return merged
   } catch {
     return seed()
   }
