@@ -435,6 +435,55 @@ function Shop({ wallet, state, dispatch, toast }) {
   )
 }
 
+/* ---------------- Admin panel ---------------- */
+
+function AdminCoinPanel({ wallet, dispatch, toast }) {
+  const [custom, setCustom] = useState('')
+  const add = (amount) => {
+    if (!amount) return
+    dispatch({ type: 'grant-coins', key: wallet.key, amount, detail: 'Admin self-grant' })
+    toast({ type: 'success', title: amount >= 0 ? 'Coins added' : 'Coins removed', body: `${amount > 0 ? '+' : ''}${amount.toLocaleString()}` })
+  }
+  return (
+    <Card className="mb-6 mt-6 p-5">
+      <p className="caps-label mb-3 flex items-center gap-2"><Plus size={12} /> Admin — add coins to your own wallet</p>
+      <div className="flex flex-wrap items-center gap-2">
+        {[1000, 5000, 25000, 100000].map((v) => (
+          <button
+            key={v}
+            onClick={() => add(v)}
+            className="bd tile txt rounded-lg border px-3 py-2 text-sm font-semibold hover:border-yellow-500"
+          >
+            +{v.toLocaleString()}
+          </button>
+        ))}
+        <div className="flex items-center gap-2">
+          <input
+            type="number"
+            value={custom}
+            onChange={(e) => setCustom(e.target.value)}
+            placeholder="Custom amount"
+            className="bd tile txt w-36 rounded-lg border px-3 py-2 text-sm focus:outline-none"
+          />
+          <button
+            onClick={() => { const a = Math.floor(Number(custom) || 0); if (a) { add(a); setCustom('') } }}
+            className="rounded-lg bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-500"
+          >
+            Add
+          </button>
+        </div>
+        <button
+          onClick={() => add(-wallet.balance)}
+          className="bd muted rounded-lg border px-3 py-2 text-sm hover:border-red-500"
+        >
+          Reset to 0
+        </button>
+      </div>
+      <p className="muted mt-2 text-xs">Use a negative custom amount to remove coins.</p>
+    </Card>
+  )
+}
+
 /* ---------------- Page ---------------- */
 
 export default function Casino() {
@@ -451,30 +500,17 @@ export default function Casino() {
         title="ZeroTrace Coins"
         subtitle="Every cheater you catch earns coins. Gamble them — or redeem them for discounts and license keys."
         actions={
-          <div className="flex flex-wrap items-center gap-2">
-            {state.role === 'admin' && (
-              <button
-                onClick={() => {
-                  const input = prompt('Add coins to your own wallet (negative to remove):')
-                  if (input == null) return
-                  const amount = Math.floor(Number(input))
-                  if (!amount || Number.isNaN(amount)) return toast({ type: 'error', title: 'Enter a valid number' })
-                  dispatch({ type: 'grant-coins', key: wallet.key, amount, detail: 'Admin self-grant' })
-                  toast({ type: 'success', title: amount >= 0 ? 'Coins added' : 'Coins removed', body: `${amount > 0 ? '+' : ''}${amount}` })
-                }}
-                className="bd txt flex items-center gap-2 rounded-xl border px-3 py-2 text-sm hover:border-yellow-500"
-              >
-                <Plus size={15} /> Add coins
-              </button>
-            )}
-            <div className="flex items-center gap-2 rounded-xl border border-yellow-500/40 bg-yellow-500/10 px-4 py-2">
-              <Coins size={18} className="text-yellow-400" />
-              <span className="text-lg font-bold text-yellow-300">{wallet.balance.toLocaleString()}</span>
-              <span className="muted text-xs">coins</span>
-            </div>
+          <div className="flex items-center gap-2 rounded-xl border border-yellow-500/40 bg-yellow-500/10 px-4 py-2">
+            <Coins size={18} className="text-yellow-400" />
+            <span className="text-lg font-bold text-yellow-300">{wallet.balance.toLocaleString()}</span>
+            <span className="muted text-xs">coins</span>
           </div>
         }
       />
+
+      {state.role === 'admin' && (
+        <AdminCoinPanel wallet={wallet} dispatch={dispatch} toast={toast} />
+      )}
 
       <Tabs
         tabs={[
