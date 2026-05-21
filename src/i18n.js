@@ -21,6 +21,7 @@ export const DE = {
   'Random': 'Zufällig', 'Create code': 'Code erstellen', 'Discount code created': 'Rabattcode erstellt',
   'Code already exists': 'Code existiert bereits', 'Enter a code': 'Code eingeben',
   'All codes': 'Alle Codes', 'No discount codes yet.': 'Noch keine Rabattcodes.',
+  'Delete all': 'Alle löschen', 'All discount codes deleted': 'Alle Rabattcodes gelöscht',
   'Discount': 'Rabatt', 'Uses': 'Nutzungen', 'Expires': 'Läuft ab', 'Source': 'Quelle',
   'never': 'nie', 'used up': 'aufgebraucht', 'expired': 'abgelaufen',
   'Have a discount code?': 'Hast du einen Rabattcode?',

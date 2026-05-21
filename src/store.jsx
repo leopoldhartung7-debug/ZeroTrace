@@ -1180,6 +1180,9 @@ function reducer(state, action) {
     case 'delete-discount-code':
       return { ...state, discountCodes: (state.discountCodes || []).filter((c) => c.id !== action.id) }
 
+    case 'clear-discount-codes':
+      return { ...state, discountCodes: [] }
+
     case 'toggle-discount-code':
       return {
         ...state,

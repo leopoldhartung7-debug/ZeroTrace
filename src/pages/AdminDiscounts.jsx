@@ -86,10 +86,23 @@ export default function AdminDiscounts() {
       </Card>
 
       <Card className="mt-6 p-0">
-        <div className="p-5">
+        <div className="flex flex-wrap items-center justify-between gap-2 p-5">
           <h3 className="txt flex items-center gap-2 text-lg font-semibold">
             <Ticket size={18} /> All codes ({codes.length})
           </h3>
+          {codes.length > 0 && (
+            <button
+              onClick={() => {
+                if (!confirm(`Delete ALL ${codes.length} discount codes? This cannot be undone.`)) return
+                dispatch({ type: 'clear-discount-codes' })
+                logAdminAction(dispatch, state, 'discount-clear-all', '', `${codes.length} codes`)
+                toast({ type: 'success', title: 'All discount codes deleted' })
+              }}
+              className="bd flex items-center gap-2 rounded-lg border border-red-600/40 px-3 py-2 text-sm text-red-500 hover:bg-red-600/10"
+            >
+              <Trash2 size={14} /> Delete all
+            </button>
+          )}
         </div>
         {codes.length === 0 ? (
           <p className="muted px-5 pb-12 pt-4 text-center text-sm">No discount codes yet.</p>
