@@ -13,6 +13,29 @@ const MONTHS = {
 }
 
 export const DE = {
+  // ---- Coins / Casino ----
+  'Earn coins by catching cheaters': 'Verdiene Coins indem du Cheater fängst',
+  'ZeroTrace Coins': 'ZeroTrace Coins',
+  'Every cheater you catch earns coins. Gamble them — or redeem them for discounts and license keys.': 'Jeder gefangene Cheater bringt Coins. Verzocke sie — oder löse sie gegen Rabatte und Lizenz-Keys ein.',
+  'coins': 'Coins', 'Coins earned': 'Coins verdient',
+  'Lucky Wheel': 'Glücksrad', 'Blackjack': 'Blackjack', 'Shop': 'Shop', 'History': 'Verlauf',
+  'Your bet': 'Dein Einsatz', 'Pick a number': 'Wähle eine Zahl', 'Max': 'Max',
+  'Bet on a number 0–9. Hit it and get': 'Wette auf eine Zahl 0–9. Triffst du sie, bekommst du',
+  'your stake back.': 'deines Einsatzes zurück.',
+  'Spinning…': 'Dreht…', 'Spin for': 'Drehen für', 'Potential win': 'Möglicher Gewinn',
+  'Enter a bet': 'Einsatz eingeben', 'Not enough coins': 'Nicht genug Coins',
+  'You won': 'Du hast gewonnen', 'Landed on': 'Gelandet auf',
+  'Beat the dealer without going over 21. Blackjack pays 3:2.': 'Schlag den Dealer ohne über 21 zu kommen. Blackjack zahlt 3:2.',
+  'Deal': 'Geben', 'Hit': 'Karte', 'Stand': 'Halten', 'New round': 'Neue Runde',
+  'Dealer': 'Dealer', 'You': 'Du', 'Bust with': 'Überkauft mit', 'You win!': 'Du gewinnst!',
+  'Push at': 'Unentschieden bei', 'Dealer wins': 'Dealer gewinnt', 'Blackjack!': 'Blackjack!',
+  '10% discount code': '10% Rabattcode', '25% discount code': '25% Rabattcode', '50% discount code': '50% Rabattcode',
+  '7-day license key': '7-Tage-Lizenzkey', '30-day license key': '30-Tage-Lizenzkey', '1-year license key': '1-Jahres-Lizenzkey',
+  'Redeem': 'Einlösen', 'Locked': 'Gesperrt', 'Redeemed!': 'Eingelöst!',
+  'Your redemptions': 'Deine Einlösungen',
+  'No transactions yet. Catch a cheater to earn coins!': 'Noch keine Transaktionen. Fang einen Cheater um Coins zu verdienen!',
+  'Time': 'Zeit', 'Type': 'Typ', 'Detail': 'Detail', 'Amount': 'Betrag',
+
   // ---- Analyst batch (star, multi-select, saved filters, re-scan, etc.) ----
   'Starred': 'Favoriten', 'Save filter': 'Filter speichern', 'Name this filter:': 'Filter benennen:',
   'Filter saved': 'Filter gespeichert', 'selected': 'ausgewählt',

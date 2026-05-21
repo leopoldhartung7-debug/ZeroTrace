@@ -280,6 +280,8 @@ function seed() {
     savedFilters: [],
     watchlist: [],
     recentlyViewed: [],
+    wallets: {},
+    shopPurchases: [],
   }
 }
 
@@ -1054,6 +1056,76 @@ function reducer(state, action) {
     case 'clear-audit-log':
       return { ...state, adminAuditLog: [] }
 
+    case 'wallet-tx': {
+      const w = state.wallets?.[action.key] || { balance: 0, history: [] }
+      const balance = Math.max(0, w.balance + action.delta)
+      return {
+        ...state,
+        wallets: {
+          ...(state.wallets || {}),
+          [action.key]: {
+            balance,
+            history: [
+              { id: 'tx' + Date.now() + Math.random().toString(16).slice(2, 6), time: Date.now(), type: action.txType, amount: action.delta, detail: action.detail || '' },
+              ...w.history,
+            ].slice(0, 200),
+          },
+        },
+      }
+    }
+
+    case 'award-coins': {
+      const pin = state.pins.find((p) => p.id === action.pinId)
+      if (!pin || pin.coinsAwarded) return state
+      const key = pin.ownerId || 'analyst'
+      const w = state.wallets?.[key] || { balance: 0, history: [] }
+      return {
+        ...state,
+        pins: state.pins.map((p) => (p.id === action.pinId ? { ...p, coinsAwarded: true } : p)),
+        wallets: {
+          ...(state.wallets || {}),
+          [key]: {
+            balance: w.balance + action.amount,
+            history: [
+              { id: 'tx' + Date.now() + Math.random().toString(16).slice(2, 6), time: Date.now(), type: 'earn', amount: action.amount, detail: `Caught cheater (${pin.pin})` },
+              ...w.history,
+            ].slice(0, 200),
+          },
+        },
+        notifications: note(state, 'Coins earned', `+${action.amount} coins for catching a cheater (${pin.pin})`, pin.ownerId),
+      }
+    }
+
+    case 'shop-redeem': {
+      const w = state.wallets?.[action.key] || { balance: 0, history: [] }
+      if (w.balance < action.cost) return state
+      const purchase = {
+        id: 'sp' + Date.now() + Math.random().toString(16).slice(2, 6),
+        ownerKey: action.key,
+        label: action.label,
+        code: action.code,
+        kind: action.kind,
+        cost: action.cost,
+        time: Date.now(),
+      }
+      const extraKeys = action.licenseKey ? [action.licenseKey] : []
+      return {
+        ...state,
+        wallets: {
+          ...(state.wallets || {}),
+          [action.key]: {
+            balance: w.balance - action.cost,
+            history: [
+              { id: 'tx' + Date.now() + Math.random().toString(16).slice(2, 6), time: Date.now(), type: 'redeem', amount: -action.cost, detail: action.label },
+              ...w.history,
+            ].slice(0, 200),
+          },
+        },
+        licenseKeys: [...extraKeys, ...(state.licenseKeys || [])],
+        shopPurchases: [purchase, ...(state.shopPurchases || [])],
+      }
+    }
+
     case 'toggle-pin-star':
       return {
         ...state,
@@ -1539,7 +1611,7 @@ const DICT = {
     'nav.database': 'Cheat Database', 'nav.tools': 'Forensic Tools', 'nav.history': 'Activity Log',
     'nav.designer': 'Tool Designer', 'nav.keys': 'Key Generator',
     'nav.support': 'Support', 'nav.resources': 'Resources', 'nav.settings': 'Settings',
-    'nav.scoreboard': 'Scoreboard', 'nav.compare': 'Compare',
+    'nav.scoreboard': 'Scoreboard', 'nav.compare': 'Compare', 'nav.casino': 'Coins & Casino',
     'nav.logins': 'Logins', 'nav.security': 'Security', 'nav.weeklyReport': 'Weekly Report',
     'nav.gameProfiles': 'Game Profiles',
     'nav.analytics': 'System Analytics', 'nav.blacklists': 'Blacklists',
@@ -1559,7 +1631,7 @@ const DICT = {
     'nav.database': 'Cheat-Datenbank', 'nav.tools': 'Forensik-Tools', 'nav.history': 'Aktivität',
     'nav.designer': 'Tool-Designer', 'nav.keys': 'Key-Generator',
     'nav.support': 'Support', 'nav.resources': 'Ressourcen', 'nav.settings': 'Einstellungen',
-    'nav.scoreboard': 'Bestenliste', 'nav.compare': 'Vergleich',
+    'nav.scoreboard': 'Bestenliste', 'nav.compare': 'Vergleich', 'nav.casino': 'Coins & Casino',
     'nav.logins': 'Logins', 'nav.security': 'Sicherheit', 'nav.weeklyReport': 'Wochenbericht',
     'nav.gameProfiles': 'Spielprofile',
     'nav.analytics': 'System-Analytics', 'nav.blacklists': 'Sperrlisten',
@@ -1621,6 +1693,17 @@ export function exportUserData(state, userId) {
     notifications,
     savedStrings,
   }
+}
+
+export function walletKeyOf(state) {
+  return state.session?.userId || state.role || 'analyst'
+}
+
+export function useWallet() {
+  const { state } = useStore()
+  const key = walletKeyOf(state)
+  const w = state.wallets?.[key] || { balance: 0, history: [] }
+  return { key, balance: w.balance, history: w.history }
 }
 
 export function useT() {

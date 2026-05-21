@@ -7,6 +7,7 @@ import { ScanWebhookNotifier, WeeklyReportNotifier } from './lib/webhook.js'
 import { KeyExpiryWatcher } from './lib/expiry.js'
 import { DigestNotifier } from './lib/digest.js'
 import { WatchlistNotifier } from './lib/watchlist.js'
+import { CoinAwarder } from './lib/coins.js'
 import { ToastProvider } from './components/ui.jsx'
 import CommandPalette from './components/CommandPalette.jsx'
 import Sidebar from './components/Sidebar.jsx'
@@ -34,6 +35,7 @@ import UserDetails from './pages/UserDetails.jsx'
 import Scoreboard from './pages/Scoreboard.jsx'
 import PlayerProfile from './pages/PlayerProfile.jsx'
 import Compare from './pages/Compare.jsx'
+import Casino from './pages/Casino.jsx'
 import AdminAuditLog from './pages/AdminAuditLog.jsx'
 import AdminBlacklists from './pages/AdminBlacklists.jsx'
 import AdminWebhooks from './pages/AdminWebhooks.jsx'
@@ -115,6 +117,7 @@ export default function App() {
         <WeeklyReportNotifier />
         <DigestNotifier />
         <WatchlistNotifier />
+        <CoinAwarder />
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
@@ -149,6 +152,7 @@ export default function App() {
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/account" element={<Account />} />
             <Route path="/scoreboard" element={<Scoreboard />} />
+            <Route path="/casino" element={<Casino />} />
             <Route path="/players/:id" element={<PlayerProfile />} />
             <Route path="/compare" element={<Compare />} />
             <Route

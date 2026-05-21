@@ -6,7 +6,7 @@ import {
   LifeBuoy, BookOpen, Settings, Wifi, Bell, Globe, Moon, Sun,
   ChevronsUpDown, Trash2, Check, Command, Trophy, ShoppingCart,
   Download, Scale, ChevronDown, ChevronRight, LogOut, KeyRound, GitCompareArrows,
-  ShieldCheck, Mail, Ban, Activity, BarChart3, Megaphone, Wrench as WrenchIcon,
+  ShieldCheck, Mail, Ban, Activity, BarChart3, Megaphone, Wrench as WrenchIcon, Coins,
 } from 'lucide-react'
 import { useStore, useT } from '../store.jsx'
 
@@ -56,6 +56,7 @@ export default function Sidebar() {
         { to: '/tools', label: t('nav.tools'), icon: Wrench },
         { to: '/scoreboard', label: t('nav.scoreboard'), icon: Trophy },
         { to: '/compare', label: t('nav.compare'), icon: GitCompareArrows },
+        { to: '/casino', label: t('nav.casino'), icon: Coins },
       ],
     },
     {
