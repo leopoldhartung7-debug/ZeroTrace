@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Megaphone, Info, AlertTriangle, CheckCircle2, XCircle, Save } from 'lucide-react'
+import { Megaphone, Info, AlertTriangle, CheckCircle2, XCircle, Save, Trash2 } from 'lucide-react'
 import { PageHeader, Card, Textarea } from '../components/kit.jsx'
 import { useToast } from '../components/ui.jsx'
 import { useStore, logAdminAction } from '../store.jsx'
@@ -34,6 +34,14 @@ export default function AdminAnnouncement() {
     })
     logAdminAction(dispatch, state, 'announcement-update', tone, enabled ? `enabled: ${text.slice(0, 80)}` : 'disabled')
     toast({ type: 'success', title: 'Announcement saved' })
+  }
+
+  const remove = () => {
+    if (!confirm('Delete the current announcement? It will be removed for everyone.')) return
+    dispatch({ type: 'set-announcement', value: { enabled: false, text: '', tone: 'info', dismissable: true } })
+    logAdminAction(dispatch, state, 'announcement-delete', '', '')
+    setText(''); setTone('info'); setEnabled(false); setDismissable(true)
+    toast({ type: 'success', title: 'Announcement deleted' })
   }
 
   const toneMeta = TONES.find((t) => t.value === tone) || TONES[0]
@@ -99,6 +107,14 @@ export default function AdminAnnouncement() {
         </div>
 
         <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-end">
+          {(a.text?.trim() || a.enabled) && (
+            <button
+              onClick={remove}
+              className="bd flex items-center justify-center gap-2 rounded-lg border border-red-600/40 px-5 py-2.5 text-sm font-semibold text-red-500 hover:bg-red-600/10"
+            >
+              <Trash2 size={14} /> Delete announcement
+            </button>
+          )}
           <button
             onClick={save}
             className="bg-sky-600 hover:bg-sky-700 flex items-center justify-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold text-white"

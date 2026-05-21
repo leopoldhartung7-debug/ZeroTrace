@@ -172,6 +172,8 @@ export const DE = {
   'No geo data yet. Enable IP lookup in scan results.': 'Noch keine Geo-Daten. IP-Lookup in Scan-Ergebnissen aktivieren.',
   'Communication': 'Kommunikation', 'Announcement Banner': 'Ankündigungs-Banner',
   'Announcement': 'Ankündigung', 'Posted': 'Gepostet',
+  'Delete announcement': 'Ankündigung löschen', 'Announcement deleted': 'Ankündigung gelöscht',
+  'Delete the current announcement? It will be removed for everyone.': 'Aktuelle Ankündigung löschen? Sie wird für alle entfernt.',
   'Display a banner at the top of the dashboard for every signed-in user.': 'Zeige allen angemeldeten Nutzern ein Banner oben im Dashboard.',
   'Preview': 'Vorschau', 'Type something below to see the preview.': 'Schreibe unten etwas um die Vorschau zu sehen.',
   'Message': 'Nachricht', 'Tone': 'Ton',
