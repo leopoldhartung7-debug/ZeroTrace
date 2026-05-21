@@ -9,7 +9,7 @@ import { useToast } from '../components/ui.jsx'
 import { useStore, useWallet, generateLicenseKey } from '../store.jsx'
 
 const WHEEL_COLORS = ['#0ea5e9', '#1e293b', '#38bdf8', '#0f172a', '#0284c7', '#1e293b', '#38bdf8', '#0f172a', '#0ea5e9', '#1e293b']
-const WHEEL_MULT = 5 // hit your exact number → 5× your stake back
+const WHEEL_MULT = 8 // hit your exact number → 8× your stake back
 
 function polar(cx, cy, r, deg) {
   const rad = ((deg - 90) * Math.PI) / 180
@@ -43,11 +43,16 @@ function LuckyWheel({ wallet, dispatch, toast }) {
     dispatch({ type: 'wallet-tx', key: wallet.key, delta: -amount, txType: 'bet', detail: `Lucky Wheel bet on ${pick}` })
 
     const result = Math.floor(Math.random() * 10)
-    // Center angle of a segment (clockwise from top): result*36 + 18.
-    const target = 360 * 6 - (result * 36 + 18)
-    const base = Math.ceil(rotation / 360) * 360 // keep spinning forward
-    const next = base + target
-    setRotation(next)
+    const spins = 5 + Math.floor(Math.random() * 4) // 5–8 full turns for variety
+    // We want the wheel to end with segment `result` centered under the top
+    // pointer: final rotation mod 360 must equal -(result*36 + 18).
+    const targetMod = ((360 - (result * 36 + 18)) % 360 + 360) % 360
+    setRotation((prev) => {
+      const prevMod = ((prev % 360) + 360) % 360
+      let delta = targetMod - prevMod
+      if (delta < 0) delta += 360
+      return prev + spins * 360 + delta
+    })
 
     setTimeout(() => {
       const won = result === pick
