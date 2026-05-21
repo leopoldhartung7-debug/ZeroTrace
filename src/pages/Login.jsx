@@ -47,7 +47,7 @@ export default function Login() {
 
   async function sendVerificationCode(email, code, username) {
     const cfg = state.integrations || {}
-    if (!cfg.emailJsServiceId || !cfg.emailJsTemplateId || !cfg.emailJsPublicKey) return false
+    if (!cfg.emailJsServiceId || !cfg.emailJsTemplateId || !cfg.emailJsPublicKey) return { ok: false, error: 'EmailJS not configured' }
     const lang = state.settings?.lang || 'en'
     const subject = lang === 'de' ? 'ZeroTrace – E-Mail bestätigen' : 'Verify your ZeroTrace email'
     const message = lang === 'de'
@@ -63,15 +63,19 @@ export default function Login() {
           user_id: cfg.emailJsPublicKey,
           template_params: {
             to_email: email,
+            email,
+            to_name: username || '',
             subject,
             message,
             message_html: verifyHtml({ username: username || '', code }, lang),
           },
         }),
       })
-      return resp.ok
-    } catch {
-      return false
+      if (resp.ok) return { ok: true }
+      const text = await resp.text().catch(() => '')
+      return { ok: false, error: `HTTP ${resp.status}: ${text || 'unknown error'}` }
+    } catch (e) {
+      return { ok: false, error: e.message || 'Network error' }
     }
   }
 
@@ -313,13 +317,13 @@ export default function Login() {
     if (emailJsReady) {
       const code = String(Math.floor(100000 + Math.random() * 900000))
       setChecking(true)
-      const ok = await sendVerificationCode(email, code, username)
+      const res = await sendVerificationCode(email, code, username)
       setChecking(false)
-      if (!ok) {
+      if (!res.ok) {
         return toast({
           type: 'error',
           title: 'Could not send verification email',
-          body: 'Check your EmailJS configuration.',
+          body: res.error || 'Check your EmailJS configuration.',
         })
       }
       setSentCode(code)
@@ -352,9 +356,9 @@ export default function Login() {
     if (!pendingUser) return
     const code = String(Math.floor(100000 + Math.random() * 900000))
     setChecking(true)
-    const ok = await sendVerificationCode(pendingUser.email, code, pendingUser.username)
+    const res = await sendVerificationCode(pendingUser.email, code, pendingUser.username)
     setChecking(false)
-    if (!ok) return toast({ type: 'error', title: 'Could not resend code' })
+    if (!res.ok) return toast({ type: 'error', title: 'Could not resend code', body: res.error })
     setSentCode(code)
     toast({ type: 'success', title: 'Code resent', body: `New code sent to ${pendingUser.email}` })
   }
