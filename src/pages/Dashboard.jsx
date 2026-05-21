@@ -160,6 +160,7 @@ function fmtNum(n) {
 
 export default function Dashboard() {
   const t = useT()
+  const { state } = useStore()
   const myStats = useStats()
   const platformStats = usePlatformStats()
   const [topTab, setTopTab] = useState('My Statistics')
@@ -182,10 +183,20 @@ export default function Dashboard() {
         { icon: ShieldAlert, label: 'Unique Cheats', value: fmtNum(myStats.uniqueCheats), accent: 'yellow' },
       ]
 
+  const sessionUser = state.session?.userId
+    ? (state.users || []).find((u) => u.id === state.session.userId)
+    : null
+  const displayName = sessionUser
+    ? sessionUser.username
+    : state.role === 'admin'
+      ? 'Admin'
+      : 'Analyst'
+  const welcomeBack = (state.settings?.lang === 'de' ? 'Willkommen zurück, ' : 'Welcome back, ') + displayName + '.'
+
   return (
     <div className="w-full min-w-0">
       <p className="caps-label">{t('dash.kicker')}</p>
-      <h1 className="txt mt-3 break-words text-3xl font-bold tracking-tight sm:text-4xl">{t('dash.welcome')}</h1>
+      <h1 className="txt mt-3 break-words text-3xl font-bold tracking-tight sm:text-4xl">{welcomeBack}</h1>
 
       <div className="mt-8">
         <Tabs tabs={['My Statistics', 'Platform']} active={topTab} onChange={setTopTab} />
