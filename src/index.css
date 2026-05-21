@@ -91,6 +91,20 @@
     text-transform: uppercase;
     color: var(--muted);
   }
+  /* Landing page only: override every font (incl. h1/h2/h3) with Space Grotesk. */
+  .landing-font,
+  .landing-font h1,
+  .landing-font h2,
+  .landing-font h3,
+  .landing-font h4,
+  .landing-font p,
+  .landing-font span,
+  .landing-font a,
+  .landing-font button,
+  .landing-font li,
+  .landing-font div {
+    font-family: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+  }
 }
 
 ::selection {

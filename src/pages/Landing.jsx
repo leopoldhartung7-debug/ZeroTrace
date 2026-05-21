@@ -255,7 +255,7 @@ export default function Landing() {
   }
 
   return (
-    <div className="force-dark app-bg min-h-screen overflow-x-hidden text-white">
+    <div className="landing-font force-dark app-bg min-h-screen overflow-x-hidden text-white">
       <header className="sticky top-0 z-30 flex items-center justify-between border-b border-white/5 bg-[#1a1b1e]/80 px-6 py-5 backdrop-blur md:px-12">
         <button onClick={() => nav('/')} className="flex items-center gap-3">
           <Logo size="md" />
