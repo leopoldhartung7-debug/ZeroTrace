@@ -332,12 +332,12 @@ function Blackjack({ wallet, dispatch, toast }) {
 /* ---------------- Shop ---------------- */
 
 const SHOP_ITEMS = [
-  { id: 'disc10', kind: 'discount', label: '10% discount code', cost: 3000, desc: '10% off your next license purchase.' },
-  { id: 'disc25', kind: 'discount', label: '25% discount code', cost: 8000, desc: '25% off your next license purchase.' },
-  { id: 'disc50', kind: 'discount', label: '50% discount code', cost: 16000, desc: 'Half off your next license purchase.' },
-  { id: 'key7', kind: 'key', label: '7-day license key', cost: 20000, desc: 'A real 7-day ZeroTrace key.', days: 7 },
-  { id: 'key30', kind: 'key', label: '30-day license key', cost: 55000, desc: 'A real 30-day ZeroTrace key.', days: 30 },
-  { id: 'key365', kind: 'key', label: '1-year license key', cost: 200000, desc: 'A real 1-year ZeroTrace key.', days: 365 },
+  { id: 'disc10', kind: 'discount', label: '10% discount code', cost: 2000, desc: '10% off your next license purchase.' },
+  { id: 'disc25', kind: 'discount', label: '25% discount code', cost: 5000, desc: '25% off your next license purchase.' },
+  { id: 'disc50', kind: 'discount', label: '50% discount code', cost: 10000, desc: 'Half off your next license purchase.' },
+  { id: 'key7', kind: 'key', label: '7-day license key', cost: 14000, desc: 'A real 7-day ZeroTrace key.', days: 7 },
+  { id: 'key30', kind: 'key', label: '30-day license key', cost: 38000, desc: 'A real 30-day ZeroTrace key.', days: 30 },
+  { id: 'key365', kind: 'key', label: '1-year license key', cost: 130000, desc: 'A real 1-year ZeroTrace key.', days: 365 },
 ]
 
 function randCode(prefix) {
