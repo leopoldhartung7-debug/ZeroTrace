@@ -414,8 +414,8 @@ static int    g_progress = 0;     // 0..100 (synced with the scan)
 static double g_angle = 0;        // spinner rotation
 static ScanResult g_res;          // filled when the scan finishes
 
-// Matte-grey scanning background.
-static const COLORREF kScanBg = RGB(0x22, 0x22, 0x24);
+// Near-black scanning background (like the reference).
+static const COLORREF kScanBg = RGB(0x0c, 0x0c, 0x0e);
 
 static const char* kEula =
     "END-USER SOFTWARE LICENSE AGREEMENT\r\n\r\n"
@@ -508,10 +508,24 @@ static void paintScanning(HWND hWnd, HDC dc) {
     RECT rc; GetClientRect(hWnd, &rc);
     int W = rc.right, H = rc.bottom;
 
-    // matte-grey background
+    // near-black background
     HBRUSH bg = CreateSolidBrush(kScanBg);
     FillRect(dc, &rc, bg);
     DeleteObject(bg);
+
+    // faint drifting particles (subtle smoky-light effect)
+    for (int i = 0; i < 36; ++i) {
+        int px2 = (i * 9973 + (int)g_angle * 3) % W;
+        int py2 = (i * 6131 + (int)(g_angle * 1.5)) % H;
+        int g = 0x18 + (i * 7) % 0x22;
+        HBRUSH pb = CreateSolidBrush(RGB(g, g, g + 4));
+        HBRUSH opb2 = (HBRUSH)SelectObject(dc, pb);
+        HPEN onp = (HPEN)SelectObject(dc, GetStockObject(NULL_PEN));
+        int s = 1 + (i % 3);
+        Ellipse(dc, px2, py2, px2 + s, py2 + s);
+        SelectObject(dc, opb2); SelectObject(dc, onp);
+        DeleteObject(pb);
+    }
 
     drawLogo(dc, W / 2, 70);
 
