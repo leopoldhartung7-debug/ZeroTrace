@@ -657,7 +657,7 @@ export default function Pins() {
               <ChevronLeft size={15} />
             </button>
             <span className="rounded-md border border-sky-600/40 bg-sky-600/15 px-3 py-1 text-sm font-medium text-sky-500">
-              {safePage}
+              {safePage} / {totalPages}
             </span>
             <button
               disabled={safePage >= totalPages}

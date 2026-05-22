@@ -96,7 +96,7 @@ function PaginatedTable({ columns, rows, render, searchKeys, placeholder, empty 
           <button onClick={() => setPage(Math.max(1, p - 1))} disabled={p <= 1} className="bd rounded-md border p-1.5 disabled:opacity-40">
             <ChevronLeft size={14} />
           </button>
-          <span className="rounded-md border border-sky-600/40 bg-sky-600/15 px-3 py-1 text-sky-500">{p}</span>
+          <span className="rounded-md border border-sky-600/40 bg-sky-600/15 px-3 py-1 text-sky-500">{p} / {pages}</span>
           <button onClick={() => setPage(Math.min(pages, p + 1))} disabled={p >= pages} className="bd rounded-md border p-1.5 disabled:opacity-40">
             <ChevronRight size={14} />
           </button>
