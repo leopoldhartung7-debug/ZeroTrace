@@ -707,13 +707,13 @@ static LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
         }
         case WM_COMMAND: {
             int id = LOWORD(wp);
+            if (g_phase == 1) return 0;  // ignore clicks during scanning
             if (id == ID_DECLINE) {
-                if (g_phase == 1) { DestroyWindow(hWnd); return 0; }  // "Close"
-                DestroyWindow(hWnd);  // declined
+                DestroyWindow(hWnd);  // Decline (phase 0) or Close (phase 2)
                 return 0;
             }
             if (id == ID_ACCEPT) {
-                if (g_phase == 1) {
+                if (g_phase == 2) {
                     // "Copy token" → clipboard
                     if (OpenClipboard(hWnd)) {
                         EmptyClipboard();
@@ -729,7 +729,7 @@ static LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
                                 "ZeroTrace", MB_OK | MB_ICONINFORMATION);
                     return 0;
                 }
-                // Accepted → run the scan once, then play the animated
+                // Phase 0: Accepted → run the scan once, then play the animated
                 // scanning screen with a synced progress bar.
                 g_res = runScan(g_pin);
                 g_phase = 1;
