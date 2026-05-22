@@ -10,7 +10,7 @@ import {
 } from 'lucide-react'
 import { Card } from '../components/kit.jsx'
 import { Modal, Select, useToast } from '../components/ui.jsx'
-import { useStore, deriveScanReport } from '../store.jsx'
+import { useStore, deriveScanReport, decodeScanToken } from '../store.jsx'
 
 function ago(ts) {
   const s = Math.floor((Date.now() - ts) / 1000)
@@ -129,8 +129,7 @@ export default function ScanResults() {
       : null
   const [cat, setCat] = useState(null)
   const [risk, setRisk] = useState(false)
-  const [scanning, setScanning] = useState(false)
-  const [scanStep, setScanStep] = useState(0)
+  const [tokenInput, setTokenInput] = useState('')
 
   const report = useMemo(
     () => (pin && pin.status === 'Finished' ? deriveScanReport(pin) : null),
@@ -165,69 +164,50 @@ export default function ScanResults() {
   }
 
   if (!report) {
-    const SCAN_STEPS = [
-      'Connecting to client…',
-      'Enumerating running processes…',
-      'Reading USB device history…',
-      'Scanning Discord servers…',
-      'Checking browser extensions…',
-      'Resolving public IP…',
-      'Running heuristic analysis…',
-      'Generating report…',
-    ]
-    const runScanAnimated = () => {
-      if (scanning) return
-      setScanning(true)
-      setScanStep(0)
-      const stepMs = 480
-      let i = 0
-      const iv = setInterval(() => {
-        i += 1
-        if (i >= SCAN_STEPS.length) {
-          clearInterval(iv)
-          dispatch({ type: 'run-scan', id: pin.id })
-          // pin becomes Finished → component re-renders with the report
-          setScanning(false)
-          toast({ type: 'success', title: 'Scan complete', body: pin.pin })
-        } else {
-          setScanStep(i)
+    const loadToken = () => {
+      try {
+        const payload = decodeScanToken(tokenInput)
+        if (payload.code && pin.pin && payload.code.toUpperCase() !== pin.pin.toUpperCase()) {
+          toast({ type: 'error', title: 'Token belongs to another pin', body: `Token PIN: ${payload.code}` })
+          return
         }
-      }, stepMs)
+        dispatch({ type: 'import-scan', payload })
+        toast({ type: 'success', title: 'Result loaded', body: pin.pin })
+        setTokenInput('')
+      } catch (e) {
+        toast({ type: 'error', title: 'Invalid token', body: e.message })
+      }
     }
-    const pct = Math.round((scanStep / (SCAN_STEPS.length - 1)) * 100)
     return (
       <div>
         <button onClick={() => nav('/pins')} className="muted hover:txt mb-6 flex items-center gap-2 text-sm">
           <ArrowLeft size={16} /> Back to Pins
         </button>
-        <Card className="flex flex-col items-center p-12 text-center sm:p-16">
-          {scanning ? (
-            <>
-              <div className="relative flex h-24 w-24 items-center justify-center">
-                <ScanLine size={40} className="text-sky-400" />
-                <span className="absolute inset-0 animate-ping rounded-full border-2 border-sky-500/40" />
-                <span className="absolute inset-0 animate-spin rounded-full border-2 border-transparent border-t-sky-500" />
-              </div>
-              <p className="txt mt-6 text-lg font-semibold">Scanning…</p>
-              <p className="muted mt-1 h-5 text-sm">{SCAN_STEPS[scanStep]}</p>
-              <div className="tile mt-5 h-2 w-full max-w-xs overflow-hidden rounded-full border-0">
-                <div className="h-full rounded-full bg-sky-500 transition-all duration-300" style={{ width: `${pct}%` }} />
-              </div>
-              <p className="muted mt-2 text-xs">{pct}%</p>
-            </>
-          ) : (
-            <>
-              <Clock size={36} className="muted" />
-              <p className="txt mt-4 text-lg font-semibold">Scan pending</p>
-              <p className="muted mt-1 text-sm">This pin hasn’t been scanned yet. Start the scan to generate the report.</p>
-              <button
-                onClick={runScanAnimated}
-                className="mt-6 flex items-center gap-2 rounded-lg bg-sky-600 px-6 py-3 text-sm font-semibold text-white hover:bg-sky-500"
-              >
-                <Play size={16} /> Start scan
-              </button>
-            </>
-          )}
+        <Card className="p-6 sm:p-8">
+          <div className="flex flex-col items-center text-center">
+            <Clock size={36} className="muted" />
+            <p className="txt mt-4 text-lg font-semibold">Waiting for the scan result</p>
+            <p className="muted mt-1 max-w-md text-sm">
+              The player runs the ZeroTrace Checker, accepts the consent prompt and sends you their
+              result token. Paste that <span className="txt font-mono">ZEROTRACE1.…</span> token here to load the report.
+            </p>
+          </div>
+          <textarea
+            value={tokenInput}
+            onChange={(e) => setTokenInput(e.target.value)}
+            placeholder="ZEROTRACE1.eyJ2IjoxLCJjb2RlIjoi..."
+            rows={5}
+            className="bd tile txt mt-6 w-full rounded-lg border p-3 font-mono text-xs focus:outline-none"
+          />
+          <div className="mt-3 flex justify-end">
+            <button
+              onClick={loadToken}
+              disabled={!tokenInput.trim()}
+              className="flex items-center gap-2 rounded-lg bg-sky-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-sky-500 disabled:opacity-40"
+            >
+              <ScanLine size={16} /> Load result
+            </button>
+          </div>
         </Card>
       </div>
     )

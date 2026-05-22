@@ -418,25 +418,25 @@ static ScanResult g_res;          // filled when the scan finishes
 static const COLORREF kScanBg = RGB(0x22, 0x22, 0x24);
 
 static const char* kEula =
-    "END-USER SOFTWARE LICENSE AGREEMENT & PRIVACY NOTICE\r\n\r\n"
-    "This License Agreement is a legal agreement between you and ZeroTrace "
-    "regarding the use of the ZeroTrace Cheat Checker (the \"Software\").\r\n\r\n"
-    "WHAT THIS SOFTWARE CHECKS\r\n"
-    "By accepting, you consent to the Software performing a one-time, "
-    "transparent anti-cheat check that reads ONLY:\r\n"
-    "   - the list of currently running processes and their loaded modules\r\n"
+    "END-USER SOFTWARE LICENSE AGREEMENT\r\n\r\n"
+    "This End-User License Agreement (\"EULA\") is a legal agreement between "
+    "you and ZeroTrace.\r\n\r\n"
+    "This EULA agreement governs your acquisition and use of our ZeroTrace "
+    "anti-cheat software (\"Software\") directly from ZeroTrace or indirectly "
+    "through a ZeroTrace authorized reseller or distributor (a \"Reseller\").\r\n\r\n"
+    "By accepting, you consent to a one-time, transparent anti-cheat check "
+    "that reads ONLY:\r\n"
+    "   - your running processes and their loaded modules\r\n"
+    "   - the loaded kernel drivers\r\n"
+    "   - whether the system is a virtual machine\r\n"
     "   - known cheat files inside your game folder\r\n\r\n"
-    "WHAT IT DOES NOT DO\r\n"
-    "The Software does NOT read, collect or transmit your USB history, your "
-    "browser data or history, your Discord data, your IP address, or any "
-    "personal files outside the game folder. Nothing runs in the background "
-    "and nothing is hidden from you.\r\n\r\n"
-    "RESULT\r\n"
-    "The result of the check (a verdict and the names of any cheats found) is "
-    "shown to you on screen and turned into a token that you choose to share "
-    "with the analyst who requested the check. You are in full control of that "
-    "token.\r\n\r\n"
-    "If you do not agree, press Decline and no scan will be performed.";
+    "The Software does NOT read or transmit your USB history, your browser "
+    "data or history, your Discord data, your IP address, or any personal "
+    "files outside the game folder. Nothing runs in the background.\r\n\r\n"
+    "The check produces a token that you send to the analyst who requested "
+    "it. The result is reviewed by the analyst, not shown on this device.\r\n\r\n"
+    "If you do not agree to the terms of this EULA, do not accept. Press "
+    "Decline and no scan will be performed.";
 
 // Show the consent-phase child controls (used for consent + result phases).
 static void showControls(int show) {
@@ -450,10 +450,15 @@ static void enterResultPhase(HWND hWnd) {
     g_phase = 2;
     g_token = g_res.token;
     showControls(TRUE);
-    std::string title = "Scan complete  -  " + g_res.verdict;
-    SetWindowTextA(g_hTitle, title.c_str());
-    SetWindowTextA(g_hSub, "Review the result, then copy the token for your analyst.");
-    SetWindowTextA(g_hText, g_res.summary.c_str());
+    // The scanned user does NOT see the verdict/findings — only the token to send.
+    std::string text =
+        "Your scan is finished.\r\n\r\n"
+        "Copy the token below and send it to the analyst who requested this "
+        "check. They will load it on their side to view the result.\r\n\r\n" +
+        g_res.token;
+    SetWindowTextA(g_hTitle, "Scan complete");
+    SetWindowTextA(g_hSub, "Copy your token and send it to your analyst.");
+    SetWindowTextA(g_hText, text.c_str());
     SetWindowTextA(g_hAccept, "Copy token");
     SetWindowTextA(g_hDecline, "Close");
     InvalidateRect(hWnd, nullptr, TRUE);

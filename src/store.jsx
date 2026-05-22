@@ -58,6 +58,19 @@ function fmtTs(d) {
   )
 }
 
+export function decodeScanToken(raw) {
+  let s = (raw || '').trim().replace(/^["']|["']$/g, '').trim()
+  let b64 = (/^(zerotrace1|ocean1)\./i.test(s) ? s.slice(s.indexOf('.') + 1) : s).replace(/\s+/g, '')
+  if (!b64) throw new Error('Empty token')
+  let json
+  try { json = decodeURIComponent(escape(atob(b64))) }
+  catch { if (b64.startsWith('{')) json = s; else throw new Error('Token is not valid Base64') }
+  let obj
+  try { obj = JSON.parse(json) } catch { throw new Error('Token does not contain valid JSON') }
+  if (!obj || !obj.code) throw new Error('Token is missing the session code')
+  return obj
+}
+
 export function deriveScanReport(pin) {
   if (!pin || pin.status !== 'Finished') return null
 
