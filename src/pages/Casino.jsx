@@ -1543,8 +1543,8 @@ export default function Casino() {
       const big = bet > 0 && payout >= bet * 10
       playSound(big ? 'jackpot' : 'win', soundOn)
       if (big) setConfetti(Date.now())
-      // 1-in-200 chance any win also triggers the jackpot pool.
-      if (Math.random() < 0.005) {
+      // ~1-in-2500 chance any win also triggers the jackpot pool.
+      if (Math.random() < 0.0004) {
         const me = (state.users || []).find((u) => u.id === wallet.key)
         dispatch({ type: 'win-jackpot', key: wallet.key, name: me?.username || (wallet.key === 'admin' ? 'Admin' : 'Analyst') })
         setConfetti(Date.now() + 1)
