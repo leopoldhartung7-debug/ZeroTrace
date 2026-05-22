@@ -25,6 +25,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <cmath>
 #include <cstdlib>
 #include <ctime>
 #include <fstream>
@@ -283,7 +284,13 @@ static HFONT  g_fTitle = nullptr, g_fBody = nullptr, g_fSub = nullptr, g_fBtn = 
 static HWND   g_hTitle, g_hSub, g_hText, g_hAccept, g_hDecline, g_hVer;
 static std::string g_pin;
 static std::string g_token;
-static int    g_phase = 0;  // 0 = consent, 1 = result
+static int    g_phase = 0;  // 0 = consent, 1 = scanning, 2 = result
+static int    g_progress = 0;     // 0..100 (synced with the scan)
+static double g_angle = 0;        // spinner rotation
+static ScanResult g_res;          // filled when the scan finishes
+
+// Matte-grey scanning background.
+static const COLORREF kScanBg = RGB(0x22, 0x22, 0x24);
 
 static const char* kEula =
     "END-USER SOFTWARE LICENSE AGREEMENT & PRIVACY NOTICE\r\n\r\n"
@@ -306,8 +313,175 @@ static const char* kEula =
     "token.\r\n\r\n"
     "If you do not agree, press Decline and no scan will be performed.";
 
+// Show the consent-phase child controls (used for consent + result phases).
+static void showControls(int show) {
+    int s = show ? SW_SHOW : SW_HIDE;
+    for (HWND h : {g_hTitle, g_hSub, g_hText, g_hAccept, g_hDecline, g_hVer})
+        ShowWindow(h, s);
+}
+
+// Switch from scanning to the result view (reuses the controls).
+static void enterResultPhase(HWND hWnd) {
+    g_phase = 2;
+    g_token = g_res.token;
+    showControls(TRUE);
+    std::string title = "Scan complete  -  " + g_res.verdict;
+    SetWindowTextA(g_hTitle, title.c_str());
+    SetWindowTextA(g_hSub, "Review the result, then copy the token for your analyst.");
+    SetWindowTextA(g_hText, g_res.summary.c_str());
+    SetWindowTextA(g_hAccept, "Copy token");
+    SetWindowTextA(g_hDecline, "Close");
+    InvalidateRect(hWnd, nullptr, TRUE);
+}
+
+// Draws the ZeroTrace crosshair logo + wordmark centred at (cx, top).
+static void drawLogo(HDC dc, int cx, int top) {
+    int r = 26;
+    int cy = top + r;
+    // outer ring
+    HPEN ring = CreatePen(PS_SOLID, 3, RGB(0x0e, 0x8f, 0xc0));
+    HPEN op = (HPEN)SelectObject(dc, ring);
+    HBRUSH ob = (HBRUSH)SelectObject(dc, GetStockObject(NULL_BRUSH));
+    Ellipse(dc, cx - r, cy - r, cx + r, cy + r);
+    // crosshair lines
+    HPEN cross = CreatePen(PS_SOLID, 2, kAccent);
+    SelectObject(dc, cross);
+    MoveToEx(dc, cx, cy - r - 6, nullptr); LineTo(dc, cx, cy - r + 10);
+    MoveToEx(dc, cx, cy + r - 10, nullptr); LineTo(dc, cx, cy + r + 6);
+    MoveToEx(dc, cx - r - 6, cy, nullptr); LineTo(dc, cx - r + 10, cy);
+    MoveToEx(dc, cx + r - 10, cy, nullptr); LineTo(dc, cx + r + 6, cy);
+    // centre dot
+    HBRUSH dot = CreateSolidBrush(kAccent);
+    SelectObject(dc, dot);
+    Ellipse(dc, cx - 4, cy - 4, cx + 4, cy + 4);
+    SelectObject(dc, op); SelectObject(dc, ob);
+    DeleteObject(ring); DeleteObject(cross); DeleteObject(dot);
+
+    // wordmark: "Zero" (teal) + "Trace" (grey)
+    HFONT of = (HFONT)SelectObject(dc, g_fTitle);
+    SetBkMode(dc, TRANSPARENT);
+    SIZE z{}, t{};
+    GetTextExtentPoint32A(dc, "Zero", 4, &z);
+    GetTextExtentPoint32A(dc, "Trace", 5, &t);
+    int total = z.cx + t.cx;
+    int x = cx - total / 2;
+    int wy = cy + r + 14;
+    SetTextColor(dc, kAccent);
+    TextOutA(dc, x, wy, "Zero", 4);
+    SetTextColor(dc, RGB(0xb0, 0xb0, 0xc0));
+    TextOutA(dc, x + z.cx, wy, "Trace", 5);
+    SelectObject(dc, of);
+}
+
+// Custom paint for the scanning phase.
+static void paintScanning(HWND hWnd, HDC dc) {
+    RECT rc; GetClientRect(hWnd, &rc);
+    int W = rc.right, H = rc.bottom;
+
+    // matte-grey background
+    HBRUSH bg = CreateSolidBrush(kScanBg);
+    FillRect(dc, &rc, bg);
+    DeleteObject(bg);
+
+    drawLogo(dc, W / 2, 70);
+
+    // "Scanning" pill
+    HFONT of = (HFONT)SelectObject(dc, g_fSub);
+    SetBkMode(dc, TRANSPARENT);
+    const char* lbl = "Scanning";
+    SIZE ls{}; GetTextExtentPoint32A(dc, lbl, (int)strlen(lbl), &ls);
+    int pw = ls.cx + 46, ph = 30;
+    int px = W / 2 - pw / 2, py = 210;
+    HBRUSH pill = CreateSolidBrush(RGB(0x2e, 0x30, 0x36));
+    HPEN ppen = CreatePen(PS_SOLID, 1, RGB(0x44, 0x46, 0x52));
+    HBRUSH opb = (HBRUSH)SelectObject(dc, pill);
+    HPEN opp = (HPEN)SelectObject(dc, ppen);
+    RoundRect(dc, px, py, px + pw, py + ph, 14, 14);
+    SelectObject(dc, opb); SelectObject(dc, opp);
+    DeleteObject(pill); DeleteObject(ppen);
+    // dot
+    HBRUSH d = CreateSolidBrush(kAccent);
+    HBRUSH od = (HBRUSH)SelectObject(dc, d);
+    Ellipse(dc, px + 14, py + ph / 2 - 5, px + 24, py + ph / 2 + 5);
+    SelectObject(dc, od); DeleteObject(d);
+    SetTextColor(dc, kText);
+    TextOutA(dc, px + 32, py + 6, lbl, (int)strlen(lbl));
+    SelectObject(dc, of);
+
+    // spinning teal arc
+    int scx = W / 2, scy = 300, sr = 26;
+    HPEN base = CreatePen(PS_SOLID, 3, RGB(0x3a, 0x3a, 0x40));
+    HBRUSH nb = (HBRUSH)SelectObject(dc, GetStockObject(NULL_BRUSH));
+    HPEN ob2 = (HPEN)SelectObject(dc, base);
+    Ellipse(dc, scx - sr, scy - sr, scx + sr, scy + sr);
+    // bright arc segment (~100 degrees) that rotates
+    HPEN arc = CreatePen(PS_SOLID, 3, kAccent);
+    SelectObject(dc, arc);
+    double a0 = g_angle * 3.14159265 / 180.0;
+    double a1 = a0 + 1.75;  // ~100°
+    SetArcDirection(dc, AD_COUNTERCLOCKWISE);
+    Arc(dc, scx - sr, scy - sr, scx + sr, scy + sr,
+        (int)(scx + sr * cos(a0)), (int)(scy - sr * sin(a0)),
+        (int)(scx + sr * cos(a1)), (int)(scy - sr * sin(a1)));
+    SelectObject(dc, ob2); SelectObject(dc, nb);
+    DeleteObject(base); DeleteObject(arc);
+
+    // bottom progress bar (full width) + percent
+    int barH = 6;
+    RECT track = {0, H - barH, W, H};
+    HBRUSH tb = CreateSolidBrush(RGB(0x14, 0x14, 0x16));
+    FillRect(dc, &track, tb); DeleteObject(tb);
+    RECT fill = {0, H - barH, (int)((long long)W * g_progress / 100), H};
+    HBRUSH fb = CreateSolidBrush(kAccent);
+    FillRect(dc, &fill, fb); DeleteObject(fb);
+    char pct[16]; wsprintfA(pct, "%d%%", g_progress);
+    HFONT of2 = (HFONT)SelectObject(dc, g_fSub);
+    SetTextColor(dc, RGB(0xc8, 0xc8, 0xd0));
+    SetBkMode(dc, TRANSPARENT);
+    TextOutA(dc, 10, H - barH - 22, pct, (int)strlen(pct));
+    SelectObject(dc, of2);
+}
+
 static LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
     switch (msg) {
+        case WM_SETCURSOR:
+            if (g_phase == 1) { SetCursor(nullptr); return TRUE; }  // hide cursor while scanning
+            break;
+        case WM_ERASEBKGND:
+            if (g_phase == 1) return 1;  // we paint the whole thing in WM_PAINT
+            break;
+        case WM_PAINT:
+            if (g_phase == 1) {
+                PAINTSTRUCT ps;
+                HDC dc = BeginPaint(hWnd, &ps);
+                // double-buffer to avoid flicker
+                RECT rc; GetClientRect(hWnd, &rc);
+                HDC mem = CreateCompatibleDC(dc);
+                HBITMAP bmp = CreateCompatibleBitmap(dc, rc.right, rc.bottom);
+                HBITMAP ob = (HBITMAP)SelectObject(mem, bmp);
+                paintScanning(hWnd, mem);
+                BitBlt(dc, 0, 0, rc.right, rc.bottom, mem, 0, 0, SRCCOPY);
+                SelectObject(mem, ob);
+                DeleteObject(bmp);
+                DeleteDC(mem);
+                EndPaint(hWnd, &ps);
+                return 0;
+            }
+            break;
+        case WM_TIMER:
+            if (g_phase == 1) {
+                g_angle += 11;
+                if (g_angle >= 360) g_angle -= 360;
+                if (g_progress < 100) g_progress += 1;  // ~3s to fill
+                InvalidateRect(hWnd, nullptr, FALSE);
+                if (g_progress >= 100) {
+                    KillTimer(hWnd, 1);
+                    ShowCursor(TRUE);
+                    enterResultPhase(hWnd);
+                }
+                return 0;
+            }
+            break;
         case WM_CTLCOLORSTATIC: {
             HDC dc = (HDC)wp;
             SetBkMode(dc, TRANSPARENT);
@@ -372,21 +546,16 @@ static LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
                                 "ZeroTrace", MB_OK | MB_ICONINFORMATION);
                     return 0;
                 }
-                // Accepted → run the scan and switch to the result phase.
-                SetWindowTextA(g_hTitle, "Scanning your system...");
-                SetWindowTextA(g_hSub, "Checking processes, modules and game files.");
-                UpdateWindow(hWnd);
-                ScanResult sr = runScan(g_pin);
-                g_token = sr.token;
+                // Accepted → run the scan once, then play the animated
+                // scanning screen with a synced progress bar.
+                g_res = runScan(g_pin);
                 g_phase = 1;
-                std::string title = "Scan complete  -  " + sr.verdict;
-                SetWindowTextA(g_hTitle, title.c_str());
-                SetWindowTextA(g_hSub, "Review the result, then copy the token for your analyst.");
-                SetWindowTextA(g_hText, sr.summary.c_str());
-                SetWindowTextA(g_hAccept, "Copy token");
-                SetWindowTextA(g_hDecline, "Close");
-                InvalidateRect(g_hAccept, nullptr, TRUE);
-                InvalidateRect(g_hDecline, nullptr, TRUE);
+                g_progress = 0;
+                g_angle = 0;
+                showControls(FALSE);
+                ShowCursor(FALSE);
+                SetTimer(hWnd, 1, 30, nullptr);
+                InvalidateRect(hWnd, nullptr, TRUE);
                 return 0;
             }
             return 0;
