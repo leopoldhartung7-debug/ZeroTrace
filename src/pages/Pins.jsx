@@ -187,10 +187,12 @@ export default function Pins() {
   const downloadScannerWithPin = async (c) => {
     // Default to the scanner bundled with the site (same-origin → no CORS),
     // unless an admin set a custom hosting URL.
-    const url = state.settings?.scannerUrl || 'ZeroTraceChecker.exe'
+    const base0 = state.settings?.scannerUrl || 'ZeroTraceChecker.exe'
+    // Cache-bust so the browser never serves an old scanner build.
+    const url = base0 + (base0.includes('?') ? '&' : '?') + 't=' + Date.now()
     try {
       toast({ type: 'info', title: 'Preparing scanner…' })
-      const res = await fetch(url)
+      const res = await fetch(url, { cache: 'no-store' })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const base = new Uint8Array(await res.arrayBuffer())
       const marker = new TextEncoder().encode(`\nZTPIN:${c.pin}\n`)
