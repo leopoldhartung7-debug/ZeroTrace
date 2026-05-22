@@ -248,12 +248,9 @@ int main(int argc, char** argv) {
     scanProcessesAndModules(dets);
 
     std::cout << "Scanning game folders for cheat files...\n";
-    char* up = nullptr;
-    size_t len = 0;
-    _dupenv_s(&up, &len, "LOCALAPPDATA");
+    const char* up = std::getenv("LOCALAPPDATA");
     if (up) {
         scanGameFolder(std::string(up) + "\\FiveM\\FiveM.app", dets);
-        free(up);
     }
     scanGameFolder("C:\\Program Files\\FiveM", dets);
 

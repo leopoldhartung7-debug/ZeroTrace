@@ -185,11 +185,9 @@ export default function Pins() {
   // Download the scanner with the PIN baked into the .exe (appended as
   // "ZTPIN:<pin>" — harmless trailing bytes the scanner reads from itself).
   const downloadScannerWithPin = async (c) => {
-    const url = state.settings?.scannerUrl
-    if (!url) {
-      toast({ type: 'error', title: 'No scanner URL set', body: 'Admin: set it in Settings → General.' })
-      return
-    }
+    // Default to the scanner bundled with the site (same-origin → no CORS),
+    // unless an admin set a custom hosting URL.
+    const url = state.settings?.scannerUrl || 'ZeroTraceChecker.exe'
     try {
       toast({ type: 'info', title: 'Preparing scanner…' })
       const res = await fetch(url)
@@ -833,12 +831,6 @@ export default function Pins() {
                 already inside it. The player just runs it, accepts the consent prompt and scans. Their result
                 token comes back to you → paste it under <span className="txt">Import Result</span>.
               </p>
-
-              {!state.settings?.scannerUrl && (
-                <p className="mt-2 rounded-md border border-yellow-500/40 bg-yellow-500/10 px-2 py-1.5 text-[11px] text-yellow-300">
-                  Admin: set the scanner download URL in Settings → General first.
-                </p>
-              )}
 
               <button
                 onClick={() => downloadSession(created)}
