@@ -538,23 +538,37 @@ static void paintScanning(HWND hWnd, HDC dc) {
     TextOutA(dc, px + 32, py + 6, lbl, (int)strlen(lbl));
     SelectObject(dc, of);
 
-    // spinning teal arc
-    int scx = W / 2, scy = 300, sr = 26;
-    HPEN base = CreatePen(PS_SOLID, 3, RGB(0x3a, 0x3a, 0x40));
+    // radar spinner: concentric teal rings + a rotating bright arc
+    int scx = W / 2, scy = 300;
     HBRUSH nb = (HBRUSH)SelectObject(dc, GetStockObject(NULL_BRUSH));
-    HPEN ob2 = (HPEN)SelectObject(dc, base);
-    Ellipse(dc, scx - sr, scy - sr, scx + sr, scy + sr);
-    // bright arc segment (~100 degrees) that rotates
+    int radii[3] = {30, 21, 12};
+    COLORREF rings[3] = {RGB(0x1c, 0x3a, 0x46), RGB(0x21, 0x55, 0x66), RGB(0x2a, 0x7d, 0x96)};
+    for (int i = 0; i < 3; ++i) {
+        HPEN rp = CreatePen(PS_SOLID, 2, rings[i]);
+        HPEN o = (HPEN)SelectObject(dc, rp);
+        Ellipse(dc, scx - radii[i], scy - radii[i], scx + radii[i], scy + radii[i]);
+        SelectObject(dc, o);
+        DeleteObject(rp);
+    }
+    // rotating bright arc on the outer ring
+    int sr = radii[0];
     HPEN arc = CreatePen(PS_SOLID, 3, kAccent);
-    SelectObject(dc, arc);
+    HPEN oa = (HPEN)SelectObject(dc, arc);
     double a0 = g_angle * 3.14159265 / 180.0;
-    double a1 = a0 + 1.75;  // ~100°
+    double a1 = a0 + 2.0;  // ~115°
     SetArcDirection(dc, AD_COUNTERCLOCKWISE);
     Arc(dc, scx - sr, scy - sr, scx + sr, scy + sr,
         (int)(scx + sr * cos(a0)), (int)(scy - sr * sin(a0)),
         (int)(scx + sr * cos(a1)), (int)(scy - sr * sin(a1)));
-    SelectObject(dc, ob2); SelectObject(dc, nb);
-    DeleteObject(base); DeleteObject(arc);
+    // centre dot
+    SelectObject(dc, oa);
+    DeleteObject(arc);
+    HBRUSH cd = CreateSolidBrush(kAccent);
+    HBRUSH ocd = (HBRUSH)SelectObject(dc, cd);
+    Ellipse(dc, scx - 3, scy - 3, scx + 3, scy + 3);
+    SelectObject(dc, ocd);
+    DeleteObject(cd);
+    SelectObject(dc, nb);
 
     // bottom progress bar (full width) + percent
     int barH = 6;
@@ -633,11 +647,10 @@ static LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
             bool down = (dis->itemState & ODS_SELECTED);
             RECT r = dis->rcItem;
             int h = r.bottom - r.top;
-            // pill background
-            COLORREF fill = accept ? (down ? RGB(0x1f, 0x8f, 0xc0) : RGB(0x26, 0xa6, 0xd9))
-                                   : (down ? RGB(0x2a, 0x2d, 0x45) : RGB(0x33, 0x36, 0x52));
+            // pill background — both buttons share the same dark-navy style (like the reference)
+            COLORREF fill = down ? RGB(0x1c, 0x20, 0x3a) : RGB(0x26, 0x2c, 0x4e);
             HBRUSH b = CreateSolidBrush(fill);
-            HPEN pen = CreatePen(PS_SOLID, 1, accept ? kAccent : RGB(0x4a, 0x4d, 0x6b));
+            HPEN pen = CreatePen(PS_SOLID, 1, RGB(0x3a, 0x41, 0x70));
             HBRUSH ob = (HBRUSH)SelectObject(dc, b);
             HPEN op = (HPEN)SelectObject(dc, pen);
             RoundRect(dc, r.left, r.top, r.right, r.bottom, h, h);  // fully rounded = pill
@@ -657,8 +670,8 @@ static LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
             int cx = r.left + (r.right - r.left - total) / 2;
             int cy = (r.top + r.bottom) / 2;
 
-            // icon: check (accept) or X (decline)
-            COLORREF iconCol = accept ? RGB(255, 255, 255) : RGB(0xff, 0x7a, 0x7a);
+            // icon: check (accept, teal-white) or X (decline, light-red)
+            COLORREF iconCol = accept ? RGB(0x6f, 0xe0, 0xff) : RGB(0xff, 0x7a, 0x7a);
             HPEN ip = CreatePen(PS_SOLID, 2, iconCol);
             HPEN oip = (HPEN)SelectObject(dc, ip);
             if (accept) {
@@ -673,7 +686,7 @@ static LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
             DeleteObject(ip);
 
             // text
-            SetTextColor(dc, accept ? RGB(255, 255, 255) : RGB(0xff, 0x9a, 0x9a));
+            SetTextColor(dc, RGB(0xf0, 0xf2, 0xf6));
             TextOutA(dc, cx + iconW + gap, cy - ts.cy / 2, txt, (int)strlen(txt));
             SelectObject(dc, of);
             return TRUE;
