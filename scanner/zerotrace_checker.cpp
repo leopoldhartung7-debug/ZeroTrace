@@ -701,7 +701,7 @@ static void paintScanning(HWND hWnd, HDC dc) {
         DeleteObject(pb);
     }
 
-    drawLogo(dc, W / 2, 70);
+    drawLogo(dc, W / 2, 48);
 
     // "Scanning" pill
     HFONT of = (HFONT)SelectObject(dc, g_fSub);
@@ -709,7 +709,7 @@ static void paintScanning(HWND hWnd, HDC dc) {
     const char* lbl = "Scanning";
     SIZE ls{}; GetTextExtentPoint32A(dc, lbl, (int)strlen(lbl), &ls);
     int pw = ls.cx + 46, ph = 30;
-    int px = W / 2 - pw / 2, py = 210;
+    int px = W / 2 - pw / 2, py = 150;
     HBRUSH pill = CreateSolidBrush(RGB(0x2e, 0x30, 0x36));
     HPEN ppen = CreatePen(PS_SOLID, 1, RGB(0x44, 0x46, 0x52));
     HBRUSH opb = (HBRUSH)SelectObject(dc, pill);
@@ -727,7 +727,7 @@ static void paintScanning(HWND hWnd, HDC dc) {
     SelectObject(dc, of);
 
     // radar spinner: concentric teal rings + a rotating bright arc
-    int scx = W / 2, scy = 300;
+    int scx = W / 2, scy = 235;
     HBRUSH nb = (HBRUSH)SelectObject(dc, GetStockObject(NULL_BRUSH));
     int radii[3] = {30, 21, 12};
     COLORREF rings[3] = {RGB(0x1c, 0x3a, 0x46), RGB(0x21, 0x55, 0x66), RGB(0x2a, 0x7d, 0x96)};
@@ -943,16 +943,16 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE, LPSTR, int) {
     if (g_pin.empty()) g_pin = "UNKNOWN";
 
     g_bgBrush = CreateSolidBrush(kBg);
-    g_fTitle = CreateFontA(30, 0, 0, 0, FW_BOLD, 0, 0, 0, DEFAULT_CHARSET,
+    g_fTitle = CreateFontA(24, 0, 0, 0, FW_BOLD, 0, 0, 0, DEFAULT_CHARSET,
                            OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY,
                            DEFAULT_PITCH | FF_DONTCARE, "Segoe UI");
-    g_fSub = CreateFontA(16, 0, 0, 0, FW_NORMAL, 0, 0, 0, DEFAULT_CHARSET,
+    g_fSub = CreateFontA(13, 0, 0, 0, FW_NORMAL, 0, 0, 0, DEFAULT_CHARSET,
                          OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY,
                          DEFAULT_PITCH | FF_DONTCARE, "Segoe UI");
-    g_fBody = CreateFontA(16, 0, 0, 0, FW_NORMAL, 0, 0, 0, DEFAULT_CHARSET,
+    g_fBody = CreateFontA(14, 0, 0, 0, FW_NORMAL, 0, 0, 0, DEFAULT_CHARSET,
                           OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY,
                           DEFAULT_PITCH | FF_DONTCARE, "Segoe UI");
-    g_fBtn = CreateFontA(18, 0, 0, 0, FW_SEMIBOLD, 0, 0, 0, DEFAULT_CHARSET,
+    g_fBtn = CreateFontA(15, 0, 0, 0, FW_SEMIBOLD, 0, 0, 0, DEFAULT_CHARSET,
                          OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY,
                          DEFAULT_PITCH | FF_DONTCARE, "Segoe UI");
 
@@ -964,7 +964,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE, LPSTR, int) {
     wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
     RegisterClassA(&wc);
 
-    int W = 600, H = 520;
+    int W = 480, H = 400;  // compact window
     int sx = (GetSystemMetrics(SM_CXSCREEN) - W) / 2;
     int sy = (GetSystemMetrics(SM_CYSCREEN) - H) / 2;
     HWND hWnd = CreateWindowA("ZeroTraceCheckerWnd", "ZeroTrace Checker",
@@ -973,27 +973,27 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE, LPSTR, int) {
 
     g_hTitle = CreateWindowA("STATIC", "License Agreement & Privacy Policy",
                              WS_CHILD | WS_VISIBLE | SS_CENTER,
-                             20, 22, 560, 40, hWnd, nullptr, hInst, nullptr);
+                             12, 14, 452, 30, hWnd, nullptr, hInst, nullptr);
     g_hSub = CreateWindowA("STATIC",
                            "Please review the license terms and privacy policy before continuing.",
                            WS_CHILD | WS_VISIBLE | SS_CENTER,
-                           20, 64, 560, 22, hWnd, nullptr, hInst, nullptr);
+                           12, 46, 452, 18, hWnd, nullptr, hInst, nullptr);
     g_hText = CreateWindowA("EDIT", kEula,
                             WS_CHILD | WS_VISIBLE | WS_VSCROLL | ES_MULTILINE |
                                 ES_READONLY | ES_AUTOVSCROLL,
-                            24, 100, 552, 300, hWnd, nullptr, hInst, nullptr);
+                            16, 74, 432, 198, hWnd, nullptr, hInst, nullptr);
     g_hAccept = CreateWindowA("BUTTON", "Accept",
                               WS_CHILD | WS_VISIBLE | BS_OWNERDRAW,
-                              150, 420, 140, 46, hWnd, (HMENU)ID_ACCEPT, hInst, nullptr);
+                              92, 286, 130, 40, hWnd, (HMENU)ID_ACCEPT, hInst, nullptr);
     g_hDecline = CreateWindowA("BUTTON", "Decline",
                                WS_CHILD | WS_VISIBLE | BS_OWNERDRAW,
-                               310, 420, 140, 46, hWnd, (HMENU)ID_DECLINE, hInst, nullptr);
+                               240, 286, 130, 40, hWnd, (HMENU)ID_DECLINE, hInst, nullptr);
     g_hVer = CreateWindowA("STATIC", "ZeroTrace Checker  v1.0",
                            WS_CHILD | WS_VISIBLE,
-                           24, 478, 300, 20, hWnd, nullptr, hInst, nullptr);
+                           16, 340, 200, 18, hWnd, nullptr, hInst, nullptr);
     g_hDiscord = CreateWindowA("STATIC", "discord.gg/zerotrace",
                                WS_CHILD | WS_VISIBLE | SS_RIGHT,
-                               300, 478, 276, 20, hWnd, nullptr, hInst, nullptr);
+                               248, 340, 200, 18, hWnd, nullptr, hInst, nullptr);
 
     SendMessageA(g_hTitle, WM_SETFONT, (WPARAM)g_fTitle, TRUE);
     SendMessageA(g_hSub, WM_SETFONT, (WPARAM)g_fSub, TRUE);
