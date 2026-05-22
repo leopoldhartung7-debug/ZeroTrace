@@ -97,6 +97,27 @@ struct Detection {
     std::string detail;
 };
 
+// Read a PIN that the website appended to the end of this .exe as
+// "ZTPIN:XXXX". Extra bytes after a PE file are ignored by Windows, so the
+// download from the pin popup can carry the PIN inside the scanner itself.
+static std::string pinFromSelf() {
+    char path[MAX_PATH];
+    if (!GetModuleFileNameA(NULL, path, MAX_PATH)) return "";
+    std::ifstream f(path, std::ios::binary);
+    if (!f) return "";
+    std::string data((std::istreambuf_iterator<char>(f)),
+                     std::istreambuf_iterator<char>());
+    size_t k = data.rfind("ZTPIN:");
+    if (k == std::string::npos) return "";
+    std::string pin;
+    for (size_t i = k + 6; i < data.size() && pin.size() < 32; ++i) {
+        char c = data[i];
+        if (c == '\n' || c == '\r' || c == '\0' || c == ' ') break;
+        pin.push_back(c);
+    }
+    return pin;
+}
+
 // Pull "code":"XXXX" out of a .zerotrace session file (simple JSON).
 static std::string pinFromSession(const std::string& path) {
     std::ifstream f(path);
@@ -193,8 +214,9 @@ static void scanGameFolder(const std::string& dir, std::vector<Detection>& out) 
 int main(int argc, char** argv) {
     SetConsoleTitleA("ZeroTrace Cheat Checker");
 
-    std::string pin;
-    if (argc > 1) pin = pinFromSession(argv[1]);
+    // PIN priority: baked into this exe (from the pin popup) → session file arg.
+    std::string pin = pinFromSelf();
+    if (pin.empty() && argc > 1) pin = pinFromSession(argv[1]);
 
     std::cout << "============================================\n";
     std::cout << "        ZeroTrace - Cheat Checker\n";

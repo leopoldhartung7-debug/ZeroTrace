@@ -182,6 +182,39 @@ export default function Pins() {
     toast({ type: 'success', title: 'Session file downloaded', body: `ZeroTraceScan-${c.pin}.zerotrace` })
   }
 
+  // Download the scanner with the PIN baked into the .exe (appended as
+  // "ZTPIN:<pin>" — harmless trailing bytes the scanner reads from itself).
+  const downloadScannerWithPin = async (c) => {
+    const url = state.settings?.scannerUrl
+    if (!url) {
+      toast({ type: 'error', title: 'No scanner URL set', body: 'Admin: set it in Settings → General.' })
+      return
+    }
+    try {
+      toast({ type: 'info', title: 'Preparing scanner…' })
+      const res = await fetch(url)
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const base = new Uint8Array(await res.arrayBuffer())
+      const marker = new TextEncoder().encode(`\nZTPIN:${c.pin}\n`)
+      const out = new Uint8Array(base.length + marker.length)
+      out.set(base, 0)
+      out.set(marker, base.length)
+      const a = document.createElement('a')
+      a.href = URL.createObjectURL(new Blob([out], { type: 'application/octet-stream' }))
+      a.download = `ZeroTraceChecker-${c.pin}.exe`
+      a.click()
+      URL.revokeObjectURL(a.href)
+      toast({ type: 'success', title: 'Scanner ready', body: `PIN ${c.pin} is built in` })
+    } catch (e) {
+      toast({
+        type: 'error',
+        title: 'Could not prepare scanner',
+        body: `${e.message}. Falling back to the session file.`,
+      })
+      downloadSession(c)
+    }
+  }
+
   // Live preview of the pasted/loaded token (null until something valid).
   const importPreview = useMemo(() => {
     if (!importText.trim()) return null
@@ -787,56 +820,32 @@ export default function Pins() {
             </div>
 
             <div className="tile rounded-xl border p-4">
-              <p className="txt mb-3 text-sm font-semibold">How to scan this player</p>
+              <p className="txt mb-3 text-sm font-semibold">Send the scanner to the player</p>
 
-              {/* Step 1 — the scanner program */}
-              <div className="mb-3 flex items-start gap-3">
-                <span className="tile flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-xs font-bold">1</span>
-                <div className="min-w-0 flex-1">
-                  <p className="txt text-sm">Download the ZeroTrace Checker</p>
-                  {state.settings?.scannerUrl ? (
-                    <a
-                      href={state.settings.scannerUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="mt-2 inline-flex items-center gap-2 rounded-lg bg-sky-600 px-3 py-2 text-sm font-semibold text-white hover:bg-sky-500"
-                    >
-                      <Download size={15} /> Download Scanner
-                    </a>
-                  ) : (
-                    <p className="muted mt-1 text-xs">
-                      Admin: set the scanner download URL in <span className="txt">Settings → General</span>.
-                    </p>
-                  )}
-                </div>
-              </div>
+              <button
+                onClick={() => downloadScannerWithPin(created)}
+                className="flex w-full items-center justify-center gap-2 rounded-lg bg-sky-600 px-3 py-2.5 text-sm font-semibold text-white hover:bg-sky-500"
+              >
+                <Download size={15} /> Download Scanner (PIN built in)
+              </button>
+              <p className="muted mt-2 text-xs">
+                One file: <span className="txt font-mono">ZeroTraceChecker-{created.pin}.exe</span> — the PIN is
+                already inside it. The player just runs it, accepts the consent prompt and scans. Their result
+                token comes back to you → paste it under <span className="txt">Import Result</span>.
+              </p>
 
-              {/* Step 2 — the pre-filled session file */}
-              <div className="mb-3 flex items-start gap-3">
-                <span className="tile flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-xs font-bold">2</span>
-                <div className="min-w-0 flex-1">
-                  <p className="txt text-sm">Download the session file (PIN pre-filled)</p>
-                  <p className="muted mt-0.5 break-all font-mono text-xs">ZeroTraceScan-{created.pin}.zerotrace</p>
-                  <div className="mt-2 flex gap-2">
-                    <button
-                      onClick={() => downloadSession(created)}
-                      className="bd txt flex items-center gap-2 rounded-lg border px-3 py-2 text-sm hover:border-sky-500"
-                    >
-                      <Download size={15} /> Download session
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Step 3 — send + import */}
-              <div className="flex items-start gap-3">
-                <span className="tile flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-xs font-bold">3</span>
-                <p className="muted text-xs">
-                  Send both files to the player. They open the session file with the Checker — the PIN is
-                  filled in automatically, they only accept the consent prompt and scan. Their result token
-                  goes back to you → paste it under <span className="txt">Import Result</span>.
+              {!state.settings?.scannerUrl && (
+                <p className="mt-2 rounded-md border border-yellow-500/40 bg-yellow-500/10 px-2 py-1.5 text-[11px] text-yellow-300">
+                  Admin: set the scanner download URL in Settings → General first.
                 </p>
-              </div>
+              )}
+
+              <button
+                onClick={() => downloadSession(created)}
+                className="muted mt-3 text-xs underline-offset-2 hover:underline"
+              >
+                Or download the .zerotrace session file instead
+              </button>
             </div>
 
             <div className="tile rounded-xl border p-4">
