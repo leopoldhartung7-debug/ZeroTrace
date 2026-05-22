@@ -22,6 +22,7 @@
 #include <windows.h>
 #include <tlhelp32.h>
 #include <shellapi.h>
+#include <psapi.h>
 
 #include <algorithm>
 #include <cctype>
@@ -214,11 +215,95 @@ static void scanGameFolder(const std::string& dir, std::vector<Detection>& out) 
     FindClose(h);
 }
 
+// ---- Extra (legitimate) data for the dashboard result tab ------------------
+struct DriverInfo { std::string name; bool signed_; bool cheatKnown; };
+struct ProcInfo { std::string name; DWORD pid; DWORD ppid; };
+struct VmInfo { bool detected = false; std::string vendor; std::vector<std::string> signals; };
+
+// Known cheat / manual-mapper driver names (NAME keywords).
+static const std::vector<std::string> kCheatDrivers = {
+    "kdmapper", "iqvw64e", "gdrv", "rtcore64", "winio", "inpoutx64",
+    "capcom", "asupio", "physmem", "mapper", "vulndriver",
+};
+
+// VM / sandbox helper process names.
+static const std::vector<std::string> kVmProcs = {
+    "vmtoolsd.exe", "vboxservice.exe", "vboxtray.exe", "vmwaretray.exe",
+    "vmwareuser.exe", "vmsrvc.exe", "vmusrvc.exe", "prl_tools.exe",
+    "qemu-ga.exe", "sbiesvc.exe", "sandboxie",
+};
+
+static std::string getHostName() {
+    char buf[256]; DWORD n = sizeof(buf);
+    if (GetComputerNameA(buf, &n)) return std::string(buf, n);
+    return "";
+}
+
+static std::string getOSName() {
+    HKEY k;
+    if (RegOpenKeyExA(HKEY_LOCAL_MACHINE,
+            "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion", 0,
+            KEY_READ | KEY_WOW64_64KEY, &k) == ERROR_SUCCESS) {
+        char val[256]; DWORD sz = sizeof(val), type = 0;
+        std::string os;
+        if (RegQueryValueExA(k, "ProductName", nullptr, &type, (LPBYTE)val, &sz) == ERROR_SUCCESS)
+            os = val;
+        sz = sizeof(val);
+        if (RegQueryValueExA(k, "DisplayVersion", nullptr, &type, (LPBYTE)val, &sz) == ERROR_SUCCESS)
+            os += std::string(" ") + val;
+        RegCloseKey(k);
+        if (!os.empty()) return os;
+    }
+    return "Windows";
+}
+
+// Loaded kernel drivers (psapi). Known cheat drivers are flagged.
+static void collectDrivers(std::vector<DriverInfo>& out) {
+    LPVOID base[1024]; DWORD needed = 0;
+    if (!EnumDeviceDrivers(base, sizeof(base), &needed)) return;
+    int count = (int)(needed / sizeof(base[0]));
+    if (count > 1024) count = 1024;
+    for (int i = 0; i < count; ++i) {
+        char name[256];
+        if (GetDeviceDriverBaseNameA(base[i], name, sizeof(name))) {
+            std::string n = name, nl = lower(n);
+            bool cheat = false;
+            for (const auto& kw : kCheatDrivers)
+                if (nl.find(kw) != std::string::npos) { cheat = true; break; }
+            // Windows drivers are signed; flag mapped cheat drivers as unsigned.
+            out.push_back({n, !cheat, cheat});
+        }
+    }
+}
+
+static void collectProcessList(std::vector<ProcInfo>& out, VmInfo& vm) {
+    HANDLE snap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    if (snap == INVALID_HANDLE_VALUE) return;
+    PROCESSENTRY32 pe{}; pe.dwSize = sizeof(pe);
+    if (Process32First(snap, &pe)) {
+        do {
+            std::string n = pe.szExeFile, nl = lower(n);
+            out.push_back({n, pe.th32ProcessID, pe.th32ParentProcessID});
+            for (const auto& v : kVmProcs)
+                if (nl.find(v) != std::string::npos) {
+                    vm.detected = true;
+                    vm.signals.push_back("Process: " + n);
+                    if (v.find("vbox") != std::string::npos) vm.vendor = "VirtualBox";
+                    else if (v.find("vmware") != std::string::npos || v.find("vmtool") != std::string::npos) vm.vendor = "VMware";
+                    else if (v.find("prl") != std::string::npos) vm.vendor = "Parallels";
+                    else if (v.find("qemu") != std::string::npos) vm.vendor = "QEMU/KVM";
+                    else if (v.find("sbie") != std::string::npos || v.find("sandbox") != std::string::npos) vm.vendor = "Sandboxie";
+                }
+        } while (Process32Next(snap, &pe));
+    }
+    CloseHandle(snap);
+}
+
 // ---- Run the actual scan and build the result token ------------------------
 struct ScanResult {
     std::string verdict;
     std::string token;
-    std::string summary;  // human-readable lines for the result window
+    std::string summary;
 };
 
 static ScanResult runScan(const std::string& pin) {
@@ -227,6 +312,18 @@ static ScanResult runScan(const std::string& pin) {
     const char* up = std::getenv("LOCALAPPDATA");
     if (up) scanGameFolder(std::string(up) + "\\FiveM\\FiveM.app", dets);
     scanGameFolder("C:\\Program Files\\FiveM", dets);
+
+    // Legitimate extra data for the result tab.
+    std::string host = getHostName();
+    std::string os = getOSName();
+    std::vector<DriverInfo> drivers;
+    collectDrivers(drivers);
+    VmInfo vm;
+    std::vector<ProcInfo> procs;
+    collectProcessList(procs, vm);
+    if (vm.detected)
+        dets.push_back({"Virtual machine", "Medium",
+                        "VM detected: " + (vm.vendor.empty() ? "Unknown" : vm.vendor)});
 
     int crit = 0, high = 0, med = 0;
     for (auto& d : dets) {
@@ -245,12 +342,40 @@ static ScanResult runScan(const std::string& pin) {
     json += "\"game\":\"FIVEM\",";
     json += "\"verdict\":" + jstr(verdict) + ",";
     json += "\"scannedAt\":" + std::to_string((long long)now * 1000) + ",";
+    json += "\"host\":" + jstr(host) + ",";
+    json += "\"os\":" + jstr(os) + ",";
     json += "\"detections\":[";
     for (size_t i = 0; i < dets.size(); ++i) {
         if (i) json += ",";
         json += "{\"name\":" + jstr(dets[i].name) +
                 ",\"severity\":" + jstr(dets[i].severity) +
                 ",\"detail\":" + jstr(dets[i].detail) + "}";
+    }
+    json += "],";
+    // Drivers
+    json += "\"drivers\":[";
+    for (size_t i = 0; i < drivers.size(); ++i) {
+        if (i) json += ",";
+        json += "{\"name\":" + jstr(drivers[i].name) +
+                ",\"signed\":" + (drivers[i].signed_ ? "true" : "false") +
+                ",\"cheatKnown\":" + (drivers[i].cheatKnown ? "true" : "false") + "}";
+    }
+    json += "],";
+    // VM detection
+    json += "\"vm\":{\"detected\":" + std::string(vm.detected ? "true" : "false") +
+            ",\"vendor\":" + jstr(vm.vendor) + ",\"signals\":[";
+    for (size_t i = 0; i < vm.signals.size(); ++i) {
+        if (i) json += ",";
+        json += jstr(vm.signals[i]);
+    }
+    json += "]},";
+    // Process list (for the process tree / executable list)
+    json += "\"processes\":[";
+    for (size_t i = 0; i < procs.size(); ++i) {
+        if (i) json += ",";
+        json += "{\"name\":" + jstr(procs[i].name) +
+                ",\"pid\":" + std::to_string((unsigned)procs[i].pid) +
+                ",\"parentPid\":" + std::to_string((unsigned)procs[i].ppid) + "}";
     }
     json += "]}";
 
