@@ -432,8 +432,15 @@ export default function ScanResults() {
           <KV color="#a855f7" label="Install Date" value={report.pc.installDate} />
           <KV color="#f97316" label="Country" value={report.pc.country} />
           <KV color="#22c55e" label="Game" value={report.pc.game} />
-          <KV color="#f97316" label="Recycle" value={report.pc.recycle} />
-          <KV color="#06b6d4" label="Hardware Stats" value="Not available" />
+          {report.pc.hardware ? (
+            <>
+              <KV color="#06b6d4" label="CPU" value={report.pc.hardware.cpu || '—'} />
+              <KV color="#06b6d4" label="RAM" value={report.pc.hardware.ram || '—'} />
+              <KV color="#06b6d4" label="GPU" value={report.pc.hardware.gpu || '—'} />
+            </>
+          ) : (
+            <KV color="#06b6d4" label="Hardware Stats" value="Not available" />
+          )}
         </Card>
       </div>
 

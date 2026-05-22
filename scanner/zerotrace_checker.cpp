@@ -25,26 +25,38 @@
 #include <psapi.h>
 
 #include <algorithm>
+#include <atomic>
 #include <cctype>
 #include <cmath>
+#include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <ctime>
+#include <thread>
 #include <fstream>
 #include <iostream>
 #include <set>
 #include <string>
 #include <vector>
 
-// ---- Public cheat signatures (NAME keywords only) -------------------------
-// Extend this list as new cheats appear.
+// ---- Public cheat signatures (specific NAME keywords) ---------------------
+// Kept specific on purpose so legitimate Windows components are not flagged.
+// Generic words like "esp", "inject", "macro", "loader" were removed because
+// they appear inside many normal program/DLL names.
 static const std::vector<std::string> kCheatKeywords = {
-    "aimbot", "triggerbot", "wallhack", "esp", "modmenu", "mod menu",
-    "injector", "inject", "cheatengine", "cheat engine", "spoofer", "hwidspoof",
-    "redengine", "eulen", "skriptgg", "skript.gg", "hx-menu", "hxmenu",
-    "lynx", "desudo", "impaktor", "fontaine", "d3dmenu", "ozark", "tzx",
-    "macro", "autoclicker", "norecoil", "no recoil", "unknowncheats",
-    "kdmapper", "loader.exe", "dumper", "extreme injector", "xenos",
+    "aimbot", "triggerbot", "wallhack", "modmenu", "mod menu", "mod_menu",
+    "cheatengine", "cheat engine", "extreme injector", "xenos injector",
+    "hwidspoofer", "hwid spoofer", "redengine", "eulen", "skript.gg", "skriptgg",
+    "hx-menu", "hxmenu", "desudo", "impaktor", "fontaine cheat", "d3dmenu",
+    "tz cheat", "unknowncheats", "kdmapper", "manualmap",
 };
+
+// Directories whose files are trusted (never flagged).
+static bool isTrustedPath(const std::string& pathLower) {
+    return pathLower.find("\\windows\\") != std::string::npos ||
+           pathLower.find("\\program files\\windowsapps\\") != std::string::npos ||
+           pathLower.find("\\microsoft\\") != std::string::npos;
+}
 
 // Common, legitimate processes we never want to flag by accident.
 static const std::set<std::string> kAllowlist = {
@@ -161,17 +173,12 @@ static void scanProcessesAndModules(std::vector<Detection>& out) {
         do {
             std::string name = pe.szExeFile;
             std::string nl = lower(name);
-            if (kAllowlist.count(nl)) {
-                // Still inspect its modules below, but don't flag the process.
-            } else {
-                std::string kw;
-                if (matchCheat(nl, kw)) {
-                    out.push_back({name, "Critical",
-                                   "Process: " + name + " (matches '" + kw + "')"});
-                }
-            }
+            std::string kw;
+            if (matchCheat(nl, kw))
+                out.push_back({name, "Critical",
+                               "Process: " + name + " (matches '" + kw + "')"});
 
-            // Inspect loaded modules / DLLs of this process.
+            // Inspect loaded modules / DLLs — but skip trusted Windows components.
             HANDLE msnap = CreateToolhelp32Snapshot(
                 TH32CS_SNAPMODULE | TH32CS_SNAPMODULE32, pe.th32ProcessID);
             if (msnap != INVALID_HANDLE_VALUE) {
@@ -180,12 +187,13 @@ static void scanProcessesAndModules(std::vector<Detection>& out) {
                 if (Module32First(msnap, &me)) {
                     do {
                         std::string mod = me.szModule;
-                        std::string ml = lower(mod);
-                        std::string kw;
-                        if (matchCheat(ml, kw)) {
+                        std::string pathl = lower(me.szExePath);
+                        if (isTrustedPath(pathl)) continue;  // skip Windows/system DLLs
+                        std::string mk;
+                        if (matchCheat(lower(mod), mk)) {
                             out.push_back({mod, "High",
                                            "Module: " + mod + " in " + name +
-                                               " (matches '" + kw + "')"});
+                                               " (matches '" + mk + "')"});
                         }
                     } while (Module32Next(msnap, &me));
                 }
@@ -196,20 +204,76 @@ static void scanProcessesAndModules(std::vector<Detection>& out) {
     CloseHandle(snap);
 }
 
-// Scan a single game folder for cheat-named files (top level only).
-static void scanGameFolder(const std::string& dir, std::vector<Detection>& out) {
+// Content signatures — strings that appear INSIDE cheat binaries.
+static const std::vector<std::string> kFileSigs = {
+    "aimbot", "triggerbot", "wallhack", "esp menu", "mod menu", "modmenu",
+    "cheatengine", "redengine", "eulen", "skript.gg", "unknowncheats",
+    "kdmapper", "hwid spoof", "manualmap", "no recoil", "silent aim",
+};
+
+// Read up to 24 MB of a file and look for any cheat content signature.
+static bool fileHasCheatSig(const std::string& path, std::string& which) {
+    std::ifstream f(path, std::ios::binary);
+    if (!f) return false;
+    static const size_t CAP = 24u * 1024 * 1024;
+    std::string data;
+    data.resize(CAP);
+    f.read(&data[0], CAP);
+    std::streamsize got = f.gcount();
+    if (got <= 0) return false;
+    data.resize((size_t)got);
+    for (auto& c : data) c = (char)std::tolower((unsigned char)c);
+    for (const auto& sig : kFileSigs) {
+        if (data.find(sig) != std::string::npos) { which = sig; return true; }
+    }
+    return false;
+}
+
+static bool isExecName(const std::string& nameLower) {
+    auto ends = [&](const char* e) {
+        size_t le = strlen(e);
+        return nameLower.size() >= le && nameLower.compare(nameLower.size() - le, le, e) == 0;
+    };
+    return ends(".exe") || ends(".dll") || ends(".sys") || ends(".jar") ||
+           ends(".scr") || ends(".bat");
+}
+
+// Recursively scan a directory: name match everywhere, content match for
+// executables. Depth- and count-limited so it stays bounded.
+static void scanDirRecursive(const std::string& dir, std::vector<Detection>& out,
+                             int depth, std::atomic<long>& fileCount,
+                             bool contentScan) {
+    if (depth < 0 || fileCount > 400000) return;
+    std::string dl = lower(dir);
+    if (isTrustedPath(dl + "\\")) return;
     std::string pattern = dir + "\\*";
     WIN32_FIND_DATAA fd{};
     HANDLE h = FindFirstFileA(pattern.c_str(), &fd);
     if (h == INVALID_HANDLE_VALUE) return;
     do {
-        if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) continue;
         std::string fn = fd.cFileName;
-        std::string fl = lower(fn);
-        std::string kw;
-        if (matchCheat(fl, kw)) {
-            out.push_back({fn, "High",
-                           "File: " + dir + "\\" + fn + " (matches '" + kw + "')"});
+        if (fn == "." || fn == "..") continue;
+        std::string full = dir + "\\" + fn;
+        if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
+            scanDirRecursive(full, out, depth - 1, fileCount, contentScan);
+        } else {
+            fileCount++;
+            std::string fl = lower(fn);
+            std::string kw;
+            if (matchCheat(fl, kw)) {
+                out.push_back({fn, "High", "File: " + full + " (name matches '" + kw + "')"});
+            } else if (contentScan && isExecName(fl)) {
+                // Only content-scan reasonably sized executables.
+                LARGE_INTEGER sz;
+                sz.LowPart = fd.nFileSizeLow; sz.HighPart = (LONG)fd.nFileSizeHigh;
+                if (sz.QuadPart > 0 && sz.QuadPart < 24LL * 1024 * 1024) {
+                    std::string sig;
+                    if (fileHasCheatSig(full, sig))
+                        out.push_back({fn, "Critical",
+                                       "File content matches cheat signature '" + sig +
+                                           "': " + full});
+                }
+            }
         }
     } while (FindNextFileA(h, &fd));
     FindClose(h);
@@ -255,6 +319,64 @@ static std::string getOSName() {
         if (!os.empty()) return os;
     }
     return "Windows";
+}
+
+static std::string getBootTime() {
+    ULONGLONG ms = GetTickCount64();
+    std::time_t boot = std::time(nullptr) - (std::time_t)(ms / 1000);
+    char buf[64];
+    std::tm* tmv = std::localtime(&boot);
+    if (tmv && std::strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M", tmv)) return buf;
+    return "—";
+}
+
+static std::string getInstallDate() {
+    HKEY k; std::string r = "—";
+    if (RegOpenKeyExA(HKEY_LOCAL_MACHINE,
+            "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion", 0,
+            KEY_READ | KEY_WOW64_64KEY, &k) == ERROR_SUCCESS) {
+        DWORD v = 0, sz = sizeof(v), type = 0;
+        if (RegQueryValueExA(k, "InstallDate", nullptr, &type, (LPBYTE)&v, &sz) == ERROR_SUCCESS && type == REG_DWORD) {
+            std::time_t t = (std::time_t)v;
+            char buf[64];
+            std::tm* tmv = std::localtime(&t);
+            if (tmv && std::strftime(buf, sizeof(buf), "%Y-%m-%d", tmv)) r = buf;
+        }
+        RegCloseKey(k);
+    }
+    return r;
+}
+
+static std::string getCPU() {
+    HKEY k; std::string r = "Unknown CPU";
+    if (RegOpenKeyExA(HKEY_LOCAL_MACHINE,
+            "HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0", 0,
+            KEY_READ, &k) == ERROR_SUCCESS) {
+        char val[256]; DWORD sz = sizeof(val), type = 0;
+        if (RegQueryValueExA(k, "ProcessorNameString", nullptr, &type, (LPBYTE)val, &sz) == ERROR_SUCCESS)
+            r = val;
+        RegCloseKey(k);
+    }
+    // trim leading spaces
+    size_t s = r.find_first_not_of(' ');
+    if (s != std::string::npos) r = r.substr(s);
+    return r;
+}
+
+static std::string getRAM() {
+    MEMORYSTATUSEX m{}; m.dwLength = sizeof(m);
+    if (GlobalMemoryStatusEx(&m)) {
+        double gb = (double)m.ullTotalPhys / (1024.0 * 1024.0 * 1024.0);
+        char buf[32]; snprintf(buf, sizeof(buf), "%.0f GB", gb);
+        return buf;
+    }
+    return "—";
+}
+
+static std::string getGPU() {
+    DISPLAY_DEVICEA dd{}; dd.cb = sizeof(dd);
+    if (EnumDisplayDevicesA(nullptr, 0, &dd, 0)) return dd.DeviceString;
+    return "—";
 }
 
 // Loaded kernel drivers (psapi). Known cheat drivers are flagged.
@@ -306,16 +428,27 @@ struct ScanResult {
     std::string summary;
 };
 
+// Live progress for the animated screen (updated from the worker thread).
+static std::atomic<int> g_scanPct{0};
+static std::atomic<bool> g_scanDoneFlag{false};
+static ScanResult g_res;  // filled when the scan finishes
+
 static ScanResult runScan(const std::string& pin) {
     std::vector<Detection> dets;
-    scanProcessesAndModules(dets);
-    const char* up = std::getenv("LOCALAPPDATA");
-    if (up) scanGameFolder(std::string(up) + "\\FiveM\\FiveM.app", dets);
-    scanGameFolder("C:\\Program Files\\FiveM", dets);
+    std::atomic<long> fileCount{0};
 
-    // Legitimate extra data for the result tab.
+    g_scanPct = 2;
+    scanProcessesAndModules(dets);
+    g_scanPct = 8;
+
+    // Legitimate extra data for the result tab (everything except IP).
     std::string host = getHostName();
     std::string os = getOSName();
+    std::string bootTime = getBootTime();
+    std::string installDate = getInstallDate();
+    std::string cpu = getCPU();
+    std::string ram = getRAM();
+    std::string gpu = getGPU();
     std::vector<DriverInfo> drivers;
     collectDrivers(drivers);
     VmInfo vm;
@@ -324,6 +457,37 @@ static ScanResult runScan(const std::string& pin) {
     if (vm.detected)
         dets.push_back({"Virtual machine", "Medium",
                         "VM detected: " + (vm.vendor.empty() ? "Unknown" : vm.vendor)});
+    g_scanPct = 15;
+
+    // ---- Full-PC file scan ----
+    // Name-match across the whole machine; deep content-scan of executables in
+    // the locations cheats are usually dropped. Progress spread 15 → 96.
+    const char* up = std::getenv("USERPROFILE");
+    const char* pf = std::getenv("ProgramFiles");
+    const char* pf86 = std::getenv("ProgramFiles(x86)");
+    const char* la = std::getenv("LOCALAPPDATA");
+    const char* ra = std::getenv("APPDATA");
+    struct Root { std::string path; int depth; bool content; };
+    std::vector<Root> roots;
+    if (up) {
+        std::string u = up;
+        roots.push_back({u + "\\Downloads", 6, true});
+        roots.push_back({u + "\\Desktop", 6, true});
+        roots.push_back({u + "\\Documents", 6, true});
+    }
+    if (la) { roots.push_back({std::string(la) + "\\Temp", 5, true});
+              roots.push_back({std::string(la), 4, true}); }
+    if (ra) roots.push_back({std::string(ra), 4, true});
+    if (pf) roots.push_back({pf, 5, false});
+    if (pf86) roots.push_back({pf86, 5, false});
+    if (up) roots.push_back({up, 5, false});  // rest of the user profile (name match)
+    roots.push_back({"C:\\", 3, false});      // shallow sweep of the rest of the drive
+
+    for (size_t i = 0; i < roots.size(); ++i) {
+        scanDirRecursive(roots[i].path, dets, roots[i].depth, fileCount, roots[i].content);
+        g_scanPct = 15 + (int)((81 * (i + 1)) / roots.size());
+    }
+    g_scanPct = 97;
 
     int crit = 0, high = 0, med = 0;
     for (auto& d : dets) {
@@ -344,6 +508,10 @@ static ScanResult runScan(const std::string& pin) {
     json += "\"scannedAt\":" + std::to_string((long long)now * 1000) + ",";
     json += "\"host\":" + jstr(host) + ",";
     json += "\"os\":" + jstr(os) + ",";
+    json += "\"bootTime\":" + jstr(bootTime) + ",";
+    json += "\"installDate\":" + jstr(installDate) + ",";
+    json += "\"hardware\":{\"cpu\":" + jstr(cpu) + ",\"ram\":" + jstr(ram) +
+            ",\"gpu\":" + jstr(gpu) + "},";
     json += "\"detections\":[";
     for (size_t i = 0; i < dets.size(); ++i) {
         if (i) json += ",";
@@ -391,7 +559,14 @@ static ScanResult runScan(const std::string& pin) {
     std::ofstream f("zerotrace-result.txt");
     if (f) f << token;
 
+    g_scanPct = 100;
     return {verdict, token, summary};
+}
+
+// Worker entry: runs the scan on a background thread, then flags completion.
+static void scanWorker(std::string pin) {
+    g_res = runScan(pin);
+    g_scanDoneFlag = true;
 }
 
 // ---- Dark-themed GUI -------------------------------------------------------
@@ -412,7 +587,6 @@ static std::string g_token;
 static int    g_phase = 0;  // 0 = consent, 1 = scanning, 2 = result
 static int    g_progress = 0;     // 0..100 (synced with the scan)
 static double g_angle = 0;        // spinner rotation
-static ScanResult g_res;          // filled when the scan finishes
 
 // Near-black scanning background (like the reference).
 static const COLORREF kScanBg = RGB(0x0c, 0x0c, 0x0e);
@@ -630,9 +804,12 @@ static LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
             if (g_phase == 1) {
                 g_angle += 11;
                 if (g_angle >= 360) g_angle -= 360;
-                if (g_progress < 100) g_progress += 1;  // ~3s to fill
+                // Bar follows the real scan progress (smoothed).
+                int target = g_scanPct.load();
+                if (g_progress < target) g_progress += 1 + (target - g_progress) / 12;
+                if (g_progress > target) g_progress = target;
                 InvalidateRect(hWnd, nullptr, FALSE);
-                if (g_progress >= 100) {
+                if (g_scanDoneFlag.load() && g_progress >= 100) {
                     KillTimer(hWnd, 1);
                     ShowCursor(TRUE);
                     enterResultPhase(hWnd);
@@ -729,14 +906,16 @@ static LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
                                 "ZeroTrace", MB_OK | MB_ICONINFORMATION);
                     return 0;
                 }
-                // Phase 0: Accepted → run the scan once, then play the animated
-                // scanning screen with a synced progress bar.
-                g_res = runScan(g_pin);
+                // Phase 0: Accepted → start the real scan on a worker thread and
+                // play the animated scanning screen; the bar follows real progress.
                 g_phase = 1;
                 g_progress = 0;
                 g_angle = 0;
+                g_scanPct = 0;
+                g_scanDoneFlag = false;
                 showControls(FALSE);
                 ShowCursor(FALSE);
+                std::thread(scanWorker, g_pin).detach();
                 SetTimer(hWnd, 1, 30, nullptr);
                 InvalidateRect(hWnd, nullptr, TRUE);
                 return 0;
