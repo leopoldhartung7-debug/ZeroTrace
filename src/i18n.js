@@ -48,7 +48,7 @@ export const DE = {
   'green': 'grün', 'red': 'rot', 'black': 'schwarz',
   'Match 3 symbols for the jackpot. Two of a kind pays ×1.5.': 'Triff 3 gleiche Symbole für den Jackpot. Zwei gleiche zahlen ×1,5.',
   'Payouts (3 of a kind)': 'Auszahlungen (3 gleiche)',
-  'Jackpot!': 'Jackpot!', 'Two of a kind → ×1.5': 'Zwei gleiche → ×1,5',
+  'Jackpot!': 'Jackpot!', 'Two of a kind → ×1.25': 'Zwei gleiche → ×1,25',
   'No match — try again': 'Kein Treffer — nochmal versuchen', 'No win': 'Kein Gewinn',
   'Your bet': 'Dein Einsatz', 'Pick a number': 'Wähle eine Zahl', 'Max': 'Max',
   'Bet on a number 0–9. Hit it and get': 'Wette auf eine Zahl 0–9. Triffst du sie, bekommst du',

@@ -37,7 +37,7 @@ function useCountUp(value) {
 }
 
 const WHEEL_COLORS = ['#0ea5e9', '#1e293b', '#38bdf8', '#0f172a', '#0284c7', '#1e293b', '#38bdf8', '#0f172a', '#0ea5e9', '#1e293b']
-const WHEEL_MULT = 8 // hit your exact number → 8× your stake back
+const WHEEL_MULT = 7 // hit your exact number → 7× your stake back
 
 function polar(cx, cy, r, deg) {
   const rad = ((deg - 90) * Math.PI) / 180
@@ -578,8 +578,8 @@ function Roulette({ wallet, dispatch, toast, fx = {} }) {
 
 /* ---------------- Slot Machine ---------------- */
 const SLOT_SYMBOLS = ['🍒', '🍋', '🔔', '⭐', '7️⃣', '💎']
-const SLOT_THREE = { '🍒': 2, '🍋': 3, '🔔': 5, '⭐': 8, '7️⃣': 12, '💎': 20 }
-const SLOT_TWO_MULT = 1.5
+const SLOT_THREE = { '🍒': 2, '🍋': 3, '🔔': 4, '⭐': 6, '7️⃣': 10, '💎': 16 }
+const SLOT_TWO_MULT = 1.25
 
 function SlotMachine({ wallet, dispatch, toast, fx = {} }) {
   const [bet, setBet] = useState(50)
@@ -1054,7 +1054,7 @@ function Crash({ wallet, dispatch, toast, fx }) {
     setActiveBet(amount)
     // House edge ~4%: crash point distribution.
     const r = Math.random()
-    const cp = Math.max(1, Math.floor((0.96 / (1 - r)) * 100) / 100)
+    const cp = Math.max(1, Math.floor((0.92 / (1 - r)) * 100) / 100)
     setCrashAt(cp)
     setMult(1)
     setPhase('running')
@@ -1179,7 +1179,7 @@ function Mines({ wallet, dispatch, toast, fx }) {
     // product of (remaining/safe-remaining) with house edge
     let m = 1
     for (let i = 0; i < n; i++) m *= (SIZE - i) / (safeTotal - i)
-    return Math.floor(m * 0.97 * 100) / 100
+    return Math.floor(m * 0.93 * 100) / 100
   }
   const currentMult = multAt(picks)
   const nextMult = picks < safeTotal ? multAt(picks + 1) : currentMult
@@ -1303,8 +1303,8 @@ function HiLo({ wallet, dispatch, toast, fx }) {
       return
     }
     const stepMult = dir === 'higher'
-      ? (higherChance > 0 ? 0.97 / higherChance : 1)
-      : (lowerChance > 0 ? 0.97 / lowerChance : 1)
+      ? (higherChance > 0 ? 0.93 / higherChance : 1)
+      : (lowerChance > 0 ? 0.93 / lowerChance : 1)
     const m = Math.max(1.01, Math.floor(mult * Math.max(1.05, stepMult) * 100) / 100)
     setMult(m); setCurrent(next)
     toast({ type: 'success', title: `Next was ${label(next)} — ${m.toFixed(2)}×` })
