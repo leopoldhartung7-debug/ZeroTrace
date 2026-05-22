@@ -129,6 +129,8 @@ export default function ScanResults() {
       : null
   const [cat, setCat] = useState(null)
   const [risk, setRisk] = useState(false)
+  const [scanning, setScanning] = useState(false)
+  const [scanStep, setScanStep] = useState(0)
 
   const report = useMemo(
     () => (pin && pin.status === 'Finished' ? deriveScanReport(pin) : null),
@@ -163,24 +165,69 @@ export default function ScanResults() {
   }
 
   if (!report) {
+    const SCAN_STEPS = [
+      'Connecting to client…',
+      'Enumerating running processes…',
+      'Reading USB device history…',
+      'Scanning Discord servers…',
+      'Checking browser extensions…',
+      'Resolving public IP…',
+      'Running heuristic analysis…',
+      'Generating report…',
+    ]
+    const runScanAnimated = () => {
+      if (scanning) return
+      setScanning(true)
+      setScanStep(0)
+      const stepMs = 480
+      let i = 0
+      const iv = setInterval(() => {
+        i += 1
+        if (i >= SCAN_STEPS.length) {
+          clearInterval(iv)
+          dispatch({ type: 'run-scan', id: pin.id })
+          // pin becomes Finished → component re-renders with the report
+          setScanning(false)
+          toast({ type: 'success', title: 'Scan complete', body: pin.pin })
+        } else {
+          setScanStep(i)
+        }
+      }, stepMs)
+    }
+    const pct = Math.round((scanStep / (SCAN_STEPS.length - 1)) * 100)
     return (
       <div>
         <button onClick={() => nav('/pins')} className="muted hover:txt mb-6 flex items-center gap-2 text-sm">
           <ArrowLeft size={16} /> Back to Pins
         </button>
-        <Card className="flex flex-col items-center p-16 text-center">
-          <Clock size={36} className="muted" />
-          <p className="txt mt-4 text-lg font-semibold">Scan pending</p>
-          <p className="muted mt-1 text-sm">No results yet — this pin has not been scanned.</p>
-          <button
-            onClick={() => {
-              dispatch({ type: 'run-scan', id: pin.id })
-              toast({ type: 'info', title: 'Scan complete', body: pin.pin })
-            }}
-            className="mt-6 flex items-center gap-2 rounded-lg bg-sky-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-sky-500"
-          >
-            <Play size={15} /> Run scan now
-          </button>
+        <Card className="flex flex-col items-center p-12 text-center sm:p-16">
+          {scanning ? (
+            <>
+              <div className="relative flex h-24 w-24 items-center justify-center">
+                <ScanLine size={40} className="text-sky-400" />
+                <span className="absolute inset-0 animate-ping rounded-full border-2 border-sky-500/40" />
+                <span className="absolute inset-0 animate-spin rounded-full border-2 border-transparent border-t-sky-500" />
+              </div>
+              <p className="txt mt-6 text-lg font-semibold">Scanning…</p>
+              <p className="muted mt-1 h-5 text-sm">{SCAN_STEPS[scanStep]}</p>
+              <div className="tile mt-5 h-2 w-full max-w-xs overflow-hidden rounded-full border-0">
+                <div className="h-full rounded-full bg-sky-500 transition-all duration-300" style={{ width: `${pct}%` }} />
+              </div>
+              <p className="muted mt-2 text-xs">{pct}%</p>
+            </>
+          ) : (
+            <>
+              <Clock size={36} className="muted" />
+              <p className="txt mt-4 text-lg font-semibold">Scan pending</p>
+              <p className="muted mt-1 text-sm">This pin hasn’t been scanned yet. Start the scan to generate the report.</p>
+              <button
+                onClick={runScanAnimated}
+                className="mt-6 flex items-center gap-2 rounded-lg bg-sky-600 px-6 py-3 text-sm font-semibold text-white hover:bg-sky-500"
+              >
+                <Play size={16} /> Start scan
+              </button>
+            </>
+          )}
         </Card>
       </div>
     )
