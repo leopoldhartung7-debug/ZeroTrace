@@ -454,10 +454,6 @@ export default function Login() {
             Register
           </button>
         </p>
-        <p className="mt-4 rounded-lg border border-white/10 bg-white/[0.02] px-3 py-2 text-center text-[11px] leading-relaxed text-neutral-500">
-          Demo logins — Admin: <span className="text-neutral-300">admin / OceanAdmin1</span>
-          {' · '}Analyst: <span className="text-neutral-300">analyst / ZeroTraceAnalyst1</span>
-        </p>
         <p className="mt-3 text-center text-xs text-neutral-500">
           Need help?{' '}
           <button

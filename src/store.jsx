@@ -295,6 +295,7 @@ function seed() {
     discountCodes: [],
     jackpot: 5000,
     casino: { disabledGames: [], houseProfit: 0 },
+    onboardingDone: false,
   }
 }
 
@@ -1074,6 +1075,12 @@ function reducer(state, action) {
         },
       }
     }
+
+    case 'complete-onboarding':
+      return { ...state, onboardingDone: true }
+
+    case 'restart-onboarding':
+      return { ...state, onboardingDone: false }
 
     case 'clear-audit-log':
       return { ...state, adminAuditLog: [] }

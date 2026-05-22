@@ -13,6 +13,18 @@ const MONTHS = {
 }
 
 export const DE = {
+  // ---- Onboarding tour ----
+  'Welcome to ZeroTrace': 'Willkommen bei ZeroTrace',
+  'This is your dashboard. It shows your scan statistics, detection results and any announcements at a glance.': 'Das ist dein Dashboard. Hier siehst du deine Scan-Statistiken, Erkennungsergebnisse und Ankündigungen auf einen Blick.',
+  'Create a Pin': 'Pin erstellen',
+  'Go to “Pins” to generate a one-time PIN. Send it together with the scanner to the player you want to check.': 'Geh zu „Pins" um einen Einmal-PIN zu erstellen. Schick ihn zusammen mit dem Scanner an den Spieler den du prüfen willst.',
+  'Read the scan': 'Scan auswerten',
+  'When a scan finishes, open the pin’s “View Results” to see the full forensic report, verdict and risk score.': 'Wenn ein Scan fertig ist, öffne beim Pin „Ergebnisse ansehen" für den vollständigen forensischen Bericht, das Verdict und den Risk-Score.',
+  'Earn coins': 'Coins verdienen',
+  'Every cheater you catch earns coins. Spend them in the Casino on games, discount codes or even real license keys.': 'Jeder gefangene Cheater bringt Coins. Gib sie im Casino für Spiele, Rabattcodes oder sogar echte Lizenz-Keys aus.',
+  'Step': 'Schritt', 'of': 'von', 'Skip': 'Überspringen', 'Back': 'Zurück',
+  'Next': 'Weiter', 'Get started': 'Los geht’s',
+
   // ---- Discount codes ----
   'Promotions': 'Aktionen', 'Discount Codes': 'Rabattcodes',
   'Create discount codes analysts can apply to license-key purchases in the shop.': 'Erstelle Rabattcodes die Analysten beim Key-Kauf im Shop einlösen können.',

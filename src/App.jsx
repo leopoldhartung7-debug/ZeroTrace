@@ -45,6 +45,7 @@ import AdminMaintenance from './pages/AdminMaintenance.jsx'
 import AdminDiscounts from './pages/AdminDiscounts.jsx'
 import MaintenanceScreen from './pages/MaintenanceScreen.jsx'
 import { AnnouncementBanner, ImpersonationBanner } from './components/Banners.jsx'
+import OnboardingTour from './components/OnboardingTour.jsx'
 
 function AdminRoute({ children }) {
   const { state } = useStore()
@@ -104,6 +105,7 @@ function DashboardLayout() {
         </main>
       </div>
       <CommandPalette />
+      <OnboardingTour />
     </div>
   )
 }
