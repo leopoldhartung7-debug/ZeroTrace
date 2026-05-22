@@ -218,14 +218,14 @@ function handValue(cards) {
 function PlayingCard({ card, hidden }) {
   if (hidden) {
     return (
-      <div className="flex h-24 w-16 items-center justify-center rounded-lg border border-sky-500/40 bg-gradient-to-br from-sky-900/60 to-slate-900 text-sky-500">
+      <div className="zt-deal flex h-24 w-16 items-center justify-center rounded-lg border border-sky-500/40 bg-gradient-to-br from-sky-900/60 to-slate-900 text-sky-500">
         <Sparkles size={20} />
       </div>
     )
   }
   const red = card.s === '♥' || card.s === '♦'
   return (
-    <div className="flex h-24 w-16 flex-col justify-between rounded-lg border border-line bg-white p-1.5 shadow-md">
+    <div className="zt-deal flex h-24 w-16 flex-col justify-between rounded-lg border border-line bg-white p-1.5 shadow-md">
       <span className={`text-sm font-bold ${red ? 'text-red-600' : 'text-slate-900'}`}>{card.r}</span>
       <span className={`text-center text-xl ${red ? 'text-red-600' : 'text-slate-900'}`}>{card.s}</span>
       <span className={`rotate-180 text-sm font-bold ${red ? 'text-red-600' : 'text-slate-900'}`}>{card.r}</span>
@@ -981,7 +981,7 @@ function Coinflip({ wallet, dispatch, toast, fx }) {
   return (
     <div className="grid gap-6 lg:grid-cols-2">
       <Card className="flex flex-col items-center justify-center p-6">
-        <div className={`flex h-32 w-32 items-center justify-center rounded-full border-4 border-yellow-500/60 bg-gradient-to-br from-yellow-400 to-yellow-600 text-4xl font-bold text-yellow-900 ${flipping ? 'animate-spin' : ''}`}>
+        <div className={`flex h-32 w-32 items-center justify-center rounded-full border-4 border-yellow-500/60 bg-gradient-to-br from-yellow-400 to-yellow-600 text-4xl font-bold text-yellow-900 ${flipping ? 'zt-coinflip' : ''}`}>
           {flipping ? '?' : last ? (last.result === 'heads' ? 'H' : 'T') : 'H'}
         </div>
         {last && (
@@ -1168,7 +1168,7 @@ function Mines({ wallet, dispatch, toast, fx }) {
                 c.revealed ? (c.mine ? 'border-red-600/50 bg-red-600/20' : 'border-green-600/50 bg-green-600/20') : 'bd tile hover:border-sky-500'
               }`}
             >
-              {c.revealed ? (c.mine ? '💣' : '💎') : ''}
+              {c.revealed ? <span className="zt-pop">{c.mine ? '💣' : '💎'}</span> : ''}
             </button>
           ))}
         </div>
@@ -1208,7 +1208,11 @@ function DiceGame({ wallet, dispatch, toast, fx }) {
   const [target, setTarget] = useState(50)
   const [mode, setMode] = useState('under') // under | over
   const [last, setLast] = useState(null)
+  const [rolling, setRolling] = useState(false)
+  const [display, setDisplay] = useState('—')
   const ref = useRef(false)
+  const intRef = useRef(null)
+  useEffect(() => () => clearInterval(intRef.current), [])
   // win chance and multiplier (house edge 3%)
   const chance = mode === 'under' ? target : 100 - target
   const mult = chance > 0 ? Math.floor((97 / chance) * 100) / 100 : 0
@@ -1220,11 +1224,17 @@ function DiceGame({ wallet, dispatch, toast, fx }) {
     if (amount > wallet.balance) return toast({ type: 'error', title: 'Not enough coins' })
     if (chance < 2 || chance > 98) return toast({ type: 'error', title: 'Pick a fairer target' })
     ref.current = true
+    setRolling(true)
+    setLast(null)
     dispatch({ type: 'wallet-tx', key: wallet.key, delta: -amount, txType: 'bet', detail: 'Dice', notifyOwnerId: wallet.ownerId })
     fx.spin()
     const result = Math.floor(Math.random() * 10000) / 100 // 0.00–99.99
     const won = mode === 'under' ? result < target : result > target
+    // Flicker random numbers while "rolling".
+    intRef.current = setInterval(() => setDisplay((Math.random() * 100).toFixed(2)), 60)
     setTimeout(() => {
+      clearInterval(intRef.current)
+      setDisplay(result.toFixed(2))
       if (won) {
         const payout = Math.floor(amount * mult)
         dispatch({ type: 'wallet-tx', key: wallet.key, delta: payout, txType: 'win', detail: `Dice ${mult}x`, notifyOwnerId: wallet.ownerId })
@@ -1234,15 +1244,15 @@ function DiceGame({ wallet, dispatch, toast, fx }) {
         fx.lose()
         toast({ type: 'error', title: `Rolled ${result} — no win` })
       }
-      setLast({ result, won }); ref.current = false
-    }, 400)
+      setLast({ result, won }); setRolling(false); ref.current = false
+    }, 900)
   }
 
   return (
     <div className="grid gap-6 lg:grid-cols-2">
       <Card className="flex flex-col items-center justify-center p-6">
-        <div className={`text-6xl font-bold tabular-nums ${last ? (last.won ? 'text-green-400' : 'text-red-500') : 'txt'}`}>
-          {last ? last.result.toFixed(2) : '—'}
+        <div className={`text-6xl font-bold tabular-nums ${rolling ? 'zt-shake text-sky-400' : last ? (last.won ? 'text-green-400' : 'text-red-500') : 'txt'}`}>
+          {rolling ? display : last ? last.result.toFixed(2) : '—'}
         </div>
         <p className="muted mt-3 text-sm">Roll {mode === 'under' ? 'under' : 'over'} {target}</p>
       </Card>
@@ -1322,7 +1332,7 @@ function HiLo({ wallet, dispatch, toast, fx }) {
   return (
     <div className="grid gap-6 lg:grid-cols-2">
       <Card className="flex flex-col items-center justify-center p-6">
-        <div className="flex h-32 w-24 items-center justify-center rounded-xl border border-line bg-white text-5xl font-bold text-slate-900">{label(current)}</div>
+        <div key={current} className="zt-flipin flex h-32 w-24 items-center justify-center rounded-xl border border-line bg-white text-5xl font-bold text-slate-900">{label(current)}</div>
         {phase === 'playing' && <p className="mt-4 text-sm font-semibold text-sky-400">{mult.toFixed(2)}×</p>}
       </Card>
       <Card className="p-6">
