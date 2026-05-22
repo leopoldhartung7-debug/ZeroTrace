@@ -1089,10 +1089,49 @@ function Crash({ wallet, dispatch, toast, fx }) {
 
   const color = phase === 'crashed' ? 'text-red-500' : phase === 'cashed' ? 'text-green-400' : 'text-sky-400'
 
+  // Plane position along a log curve so it climbs smoothly with the multiplier.
+  const progress = Math.min(0.85, Math.log(Math.max(1, mult)) / Math.log(25))
+  const crashed = phase === 'crashed'
+  const flying = phase === 'running' || phase === 'cashed'
+  const planeLeft = crashed ? 90 : 6 + progress * 80
+  const planeBottom = crashed ? -10 : 6 + progress * 78
+  const planeRot = crashed ? 110 : flying ? -18 : -18
+
   return (
     <div className="grid gap-6 lg:grid-cols-2">
-      <Card className="flex flex-col items-center justify-center p-6">
-        <div className={`text-6xl font-bold tabular-nums ${color}`}>{mult.toFixed(2)}×</div>
+      <Card className="relative flex flex-col items-center justify-center overflow-hidden p-6">
+        <div className="relative h-56 w-full overflow-hidden rounded-xl border border-line bg-gradient-to-b from-sky-950/40 to-slate-950">
+          {/* climbing trail */}
+          <svg className="absolute inset-0 h-full w-full" preserveAspectRatio="none" viewBox="0 0 100 100">
+            {flying && (
+              <path
+                d={`M 6 94 Q ${(6 + planeLeft) / 2} ${94 - (94 - (100 - planeBottom)) * 0.5}, ${planeLeft} ${100 - planeBottom}`}
+                fill="none"
+                stroke="#38bdf8"
+                strokeWidth="1.2"
+                strokeOpacity="0.5"
+              />
+            )}
+          </svg>
+          {/* plane */}
+          <div
+            className="absolute text-3xl"
+            style={{
+              left: `${planeLeft}%`,
+              bottom: `${planeBottom}%`,
+              transform: `translate(-50%, 50%) rotate(${planeRot}deg)`,
+              transition: crashed ? 'left 0.8s ease-in, bottom 0.8s ease-in, transform 0.4s' : 'left 0.12s linear, bottom 0.12s linear',
+            }}
+          >
+            {crashed ? '💥' : '✈️'}
+          </div>
+          {/* multiplier overlay */}
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className={`text-5xl font-bold tabular-nums ${color}`} style={{ textShadow: '0 2px 12px rgba(0,0,0,0.6)' }}>
+              {mult.toFixed(2)}×
+            </span>
+          </div>
+        </div>
         <p className="muted mt-3 text-sm">
           {phase === 'idle' && 'Place a bet and watch it climb.'}
           {phase === 'running' && 'Cash out before it crashes!'}
