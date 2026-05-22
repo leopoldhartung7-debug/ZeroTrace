@@ -13,6 +13,18 @@ const MONTHS = {
 }
 
 export const DE = {
+  // ---- Scanner / pin flow ----
+  'How to scan this player': 'So scannst du diesen Spieler',
+  'Download the ZeroTrace Checker': 'Lade den ZeroTrace-Checker herunter',
+  'Download Scanner': 'Scanner herunterladen',
+  'Admin: set the scanner download URL in': 'Admin: setze die Scanner-Download-URL unter',
+  'Download the session file (PIN pre-filled)': 'Lade die Session-Datei herunter (PIN vorausgefüllt)',
+  'Download session': 'Session herunterladen',
+  'Send both files to the player. They open the session file with the Checker — the PIN is filled in automatically, they only accept the consent prompt and scan. Their result token goes back to you → paste it under':
+    'Schick beide Dateien an den Spieler. Er öffnet die Session-Datei mit dem Checker — der PIN ist automatisch ausgefüllt, er muss nur die Zustimmung bestätigen und scannen. Sein Ergebnis-Token kommt zu dir zurück → füge ihn ein unter',
+  'Scanner download URL': 'Scanner-Download-URL',
+  'Where the ZeroTrace Checker is hosted (shown in the pin popup)': 'Wo der ZeroTrace-Checker gehostet ist (wird im Pin-Popup angezeigt)',
+
   // ---- Onboarding tour ----
   'Welcome to ZeroTrace': 'Willkommen bei ZeroTrace',
   'This is your dashboard. It shows your scan statistics, detection results and any announcements at a glance.': 'Das ist dein Dashboard. Hier siehst du deine Scan-Statistiken, Erkennungsergebnisse und Ankündigungen auf einen Blick.',

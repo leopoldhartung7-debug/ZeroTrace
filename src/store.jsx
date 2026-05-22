@@ -237,6 +237,7 @@ function seed() {
       digestFrequency: 'off',
       lastDigestAt: 0,
       casinoSound: true,
+      scannerUrl: '',
     },
     notifications: [
       { id: 'n1', title: 'Scan finished', body: 'Pin F1T5F8C0 returned: Cheating', time: now - 3600000, read: false },

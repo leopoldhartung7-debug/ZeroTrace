@@ -84,6 +84,16 @@ function General() {
               options={ALL_GAMES.map((g) => ({ value: g, label: g }))}
             />
           </Row>
+          {state.role === 'admin' && (
+            <Row title="Scanner download URL" desc="Where the ZeroTrace Checker is hosted (shown in the pin popup)">
+              <input
+                value={state.settings.scannerUrl || ''}
+                onChange={(e) => dispatch({ type: 'set-setting', key: 'scannerUrl', value: e.target.value })}
+                placeholder="https://…/ZeroTraceChecker.exe"
+                className="bd tile txt w-full rounded-lg border px-3 py-2.5 text-sm focus:outline-none"
+              />
+            </Row>
+          )}
         </Card>
 
         <Card className="p-6">

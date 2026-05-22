@@ -787,31 +787,56 @@ export default function Pins() {
             </div>
 
             <div className="tile rounded-xl border p-4">
-              <p className="muted text-sm">Scanner session file:</p>
-              <p className="txt mt-1 break-all font-mono text-xs">ZeroTraceScan-{created.pin}.zerotrace</p>
-              <div className="mt-3 flex gap-2">
-                <button
-                  onClick={() => downloadSession(created)}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-sky-600 px-3 py-2 text-sm font-semibold text-white hover:bg-sky-500"
-                >
-                  <Download size={15} /> Download
-                </button>
-                <button
-                  onClick={() =>
-                    copyText(
-                      JSON.stringify({ pin: created.pin, game: created.game, name: created.name }),
-                      'Session data',
-                    )
-                  }
-                  className="bd txt flex items-center gap-2 rounded-lg border px-3 py-2 text-sm hover:border-sky-500"
-                >
-                  <Copy size={15} /> Copy
-                </button>
+              <p className="txt mb-3 text-sm font-semibold">How to scan this player</p>
+
+              {/* Step 1 — the scanner program */}
+              <div className="mb-3 flex items-start gap-3">
+                <span className="tile flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-xs font-bold">1</span>
+                <div className="min-w-0 flex-1">
+                  <p className="txt text-sm">Download the ZeroTrace Checker</p>
+                  {state.settings?.scannerUrl ? (
+                    <a
+                      href={state.settings.scannerUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mt-2 inline-flex items-center gap-2 rounded-lg bg-sky-600 px-3 py-2 text-sm font-semibold text-white hover:bg-sky-500"
+                    >
+                      <Download size={15} /> Download Scanner
+                    </a>
+                  ) : (
+                    <p className="muted mt-1 text-xs">
+                      Admin: set the scanner download URL in <span className="txt">Settings → General</span>.
+                    </p>
+                  )}
+                </div>
               </div>
-              <p className="muted mt-2 text-xs">
-                Open this file with ZeroTraceScanner.exe — the pin is filled in automatically, you only
-                need to accept the consent prompt and scan.
-              </p>
+
+              {/* Step 2 — the pre-filled session file */}
+              <div className="mb-3 flex items-start gap-3">
+                <span className="tile flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-xs font-bold">2</span>
+                <div className="min-w-0 flex-1">
+                  <p className="txt text-sm">Download the session file (PIN pre-filled)</p>
+                  <p className="muted mt-0.5 break-all font-mono text-xs">ZeroTraceScan-{created.pin}.zerotrace</p>
+                  <div className="mt-2 flex gap-2">
+                    <button
+                      onClick={() => downloadSession(created)}
+                      className="bd txt flex items-center gap-2 rounded-lg border px-3 py-2 text-sm hover:border-sky-500"
+                    >
+                      <Download size={15} /> Download session
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Step 3 — send + import */}
+              <div className="flex items-start gap-3">
+                <span className="tile flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-xs font-bold">3</span>
+                <p className="muted text-xs">
+                  Send both files to the player. They open the session file with the Checker — the PIN is
+                  filled in automatically, they only accept the consent prompt and scan. Their result token
+                  goes back to you → paste it under <span className="txt">Import Result</span>.
+                </p>
+              </div>
             </div>
 
             <div className="tile rounded-xl border p-4">
