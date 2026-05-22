@@ -338,6 +338,9 @@ function Blackjack({ wallet, dispatch, toast }) {
 
 const ROULETTE_RED = new Set([1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36])
 const rColor = (n) => (n === 0 ? 'green' : ROULETTE_RED.has(n) ? 'red' : 'black')
+// Real European wheel pocket order (clockwise from 0).
+const WHEEL_ORDER = [0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26]
+const POCKET = 360 / 37
 
 const ROULETTE_BETS = [
   { id: 'red', label: 'Red', mult: 2, test: (n) => n !== 0 && ROULETTE_RED.has(n) },
@@ -355,13 +358,14 @@ function Roulette({ wallet, dispatch, toast }) {
   const [bet, setBet] = useState(50)
   const [betType, setBetType] = useState('red') // a ROULETTE_BETS id or 'number'
   const [pickNumber, setPickNumber] = useState(0)
-  const [display, setDisplay] = useState(0)
+  const [wheelRot, setWheelRot] = useState(0)
+  const [ballRot, setBallRot] = useState(0)
   const [spinning, setSpinning] = useState(false)
   const [last, setLast] = useState(null)
-  const intervalRef = useRef(null)
   const spinningRef = useRef(false)
+  const timerRef = useRef(null)
 
-  useEffect(() => () => clearInterval(intervalRef.current), [])
+  useEffect(() => () => clearTimeout(timerRef.current), [])
 
   const spin = () => {
     if (spinningRef.current) return
@@ -376,14 +380,19 @@ function Roulette({ wallet, dispatch, toast }) {
     dispatch({ type: 'wallet-tx', key: wallet.key, delta: -amount, txType: 'bet', detail: `Roulette on ${betLabel}` })
 
     const result = Math.floor(Math.random() * 37) // 0–36
+    const index = WHEEL_ORDER.indexOf(result)
+    // Rotate the wheel so the result pocket centre sits under the top pointer.
+    const targetMod = ((360 - (index * POCKET + POCKET / 2)) % 360 + 360) % 360
+    setWheelRot((prev) => {
+      const prevMod = ((prev % 360) + 360) % 360
+      let delta = targetMod - prevMod
+      if (delta < 0) delta += 360
+      return prev + 6 * 360 + delta
+    })
+    // Ball spins the opposite way and always settles at the top (0 mod 360).
+    setBallRot((prev) => prev - 10 * 360)
 
-    intervalRef.current = setInterval(() => {
-      setDisplay(Math.floor(Math.random() * 37))
-    }, 70)
-
-    setTimeout(() => {
-      clearInterval(intervalRef.current)
-      setDisplay(result)
+    timerRef.current = setTimeout(() => {
       let won = false
       let mult = 0
       if (betType === 'number') {
@@ -404,22 +413,61 @@ function Roulette({ wallet, dispatch, toast }) {
       setLast({ result, won })
       setSpinning(false)
       spinningRef.current = false
-    }, 2600)
+    }, 5200)
   }
 
-  const dColor = rColor(display)
-  const dBg = dColor === 'green' ? 'bg-green-600' : dColor === 'red' ? 'bg-red-600' : 'bg-neutral-800'
+  const segFill = { green: '#16a34a', red: '#dc2626', black: '#171717' }
 
   return (
     <div className="grid gap-6 lg:grid-cols-2">
       <Card className="flex flex-col items-center justify-center p-6">
-        <div className={`flex h-32 w-32 items-center justify-center rounded-full border-4 ${spinning ? 'border-sky-500/60' : 'border-line'} ${dBg} text-5xl font-bold text-white`}>
-          {display}
+        <div className="relative h-72 w-72">
+          {/* Top pointer */}
+          <div className="absolute left-1/2 top-[-4px] z-20 -translate-x-1/2">
+            <div className="h-0 w-0 border-l-[9px] border-r-[9px] border-t-[16px] border-l-transparent border-r-transparent border-t-sky-400" />
+          </div>
+
+          {/* Wheel */}
+          <svg
+            viewBox="0 0 200 200"
+            className="absolute inset-0 h-full w-full"
+            style={{ transform: `rotate(${wheelRot}deg)`, transition: 'transform 5s cubic-bezier(0.12,0.7,0.1,1)' }}
+          >
+            <circle cx="100" cy="100" r="98" fill="#0b0e14" />
+            {WHEEL_ORDER.map((n, i) => {
+              const a0 = i * POCKET
+              const a1 = (i + 1) * POCKET
+              const [tx, ty] = polar(100, 100, 84, a0 + POCKET / 2)
+              return (
+                <g key={n}>
+                  <path d={segmentPath(100, 100, 96, a0, a1)} fill={segFill[rColor(n)]} stroke="#0b0e14" strokeWidth="0.5" />
+                  <text
+                    x={tx} y={ty} fill="#fff" fontSize="8" fontWeight="700"
+                    textAnchor="middle" dominantBaseline="middle"
+                    transform={`rotate(${a0 + POCKET / 2} ${tx} ${ty})`}
+                  >
+                    {n}
+                  </text>
+                </g>
+              )
+            })}
+            <circle cx="100" cy="100" r="46" fill="#11151f" stroke="#2a2c33" strokeWidth="2" />
+            <circle cx="100" cy="100" r="30" fill="#0b0e14" />
+          </svg>
+
+          {/* Ball orbit */}
+          <div
+            className="absolute inset-0"
+            style={{ transform: `rotate(${ballRot}deg)`, transition: 'transform 5s cubic-bezier(0.15,0.6,0.1,1)' }}
+          >
+            <div className="absolute left-1/2 top-[6px] h-3 w-3 -translate-x-1/2 rounded-full bg-white shadow-[0_0_6px_rgba(255,255,255,0.8)]" />
+          </div>
         </div>
-        <p className="muted mt-3 text-sm capitalize">{dColor}</p>
+
         {last && (
-          <div className={`mt-4 rounded-lg border px-4 py-2 text-sm font-semibold ${last.won ? 'border-green-600/40 bg-green-600/15 text-green-400' : 'border-red-600/40 bg-red-600/15 text-red-400'}`}>
-            {last.won ? `Number ${last.result} — you won!` : `Number ${last.result} — no win`}
+          <div className={`mt-4 flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-semibold ${last.won ? 'border-green-600/40 bg-green-600/15 text-green-400' : 'border-red-600/40 bg-red-600/15 text-red-400'}`}>
+            <span className={`flex h-6 w-6 items-center justify-center rounded-full text-xs text-white`} style={{ background: segFill[rColor(last.result)] }}>{last.result}</span>
+            {last.won ? 'You won!' : 'No win'}
           </div>
         )}
       </Card>
