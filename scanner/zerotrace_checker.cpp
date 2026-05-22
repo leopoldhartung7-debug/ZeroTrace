@@ -406,7 +406,7 @@ static const COLORREF kAccent = RGB(0x38, 0xbd, 0xf8);
 
 static HBRUSH g_bgBrush = nullptr;
 static HFONT  g_fTitle = nullptr, g_fBody = nullptr, g_fSub = nullptr, g_fBtn = nullptr;
-static HWND   g_hTitle, g_hSub, g_hText, g_hAccept, g_hDecline, g_hVer;
+static HWND   g_hTitle, g_hSub, g_hText, g_hAccept, g_hDecline, g_hVer, g_hDiscord;
 static std::string g_pin;
 static std::string g_token;
 static int    g_phase = 0;  // 0 = consent, 1 = scanning, 2 = result
@@ -441,7 +441,7 @@ static const char* kEula =
 // Show the consent-phase child controls (used for consent + result phases).
 static void showControls(int show) {
     int s = show ? SW_SHOW : SW_HIDE;
-    for (HWND h : {g_hTitle, g_hSub, g_hText, g_hAccept, g_hDecline, g_hVer})
+    for (HWND h : {g_hTitle, g_hSub, g_hText, g_hAccept, g_hDecline, g_hVer, g_hDiscord})
         ShowWindow(h, s);
 }
 
@@ -616,7 +616,7 @@ static LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
             HDC dc = (HDC)wp;
             SetBkMode(dc, TRANSPARENT);
             HWND ctl = (HWND)lp;
-            SetTextColor(dc, ctl == g_hSub || ctl == g_hVer ? kMuted : kText);
+            SetTextColor(dc, (ctl == g_hSub || ctl == g_hVer || ctl == g_hDiscord) ? kMuted : kText);
             return (LRESULT)g_bgBrush;
         }
         case WM_CTLCOLOREDIT: {
@@ -628,28 +628,54 @@ static LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
         }
         case WM_DRAWITEM: {
             DRAWITEMSTRUCT* dis = (DRAWITEMSTRUCT*)lp;
+            HDC dc = dis->hDC;
             bool accept = dis->CtlID == ID_ACCEPT;
             bool down = (dis->itemState & ODS_SELECTED);
+            RECT r = dis->rcItem;
+            int h = r.bottom - r.top;
+            // pill background
             COLORREF fill = accept ? (down ? RGB(0x1f, 0x8f, 0xc0) : RGB(0x26, 0xa6, 0xd9))
                                    : (down ? RGB(0x2a, 0x2d, 0x45) : RGB(0x33, 0x36, 0x52));
             HBRUSH b = CreateSolidBrush(fill);
-            HPEN pen = CreatePen(PS_SOLID, 1,
-                                 accept ? kAccent : RGB(0x4a, 0x4d, 0x6b));
-            HBRUSH ob = (HBRUSH)SelectObject(dis->hDC, b);
-            HPEN op = (HPEN)SelectObject(dis->hDC, pen);
-            RECT r = dis->rcItem;
-            RoundRect(dis->hDC, r.left, r.top, r.right, r.bottom, 12, 12);
-            SetBkMode(dis->hDC, TRANSPARENT);
-            SetTextColor(dis->hDC, accept ? RGB(255, 255, 255) : RGB(0xff, 0x8a, 0x8a));
-            HFONT of = (HFONT)SelectObject(dis->hDC, g_fBtn);
-            char txt[64];
-            GetWindowTextA(dis->hwndItem, txt, 64);
-            DrawTextA(dis->hDC, txt, -1, &r, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
-            SelectObject(dis->hDC, of);
-            SelectObject(dis->hDC, ob);
-            SelectObject(dis->hDC, op);
+            HPEN pen = CreatePen(PS_SOLID, 1, accept ? kAccent : RGB(0x4a, 0x4d, 0x6b));
+            HBRUSH ob = (HBRUSH)SelectObject(dc, b);
+            HPEN op = (HPEN)SelectObject(dc, pen);
+            RoundRect(dc, r.left, r.top, r.right, r.bottom, h, h);  // fully rounded = pill
+            SelectObject(dc, ob);
+            SelectObject(dc, op);
             DeleteObject(b);
             DeleteObject(pen);
+
+            // measure label to centre icon + text together
+            SetBkMode(dc, TRANSPARENT);
+            HFONT of = (HFONT)SelectObject(dc, g_fBtn);
+            char txt[64];
+            GetWindowTextA(dis->hwndItem, txt, 64);
+            SIZE ts{}; GetTextExtentPoint32A(dc, txt, (int)strlen(txt), &ts);
+            int iconW = 16, gap = 8;
+            int total = iconW + gap + ts.cx;
+            int cx = r.left + (r.right - r.left - total) / 2;
+            int cy = (r.top + r.bottom) / 2;
+
+            // icon: check (accept) or X (decline)
+            COLORREF iconCol = accept ? RGB(255, 255, 255) : RGB(0xff, 0x7a, 0x7a);
+            HPEN ip = CreatePen(PS_SOLID, 2, iconCol);
+            HPEN oip = (HPEN)SelectObject(dc, ip);
+            if (accept) {
+                MoveToEx(dc, cx, cy + 1, nullptr);
+                LineTo(dc, cx + 5, cy + 6);
+                LineTo(dc, cx + 15, cy - 6);
+            } else {
+                MoveToEx(dc, cx + 2, cy - 6, nullptr); LineTo(dc, cx + 14, cy + 6);
+                MoveToEx(dc, cx + 14, cy - 6, nullptr); LineTo(dc, cx + 2, cy + 6);
+            }
+            SelectObject(dc, oip);
+            DeleteObject(ip);
+
+            // text
+            SetTextColor(dc, accept ? RGB(255, 255, 255) : RGB(0xff, 0x9a, 0x9a));
+            TextOutA(dc, cx + iconW + gap, cy - ts.cy / 2, txt, (int)strlen(txt));
+            SelectObject(dc, of);
             return TRUE;
         }
         case WM_COMMAND: {
@@ -759,11 +785,15 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE, LPSTR, int) {
     g_hVer = CreateWindowA("STATIC", "ZeroTrace Checker  v1.0",
                            WS_CHILD | WS_VISIBLE,
                            24, 478, 300, 20, hWnd, nullptr, hInst, nullptr);
+    g_hDiscord = CreateWindowA("STATIC", "discord.gg/zerotrace",
+                               WS_CHILD | WS_VISIBLE | SS_RIGHT,
+                               300, 478, 276, 20, hWnd, nullptr, hInst, nullptr);
 
     SendMessageA(g_hTitle, WM_SETFONT, (WPARAM)g_fTitle, TRUE);
     SendMessageA(g_hSub, WM_SETFONT, (WPARAM)g_fSub, TRUE);
     SendMessageA(g_hText, WM_SETFONT, (WPARAM)g_fBody, TRUE);
     SendMessageA(g_hVer, WM_SETFONT, (WPARAM)g_fSub, TRUE);
+    SendMessageA(g_hDiscord, WM_SETFONT, (WPARAM)g_fSub, TRUE);
 
     ShowWindow(hWnd, SW_SHOW);
     UpdateWindow(hWnd);
