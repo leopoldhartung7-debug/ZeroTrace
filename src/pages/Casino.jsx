@@ -361,32 +361,24 @@ function SlotMachine({ wallet, dispatch, toast }) {
     setLast(null)
     dispatch({ type: 'wallet-tx', key: wallet.key, delta: -amount, txType: 'bet', detail: 'Slots spin' })
 
-    const final = [
-      SLOT_SYMBOLS[Math.floor(Math.random() * SLOT_SYMBOLS.length)],
-      SLOT_SYMBOLS[Math.floor(Math.random() * SLOT_SYMBOLS.length)],
-      SLOT_SYMBOLS[Math.floor(Math.random() * SLOT_SYMBOLS.length)],
-    ]
+    const rnd = () => SLOT_SYMBOLS[Math.floor(Math.random() * SLOT_SYMBOLS.length)]
+    const final = [rnd(), rnd(), rnd()]
+    const stopped = [false, false, false]
 
-    // Flicker the reels for visual effect.
+    // Flicker only the reels that haven't stopped yet; keep stopped reels fixed.
     intervalRef.current = setInterval(() => {
-      setReels([
-        SLOT_SYMBOLS[Math.floor(Math.random() * SLOT_SYMBOLS.length)],
-        SLOT_SYMBOLS[Math.floor(Math.random() * SLOT_SYMBOLS.length)],
-        SLOT_SYMBOLS[Math.floor(Math.random() * SLOT_SYMBOLS.length)],
-      ])
+      setReels((prev) => prev.map((s, i) => (stopped[i] ? final[i] : rnd())))
     }, 80)
 
     // Stop reels one by one.
     const stops = [800, 1300, 1800]
     stops.forEach((t, i) => {
       setTimeout(() => {
-        setReels((prev) => {
-          const next = [...prev]
-          next[i] = final[i]
-          return next
-        })
+        stopped[i] = true
+        setReels((prev) => prev.map((s, idx) => (stopped[idx] ? final[idx] : s)))
         if (i === 2) {
           clearInterval(intervalRef.current)
+          setReels([...final]) // guarantee the display equals the scored result
           resolve(final, amount)
         }
       }, t)
