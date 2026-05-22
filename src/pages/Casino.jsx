@@ -977,7 +977,7 @@ function Coinflip({ wallet, dispatch, toast, fx }) {
     timerRef.current = setTimeout(() => {
       const won = result === side
       if (won) {
-        const payout = amount * 2
+        const payout = Math.floor(amount * 1.5)
         dispatch({ type: 'wallet-tx', key: wallet.key, delta: payout, txType: 'win', detail: 'Coinflip win', notifyOwnerId: wallet.ownerId })
         fx.win(payout, amount)
         toast({ type: 'success', title: `${result === 'heads' ? 'Heads' : 'Tails'} — you won ${payout.toLocaleString()}!` })
@@ -1017,7 +1017,7 @@ function Coinflip({ wallet, dispatch, toast, fx }) {
       </Card>
       <Card className="p-6">
         <h3 className="txt mb-1 text-lg font-semibold">Coinflip</h3>
-        <p className="muted mb-5 text-sm">Heads or tails — 50/50, double or nothing (×2).</p>
+        <p className="muted mb-5 text-sm">Heads or tails — 50/50, hit your side to win ×1.5.</p>
         <BetRow bet={bet} setBet={setBet} balance={wallet.balance} />
         <p className="caps-label mb-2 mt-5">Pick a side</p>
         <div className="grid grid-cols-2 gap-2">

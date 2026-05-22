@@ -69,7 +69,7 @@ export const DE = {
   'Coinflip': 'Münzwurf', 'Crash': 'Crash', 'Mines': 'Minen', 'Dice': 'Würfel',
   'Hi-Lo': 'Höher/Tiefer', 'Stats': 'Statistik', 'Leaderboard': 'Bestenliste', 'Gift': 'Verschenken',
   'Pick a side': 'Wähle eine Seite', 'Flip for': 'Werfen für', 'Flipping…': 'Wirft…',
-  'Heads or tails — 50/50, double or nothing (×2).': 'Kopf oder Zahl — 50/50, doppelt oder nichts (×2).',
+  'Heads or tails — 50/50, hit your side to win ×1.5.': 'Kopf oder Zahl — 50/50, triffst du deine Seite gewinnst du ×1,5.',
   'The multiplier rises. Cash out before it crashes — or lose your bet.': 'Der Multiplikator steigt. Cashe aus bevor er crasht — sonst ist der Einsatz weg.',
   'Cash out': 'Auszahlen', 'Start': 'Start', 'Cash out before it crashes!': 'Cashe aus bevor er crasht!',
   'Reveal gems to grow your multiplier. Hit a mine and you lose it all.': 'Decke Edelsteine auf um deinen Multiplikator zu steigern. Eine Mine = alles weg.',
