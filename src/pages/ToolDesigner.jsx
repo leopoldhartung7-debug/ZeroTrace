@@ -139,7 +139,8 @@ function GuiPreview({ s }) {
   )
 }
 
-const PREFIX = 'OCEANUI1.'
+const PREFIX = 'ZEROTRACEUI1.'
+const LEGACY_PREFIX = 'OCEANUI1.'
 
 export default function ToolDesigner({ embedded = false }) {
   const { state, dispatch } = useStore()
@@ -177,7 +178,11 @@ export default function ToolDesigner({ embedded = false }) {
   const doImport = () => {
     try {
       const raw = importText.trim()
-      const b64 = raw.startsWith(PREFIX) ? raw.slice(PREFIX.length) : raw
+      const b64 = raw.startsWith(PREFIX)
+        ? raw.slice(PREFIX.length)
+        : raw.startsWith(LEGACY_PREFIX)
+          ? raw.slice(LEGACY_PREFIX.length)
+          : raw
       const obj = JSON.parse(decodeURIComponent(escape(atob(b64))))
       setS({ ...defaultToolStyle(), ...obj })
       toast({ type: 'success', title: 'Style loaded', body: 'Press Save All to apply' })

@@ -156,7 +156,7 @@ export default function Account() {
     }
     const a = document.createElement('a')
     a.href = URL.createObjectURL(blob)
-    a.download = `ocean-export.${ext}`
+    a.download = `zerotrace-export.${ext}`
     a.click()
     URL.revokeObjectURL(a.href)
     toast({ type: 'success', title: 'Data exported', body: ext.toUpperCase() })

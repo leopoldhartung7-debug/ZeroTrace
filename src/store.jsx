@@ -1,7 +1,8 @@
 import { createContext, useContext, useEffect, useMemo, useReducer } from 'react'
 import { checkAchievements } from './lib/casino.js'
 
-const KEY = 'ocean-ac-state-v2'
+const KEY = 'zerotrace-state-v1'
+const LEGACY_KEY = 'ocean-ac-state-v2' // migrated on first load so no data is lost
 
 // Built-in EmailJS credentials so every browser can send registration,
 // welcome and expiry emails out of the box (these values are public by design).
@@ -324,7 +325,15 @@ export function defaultToolStyle() {
 
 function load() {
   try {
-    const raw = localStorage.getItem(KEY)
+    // Migrate data saved under the old "ocean" key to the new ZeroTrace key.
+    let raw = localStorage.getItem(KEY)
+    if (!raw) {
+      const legacy = localStorage.getItem(LEGACY_KEY)
+      if (legacy) {
+        localStorage.setItem(KEY, legacy)
+        raw = legacy
+      }
+    }
     const base = seed()
     if (!raw) return base
     const parsed = JSON.parse(raw)

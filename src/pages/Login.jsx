@@ -135,7 +135,7 @@ export default function Login() {
   }, [loc.search])
   const [form, setForm] = useState({ id: '', pw: '' })
 
-  const ADMIN = { user: 'admin', email: 'admin@anticheat.ac', pass: 'OceanAdmin1' }
+  const ADMIN = { user: 'admin', email: 'admin@anticheat.ac', pass: 'ZeroTraceAdmin1' }
   const ANALYST = { user: 'analyst', email: 'analyst@anticheat.ac', pass: 'ZeroTraceAnalyst1' }
 
   const enterDashboard = (role, method) => {

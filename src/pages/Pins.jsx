@@ -28,12 +28,28 @@ const RESULT_TONE = { Cheating: 'text-red-500', Suspicious: 'text-yellow-500', C
 const STATUS_TONE = { Finished: 'text-green-500', Pending: 'text-yellow-500', Expired: 'text-red-500' }
 
 function decodeToken(raw) {
-  const s = (raw || '').trim()
-  const b64 = s.startsWith('OCEAN1.') ? s.slice(7) : s
+  let s = (raw || '').trim()
+  // Tolerate scanners that wrap the token in quotes or whitespace/newlines.
+  s = s.replace(/^["']|["']$/g, '').trim()
+  // Strip a "ZEROTRACE1." / legacy "OCEAN1." prefix case-insensitively, then
+  // remove any internal whitespace.
+  let b64 = (/^(zerotrace1|ocean1)\./i.test(s) ? s.slice(s.indexOf('.') + 1) : s).replace(/\s+/g, '')
   if (!b64) throw new Error('Empty token')
-  const json = decodeURIComponent(escape(atob(b64)))
-  const obj = JSON.parse(json)
-  if (!obj || !obj.code) throw new Error('Token missing session code')
+  let json
+  try {
+    json = decodeURIComponent(escape(atob(b64)))
+  } catch {
+    // Maybe it's raw JSON rather than base64.
+    if (b64.startsWith('{')) json = s
+    else throw new Error('Token is not valid Base64')
+  }
+  let obj
+  try {
+    obj = JSON.parse(json)
+  } catch {
+    throw new Error('Token does not contain valid JSON')
+  }
+  if (!obj || !obj.code) throw new Error('Token is missing the session code')
   return obj
 }
 
@@ -160,10 +176,27 @@ export default function Pins() {
     const blob = new Blob([JSON.stringify(session, null, 2)], { type: 'application/json' })
     const a = document.createElement('a')
     a.href = URL.createObjectURL(blob)
-    a.download = `OceanScan-${c.pin}.ocean`
+    a.download = `ZeroTraceScan-${c.pin}.zerotrace`
     a.click()
     URL.revokeObjectURL(a.href)
-    toast({ type: 'success', title: 'Session file downloaded', body: `OceanScan-${c.pin}.ocean` })
+    toast({ type: 'success', title: 'Session file downloaded', body: `ZeroTraceScan-${c.pin}.zerotrace` })
+  }
+
+  // Live preview of the pasted/loaded token (null until something valid).
+  const importPreview = useMemo(() => {
+    if (!importText.trim()) return null
+    try {
+      return { ok: true, payload: decodeToken(importText) }
+    } catch (e) {
+      return { ok: false, error: e.message }
+    }
+  }, [importText])
+
+  const onImportFile = (file) => {
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => setImportText(String(reader.result || ''))
+    reader.readAsText(file)
   }
 
   const submitImport = () => {
@@ -755,7 +788,7 @@ export default function Pins() {
 
             <div className="tile rounded-xl border p-4">
               <p className="muted text-sm">Scanner session file:</p>
-              <p className="txt mt-1 break-all font-mono text-xs">OceanScan-{created.pin}.ocean</p>
+              <p className="txt mt-1 break-all font-mono text-xs">ZeroTraceScan-{created.pin}.zerotrace</p>
               <div className="mt-3 flex gap-2">
                 <button
                   onClick={() => downloadSession(created)}
@@ -776,7 +809,7 @@ export default function Pins() {
                 </button>
               </div>
               <p className="muted mt-2 text-xs">
-                Open this file with OceanScanner.exe — the pin is filled in automatically, you only
+                Open this file with ZeroTraceScanner.exe — the pin is filled in automatically, you only
                 need to accept the consent prompt and scan.
               </p>
             </div>
@@ -833,7 +866,8 @@ export default function Pins() {
             </button>
             <button
               onClick={submitImport}
-              className="rounded-lg bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-500"
+              disabled={!importPreview?.ok}
+              className="rounded-lg bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-500 disabled:opacity-40"
             >
               Import
             </button>
@@ -842,17 +876,52 @@ export default function Pins() {
       >
         <div className="space-y-3">
           <p className="muted text-sm">
-            Paste the <code className="txt">OCEAN1.…</code> token produced by the FiveM Scanner.
-            It will be matched to its session code and update the pin, dashboard and activity log.
+            Paste the <code className="txt">ZEROTRACE1.…</code> token produced by the scanner — or load a{' '}
+            <code className="txt">.zerotrace</code> session file. It’s matched to its session code and updates
+            the pin, dashboard and activity log with the real scan data.
           </p>
+
+          <label
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={(e) => { e.preventDefault(); onImportFile(e.dataTransfer.files[0]) }}
+            className="bd tile flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed py-3 text-xs hover:border-sky-500"
+          >
+            <input
+              type="file"
+              accept=".zerotrace,.ocean,.txt,.json,application/json,text/plain"
+              className="hidden"
+              onChange={(e) => e.target.files[0] && onImportFile(e.target.files[0])}
+            />
+            <Download size={14} className="muted" /> Drop a .zerotrace file here or click to load
+          </label>
+
           <textarea
             autoFocus
             value={importText}
             onChange={(e) => setImportText(e.target.value)}
-            placeholder="OCEAN1.eyJ2IjoxLCJjb2RlIjoi..."
-            rows={6}
+            placeholder="ZEROTRACE1.eyJ2IjoxLCJjb2RlIjoi..."
+            rows={5}
             className="bd tile txt w-full rounded-lg border p-3 font-mono text-xs focus:outline-none"
           />
+
+          {importPreview && (
+            importPreview.ok ? (
+              <div className="rounded-lg border border-green-600/40 bg-green-600/10 p-3 text-xs">
+                <p className="font-semibold text-green-400">Valid token ✓</p>
+                <div className="muted mt-1 grid grid-cols-2 gap-x-3 gap-y-0.5">
+                  <span>Pin: <span className="txt font-mono">{importPreview.payload.code}</span></span>
+                  <span>Verdict: <span className="txt">{importPreview.payload.verdict || '—'}</span></span>
+                  <span>Detections: <span className="txt">{(importPreview.payload.detections || []).length}</span></span>
+                  <span>Game: <span className="txt">{importPreview.payload.game || '—'}</span></span>
+                  {importPreview.payload.host && <span className="col-span-2 break-all">Host: <span className="txt">{importPreview.payload.host}</span></span>}
+                </div>
+              </div>
+            ) : (
+              <div className="rounded-lg border border-red-600/40 bg-red-600/10 p-3 text-xs text-red-400">
+                {importPreview.error}
+              </div>
+            )
+          )}
         </div>
       </Modal>
 

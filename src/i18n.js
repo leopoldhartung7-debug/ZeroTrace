@@ -907,7 +907,7 @@ export const DE = {
   'First public beta of the ZeroTrace dashboard and FiveM scanner.':
     'Erste öffentliche Beta des ZeroTrace-Dashboards und des FiveM-Scanners.',
   'Dashboard, Pins and Strings': 'Dashboard, Pins und Strings',
-  'C++ FiveM scanner with .ocean sessions': 'C++-FiveM-Scanner mit .ocean-Sitzungen',
+  'C++ FiveM scanner with .zerotrace sessions': 'C++-FiveM-Scanner mit .zerotrace-Sitzungen',
 
   // Documentation content
   'Overview': 'Übersicht', 'Detects Logs': 'Erkennungsprotokolle', 'Warning Logs': 'Warnprotokolle',
@@ -966,8 +966,8 @@ export const DE = {
     'Bestandene Integritätsprüfungen werden als Integritätsprotokolle erfasst und erhöhen die Zuverlässigkeit eines „sauber“-Urteils.',
   'The ZeroTrace+ API exposes scan sessions and results. All endpoints require a Bearer API key. Base URL: https://api.anticheat.ac/v1.':
     'Die ZeroTrace+-API stellt Scan-Sitzungen und -Ergebnisse bereit. Alle Endpunkte erfordern einen Bearer-API-Schlüssel. Basis-URL: https://api.anticheat.ac/v1.',
-  'This dashboard is client-side; the API reference here describes the schema the OCEAN1 token / .ocean session files follow.':
-    'Dieses Dashboard ist clientseitig; die API-Referenz hier beschreibt das Schema, dem der OCEAN1-Token / die .ocean-Sitzungsdateien folgen.',
+  'This dashboard is client-side; the API reference here describes the schema the ZEROTRACE1 token / .zerotrace session files follow.':
+    'Dieses Dashboard ist clientseitig; die API-Referenz hier beschreibt das Schema, dem der ZEROTRACE1-Token / die .zerotrace-Sitzungsdateien folgen.',
   'Returns users that have been scanned, keyed by Discord ID. Repeat scans of the same Discord ID are grouped so previous results can be retrieved.':
     'Gibt gescannte Nutzer zurück, indiziert nach Discord-ID. Wiederholte Scans derselben Discord-ID werden gruppiert, sodass frühere Ergebnisse abgerufen werden können.',
   'The risk score is computed from the scan result: detects × 8 + warnings × 2 + suspicious × 5, capped at 100.':

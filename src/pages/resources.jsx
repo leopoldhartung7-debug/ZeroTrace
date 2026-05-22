@@ -150,7 +150,7 @@ const DOC_CONTENT = {
     blocks: [
       { p: 'The ZeroTrace+ API exposes scan sessions and results. All endpoints require a Bearer API key. Base URL: https://api.anticheat.ac/v1.' },
       { code: 'GET /v1/pins\nAuthorization: Bearer <API_KEY>' },
-      { p: 'This dashboard is client-side; the API reference here describes the schema the OCEAN1 token / .ocean session files follow.' },
+      { p: 'This dashboard is client-side; the API reference here describes the schema the ZEROTRACE1 token / .zerotrace session files follow.' },
     ],
   },
   'scanned-users': {
@@ -422,10 +422,10 @@ function DownloadCard({ icon: Icon, name, tagTone, desc, hint, accent, pins, toa
     }
     const a = document.createElement('a')
     a.href = URL.createObjectURL(new Blob([JSON.stringify(session, null, 2)], { type: 'application/json' }))
-    a.download = `OceanScan-${match.pin}.ocean`
+    a.download = `ZeroTraceScan-${match.pin}.zerotrace`
     a.click()
     URL.revokeObjectURL(a.href)
-    toast({ type: 'success', title: 'Session downloaded', body: `OceanScan-${match.pin}.ocean` })
+    toast({ type: 'success', title: 'Session downloaded', body: `ZeroTraceScan-${match.pin}.zerotrace` })
   }
   return (
     <Card className="p-6">
@@ -853,7 +853,7 @@ const VERSIONS = [
     v: '0.1', title: 'BETA Release 0.1', date: '10 October 2025', author: 'NotRancio',
     tags: ['FEATURE'], badge: 'Beta',
     intro: 'First public beta of the ZeroTrace dashboard and FiveM scanner.',
-    items: ['Dashboard, Pins and Strings', 'C++ FiveM scanner with .ocean sessions'],
+    items: ['Dashboard, Pins and Strings', 'C++ FiveM scanner with .zerotrace sessions'],
   },
 ]
 
