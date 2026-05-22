@@ -1462,6 +1462,11 @@ export default function Casino() {
   const toast = useToast()
   const [tab, setTab] = useState('Lucky Wheel')
   const [confetti, setConfetti] = useState(0)
+  const [now, setNow] = useState(Date.now())
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(id)
+  }, [])
   const soundOn = state.settings?.casinoSound !== false
   const shownBalance = useCountUp(wallet.balance)
   const lp = levelProgress(wallet.xp)
@@ -1493,7 +1498,16 @@ export default function Casino() {
     setConfetti(Date.now())
     toast({ type: 'success', title: `Daily bonus: +${amount}`, body: `Streak ${streak}` })
   }
-  const dailyReady = canClaimDaily(wallet.lastDailyBonus)
+  const nextDailyAt = (wallet.lastDailyBonus || 0) + 86_400_000
+  const dailyRemaining = Math.max(0, nextDailyAt - now)
+  const dailyReady = !wallet.lastDailyBonus || dailyRemaining <= 0
+  const fmtCountdown = (ms) => {
+    const s = Math.floor(ms / 1000)
+    const h = String(Math.floor(s / 3600)).padStart(2, '0')
+    const m = String(Math.floor((s % 3600) / 60)).padStart(2, '0')
+    const sec = String(s % 60).padStart(2, '0')
+    return `${h}:${m}:${sec}`
+  }
 
   const GAME_TABS = [
     { label: 'Lucky Wheel', icon: Disc3 },
@@ -1568,7 +1582,11 @@ export default function Casino() {
         <Card className="flex items-center justify-between p-4">
           <div>
             <p className="caps-label">Daily bonus</p>
-            <p className="muted mt-1 text-xs">{dailyReady ? `+${dailyBonusAmount((wallet.dailyStreak || 0) + 1)} ready` : 'Come back tomorrow'}</p>
+            {dailyReady ? (
+              <p className="muted mt-1 text-xs">+{dailyBonusAmount((wallet.dailyStreak || 0) + 1)} ready</p>
+            ) : (
+              <p className="mt-1 font-mono text-lg font-bold tabular-nums text-sky-400">{fmtCountdown(dailyRemaining)}</p>
+            )}
           </div>
           <button
             onClick={claimDaily}
