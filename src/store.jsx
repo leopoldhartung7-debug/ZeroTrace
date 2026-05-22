@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useReducer } from 'react'
+import { checkAchievements } from './lib/casino.js'
 
 const KEY = 'ocean-ac-state-v2'
 
@@ -234,6 +235,7 @@ function seed() {
       approvalRequired: false,
       digestFrequency: 'off',
       lastDigestAt: 0,
+      casinoSound: true,
     },
     notifications: [
       { id: 'n1', title: 'Scan finished', body: 'Pin F1T5F8C0 returned: Cheating', time: now - 3600000, read: false },
@@ -291,6 +293,8 @@ function seed() {
     wallets: {},
     shopPurchases: [],
     discountCodes: [],
+    jackpot: 5000,
+    casino: { disabledGames: [], houseProfit: 0 },
   }
 }
 
@@ -1076,21 +1080,149 @@ function reducer(state, action) {
 
     case 'wallet-tx': {
       const w = state.wallets?.[action.key] || { balance: 0, history: [] }
-      const balance = Math.max(0, w.balance + action.delta)
+      const balance = Math.max(0, (w.balance || 0) + action.delta)
+      let xp = w.xp || 0
+      let wagered = w.wagered || 0
+      let won = w.won || 0
+      let biggestWin = w.biggestWin || 0
+      let jackpot = state.jackpot || 0
+      let houseProfit = state.casino?.houseProfit || 0
+      if (action.txType === 'bet') {
+        const amt = Math.abs(action.delta)
+        wagered += amt
+        xp += amt
+        jackpot += Math.ceil(amt * 0.01) // 1% of every bet feeds the jackpot
+        houseProfit += amt
+      } else if (action.txType === 'win') {
+        won += action.delta
+        if (action.delta > biggestWin) biggestWin = action.delta
+        houseProfit -= action.delta
+      }
+      const ach = checkAchievements(w.achievements || [], { balance, xp, wagered, won, biggestWin })
+      let notifications = state.notifications
+      ach.unlocked.forEach((a) => {
+        notifications = note(
+          { ...state, notifications },
+          'Achievement unlocked',
+          `${a.name} — ${a.desc}`,
+          action.notifyOwnerId ?? null,
+        )
+      })
       return {
         ...state,
+        jackpot,
+        casino: { ...(state.casino || { disabledGames: [] }), houseProfit },
+        notifications,
         wallets: {
           ...(state.wallets || {}),
           [action.key]: {
+            ...w,
             balance,
+            xp,
+            wagered,
+            won,
+            biggestWin,
+            achievements: ach.list,
             history: [
               { id: 'tx' + Date.now() + Math.random().toString(16).slice(2, 6), time: Date.now(), type: action.txType, amount: action.delta, detail: action.detail || '' },
-              ...w.history,
+              ...(w.history || []),
             ].slice(0, 200),
           },
         },
       }
     }
+
+    case 'claim-daily-bonus': {
+      const w = state.wallets?.[action.key] || { balance: 0, history: [] }
+      return {
+        ...state,
+        wallets: {
+          ...(state.wallets || {}),
+          [action.key]: {
+            ...w,
+            balance: (w.balance || 0) + action.amount,
+            lastDailyBonus: Date.now(),
+            dailyStreak: action.streak,
+            history: [
+              { id: 'tx' + Date.now() + Math.random().toString(16).slice(2, 6), time: Date.now(), type: 'bonus', amount: action.amount, detail: `Daily bonus (streak ${action.streak})` },
+              ...(w.history || []),
+            ].slice(0, 200),
+          },
+        },
+      }
+    }
+
+    case 'mark-free-spin': {
+      const w = state.wallets?.[action.key] || { balance: 0, history: [] }
+      return {
+        ...state,
+        wallets: { ...(state.wallets || {}), [action.key]: { ...w, lastFreeSpin: Date.now() } },
+      }
+    }
+
+    case 'win-jackpot': {
+      const w = state.wallets?.[action.key] || { balance: 0, history: [] }
+      const pool = state.jackpot || 0
+      return {
+        ...state,
+        jackpot: 5000, // reset pool
+        wallets: {
+          ...(state.wallets || {}),
+          [action.key]: {
+            ...w,
+            balance: (w.balance || 0) + pool,
+            biggestWin: Math.max(w.biggestWin || 0, pool),
+            history: [
+              { id: 'tx' + Date.now() + Math.random().toString(16).slice(2, 6), time: Date.now(), type: 'jackpot', amount: pool, detail: 'JACKPOT WIN!' },
+              ...(w.history || []),
+            ].slice(0, 200),
+          },
+        },
+        notifications: note(state, 'JACKPOT!', `${action.name || 'A player'} won the ${pool.toLocaleString()} coin jackpot!`, null),
+      }
+    }
+
+    case 'gift-coins': {
+      const from = state.wallets?.[action.fromKey] || { balance: 0, history: [] }
+      if ((from.balance || 0) < action.amount) return state
+      const to = state.wallets?.[action.toKey] || { balance: 0, history: [] }
+      return {
+        ...state,
+        wallets: {
+          ...(state.wallets || {}),
+          [action.fromKey]: {
+            ...from,
+            balance: from.balance - action.amount,
+            history: [
+              { id: 'tx' + Date.now() + Math.random().toString(16).slice(2, 6), time: Date.now(), type: 'gift-out', amount: -action.amount, detail: `Gift to ${action.toLabel || action.toKey}` },
+              ...(from.history || []),
+            ].slice(0, 200),
+          },
+          [action.toKey]: {
+            ...to,
+            balance: (to.balance || 0) + action.amount,
+            history: [
+              { id: 'tx' + Date.now() + Math.random().toString(16).slice(2, 7), time: Date.now(), type: 'gift-in', amount: action.amount, detail: `Gift from ${action.fromLabel || action.fromKey}` },
+              ...(to.history || []),
+            ].slice(0, 200),
+          },
+        },
+        notifications: action.toOwnerId
+          ? note(state, 'You received coins', `${action.fromLabel || 'Someone'} sent you ${action.amount.toLocaleString()} coins`, action.toOwnerId)
+          : state.notifications,
+      }
+    }
+
+    case 'set-casino-game': {
+      const cur = state.casino || { disabledGames: [], houseProfit: 0 }
+      const disabled = new Set(cur.disabledGames || [])
+      if (action.enabled) disabled.delete(action.game)
+      else disabled.add(action.game)
+      return { ...state, casino: { ...cur, disabledGames: Array.from(disabled) } }
+    }
+
+    case 'reset-house-profit':
+      return { ...state, casino: { ...(state.casino || { disabledGames: [] }), houseProfit: 0 } }
 
     case 'grant-coins': {
       const w = state.wallets?.[action.key] || { balance: 0, history: [] }
@@ -1804,7 +1936,19 @@ export function useWallet() {
   const { state } = useStore()
   const key = walletKeyOf(state)
   const w = state.wallets?.[key] || { balance: 0, history: [] }
-  return { key, balance: w.balance, history: w.history }
+  return {
+    key,
+    balance: w.balance || 0,
+    history: w.history || [],
+    xp: w.xp || 0,
+    wagered: w.wagered || 0,
+    won: w.won || 0,
+    biggestWin: w.biggestWin || 0,
+    achievements: w.achievements || [],
+    lastDailyBonus: w.lastDailyBonus || 0,
+    dailyStreak: w.dailyStreak || 0,
+    lastFreeSpin: w.lastFreeSpin || 0,
+  }
 }
 
 export function useT() {

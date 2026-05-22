@@ -1,12 +1,40 @@
 import { useState, useRef, useEffect } from 'react'
 import {
   Coins, Dices, Disc3, ShoppingBag, History as HistoryIcon, Copy, Check,
-  TrendingUp, TrendingDown, Sparkles, Plus, Cherry, Target,
+  TrendingUp, TrendingDown, Sparkles, Plus, Cherry, Target, CircleDollarSign,
+  Rocket, Bomb, Gem, ArrowUp, ArrowDown, Trophy, Award, Gift, Volume2, VolumeX,
+  BarChart3, Repeat,
 } from 'lucide-react'
 import { PageHeader, Card } from '../components/kit.jsx'
 import Tabs from '../components/Tabs.jsx'
 import { useToast } from '../components/ui.jsx'
+import Confetti from '../components/Confetti.jsx'
 import { useStore, useWallet, generateLicenseKey, validateDiscountCode } from '../store.jsx'
+import { ACHIEVEMENTS, levelProgress, playSound, dailyBonusAmount, canClaimDaily } from '../lib/casino.js'
+
+// Count-up animation hook for the balance.
+function useCountUp(value) {
+  const [shown, setShown] = useState(value)
+  const ref = useRef(value)
+  useEffect(() => {
+    const from = ref.current
+    const to = value
+    if (from === to) return
+    const start = performance.now()
+    const dur = 600
+    let raf
+    const tick = (t) => {
+      const p = Math.min(1, (t - start) / dur)
+      const eased = 1 - Math.pow(1 - p, 3)
+      setShown(Math.round(from + (to - from) * eased))
+      if (p < 1) raf = requestAnimationFrame(tick)
+      else ref.current = to
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [value])
+  return shown
+}
 
 const WHEEL_COLORS = ['#0ea5e9', '#1e293b', '#38bdf8', '#0f172a', '#0284c7', '#1e293b', '#38bdf8', '#0f172a', '#0ea5e9', '#1e293b']
 const WHEEL_MULT = 8 // hit your exact number → 8× your stake back
@@ -23,7 +51,7 @@ function segmentPath(cx, cy, r, a0, a1) {
   return `M ${cx} ${cy} L ${x0} ${y0} A ${r} ${r} 0 ${large} 1 ${x1} ${y1} Z`
 }
 
-function LuckyWheel({ wallet, dispatch, toast }) {
+function LuckyWheel({ wallet, dispatch, toast, fx = {} }) {
   const [bet, setBet] = useState(50)
   const [pick, setPick] = useState(0)
   const [rotation, setRotation] = useState(0)
@@ -40,7 +68,8 @@ function LuckyWheel({ wallet, dispatch, toast }) {
     spinningRef.current = true
     setSpinning(true)
     setLast(null)
-    dispatch({ type: 'wallet-tx', key: wallet.key, delta: -amount, txType: 'bet', detail: `Lucky Wheel bet on ${pick}` })
+    fx.spin?.()
+    dispatch({ type: 'wallet-tx', key: wallet.key, delta: -amount, txType: 'bet', detail: `Lucky Wheel bet on ${pick}`, notifyOwnerId: wallet.ownerId })
 
     const result = Math.floor(Math.random() * 10)
     const spins = 5 + Math.floor(Math.random() * 4) // 5–8 full turns for variety
@@ -58,9 +87,11 @@ function LuckyWheel({ wallet, dispatch, toast }) {
       const won = result === pick
       if (won) {
         const payout = amount * WHEEL_MULT
-        dispatch({ type: 'wallet-tx', key: wallet.key, delta: payout, txType: 'win', detail: `Lucky Wheel hit ${result} (×${WHEEL_MULT})` })
+        dispatch({ type: 'wallet-tx', key: wallet.key, delta: payout, txType: 'win', detail: `Lucky Wheel hit ${result} (×${WHEEL_MULT})`, notifyOwnerId: wallet.ownerId })
+        fx.win?.(payout, amount)
         toast({ type: 'success', title: `You won ${payout} coins!`, body: `Number ${result} hit` })
       } else {
+        fx.lose?.()
         toast({ type: 'error', title: `Landed on ${result}`, body: `You bet on ${pick}` })
       }
       setLast({ result, won })
@@ -202,7 +233,7 @@ function PlayingCard({ card, hidden }) {
   )
 }
 
-function Blackjack({ wallet, dispatch, toast }) {
+function Blackjack({ wallet, dispatch, toast, fx = {} }) {
   const [bet, setBet] = useState(50)
   const [deck, setDeck] = useState([])
   const [player, setPlayer] = useState([])
@@ -212,14 +243,15 @@ function Blackjack({ wallet, dispatch, toast }) {
   const [activeBet, setActiveBet] = useState(0)
 
   const settle = (delta, type, detail) => {
-    if (delta !== 0) dispatch({ type: 'wallet-tx', key: wallet.key, delta, txType: type, detail })
+    if (delta !== 0) dispatch({ type: 'wallet-tx', key: wallet.key, delta, txType: type, detail, notifyOwnerId: wallet.ownerId })
   }
 
   const deal = () => {
     const amount = Math.floor(Number(bet) || 0)
     if (amount <= 0) return toast({ type: 'error', title: 'Enter a bet' })
     if (amount > wallet.balance) return toast({ type: 'error', title: 'Not enough coins' })
-    dispatch({ type: 'wallet-tx', key: wallet.key, delta: -amount, txType: 'bet', detail: 'Blackjack bet' })
+    dispatch({ type: 'wallet-tx', key: wallet.key, delta: -amount, txType: 'bet', detail: 'Blackjack bet', notifyOwnerId: wallet.ownerId })
+    fx.spin?.()
     setActiveBet(amount)
     const d = freshDeck()
     const p = [d.pop(), d.pop()]
@@ -230,6 +262,7 @@ function Blackjack({ wallet, dispatch, toast }) {
       // Natural blackjack pays 2.5× (stake + 1.5×)
       const payout = Math.floor(amount * 2.5)
       settle(payout, 'win', 'Blackjack!')
+      fx.win?.(payout, amount)
       setPhase('done')
       setMsg({ tone: 'win', text: `Blackjack! You won ${payout - amount} coins.` })
     } else {
@@ -243,6 +276,7 @@ function Blackjack({ wallet, dispatch, toast }) {
     setDeck(d); setPlayer(p)
     if (handValue(p) > 21) {
       setPhase('done')
+      fx.lose?.()
       setMsg({ tone: 'lose', text: `Bust with ${handValue(p)}. You lost ${activeBet} coins.` })
     }
   }
@@ -259,6 +293,8 @@ function Blackjack({ wallet, dispatch, toast }) {
     else if (pv === dv) { payout = activeBet; result = { tone: 'push', text: `Push at ${pv}. Bet returned.` } }
     else { payout = 0; result = { tone: 'lose', text: `Dealer wins ${dv} vs ${pv}. -${activeBet} coins.` } }
     if (payout > 0) settle(payout, 'win', 'Blackjack round')
+    if (result.tone === 'win') fx.win?.(payout, activeBet)
+    else if (result.tone === 'lose') fx.lose?.()
     setPhase('done')
     setMsg(result)
   }
@@ -354,7 +390,7 @@ const ROULETTE_BETS = [
   { id: 'd3', label: '3rd 12', mult: 3, test: (n) => n >= 25 && n <= 36 },
 ]
 
-function Roulette({ wallet, dispatch, toast }) {
+function Roulette({ wallet, dispatch, toast, fx = {} }) {
   const [bet, setBet] = useState(50)
   const [betType, setBetType] = useState('red') // a ROULETTE_BETS id or 'number'
   const [pickNumber, setPickNumber] = useState(0)
@@ -377,7 +413,8 @@ function Roulette({ wallet, dispatch, toast }) {
     setSpinning(true)
     setLast(null)
     const betLabel = betType === 'number' ? `number ${pickNumber}` : ROULETTE_BETS.find((b) => b.id === betType)?.label
-    dispatch({ type: 'wallet-tx', key: wallet.key, delta: -amount, txType: 'bet', detail: `Roulette on ${betLabel}` })
+    fx.spin?.()
+    dispatch({ type: 'wallet-tx', key: wallet.key, delta: -amount, txType: 'bet', detail: `Roulette on ${betLabel}`, notifyOwnerId: wallet.ownerId })
 
     const result = Math.floor(Math.random() * 37) // 0–36
     const index = WHEEL_ORDER.indexOf(result)
@@ -405,9 +442,11 @@ function Roulette({ wallet, dispatch, toast }) {
       }
       if (won) {
         const payout = amount * mult
-        dispatch({ type: 'wallet-tx', key: wallet.key, delta: payout, txType: 'win', detail: `Roulette hit ${result}` })
+        dispatch({ type: 'wallet-tx', key: wallet.key, delta: payout, txType: 'win', detail: `Roulette hit ${result}`, notifyOwnerId: wallet.ownerId })
+        fx.win?.(payout, amount)
         toast({ type: 'success', title: `You won ${payout.toLocaleString()} coins!`, body: `Landed on ${result} (${rColor(result)})` })
       } else {
+        fx.lose?.()
         toast({ type: 'error', title: `Landed on ${result} (${rColor(result)})`, body: 'No win' })
       }
       setLast({ result, won })
@@ -542,7 +581,7 @@ const SLOT_SYMBOLS = ['🍒', '🍋', '🔔', '⭐', '7️⃣', '💎']
 const SLOT_THREE = { '🍒': 2, '🍋': 3, '🔔': 5, '⭐': 8, '7️⃣': 12, '💎': 20 }
 const SLOT_TWO_MULT = 1.5
 
-function SlotMachine({ wallet, dispatch, toast }) {
+function SlotMachine({ wallet, dispatch, toast, fx = {} }) {
   const [bet, setBet] = useState(50)
   const [reels, setReels] = useState(['🍒', '🍋', '🔔'])
   const [spinning, setSpinning] = useState(false)
@@ -561,7 +600,8 @@ function SlotMachine({ wallet, dispatch, toast }) {
     spinningRef.current = true
     setSpinning(true)
     setLast(null)
-    dispatch({ type: 'wallet-tx', key: wallet.key, delta: -amount, txType: 'bet', detail: 'Slots spin' })
+    fx.spin?.()
+    dispatch({ type: 'wallet-tx', key: wallet.key, delta: -amount, txType: 'bet', detail: 'Slots spin', notifyOwnerId: wallet.ownerId })
 
     const rnd = () => SLOT_SYMBOLS[Math.floor(Math.random() * SLOT_SYMBOLS.length)]
     const final = [rnd(), rnd(), rnd()]
@@ -601,9 +641,11 @@ function SlotMachine({ wallet, dispatch, toast }) {
       text = 'No match — try again'
     }
     if (payout > 0) {
-      dispatch({ type: 'wallet-tx', key: wallet.key, delta: payout, txType: 'win', detail: `Slots ${final.join('')}` })
+      dispatch({ type: 'wallet-tx', key: wallet.key, delta: payout, txType: 'win', detail: `Slots ${final.join('')}`, notifyOwnerId: wallet.ownerId })
+      fx.win?.(payout, amount)
       toast({ type: 'success', title: `You won ${payout.toLocaleString()} coins!`, body: final.join(' ') })
     } else {
+      fx.lose?.()
       toast({ type: 'error', title: 'No win', body: final.join(' ') })
     }
     setLast({ payout, text, win: payout > 0 })
@@ -886,53 +928,750 @@ function AdminCoinPanel({ wallet, dispatch, toast }) {
   )
 }
 
+/* ---------------- Bet input (shared) ---------------- */
+
+function BetRow({ bet, setBet, balance }) {
+  return (
+    <>
+      <p className="caps-label mb-2">Your bet</p>
+      <div className="flex flex-wrap items-center gap-2">
+        <input type="number" min="1" value={bet} onChange={(e) => setBet(e.target.value)} className="bd tile txt w-32 rounded-lg border px-3 py-2 text-sm focus:outline-none" />
+        {[10, 50, 100, 500].map((v) => (
+          <button key={v} onClick={() => setBet(v)} className="bd tile txt rounded-md border px-2.5 py-1 text-xs hover:border-sky-500">{v}</button>
+        ))}
+        <button onClick={() => setBet(balance)} className="bd tile txt rounded-md border px-2.5 py-1 text-xs hover:border-sky-500">Max</button>
+      </div>
+    </>
+  )
+}
+
+/* ---------------- Coinflip ---------------- */
+
+function Coinflip({ wallet, dispatch, toast, fx }) {
+  const [bet, setBet] = useState(50)
+  const [side, setSide] = useState('heads')
+  const [flipping, setFlipping] = useState(false)
+  const [last, setLast] = useState(null)
+  const ref = useRef(false)
+
+  const flip = () => {
+    if (ref.current) return
+    const amount = Math.floor(Number(bet) || 0)
+    if (amount <= 0) return toast({ type: 'error', title: 'Enter a bet' })
+    if (amount > wallet.balance) return toast({ type: 'error', title: 'Not enough coins' })
+    ref.current = true; setFlipping(true); setLast(null)
+    fx.spin()
+    dispatch({ type: 'wallet-tx', key: wallet.key, delta: -amount, txType: 'bet', detail: 'Coinflip', notifyOwnerId: wallet.ownerId })
+    const result = Math.random() < 0.5 ? 'heads' : 'tails'
+    setTimeout(() => {
+      const won = result === side
+      if (won) {
+        const payout = amount * 2
+        dispatch({ type: 'wallet-tx', key: wallet.key, delta: payout, txType: 'win', detail: 'Coinflip win', notifyOwnerId: wallet.ownerId })
+        fx.win(payout, amount)
+        toast({ type: 'success', title: `${result === 'heads' ? 'Heads' : 'Tails'} — you won ${payout.toLocaleString()}!` })
+      } else {
+        fx.lose()
+        toast({ type: 'error', title: `${result === 'heads' ? 'Heads' : 'Tails'} — you lost` })
+      }
+      setLast({ result, won }); setFlipping(false); ref.current = false
+    }, 1200)
+  }
+
+  return (
+    <div className="grid gap-6 lg:grid-cols-2">
+      <Card className="flex flex-col items-center justify-center p-6">
+        <div className={`flex h-32 w-32 items-center justify-center rounded-full border-4 border-yellow-500/60 bg-gradient-to-br from-yellow-400 to-yellow-600 text-4xl font-bold text-yellow-900 ${flipping ? 'animate-spin' : ''}`}>
+          {flipping ? '?' : last ? (last.result === 'heads' ? 'H' : 'T') : 'H'}
+        </div>
+        {last && (
+          <div className={`mt-4 rounded-lg border px-4 py-2 text-sm font-semibold ${last.won ? 'border-green-600/40 bg-green-600/15 text-green-400' : 'border-red-600/40 bg-red-600/15 text-red-400'}`}>
+            {last.won ? 'You won!' : 'You lost'}
+          </div>
+        )}
+      </Card>
+      <Card className="p-6">
+        <h3 className="txt mb-1 text-lg font-semibold">Coinflip</h3>
+        <p className="muted mb-5 text-sm">Heads or tails — 50/50, double or nothing (×2).</p>
+        <BetRow bet={bet} setBet={setBet} balance={wallet.balance} />
+        <p className="caps-label mb-2 mt-5">Pick a side</p>
+        <div className="grid grid-cols-2 gap-2">
+          {['heads', 'tails'].map((s) => (
+            <button key={s} onClick={() => setSide(s)} className={`rounded-lg border py-3 text-sm font-bold capitalize ${side === s ? 'border-sky-500 bg-sky-500/15 text-sky-400' : 'bd tile txt hover:border-sky-500'}`}>{s}</button>
+          ))}
+        </div>
+        <button onClick={flip} disabled={flipping} className="mt-6 flex w-full items-center justify-center gap-2 rounded-lg bg-sky-600 py-3 text-sm font-semibold text-white hover:bg-sky-500 disabled:opacity-50">
+          <CircleDollarSign size={16} /> {flipping ? 'Flipping…' : `Flip for ${Math.floor(Number(bet) || 0)}`}
+        </button>
+      </Card>
+    </div>
+  )
+}
+
+/* ---------------- Crash ---------------- */
+
+function Crash({ wallet, dispatch, toast, fx }) {
+  const [bet, setBet] = useState(50)
+  const [mult, setMult] = useState(1)
+  const [phase, setPhase] = useState('idle') // idle | running | crashed | cashed
+  const [crashAt, setCrashAt] = useState(0)
+  const [activeBet, setActiveBet] = useState(0)
+  const rafRef = useRef(null)
+  const startRef = useRef(0)
+
+  useEffect(() => () => cancelAnimationFrame(rafRef.current), [])
+
+  const start = () => {
+    const amount = Math.floor(Number(bet) || 0)
+    if (amount <= 0) return toast({ type: 'error', title: 'Enter a bet' })
+    if (amount > wallet.balance) return toast({ type: 'error', title: 'Not enough coins' })
+    dispatch({ type: 'wallet-tx', key: wallet.key, delta: -amount, txType: 'bet', detail: 'Crash', notifyOwnerId: wallet.ownerId })
+    setActiveBet(amount)
+    // House edge ~4%: crash point distribution.
+    const r = Math.random()
+    const cp = Math.max(1, Math.floor((0.96 / (1 - r)) * 100) / 100)
+    setCrashAt(cp)
+    setMult(1)
+    setPhase('running')
+    fx.spin()
+    startRef.current = performance.now()
+    const tick = (t) => {
+      const elapsed = (t - startRef.current) / 1000
+      const m = Math.floor(Math.pow(1.0718, elapsed * 10) * 100) / 100 // grows ~ exp
+      if (m >= cp) {
+        setMult(cp)
+        setPhase('crashed')
+        fx.lose()
+        toast({ type: 'error', title: `Crashed at ${cp.toFixed(2)}×`, body: `You lost ${amount.toLocaleString()}` })
+        return
+      }
+      setMult(m)
+      rafRef.current = requestAnimationFrame(tick)
+    }
+    rafRef.current = requestAnimationFrame(tick)
+  }
+
+  const cashOut = () => {
+    if (phase !== 'running') return
+    cancelAnimationFrame(rafRef.current)
+    const m = mult
+    const payout = Math.floor(activeBet * m)
+    dispatch({ type: 'wallet-tx', key: wallet.key, delta: payout, txType: 'win', detail: `Crash cashout ${m.toFixed(2)}x`, notifyOwnerId: wallet.ownerId })
+    fx.win(payout, activeBet)
+    toast({ type: 'success', title: `Cashed out at ${m.toFixed(2)}× — +${payout.toLocaleString()}` })
+    setPhase('cashed')
+  }
+
+  const color = phase === 'crashed' ? 'text-red-500' : phase === 'cashed' ? 'text-green-400' : 'text-sky-400'
+
+  return (
+    <div className="grid gap-6 lg:grid-cols-2">
+      <Card className="flex flex-col items-center justify-center p-6">
+        <div className={`text-6xl font-bold tabular-nums ${color}`}>{mult.toFixed(2)}×</div>
+        <p className="muted mt-3 text-sm">
+          {phase === 'idle' && 'Place a bet and watch it climb.'}
+          {phase === 'running' && 'Cash out before it crashes!'}
+          {phase === 'crashed' && `Crashed at ${crashAt.toFixed(2)}×`}
+          {phase === 'cashed' && 'Cashed out — nice!'}
+        </p>
+      </Card>
+      <Card className="p-6">
+        <h3 className="txt mb-1 text-lg font-semibold">Crash</h3>
+        <p className="muted mb-5 text-sm">The multiplier rises. Cash out before it crashes — or lose your bet.</p>
+        {phase === 'running' ? (
+          <button onClick={cashOut} className="flex w-full items-center justify-center gap-2 rounded-lg bg-green-600 py-3 text-sm font-semibold text-white hover:bg-green-500">
+            Cash out {Math.floor(activeBet * mult).toLocaleString()}
+          </button>
+        ) : (
+          <>
+            <BetRow bet={bet} setBet={setBet} balance={wallet.balance} />
+            <button onClick={start} className="mt-6 flex w-full items-center justify-center gap-2 rounded-lg bg-sky-600 py-3 text-sm font-semibold text-white hover:bg-sky-500">
+              <Rocket size={16} /> Start — {Math.floor(Number(bet) || 0)}
+            </button>
+          </>
+        )}
+      </Card>
+    </div>
+  )
+}
+
+/* ---------------- Mines ---------------- */
+
+function Mines({ wallet, dispatch, toast, fx }) {
+  const SIZE = 25
+  const [bet, setBet] = useState(50)
+  const [mineCount, setMineCount] = useState(3)
+  const [grid, setGrid] = useState([]) // {mine, revealed}
+  const [phase, setPhase] = useState('idle') // idle | playing | dead | done
+  const [picks, setPicks] = useState(0)
+  const [activeBet, setActiveBet] = useState(0)
+
+  const safeTotal = SIZE - mineCount
+  const multAt = (n) => {
+    // product of (remaining/safe-remaining) with house edge
+    let m = 1
+    for (let i = 0; i < n; i++) m *= (SIZE - i) / (safeTotal - i)
+    return Math.floor(m * 0.97 * 100) / 100
+  }
+  const currentMult = multAt(picks)
+  const nextMult = picks < safeTotal ? multAt(picks + 1) : currentMult
+
+  const start = () => {
+    const amount = Math.floor(Number(bet) || 0)
+    if (amount <= 0) return toast({ type: 'error', title: 'Enter a bet' })
+    if (amount > wallet.balance) return toast({ type: 'error', title: 'Not enough coins' })
+    dispatch({ type: 'wallet-tx', key: wallet.key, delta: -amount, txType: 'bet', detail: 'Mines', notifyOwnerId: wallet.ownerId })
+    setActiveBet(amount)
+    const mineIdx = new Set()
+    while (mineIdx.size < mineCount) mineIdx.add(Math.floor(Math.random() * SIZE))
+    setGrid(Array.from({ length: SIZE }, (_, i) => ({ mine: mineIdx.has(i), revealed: false })))
+    setPicks(0); setPhase('playing')
+    fx.spin()
+  }
+
+  const reveal = (i) => {
+    if (phase !== 'playing' || grid[i].revealed) return
+    const next = grid.map((c, idx) => (idx === i ? { ...c, revealed: true } : c))
+    if (grid[i].mine) {
+      setGrid(next.map((c) => ({ ...c, revealed: true })))
+      setPhase('dead')
+      fx.lose()
+      toast({ type: 'error', title: 'Boom! You hit a mine', body: `Lost ${activeBet.toLocaleString()}` })
+      return
+    }
+    const np = picks + 1
+    setGrid(next); setPicks(np)
+    fx.spin()
+    if (np >= safeTotal) cashOut(np, next)
+  }
+
+  const cashOut = (p = picks, g = grid) => {
+    if (phase !== 'playing' || p === 0) return
+    const payout = Math.floor(activeBet * multAt(p))
+    dispatch({ type: 'wallet-tx', key: wallet.key, delta: payout, txType: 'win', detail: `Mines ${multAt(p).toFixed(2)}x`, notifyOwnerId: wallet.ownerId })
+    fx.win(payout, activeBet)
+    setGrid(g.map((c) => ({ ...c, revealed: true })))
+    setPhase('done')
+    toast({ type: 'success', title: `Cashed out ${multAt(p).toFixed(2)}× — +${payout.toLocaleString()}` })
+  }
+
+  return (
+    <div className="grid gap-6 lg:grid-cols-2">
+      <Card className="flex flex-col items-center p-6">
+        <div className="grid grid-cols-5 gap-2">
+          {(grid.length ? grid : Array.from({ length: SIZE }, () => ({}))).map((c, i) => (
+            <button
+              key={i}
+              onClick={() => reveal(i)}
+              disabled={phase !== 'playing'}
+              className={`flex h-12 w-12 items-center justify-center rounded-lg border text-xl ${
+                c.revealed ? (c.mine ? 'border-red-600/50 bg-red-600/20' : 'border-green-600/50 bg-green-600/20') : 'bd tile hover:border-sky-500'
+              }`}
+            >
+              {c.revealed ? (c.mine ? '💣' : '💎') : ''}
+            </button>
+          ))}
+        </div>
+      </Card>
+      <Card className="p-6">
+        <h3 className="txt mb-1 text-lg font-semibold">Mines</h3>
+        <p className="muted mb-5 text-sm">Reveal gems to grow your multiplier. Hit a mine and you lose it all.</p>
+        {phase === 'playing' ? (
+          <div>
+            <div className="mb-4 grid grid-cols-2 gap-3 text-sm">
+              <div className="tile rounded-lg border p-3"><p className="caps-label">Current</p><p className="txt mt-1 font-bold">{currentMult.toFixed(2)}× · {Math.floor(activeBet * currentMult).toLocaleString()}</p></div>
+              <div className="tile rounded-lg border p-3"><p className="caps-label">Next gem</p><p className="txt mt-1 font-bold">{nextMult.toFixed(2)}×</p></div>
+            </div>
+            <button onClick={() => cashOut()} disabled={picks === 0} className="flex w-full items-center justify-center gap-2 rounded-lg bg-green-600 py-3 text-sm font-semibold text-white hover:bg-green-500 disabled:opacity-40">
+              Cash out {Math.floor(activeBet * currentMult).toLocaleString()}
+            </button>
+          </div>
+        ) : (
+          <>
+            <BetRow bet={bet} setBet={setBet} balance={wallet.balance} />
+            <p className="caps-label mb-2 mt-5">Mines: {mineCount}</p>
+            <input type="range" min="1" max="15" value={mineCount} onChange={(e) => setMineCount(Number(e.target.value))} className="w-full" />
+            <button onClick={start} className="mt-5 flex w-full items-center justify-center gap-2 rounded-lg bg-sky-600 py-3 text-sm font-semibold text-white hover:bg-sky-500">
+              <Bomb size={16} /> Start — {Math.floor(Number(bet) || 0)}
+            </button>
+          </>
+        )}
+      </Card>
+    </div>
+  )
+}
+
+/* ---------------- Dice ---------------- */
+
+function DiceGame({ wallet, dispatch, toast, fx }) {
+  const [bet, setBet] = useState(50)
+  const [target, setTarget] = useState(50)
+  const [mode, setMode] = useState('under') // under | over
+  const [last, setLast] = useState(null)
+  const ref = useRef(false)
+  // win chance and multiplier (house edge 3%)
+  const chance = mode === 'under' ? target : 100 - target
+  const mult = chance > 0 ? Math.floor((97 / chance) * 100) / 100 : 0
+
+  const roll = () => {
+    if (ref.current) return
+    const amount = Math.floor(Number(bet) || 0)
+    if (amount <= 0) return toast({ type: 'error', title: 'Enter a bet' })
+    if (amount > wallet.balance) return toast({ type: 'error', title: 'Not enough coins' })
+    if (chance < 2 || chance > 98) return toast({ type: 'error', title: 'Pick a fairer target' })
+    ref.current = true
+    dispatch({ type: 'wallet-tx', key: wallet.key, delta: -amount, txType: 'bet', detail: 'Dice', notifyOwnerId: wallet.ownerId })
+    fx.spin()
+    const result = Math.floor(Math.random() * 10000) / 100 // 0.00–99.99
+    const won = mode === 'under' ? result < target : result > target
+    setTimeout(() => {
+      if (won) {
+        const payout = Math.floor(amount * mult)
+        dispatch({ type: 'wallet-tx', key: wallet.key, delta: payout, txType: 'win', detail: `Dice ${mult}x`, notifyOwnerId: wallet.ownerId })
+        fx.win(payout, amount)
+        toast({ type: 'success', title: `Rolled ${result} — won ${payout.toLocaleString()}!` })
+      } else {
+        fx.lose()
+        toast({ type: 'error', title: `Rolled ${result} — no win` })
+      }
+      setLast({ result, won }); ref.current = false
+    }, 400)
+  }
+
+  return (
+    <div className="grid gap-6 lg:grid-cols-2">
+      <Card className="flex flex-col items-center justify-center p-6">
+        <div className={`text-6xl font-bold tabular-nums ${last ? (last.won ? 'text-green-400' : 'text-red-500') : 'txt'}`}>
+          {last ? last.result.toFixed(2) : '—'}
+        </div>
+        <p className="muted mt-3 text-sm">Roll {mode === 'under' ? 'under' : 'over'} {target}</p>
+      </Card>
+      <Card className="p-6">
+        <h3 className="txt mb-1 text-lg font-semibold">Dice</h3>
+        <p className="muted mb-5 text-sm">Roll 0–100. Bet whether the roll is under or over your target.</p>
+        <BetRow bet={bet} setBet={setBet} balance={wallet.balance} />
+        <div className="mt-5 grid grid-cols-2 gap-2">
+          {['under', 'over'].map((m) => (
+            <button key={m} onClick={() => setMode(m)} className={`rounded-lg border py-2 text-sm font-semibold capitalize ${mode === m ? 'border-sky-500 bg-sky-500/15 text-sky-400' : 'bd tile txt hover:border-sky-500'}`}>{m}</button>
+          ))}
+        </div>
+        <p className="caps-label mb-2 mt-5">Target: {target}</p>
+        <input type="range" min="2" max="98" value={target} onChange={(e) => setTarget(Number(e.target.value))} className="w-full" />
+        <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
+          <div className="tile rounded-lg border p-3"><p className="caps-label">Win chance</p><p className="txt mt-1 font-bold">{chance.toFixed(0)}%</p></div>
+          <div className="tile rounded-lg border p-3"><p className="caps-label">Multiplier</p><p className="txt mt-1 font-bold">{mult.toFixed(2)}×</p></div>
+        </div>
+        <button onClick={roll} className="mt-5 flex w-full items-center justify-center gap-2 rounded-lg bg-sky-600 py-3 text-sm font-semibold text-white hover:bg-sky-500">
+          <Dices size={16} /> Roll — {Math.floor(Number(bet) || 0)}
+        </button>
+      </Card>
+    </div>
+  )
+}
+
+/* ---------------- Higher / Lower ---------------- */
+
+function HiLo({ wallet, dispatch, toast, fx }) {
+  const [bet, setBet] = useState(50)
+  const [current, setCurrent] = useState(() => 2 + Math.floor(Math.random() * 13)) // 2-14
+  const [mult, setMult] = useState(1)
+  const [phase, setPhase] = useState('idle') // idle | playing | done
+  const [activeBet, setActiveBet] = useState(0)
+  // card value 2-14 (J=11,Q=12,K=13,A=14)
+  const label = (v) => ({ 11: 'J', 12: 'Q', 13: 'K', 14: 'A' }[v] || v)
+
+  const start = () => {
+    const amount = Math.floor(Number(bet) || 0)
+    if (amount <= 0) return toast({ type: 'error', title: 'Enter a bet' })
+    if (amount > wallet.balance) return toast({ type: 'error', title: 'Not enough coins' })
+    dispatch({ type: 'wallet-tx', key: wallet.key, delta: -amount, txType: 'bet', detail: 'Hi-Lo', notifyOwnerId: wallet.ownerId })
+    setActiveBet(amount); setMult(1); setCurrent(2 + Math.floor(Math.random() * 13)); setPhase('playing')
+    fx.spin()
+  }
+
+  const guess = (dir) => {
+    if (phase !== 'playing') return
+    const next = 2 + Math.floor(Math.random() * 13)
+    const higherChance = (14 - current) / 13
+    const lowerChance = (current - 2) / 13
+    const won = dir === 'higher' ? next >= current : next <= current
+    fx.spin()
+    if (!won) {
+      setCurrent(next); setPhase('done')
+      fx.lose()
+      toast({ type: 'error', title: `Next was ${label(next)} — you lost` })
+      return
+    }
+    const stepMult = dir === 'higher'
+      ? (higherChance > 0 ? 0.97 / higherChance : 1)
+      : (lowerChance > 0 ? 0.97 / lowerChance : 1)
+    const m = Math.max(1.01, Math.floor(mult * Math.max(1.05, stepMult) * 100) / 100)
+    setMult(m); setCurrent(next)
+    toast({ type: 'success', title: `Next was ${label(next)} — ${m.toFixed(2)}×` })
+  }
+
+  const cashOut = () => {
+    if (phase !== 'playing' || mult <= 1) return
+    const payout = Math.floor(activeBet * mult)
+    dispatch({ type: 'wallet-tx', key: wallet.key, delta: payout, txType: 'win', detail: `Hi-Lo ${mult.toFixed(2)}x`, notifyOwnerId: wallet.ownerId })
+    fx.win(payout, activeBet)
+    setPhase('done')
+    toast({ type: 'success', title: `Cashed out ${mult.toFixed(2)}× — +${payout.toLocaleString()}` })
+  }
+
+  return (
+    <div className="grid gap-6 lg:grid-cols-2">
+      <Card className="flex flex-col items-center justify-center p-6">
+        <div className="flex h-32 w-24 items-center justify-center rounded-xl border border-line bg-white text-5xl font-bold text-slate-900">{label(current)}</div>
+        {phase === 'playing' && <p className="mt-4 text-sm font-semibold text-sky-400">{mult.toFixed(2)}×</p>}
+      </Card>
+      <Card className="p-6">
+        <h3 className="txt mb-1 text-lg font-semibold">Higher / Lower</h3>
+        <p className="muted mb-5 text-sm">Guess if the next card is higher or lower. Build a streak, then cash out.</p>
+        {phase === 'playing' ? (
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-2">
+              <button onClick={() => guess('higher')} className="flex items-center justify-center gap-2 rounded-lg bg-sky-600 py-3 text-sm font-semibold text-white hover:bg-sky-500"><ArrowUp size={16} /> Higher</button>
+              <button onClick={() => guess('lower')} className="flex items-center justify-center gap-2 rounded-lg bg-sky-600 py-3 text-sm font-semibold text-white hover:bg-sky-500"><ArrowDown size={16} /> Lower</button>
+            </div>
+            <button onClick={cashOut} disabled={mult <= 1} className="w-full rounded-lg bg-green-600 py-2.5 text-sm font-semibold text-white hover:bg-green-500 disabled:opacity-40">
+              Cash out {Math.floor(activeBet * mult).toLocaleString()}
+            </button>
+          </div>
+        ) : (
+          <>
+            <BetRow bet={bet} setBet={setBet} balance={wallet.balance} />
+            <button onClick={start} className="mt-6 flex w-full items-center justify-center gap-2 rounded-lg bg-sky-600 py-3 text-sm font-semibold text-white hover:bg-sky-500">
+              <Repeat size={16} /> Deal — {Math.floor(Number(bet) || 0)}
+            </button>
+          </>
+        )}
+      </Card>
+    </div>
+  )
+}
+
+/* ---------------- Stats / Leaderboard / Achievements ---------------- */
+
+function StatsTab({ wallet }) {
+  const net = wallet.won - wallet.wagered
+  const tiles = [
+    { label: 'Total wagered', value: wallet.wagered },
+    { label: 'Total won', value: wallet.won },
+    { label: 'Biggest win', value: wallet.biggestWin },
+    { label: 'Net profit', value: net, color: net >= 0 ? 'text-green-500' : 'text-red-500' },
+  ]
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {tiles.map((t) => (
+          <Card key={t.label} className="p-5">
+            <p className="caps-label">{t.label}</p>
+            <p className={`mt-1 text-2xl font-bold ${t.color || 'txt'}`}>{(t.value || 0).toLocaleString()}</p>
+          </Card>
+        ))}
+      </div>
+      <Card className="p-6">
+        <h3 className="txt mb-4 flex items-center gap-2 text-lg font-semibold"><Award size={18} /> Achievements ({wallet.achievements.length}/{ACHIEVEMENTS.length})</h3>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {ACHIEVEMENTS.map((a) => {
+            const got = wallet.achievements.includes(a.id)
+            return (
+              <div key={a.id} className={`flex items-center gap-3 rounded-lg border px-4 py-3 ${got ? 'border-yellow-500/40 bg-yellow-500/10' : 'bd opacity-60'}`}>
+                <Award size={20} className={got ? 'text-yellow-400' : 'muted'} />
+                <div>
+                  <p className="txt text-sm font-semibold">{a.name}</p>
+                  <p className="muted text-xs">{a.desc}</p>
+                </div>
+                {got && <Check size={16} className="ml-auto text-green-500" />}
+              </div>
+            )
+          })}
+        </div>
+      </Card>
+    </div>
+  )
+}
+
+function LeaderboardTab({ state }) {
+  const rows = Object.entries(state.wallets || {})
+    .map(([key, w]) => {
+      const u = (state.users || []).find((x) => x.id === key)
+      const name = u ? u.username : key === 'admin' ? 'Admin' : key === 'analyst' ? 'Analyst' : key
+      return { key, name, balance: w.balance || 0, biggest: w.biggestWin || 0 }
+    })
+    .sort((a, b) => b.balance - a.balance)
+    .slice(0, 20)
+  return (
+    <Card className="p-0">
+      {rows.length === 0 ? (
+        <p className="muted py-16 text-center text-sm">No players yet.</p>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm">
+            <thead>
+              <tr className="caps-label bd border-b">
+                <th className="px-4 py-3">#</th>
+                <th className="px-4 py-3">Player</th>
+                <th className="px-4 py-3 text-right">Balance</th>
+                <th className="px-4 py-3 text-right">Biggest win</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r, i) => (
+                <tr key={r.key} className="bd border-b last:border-0">
+                  <td className="px-4 py-3">
+                    {i === 0 ? <Trophy size={16} className="text-yellow-400" /> : <span className="muted">{i + 1}</span>}
+                  </td>
+                  <td className="txt px-4 py-3 font-medium">{r.name}</td>
+                  <td className="px-4 py-3 text-right font-mono font-semibold text-yellow-400">{r.balance.toLocaleString()}</td>
+                  <td className="muted px-4 py-3 text-right font-mono">{r.biggest.toLocaleString()}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </Card>
+  )
+}
+
 /* ---------------- Page ---------------- */
+
+function GiftCard({ wallet, state, dispatch, toast }) {
+  const [to, setTo] = useState('')
+  const [amount, setAmount] = useState('')
+  const recipients = (state.users || []).filter((u) => u.id !== wallet.key)
+  const send = () => {
+    const amt = Math.floor(Number(amount) || 0)
+    if (!to) return toast({ type: 'error', title: 'Pick a recipient' })
+    if (amt <= 0) return toast({ type: 'error', title: 'Enter an amount' })
+    if (amt > wallet.balance) return toast({ type: 'error', title: 'Not enough coins' })
+    const u = recipients.find((x) => x.id === to)
+    const me = (state.users || []).find((x) => x.id === wallet.key)
+    dispatch({
+      type: 'gift-coins',
+      fromKey: wallet.key,
+      toKey: to,
+      amount: amt,
+      toOwnerId: to,
+      fromLabel: me?.username || (wallet.key === 'admin' ? 'Admin' : 'Analyst'),
+      toLabel: u?.username,
+    })
+    toast({ type: 'success', title: 'Coins sent', body: `${amt.toLocaleString()} → ${u?.username}` })
+    setAmount('')
+  }
+  return (
+    <Card className="p-6">
+      <h3 className="txt mb-1 flex items-center gap-2 text-lg font-semibold"><Gift size={18} /> Gift coins</h3>
+      <p className="muted mb-4 text-sm">Send coins to another analyst.</p>
+      {recipients.length === 0 ? (
+        <p className="muted text-sm">No other registered analysts to gift to yet.</p>
+      ) : (
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <select value={to} onChange={(e) => setTo(e.target.value)} className="bd tile txt min-w-0 flex-1 rounded-lg border px-3 py-2.5 text-sm">
+            <option value="">— recipient —</option>
+            {recipients.map((u) => <option key={u.id} value={u.id}>{u.username}</option>)}
+          </select>
+          <input type="number" min="1" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="Amount" className="bd tile txt w-full rounded-lg border px-3 py-2.5 text-sm sm:w-36" />
+          <button onClick={send} className="shrink-0 rounded-lg bg-sky-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-sky-500">Send</button>
+        </div>
+      )}
+    </Card>
+  )
+}
+
+function AdminCasinoPanel({ state, dispatch, toast }) {
+  const disabled = new Set(state.casino?.disabledGames || [])
+  const games = ['Lucky Wheel', 'Roulette', 'Slots', 'Blackjack', 'Coinflip', 'Crash', 'Mines', 'Dice', 'Hi-Lo']
+  const profit = state.casino?.houseProfit || 0
+  return (
+    <Card className="p-6">
+      <h3 className="txt mb-4 flex items-center gap-2 text-lg font-semibold"><BarChart3 size={18} /> Casino control (admin)</h3>
+      <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <div className="tile rounded-lg border p-3">
+          <p className="caps-label">House profit</p>
+          <p className={`mt-1 text-xl font-bold ${profit >= 0 ? 'text-green-500' : 'text-red-500'}`}>{profit.toLocaleString()}</p>
+        </div>
+        <div className="tile rounded-lg border p-3">
+          <p className="caps-label">Jackpot pool</p>
+          <p className="mt-1 text-xl font-bold text-yellow-400">{(state.jackpot || 0).toLocaleString()}</p>
+        </div>
+        <div className="tile rounded-lg border p-3">
+          <p className="caps-label">Players</p>
+          <p className="txt mt-1 text-xl font-bold">{Object.keys(state.wallets || {}).length}</p>
+        </div>
+      </div>
+      <p className="caps-label mb-2">Enable / disable games</p>
+      <div className="flex flex-wrap gap-2">
+        {games.map((g) => {
+          const on = !disabled.has(g)
+          return (
+            <button
+              key={g}
+              onClick={() => dispatch({ type: 'set-casino-game', game: g, enabled: !on })}
+              className={`rounded-md border px-3 py-1.5 text-xs font-semibold ${on ? 'border-green-600/40 bg-green-600/15 text-green-500' : 'bd muted'}`}
+            >
+              {g}: {on ? 'on' : 'off'}
+            </button>
+          )
+        })}
+      </div>
+      <button onClick={() => { dispatch({ type: 'reset-house-profit' }); toast({ type: 'success', title: 'House profit reset' }) }} className="bd muted mt-4 rounded-lg border px-3 py-2 text-xs hover:border-sky-500">
+        Reset house profit
+      </button>
+    </Card>
+  )
+}
 
 export default function Casino() {
   const { state, dispatch } = useStore()
   const wallet = useWallet()
   const toast = useToast()
   const [tab, setTab] = useState('Lucky Wheel')
+  const [confetti, setConfetti] = useState(0)
+  const soundOn = state.settings?.casinoSound !== false
+  const shownBalance = useCountUp(wallet.balance)
+  const lp = levelProgress(wallet.xp)
+  const disabledGames = new Set(state.casino?.disabledGames || [])
+
+  // Shared effects for all games.
+  const fx = {
+    spin: () => playSound('spin', soundOn),
+    lose: () => playSound('lose', soundOn),
+    win: (payout, bet) => {
+      const big = bet > 0 && payout >= bet * 10
+      playSound(big ? 'jackpot' : 'win', soundOn)
+      if (big) setConfetti(Date.now())
+      // 1-in-200 chance any win also triggers the jackpot pool.
+      if (Math.random() < 0.005) {
+        const me = (state.users || []).find((u) => u.id === wallet.key)
+        dispatch({ type: 'win-jackpot', key: wallet.key, name: me?.username || (wallet.key === 'admin' ? 'Admin' : 'Analyst') })
+        setConfetti(Date.now() + 1)
+      }
+    },
+  }
+  const gw = { ...wallet, ownerId: state.session?.userId || null }
+
+  const claimDaily = () => {
+    if (!canClaimDaily(wallet.lastDailyBonus)) return toast({ type: 'error', title: 'Already claimed today' })
+    const streak = canClaimDaily(wallet.lastDailyBonus) && (Date.now() - wallet.lastDailyBonus < 2 * 86400000) ? wallet.dailyStreak + 1 : 1
+    const amount = dailyBonusAmount(streak)
+    dispatch({ type: 'claim-daily-bonus', key: wallet.key, amount, streak })
+    setConfetti(Date.now())
+    toast({ type: 'success', title: `Daily bonus: +${amount}`, body: `Streak ${streak}` })
+  }
+  const dailyReady = canClaimDaily(wallet.lastDailyBonus)
+
+  const GAME_TABS = [
+    { label: 'Lucky Wheel', icon: Disc3 },
+    { label: 'Roulette', icon: Target },
+    { label: 'Slots', icon: Cherry },
+    { label: 'Blackjack', icon: Dices },
+    { label: 'Coinflip', icon: CircleDollarSign },
+    { label: 'Crash', icon: Rocket },
+    { label: 'Mines', icon: Bomb },
+    { label: 'Dice', icon: Dices },
+    { label: 'Hi-Lo', icon: Repeat },
+  ].filter((t) => !disabledGames.has(t.label))
+
+  const allTabs = [
+    ...GAME_TABS,
+    { label: 'Shop', icon: ShoppingBag },
+    { label: 'Stats', icon: BarChart3 },
+    { label: 'Leaderboard', icon: Trophy },
+    { label: 'Gift', icon: Gift },
+    { label: 'History', icon: HistoryIcon },
+  ]
+
+  const gameUnavailable = (
+    <Card className="p-12 text-center">
+      <p className="muted text-sm">This game is currently disabled by an admin.</p>
+    </Card>
+  )
 
   return (
     <div>
+      <Confetti trigger={confetti} />
       <PageHeader
         icon={Coins}
         kicker="Earn coins by catching cheaters"
         title="ZeroTrace Coins"
         subtitle="Every cheater you catch earns coins. Gamble them — or redeem them for discounts and license keys."
         actions={
-          <div className="flex items-center gap-2 rounded-xl border border-yellow-500/40 bg-yellow-500/10 px-4 py-2">
-            <Coins size={18} className="text-yellow-400" />
-            <span className="text-lg font-bold text-yellow-300">{wallet.balance.toLocaleString()}</span>
-            <span className="muted text-xs">coins</span>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={() => dispatch({ type: 'set-setting', key: 'casinoSound', value: !soundOn })}
+              className="bd txt flex items-center gap-2 rounded-xl border px-3 py-2 text-sm hover:border-sky-500"
+              title="Toggle sound"
+            >
+              {soundOn ? <Volume2 size={16} /> : <VolumeX size={16} className="muted" />}
+            </button>
+            <div className="flex items-center gap-2 rounded-xl border border-yellow-500/40 bg-yellow-500/10 px-4 py-2">
+              <Coins size={18} className="text-yellow-400" />
+              <span className="text-lg font-bold text-yellow-300">{shownBalance.toLocaleString()}</span>
+              <span className="muted text-xs">coins</span>
+            </div>
           </div>
         }
       />
 
+      {/* Level + jackpot + daily bonus bar */}
+      <div className="mb-6 grid gap-4 lg:grid-cols-3">
+        <Card className="p-4">
+          <div className="flex items-center justify-between text-sm">
+            <span className="txt font-semibold">Level {lp.level}</span>
+            <span className="muted text-xs">{wallet.xp.toLocaleString()} XP</span>
+          </div>
+          <div className="tile mt-2 h-2 w-full overflow-hidden rounded-full">
+            <div className="h-full rounded-full bg-sky-500 transition-all" style={{ width: `${lp.pct}%` }} />
+          </div>
+        </Card>
+        <Card className="flex items-center justify-between p-4">
+          <div>
+            <p className="caps-label">Jackpot pool</p>
+            <p className="mt-1 text-xl font-bold text-yellow-400">{(state.jackpot || 0).toLocaleString()}</p>
+          </div>
+          <Sparkles size={26} className="text-yellow-400" />
+        </Card>
+        <Card className="flex items-center justify-between p-4">
+          <div>
+            <p className="caps-label">Daily bonus</p>
+            <p className="muted mt-1 text-xs">{dailyReady ? `+${dailyBonusAmount((wallet.dailyStreak || 0) + 1)} ready` : 'Come back tomorrow'}</p>
+          </div>
+          <button
+            onClick={claimDaily}
+            disabled={!dailyReady}
+            className="rounded-lg bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-500 disabled:opacity-40"
+          >
+            <Gift size={15} className="mr-1 inline" /> Claim
+          </button>
+        </Card>
+      </div>
+
       {state.role === 'admin' && (
-        <AdminCoinPanel wallet={wallet} dispatch={dispatch} toast={toast} />
+        <div className="mb-6 space-y-6">
+          <AdminCoinPanel wallet={wallet} dispatch={dispatch} toast={toast} />
+          <AdminCasinoPanel state={state} dispatch={dispatch} toast={toast} />
+        </div>
       )}
 
-      <Tabs
-        tabs={[
-          { label: 'Lucky Wheel', icon: Disc3 },
-          { label: 'Roulette', icon: Target },
-          { label: 'Slots', icon: Cherry },
-          { label: 'Blackjack', icon: Dices },
-          { label: 'Shop', icon: ShoppingBag },
-          { label: 'History', icon: HistoryIcon },
-        ]}
-        active={tab}
-        onChange={setTab}
-      />
+      <Tabs tabs={allTabs} active={tab} onChange={setTab} />
 
       <div className="mt-8">
-        {tab === 'Lucky Wheel' && <LuckyWheel wallet={wallet} dispatch={dispatch} toast={toast} />}
-        {tab === 'Roulette' && <Roulette wallet={wallet} dispatch={dispatch} toast={toast} />}
-        {tab === 'Slots' && <SlotMachine wallet={wallet} dispatch={dispatch} toast={toast} />}
-        {tab === 'Blackjack' && <Blackjack wallet={wallet} dispatch={dispatch} toast={toast} />}
+        {tab === 'Lucky Wheel' && (disabledGames.has('Lucky Wheel') ? gameUnavailable : <LuckyWheel wallet={gw} dispatch={dispatch} toast={toast} fx={fx} />)}
+        {tab === 'Roulette' && (disabledGames.has('Roulette') ? gameUnavailable : <Roulette wallet={gw} dispatch={dispatch} toast={toast} fx={fx} />)}
+        {tab === 'Slots' && (disabledGames.has('Slots') ? gameUnavailable : <SlotMachine wallet={gw} dispatch={dispatch} toast={toast} fx={fx} />)}
+        {tab === 'Blackjack' && (disabledGames.has('Blackjack') ? gameUnavailable : <Blackjack wallet={gw} dispatch={dispatch} toast={toast} fx={fx} />)}
+        {tab === 'Coinflip' && <Coinflip wallet={gw} dispatch={dispatch} toast={toast} fx={fx} />}
+        {tab === 'Crash' && <Crash wallet={gw} dispatch={dispatch} toast={toast} fx={fx} />}
+        {tab === 'Mines' && <Mines wallet={gw} dispatch={dispatch} toast={toast} fx={fx} />}
+        {tab === 'Dice' && <DiceGame wallet={gw} dispatch={dispatch} toast={toast} fx={fx} />}
+        {tab === 'Hi-Lo' && <HiLo wallet={gw} dispatch={dispatch} toast={toast} fx={fx} />}
         {tab === 'Shop' && <Shop wallet={wallet} state={state} dispatch={dispatch} toast={toast} />}
+        {tab === 'Stats' && <StatsTab wallet={wallet} />}
+        {tab === 'Leaderboard' && <LeaderboardTab state={state} />}
+        {tab === 'Gift' && <GiftCard wallet={wallet} state={state} dispatch={dispatch} toast={toast} />}
         {tab === 'History' && (
           <Card className="p-0">
             {wallet.history.length === 0 ? (
