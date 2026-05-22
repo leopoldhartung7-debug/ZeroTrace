@@ -1,7 +1,7 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import {
   Coins, Dices, Disc3, ShoppingBag, History as HistoryIcon, Copy, Check,
-  TrendingUp, TrendingDown, Sparkles, Plus,
+  TrendingUp, TrendingDown, Sparkles, Plus, Cherry,
 } from 'lucide-react'
 import { PageHeader, Card } from '../components/kit.jsx'
 import Tabs from '../components/Tabs.jsx'
@@ -334,6 +334,154 @@ function Blackjack({ wallet, dispatch, toast }) {
   )
 }
 
+/* ---------------- Slot Machine ---------------- */
+
+const SLOT_SYMBOLS = ['🍒', '🍋', '🔔', '⭐', '7️⃣', '💎']
+const SLOT_THREE = { '🍒': 2, '🍋': 3, '🔔': 5, '⭐': 8, '7️⃣': 12, '💎': 20 }
+const SLOT_TWO_MULT = 1.5
+
+function SlotMachine({ wallet, dispatch, toast }) {
+  const [bet, setBet] = useState(50)
+  const [reels, setReels] = useState(['🍒', '🍋', '🔔'])
+  const [spinning, setSpinning] = useState(false)
+  const [last, setLast] = useState(null)
+  const intervalRef = useRef(null)
+  const spinningRef = useRef(false)
+
+  useEffect(() => () => clearInterval(intervalRef.current), [])
+
+  const spin = () => {
+    if (spinningRef.current) return
+    const amount = Math.floor(Number(bet) || 0)
+    if (amount <= 0) return toast({ type: 'error', title: 'Enter a bet' })
+    if (amount > wallet.balance) return toast({ type: 'error', title: 'Not enough coins' })
+
+    spinningRef.current = true
+    setSpinning(true)
+    setLast(null)
+    dispatch({ type: 'wallet-tx', key: wallet.key, delta: -amount, txType: 'bet', detail: 'Slots spin' })
+
+    const final = [
+      SLOT_SYMBOLS[Math.floor(Math.random() * SLOT_SYMBOLS.length)],
+      SLOT_SYMBOLS[Math.floor(Math.random() * SLOT_SYMBOLS.length)],
+      SLOT_SYMBOLS[Math.floor(Math.random() * SLOT_SYMBOLS.length)],
+    ]
+
+    // Flicker the reels for visual effect.
+    intervalRef.current = setInterval(() => {
+      setReels([
+        SLOT_SYMBOLS[Math.floor(Math.random() * SLOT_SYMBOLS.length)],
+        SLOT_SYMBOLS[Math.floor(Math.random() * SLOT_SYMBOLS.length)],
+        SLOT_SYMBOLS[Math.floor(Math.random() * SLOT_SYMBOLS.length)],
+      ])
+    }, 80)
+
+    // Stop reels one by one.
+    const stops = [800, 1300, 1800]
+    stops.forEach((t, i) => {
+      setTimeout(() => {
+        setReels((prev) => {
+          const next = [...prev]
+          next[i] = final[i]
+          return next
+        })
+        if (i === 2) {
+          clearInterval(intervalRef.current)
+          resolve(final, amount)
+        }
+      }, t)
+    })
+  }
+
+  const resolve = (final, amount) => {
+    const [a, b, c] = final
+    let payout = 0
+    let text = ''
+    if (a === b && b === c) {
+      payout = Math.round(amount * SLOT_THREE[a])
+      text = `Jackpot! ${a}${a}${a} → ×${SLOT_THREE[a]}`
+    } else if (a === b || b === c || a === c) {
+      payout = Math.round(amount * SLOT_TWO_MULT)
+      text = `Two of a kind → ×${SLOT_TWO_MULT}`
+    } else {
+      text = 'No match — try again'
+    }
+    if (payout > 0) {
+      dispatch({ type: 'wallet-tx', key: wallet.key, delta: payout, txType: 'win', detail: `Slots ${final.join('')}` })
+      toast({ type: 'success', title: `You won ${payout.toLocaleString()} coins!`, body: final.join(' ') })
+    } else {
+      toast({ type: 'error', title: 'No win', body: final.join(' ') })
+    }
+    setLast({ payout, text, win: payout > 0 })
+    setSpinning(false)
+    spinningRef.current = false
+  }
+
+  return (
+    <div className="grid gap-6 lg:grid-cols-2">
+      <Card className="flex flex-col items-center justify-center p-6">
+        <div className="flex gap-3">
+          {reels.map((s, i) => (
+            <div
+              key={i}
+              className={`flex h-28 w-24 items-center justify-center rounded-xl border-2 bg-black/40 text-5xl ${
+                spinning ? 'border-sky-500/60' : 'border-line'
+              }`}
+            >
+              {s}
+            </div>
+          ))}
+        </div>
+        {last && (
+          <div className={`mt-5 rounded-lg border px-4 py-2 text-sm font-semibold ${last.win ? 'border-green-600/40 bg-green-600/15 text-green-400' : 'border-red-600/40 bg-red-600/15 text-red-400'}`}>
+            {last.text}
+          </div>
+        )}
+      </Card>
+
+      <Card className="p-6">
+        <h3 className="txt mb-1 text-lg font-semibold">Slot Machine</h3>
+        <p className="muted mb-5 text-sm">Match 3 symbols for the jackpot. Two of a kind pays ×{SLOT_TWO_MULT}.</p>
+
+        <p className="caps-label mb-2">Your bet</p>
+        <div className="flex flex-wrap items-center gap-2">
+          <input
+            type="number"
+            min="1"
+            value={bet}
+            onChange={(e) => setBet(e.target.value)}
+            className="bd tile txt w-32 rounded-lg border px-3 py-2 text-sm focus:outline-none"
+          />
+          {[10, 50, 100, 500].map((v) => (
+            <button key={v} onClick={() => setBet(v)} className="bd tile txt rounded-md border px-2.5 py-1 text-xs hover:border-sky-500">{v}</button>
+          ))}
+          <button onClick={() => setBet(wallet.balance)} className="bd tile txt rounded-md border px-2.5 py-1 text-xs hover:border-sky-500">Max</button>
+        </div>
+
+        <button
+          onClick={spin}
+          disabled={spinning}
+          className="mt-6 flex w-full items-center justify-center gap-2 rounded-lg bg-sky-600 py-3 text-sm font-semibold text-white hover:bg-sky-500 disabled:opacity-50"
+        >
+          <Cherry size={16} /> {spinning ? 'Spinning…' : `Spin for ${Math.floor(Number(bet) || 0)} coins`}
+        </button>
+
+        <div className="mt-6">
+          <p className="caps-label mb-2">Payouts (3 of a kind)</p>
+          <div className="grid grid-cols-3 gap-2 text-sm sm:grid-cols-6">
+            {SLOT_SYMBOLS.map((s) => (
+              <div key={s} className="bd tile flex flex-col items-center rounded-lg border py-2">
+                <span className="text-xl">{s}</span>
+                <span className="muted text-[11px]">×{SLOT_THREE[s]}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </Card>
+    </div>
+  )
+}
+
 /* ---------------- Shop ---------------- */
 
 const SHOP_ITEMS = [
@@ -575,6 +723,7 @@ export default function Casino() {
       <Tabs
         tabs={[
           { label: 'Lucky Wheel', icon: Disc3 },
+          { label: 'Slots', icon: Cherry },
           { label: 'Blackjack', icon: Dices },
           { label: 'Shop', icon: ShoppingBag },
           { label: 'History', icon: HistoryIcon },
@@ -585,6 +734,7 @@ export default function Casino() {
 
       <div className="mt-8">
         {tab === 'Lucky Wheel' && <LuckyWheel wallet={wallet} dispatch={dispatch} toast={toast} />}
+        {tab === 'Slots' && <SlotMachine wallet={wallet} dispatch={dispatch} toast={toast} />}
         {tab === 'Blackjack' && <Blackjack wallet={wallet} dispatch={dispatch} toast={toast} />}
         {tab === 'Shop' && <Shop wallet={wallet} state={state} dispatch={dispatch} toast={toast} />}
         {tab === 'History' && (
