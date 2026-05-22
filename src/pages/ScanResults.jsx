@@ -5,8 +5,8 @@ import {
   ArrowLeft, Copy, ShieldAlert, Download, Flag, Gauge, Monitor, Cpu,
   AlertTriangle, CheckCircle2, Eye, Sparkles, Search, ChevronLeft,
   ChevronRight, Shield, MessageSquare, Video, Gamepad2, Database, Activity,
-  Clock, Play, ImageOff, Usb, FileText, Server, RefreshCw, Image as ImageIcon,
-  Trash2, Eye as EyeIcon, Bell, Layers,
+  Clock, ImageOff, Usb, FileText, Server, RefreshCw, Image as ImageIcon,
+  Trash2, Bell, Layers, ScanLine,
 } from 'lucide-react'
 import { Card } from '../components/kit.jsx'
 import { Modal, Select, useToast } from '../components/ui.jsx'
