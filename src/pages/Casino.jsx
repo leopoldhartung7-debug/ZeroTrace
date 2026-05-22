@@ -951,8 +951,11 @@ function Coinflip({ wallet, dispatch, toast, fx }) {
   const [bet, setBet] = useState(50)
   const [side, setSide] = useState('heads')
   const [flipping, setFlipping] = useState(false)
+  const [coinRot, setCoinRot] = useState(0) // current X rotation in degrees
   const [last, setLast] = useState(null)
   const ref = useRef(false)
+  const timerRef = useRef(null)
+  useEffect(() => () => clearTimeout(timerRef.current), [])
 
   const flip = () => {
     if (ref.current) return
@@ -963,7 +966,15 @@ function Coinflip({ wallet, dispatch, toast, fx }) {
     fx.spin()
     dispatch({ type: 'wallet-tx', key: wallet.key, delta: -amount, txType: 'bet', detail: 'Coinflip', notifyOwnerId: wallet.ownerId })
     const result = Math.random() < 0.5 ? 'heads' : 'tails'
-    setTimeout(() => {
+    // Heads face up at rotateX ≡ 0, Tails at ≡ 180 (mod 360).
+    const targetMod = result === 'heads' ? 0 : 180
+    setCoinRot((prev) => {
+      const prevMod = ((prev % 360) + 360) % 360
+      let delta = targetMod - prevMod
+      if (delta < 0) delta += 360
+      return prev + 360 * 5 + delta // 5 full flips + land on the result
+    })
+    timerRef.current = setTimeout(() => {
       const won = result === side
       if (won) {
         const payout = amount * 2
@@ -975,18 +986,32 @@ function Coinflip({ wallet, dispatch, toast, fx }) {
         toast({ type: 'error', title: `${result === 'heads' ? 'Heads' : 'Tails'} — you lost` })
       }
       setLast({ result, won }); setFlipping(false); ref.current = false
-    }, 1200)
+    }, 1400)
   }
+
+  const faceBase = 'absolute inset-0 flex items-center justify-center rounded-full border-4 border-yellow-600 bg-gradient-to-br from-yellow-300 to-yellow-500 text-xl font-bold text-yellow-900'
 
   return (
     <div className="grid gap-6 lg:grid-cols-2">
       <Card className="flex flex-col items-center justify-center p-6">
-        <div className={`flex h-32 w-32 items-center justify-center rounded-full border-4 border-yellow-500/60 bg-gradient-to-br from-yellow-400 to-yellow-600 text-4xl font-bold text-yellow-900 ${flipping ? 'zt-coinflip' : ''}`}>
-          {flipping ? '?' : last ? (last.result === 'heads' ? 'H' : 'T') : 'H'}
+        <div className="flex h-40 items-center justify-center" style={{ perspective: '700px' }}>
+          <div className={flipping ? 'zt-toss' : ''}>
+            <div
+              className="relative h-28 w-28"
+              style={{
+                transformStyle: 'preserve-3d',
+                transform: `rotateX(${coinRot}deg)`,
+                transition: flipping ? 'transform 1.4s cubic-bezier(0.33,0,0.2,1)' : 'none',
+              }}
+            >
+              <div className={faceBase} style={{ backfaceVisibility: 'hidden' }}>Heads</div>
+              <div className={faceBase} style={{ backfaceVisibility: 'hidden', transform: 'rotateX(180deg)' }}>Tails</div>
+            </div>
+          </div>
         </div>
         {last && (
-          <div className={`mt-4 rounded-lg border px-4 py-2 text-sm font-semibold ${last.won ? 'border-green-600/40 bg-green-600/15 text-green-400' : 'border-red-600/40 bg-red-600/15 text-red-400'}`}>
-            {last.won ? 'You won!' : 'You lost'}
+          <div className={`mt-6 rounded-lg border px-4 py-2 text-sm font-semibold ${last.won ? 'border-green-600/40 bg-green-600/15 text-green-400' : 'border-red-600/40 bg-red-600/15 text-red-400'}`}>
+            {last.result === 'heads' ? 'Heads' : 'Tails'} — {last.won ? 'you won!' : 'you lost'}
           </div>
         )}
       </Card>

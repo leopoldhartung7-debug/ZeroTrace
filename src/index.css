@@ -119,6 +119,13 @@
 }
 .zt-coinflip { animation: zt-coinflip 1.1s cubic-bezier(0.3, 0.1, 0.2, 1); }
 
+@keyframes zt-toss {
+  0% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-70px) scale(1.15); }
+  100% { transform: translateY(0) scale(1); }
+}
+.zt-toss { animation: zt-toss 1.4s cubic-bezier(0.33, 0, 0.3, 1); }
+
 @keyframes zt-deal {
   0% { transform: translateY(-24px) rotate(-8deg); opacity: 0; }
   100% { transform: translateY(0) rotate(0deg); opacity: 1; }
