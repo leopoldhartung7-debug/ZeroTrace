@@ -99,7 +99,10 @@ function DashboardLayout() {
         <main id="app-main" className="flex-1 overflow-y-auto overflow-x-hidden">
           <ImpersonationBanner />
           <AnnouncementBanner />
-          <div className="mx-auto w-full max-w-6xl min-w-0 px-4 py-6 sm:px-6 md:px-10 md:py-10">
+          <div
+            key={loc.pathname}
+            className="zt-fade mx-auto w-full min-w-0 max-w-6xl px-4 py-6 sm:px-6 md:px-10 md:py-10"
+          >
             <Outlet />
           </div>
         </main>

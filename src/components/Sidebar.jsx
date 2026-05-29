@@ -116,7 +116,7 @@ export default function Sidebar() {
         {groups.map((g) => (
           <div key={g.label}>
             <SectionLabel>{g.label}</SectionLabel>
-            {g.items.map((item) => {
+            {g.items.map((item, itemIndex) => {
               const { to, label, icon: Icon, children } = item
               if (children) {
                 return (
@@ -164,8 +164,9 @@ export default function Sidebar() {
                 <NavLink
                   key={to}
                   to={to}
+                  style={{ animationDelay: `${itemIndex * 40}ms` }}
                   className={({ isActive }) =>
-                    `relative mb-1 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                    `zt-fade-up relative mb-1 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 hover:translate-x-0.5 ${
                       isActive
                         ? 'bg-sky-500/10 text-sky-400 before:absolute before:left-0 before:top-1/2 before:h-5 before:w-[3px] before:-translate-y-1/2 before:rounded-r-full before:bg-sky-400'
                         : 'hoverable'

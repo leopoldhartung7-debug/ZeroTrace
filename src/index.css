@@ -154,6 +154,50 @@
 }
 .zt-flipin { animation: zt-flipin 0.3s ease-out; }
 
+/* ── UI motion: tasteful, theme-matched entrance + hover effects ── */
+@keyframes zt-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes zt-fade-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes zt-scale-in {
+  from { opacity: 0; transform: scale(0.97); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes zt-glow-pulse {
+  0%, 100% { box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.35), 0 0 14px rgba(56, 189, 248, 0.18); }
+  50% { box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.55), 0 0 22px rgba(56, 189, 248, 0.4); }
+}
+.zt-fade { animation: zt-fade 0.4s ease-out both; }
+.zt-fade-up { animation: zt-fade-up 0.5s ease-out both; }
+.zt-scale-in { animation: zt-scale-in 0.35s ease-out both; }
+.zt-glow-pulse { animation: zt-glow-pulse 3.5s ease-in-out infinite; }
+
+/* Soft lift for interactive cards/tiles */
+.zt-lift {
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+}
+.zt-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28);
+  border-color: rgba(56, 189, 248, 0.35);
+}
+
+/* Respect users who prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;

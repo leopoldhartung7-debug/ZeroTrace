@@ -3,12 +3,12 @@ import { ChevronDown } from 'lucide-react'
 
 export function PageHeader({ kicker, title, subtitle, actions, icon: Icon }) {
   return (
-    <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <div className="zt-fade-up mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
       <div>
         <p className="caps-label">{kicker}</p>
-        <h1 className="txt mt-2 flex items-center gap-3 text-3xl font-bold tracking-tight md:text-4xl">
+        <h1 className="txt group mt-2 flex items-center gap-3 text-3xl font-bold tracking-tight md:text-4xl">
           {Icon && (
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500 to-sky-700 text-white shadow-lg shadow-sky-600/20">
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500 to-sky-700 text-white shadow-lg shadow-sky-600/20 transition-transform duration-300 group-hover:scale-105">
               <Icon size={20} />
             </span>
           )}
@@ -22,7 +22,11 @@ export function PageHeader({ kicker, title, subtitle, actions, icon: Icon }) {
 }
 
 export function Card({ className = '', children }) {
-  return <div className={`panel rounded-2xl border ${className}`}>{children}</div>
+  return (
+    <div className={`panel rounded-2xl border transition-colors duration-200 ${className}`}>
+      {children}
+    </div>
+  )
 }
 
 const SEV = {
@@ -61,9 +65,9 @@ export function EmptyState({ icon: Icon, title, hint }) {
 
 export function StatTile({ icon: Icon, label, value, accent = 'muted', sub }) {
   return (
-    <div className="panel group overflow-hidden rounded-xl border p-3 transition-transform hover:-translate-y-0.5 sm:p-4 md:p-5">
+    <div className="panel zt-lift group overflow-hidden rounded-xl border p-3 sm:p-4 md:p-5">
       <div className="flex items-start gap-2 sm:gap-3">
-        <div className="tile flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border sm:h-9 sm:w-9 md:h-10 md:w-10">
+        <div className="tile flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border transition-transform duration-300 group-hover:scale-110 sm:h-9 sm:w-9 md:h-10 md:w-10">
           <Icon size={16} className={accent} />
         </div>
         <div className="min-w-0 flex-1">
