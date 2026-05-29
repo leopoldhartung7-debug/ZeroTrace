@@ -62,8 +62,8 @@ export function Badge({ children }) {
 
 export function StatCard({ icon: Icon, label, value, delta }) {
   return (
-    <div className="card flex items-center gap-4 p-5">
-      <div className="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-ink-700 bg-ink-850 text-accent">
+    <div className="card card-hover group flex items-center gap-4 p-5">
+      <div className="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-ink-700 bg-ink-850 text-accent transition-transform duration-300 group-hover:scale-110">
         <Icon size={20} strokeWidth={1.8} />
       </div>
       <div className="min-w-0">

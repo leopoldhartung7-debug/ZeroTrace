@@ -70,7 +70,7 @@ export default function Pins() {
         action={
           <button
             type="button"
-            className="flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-semibold text-ink-950 transition-colors hover:bg-zinc-200"
+            className="flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-semibold text-ink-950 transition-all duration-200 hover:-translate-y-0.5 hover:bg-zinc-200 active:translate-y-0"
           >
             <Plus size={16} strokeWidth={2.4} />
             Create Pin
@@ -93,8 +93,12 @@ export default function Pins() {
       </div>
 
       <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-        {pinStats.map((stat) => (
-          <div key={stat.key} className="card p-5">
+        {pinStats.map((stat, i) => (
+          <div
+            key={stat.key}
+            className="card card-hover animate-fade-in-up p-5"
+            style={{ animationDelay: `${i * 60}ms` }}
+          >
             <p className="caps-label">{stat.label}</p>
             <p className="mt-2 text-2xl font-bold text-white">
               {stat.value.toLocaleString()}
@@ -146,10 +150,11 @@ export default function Pins() {
               </tr>
             </thead>
             <tbody>
-              {visible.map((p) => (
+              {visible.map((p, i) => (
                 <tr
-                  key={p.pin}
-                  className="border-b border-ink-800 last:border-0 hover:bg-ink-850"
+                  key={`${safePage}-${p.pin}`}
+                  style={{ animationDelay: `${i * 45}ms` }}
+                  className="animate-fade-in border-b border-ink-800 transition-colors last:border-0 hover:bg-ink-850"
                 >
                   <td className="px-4 py-3 font-mono text-xs text-accent">
                     {p.pin}

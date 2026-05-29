@@ -40,7 +40,7 @@ export default function Sidebar() {
   return (
     <aside className="flex h-full w-[280px] shrink-0 flex-col border-r border-ink-700 bg-ink-900">
       <div className="flex items-center gap-3 px-6 py-6">
-        <div className="grid h-10 w-10 place-items-center rounded-xl bg-accent shadow-glow">
+        <div className="grid h-10 w-10 animate-pulse-glow place-items-center rounded-xl bg-accent shadow-glow">
           <Waves size={22} className="text-white" strokeWidth={2.2} />
         </div>
         <div className="leading-tight">
@@ -52,13 +52,14 @@ export default function Sidebar() {
       <nav className="flex-1 overflow-y-auto px-3 pb-4">
         <SectionLabel>Services</SectionLabel>
         <div className="space-y-1">
-          {services.map(({ to, label, icon: Icon, end }) => (
+          {services.map(({ to, label, icon: Icon, end }, i) => (
             <NavLink
               key={to}
               to={to}
               end={end}
+              style={{ animationDelay: `${i * 70}ms` }}
               className={({ isActive }) =>
-                `nav-item ${isActive ? 'nav-item-active' : ''}`
+                `nav-item animate-fade-in-up ${isActive ? 'nav-item-active' : ''}`
               }
             >
               <Icon size={18} strokeWidth={1.8} />
@@ -76,16 +77,16 @@ export default function Sidebar() {
 
       <div className="border-t border-ink-700 px-4 py-4">
         <div className="mb-4 flex items-center justify-around text-zinc-500">
-          <button type="button" className="rounded-md p-2 hover:bg-ink-800 hover:text-zinc-300">
+          <button type="button" className="rounded-md p-2 transition-all duration-200 hover:scale-110 hover:bg-ink-800 hover:text-zinc-300 active:scale-95">
             <Wifi size={17} />
           </button>
-          <button type="button" className="rounded-md p-2 hover:bg-ink-800 hover:text-zinc-300">
+          <button type="button" className="rounded-md p-2 transition-all duration-200 hover:scale-110 hover:bg-ink-800 hover:text-zinc-300 active:scale-95">
             <Bell size={17} />
           </button>
-          <button type="button" className="rounded-md p-2 hover:bg-ink-800 hover:text-zinc-300">
+          <button type="button" className="rounded-md p-2 transition-all duration-200 hover:scale-110 hover:bg-ink-800 hover:text-zinc-300 active:scale-95">
             <Globe size={17} />
           </button>
-          <button type="button" className="rounded-md p-2 hover:bg-ink-800 hover:text-zinc-300">
+          <button type="button" className="rounded-md p-2 transition-all duration-200 hover:scale-110 hover:bg-ink-800 hover:text-zinc-300 active:scale-95">
             <Moon size={17} />
           </button>
         </div>

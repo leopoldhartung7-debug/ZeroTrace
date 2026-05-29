@@ -10,8 +10,8 @@ import { PageHeader, Tabs } from '../components/ui.jsx'
 
 function Dropzone({ hint }) {
   return (
-    <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-ink-600 bg-ink-950 px-6 py-14 text-center transition-colors hover:border-accent/50">
-      <div className="grid h-14 w-14 place-items-center rounded-full border border-ink-700 bg-ink-850 text-accent">
+    <div className="group flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-ink-600 bg-ink-950 px-6 py-14 text-center transition-all duration-300 hover:border-accent/50 hover:bg-ink-900">
+      <div className="grid h-14 w-14 place-items-center rounded-full border border-ink-700 bg-ink-850 text-accent transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:scale-110">
         <UploadCloud size={26} strokeWidth={1.8} />
       </div>
       <p className="mt-4 text-sm font-medium text-zinc-200">
@@ -78,7 +78,7 @@ function ClientNameInput() {
 
 function StringExtractor() {
   return (
-    <div className="card space-y-6 p-6">
+    <div className="card animate-fade-in-up space-y-6 p-6">
       <div>
         <h3 className="text-sm font-semibold text-white">String Extractor</h3>
         <p className="mt-1 text-xs text-zinc-500">
@@ -88,7 +88,7 @@ function StringExtractor() {
       <Dropzone hint="Supported: .exe, .jar, .dll, .sys" />
       <button
         type="button"
-        className="w-full rounded-lg bg-accent py-2.5 text-sm font-semibold text-white shadow-glow transition-colors hover:bg-blue-500"
+        className="w-full rounded-lg bg-accent py-2.5 text-sm font-semibold text-white shadow-glow transition-all duration-200 hover:-translate-y-0.5 hover:bg-blue-500 active:translate-y-0"
       >
         Analyze File
       </button>
@@ -99,7 +99,7 @@ function StringExtractor() {
 function PresenceDetection() {
   const [subTab, setSubTab] = useState('Upload')
   return (
-    <div className="space-y-6">
+    <div className="animate-fade-in space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <WorkingModeSelect />
         <StatusBox />
@@ -117,7 +117,7 @@ function PresenceDetection() {
             <Dropzone hint="Supported: .exe, .jar, .dll, .sys" />
             <button
               type="button"
-              className="w-full rounded-lg bg-accent py-2.5 text-sm font-semibold text-white shadow-glow transition-colors hover:bg-blue-500"
+              className="w-full rounded-lg bg-accent py-2.5 text-sm font-semibold text-white shadow-glow transition-all duration-200 hover:-translate-y-0.5 hover:bg-blue-500 active:translate-y-0"
             >
               Upload Detection File
             </button>
@@ -192,7 +192,7 @@ function RuleEditor() {
 function SuspiciousDetection() {
   const [subTab, setSubTab] = useState('YARA Rules')
   return (
-    <div className="space-y-6">
+    <div className="animate-fade-in space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <WorkingModeSelect />
         <StatusBox />
@@ -211,7 +211,7 @@ function SuspiciousDetection() {
             <RuleEditor />
             <button
               type="button"
-              className="w-full rounded-lg bg-accent py-2.5 text-sm font-semibold text-white shadow-glow transition-colors hover:bg-blue-500"
+              className="w-full rounded-lg bg-accent py-2.5 text-sm font-semibold text-white shadow-glow transition-all duration-200 hover:-translate-y-0.5 hover:bg-blue-500 active:translate-y-0"
             >
               Save Rule
             </button>
@@ -223,7 +223,7 @@ function SuspiciousDetection() {
             <Dropzone hint="Supported: .exe, .jar, .dll, .sys" />
             <button
               type="button"
-              className="w-full rounded-lg bg-accent py-2.5 text-sm font-semibold text-white shadow-glow transition-colors hover:bg-blue-500"
+              className="w-full rounded-lg bg-accent py-2.5 text-sm font-semibold text-white shadow-glow transition-all duration-200 hover:-translate-y-0.5 hover:bg-blue-500 active:translate-y-0"
             >
               Upload Suspicious File
             </button>
@@ -231,8 +231,8 @@ function SuspiciousDetection() {
         )}
 
         {subTab === 'Scan' && (
-          <div className="flex flex-col items-center justify-center rounded-xl border border-ink-700 bg-ink-950 px-6 py-14 text-center">
-            <div className="grid h-14 w-14 place-items-center rounded-full border border-ink-700 bg-ink-850 text-accent">
+          <div className="group flex flex-col items-center justify-center rounded-xl border border-ink-700 bg-ink-950 px-6 py-14 text-center">
+            <div className="grid h-14 w-14 place-items-center rounded-full border border-ink-700 bg-ink-850 text-accent transition-transform duration-300 group-hover:scale-110">
               <ScanSearch size={26} strokeWidth={1.8} />
             </div>
             <p className="mt-4 text-sm font-medium text-zinc-200">
@@ -243,7 +243,7 @@ function SuspiciousDetection() {
             </p>
             <button
               type="button"
-              className="mt-5 rounded-lg bg-accent px-6 py-2 text-sm font-semibold text-white shadow-glow transition-colors hover:bg-blue-500"
+              className="mt-5 rounded-lg bg-accent px-6 py-2 text-sm font-semibold text-white shadow-glow transition-all duration-200 hover:-translate-y-0.5 hover:bg-blue-500 active:translate-y-0"
             >
               Start Scan
             </button>

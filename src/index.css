@@ -43,11 +43,34 @@
     @apply rounded-xl border border-ink-700 bg-ink-900;
   }
 
+  /* Interactive cards lift and glow softly on hover */
+  .card-hover {
+    @apply transition-all duration-300 ease-out hover:-translate-y-0.5 hover:border-ink-600 hover:shadow-glow;
+  }
+
   .nav-item {
-    @apply flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-zinc-400 transition-colors hover:bg-ink-800 hover:text-zinc-200;
+    @apply relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-zinc-400 transition-all duration-200 hover:translate-x-0.5 hover:bg-ink-800 hover:text-zinc-200;
   }
 
   .nav-item-active {
     @apply bg-accent-soft text-accent shadow-glow hover:bg-accent-soft hover:text-accent;
+  }
+
+  /* Animated accent bar on the active nav item */
+  .nav-item-active::before {
+    content: '';
+    @apply absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-accent;
+    animation: fade-in 0.3s ease-out both;
+  }
+}
+
+/* Respect users who prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
   }
 }

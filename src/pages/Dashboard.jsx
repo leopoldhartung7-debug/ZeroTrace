@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   Pin,
   ScanLine,
@@ -40,8 +40,15 @@ const tooltipStyle = {
 }
 
 function DetectionRates() {
+  // Grow the bars from zero on mount for a smooth reveal
+  const [shown, setShown] = useState(false)
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setShown(true))
+    return () => cancelAnimationFrame(id)
+  }, [])
+
   return (
-    <div className="card p-6">
+    <div className="card animate-fade-in-up p-6">
       <h3 className="text-sm font-semibold text-white">Detection Rates</h3>
       <p className="mt-1 text-xs text-zinc-500">
         Distribution across all completed scans
@@ -55,8 +62,11 @@ function DetectionRates() {
             </div>
             <div className="h-2 overflow-hidden rounded-full bg-ink-700">
               <div
-                className="h-full rounded-full"
-                style={{ width: `${rate.value}%`, backgroundColor: rate.color }}
+                className="h-full rounded-full transition-[width] duration-700 ease-out"
+                style={{
+                  width: shown ? `${rate.value}%` : '0%',
+                  backgroundColor: rate.color,
+                }}
               />
             </div>
           </div>
@@ -69,7 +79,7 @@ function DetectionRates() {
 function ResultsDonut() {
   const total = resultsDistribution.reduce((sum, d) => sum + d.value, 0)
   return (
-    <div className="card p-6">
+    <div className="card animate-fade-in-up p-6" style={{ animationDelay: '80ms' }}>
       <h3 className="text-sm font-semibold text-white">Results Distribution</h3>
       <p className="mt-1 text-xs text-zinc-500">Clean vs. flagged outcomes</p>
       <div className="relative mt-2 h-[200px]">
@@ -118,7 +128,7 @@ function ResultsDonut() {
 
 function TrendsChart() {
   return (
-    <div className="card p-6">
+    <div className="card animate-fade-in-up p-6">
       <h3 className="text-sm font-semibold text-white">Scan Activity</h3>
       <p className="mt-1 text-xs text-zinc-500">Last 7 days</p>
       <div className="mt-6 h-[260px]">
@@ -161,7 +171,7 @@ function TrendsChart() {
 
 function ByGameChart() {
   return (
-    <div className="card p-6">
+    <div className="card animate-fade-in-up p-6">
       <h3 className="text-sm font-semibold text-white">Scans by Game</h3>
       <p className="mt-1 text-xs text-zinc-500">
         Scans and detections per title
@@ -225,14 +235,19 @@ export default function Dashboard() {
       </div>
 
       <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {dashboardStats.map((stat) => (
-          <StatCard
+        {dashboardStats.map((stat, i) => (
+          <div
             key={stat.key}
-            icon={iconMap[stat.icon]}
-            label={stat.label}
-            value={stat.value}
-            delta={stat.delta}
-          />
+            className="animate-fade-in-up"
+            style={{ animationDelay: `${i * 70}ms` }}
+          >
+            <StatCard
+              icon={iconMap[stat.icon]}
+              label={stat.label}
+              value={stat.value}
+              delta={stat.delta}
+            />
+          </div>
         ))}
       </div>
 
