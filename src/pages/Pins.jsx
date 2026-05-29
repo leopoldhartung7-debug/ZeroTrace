@@ -448,10 +448,14 @@ export default function Pins() {
                   </td>
                 </tr>
               )}
-              {pageRows.map((r) => {
+              {pageRows.map((r, i) => {
                 const scanned = r.used || r.status === 'Finished' || !!r.result
                 return (
-                <tr key={r.id} className="hoverable bd border-b align-middle text-sm">
+                <tr
+                  key={r.id}
+                  style={{ animationDelay: `${Math.min(i, 12) * 45}ms` }}
+                  className="zt-fade-up hoverable bd border-b align-middle text-sm"
+                >
                   <td className="px-2 py-4">
                     <input
                       type="checkbox"

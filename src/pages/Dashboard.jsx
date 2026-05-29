@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import {
   Activity, Pin, ScanLine, Eye, ShieldAlert, Users, Globe2,
   Megaphone, Info, CheckCircle2, AlertTriangle, XCircle, Bell, X,
@@ -9,6 +9,35 @@ import {
 } from 'recharts'
 import Tabs from '../components/Tabs.jsx'
 import { useStats, usePlatformStats, useT, useStore } from '../store.jsx'
+
+const prefersReducedMotion = () =>
+  typeof window !== 'undefined' &&
+  window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+
+// Animate a number from 0 up to its target on mount (eased) — touch-visible.
+function CountUp({ value, duration = 950 }) {
+  const [display, setDisplay] = useState(
+    typeof value === 'number' && !prefersReducedMotion() ? 0 : value,
+  )
+  const raf = useRef(0)
+  useEffect(() => {
+    if (typeof value !== 'number' || !isFinite(value) || prefersReducedMotion()) {
+      setDisplay(value)
+      return
+    }
+    let start
+    const tick = (ts) => {
+      if (start === undefined) start = ts
+      const p = Math.min((ts - start) / duration, 1)
+      const eased = 1 - Math.pow(1 - p, 3)
+      setDisplay(Math.round(value * eased))
+      if (p < 1) raf.current = requestAnimationFrame(tick)
+    }
+    raf.current = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf.current)
+  }, [value, duration])
+  return <>{typeof display === 'number' ? display.toLocaleString() : display}</>
+}
 
 const TONE_STYLES = {
   info: { box: 'border-sky-500/40 bg-sky-500/10', icon: 'text-sky-400', Icon: Info },
@@ -92,11 +121,14 @@ const accentMap = {
   blue: 'text-sky-500',
 }
 
-function StatCard({ icon: Icon, label, value, accent = 'neutral' }) {
+function StatCard({ icon: Icon, label, value, accent = 'neutral', index = 0 }) {
   return (
-    <div className="panel overflow-hidden rounded-xl border p-3 sm:p-4 md:p-5">
+    <div
+      className="panel zt-rise zt-lift zt-press group overflow-hidden rounded-xl border p-3 sm:p-4 md:p-5"
+      style={{ animationDelay: `${index * 90}ms` }}
+    >
       <div className="flex items-start gap-2 sm:gap-3">
-        <div className="tile flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border sm:h-9 sm:w-9 md:h-10 md:w-10">
+        <div className="tile flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border transition-transform duration-300 group-hover:scale-110 sm:h-9 sm:w-9 md:h-10 md:w-10">
           <Icon size={16} className={accentMap[accent]} />
         </div>
         <div className="min-w-0 flex-1">
@@ -115,7 +147,7 @@ function StatCard({ icon: Icon, label, value, accent = 'neutral' }) {
             className="txt mt-1 text-lg font-bold leading-tight sm:text-xl md:text-2xl"
             style={{ overflowWrap: 'anywhere' }}
           >
-            {value}
+            {typeof value === 'number' ? <CountUp value={value} /> : value}
           </p>
         </div>
       </div>
@@ -124,6 +156,12 @@ function StatCard({ icon: Icon, label, value, accent = 'neutral' }) {
 }
 
 function RateBar({ label, value, color }) {
+  // Grow the bar from zero on mount for a clearly visible reveal.
+  const [shown, setShown] = useState(false)
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setShown(true))
+    return () => cancelAnimationFrame(id)
+  }, [])
   return (
     <div className="mb-6">
       <div className="mb-2 flex items-center justify-between text-sm">
@@ -132,8 +170,8 @@ function RateBar({ label, value, color }) {
       </div>
       <div className="tile h-2 w-full overflow-hidden rounded-full border-0">
         <div
-          className="h-full rounded-full transition-all duration-500"
-          style={{ width: `${value}%`, background: color }}
+          className="h-full rounded-full transition-[width] duration-700 ease-out"
+          style={{ width: shown ? `${value}%` : '0%', background: color }}
         />
       </div>
     </div>
@@ -171,16 +209,16 @@ export default function Dashboard() {
   const stats = platform ? platformStats : myStats
   const cards = platform
     ? [
-        { icon: Users, label: 'Active Users', value: fmtNum(platformStats.activeUsers) },
-        { icon: ScanLine, label: 'Scans Today', value: fmtNum(platformStats.scansToday) },
-        { icon: Eye, label: 'Detections', value: fmtNum(platformStats.detections), accent: 'red' },
-        { icon: Globe2, label: 'Games Covered', value: fmtNum(platformStats.gamesCovered), accent: 'blue' },
+        { icon: Users, label: 'Active Users', value: platformStats.activeUsers },
+        { icon: ScanLine, label: 'Scans Today', value: platformStats.scansToday },
+        { icon: Eye, label: 'Detections', value: platformStats.detections, accent: 'red' },
+        { icon: Globe2, label: 'Games Covered', value: platformStats.gamesCovered, accent: 'blue' },
       ]
     : [
-        { icon: Pin, label: 'Total Pins', value: fmtNum(myStats.totalPins) },
-        { icon: ScanLine, label: 'Total Scans', value: fmtNum(myStats.totalScans) },
-        { icon: Eye, label: 'Detections', value: fmtNum(myStats.detections), accent: 'red' },
-        { icon: ShieldAlert, label: 'Unique Cheats', value: fmtNum(myStats.uniqueCheats), accent: 'yellow' },
+        { icon: Pin, label: 'Total Pins', value: myStats.totalPins },
+        { icon: ScanLine, label: 'Total Scans', value: myStats.totalScans },
+        { icon: Eye, label: 'Detections', value: myStats.detections, accent: 'red' },
+        { icon: ShieldAlert, label: 'Unique Cheats', value: myStats.uniqueCheats, accent: 'yellow' },
       ]
 
   const sessionUser = state.session?.userId
@@ -215,8 +253,8 @@ export default function Dashboard() {
         </div>
 
         <div className="mt-6 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-          {cards.map((c) => (
-            <StatCard key={c.label} {...c} />
+          {cards.map((c, i) => (
+            <StatCard key={c.label} index={i} {...c} />
           ))}
         </div>
 

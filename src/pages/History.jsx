@@ -101,10 +101,14 @@ export default function History() {
           <EmptyState icon={HistoryIcon} title="No activity yet" hint="Actions you take across the app will appear here." />
         ) : (
           <ol className="relative ml-3 border-l border-line">
-            {rows.map((e) => {
+            {rows.map((e, i) => {
               const Icon = ICONS[e.kind] || ICONS.default
               return (
-                <li key={e.id} className="mb-6 ml-6">
+                <li
+                  key={e.id}
+                  style={{ animationDelay: `${Math.min(i, 14) * 40}ms` }}
+                  className="zt-fade-up mb-6 ml-6"
+                >
                   <span className="panel absolute -left-3 flex h-6 w-6 items-center justify-center rounded-full border">
                     <Icon size={12} className="muted" />
                   </span>
