@@ -64,7 +64,7 @@
                     <TextBlock Text="ENDBENUTZER-LIZENZ- UND DATENSCHUTZVEREINBARUNG"
                                FontWeight="SemiBold" Foreground="{StaticResource TextBrush}" Margin="0,0,0,8" />
                     <TextBlock TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}" LineHeight="20"
-                               Text="ZeroTrace ist ein lokales Analysewerkzeug, das diesen PC auf Hinweise fuer Cheats und Manipulationen untersucht. Mit „Akzeptieren" stimmst du der nachfolgend beschriebenen Pruefung zu." />
+                               Text="ZeroTrace ist ein lokales Analysewerkzeug, das diesen PC auf Hinweise fuer Cheats und Manipulationen untersucht. Mit „Akzeptieren“ stimmst du der nachfolgend beschriebenen Pruefung zu." />
 
                     <TextBlock Text="1. Was geprueft wird" Foreground="{StaticResource AccentBrush}"
                                FontWeight="SemiBold" Margin="0,14,0,3" />
@@ -74,7 +74,7 @@
                     <TextBlock Text="2. Was mit den Ergebnissen geschieht" Foreground="{StaticResource AccentBrush}"
                                FontWeight="SemiBold" Margin="0,14,0,3" />
                     <TextBlock TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}" LineHeight="20"
-                               Text="Die Ergebnisse werden dir nach dem Scan in der Anwendung (Seite „Funde") angezeigt und zusaetzlich an die hinterlegte Adresse des Veranstalters/Administrators gesendet, sofern dort eine Adresse eingetragen ist. Das Ergebnis wird dem eingegebenen PIN zugeordnet. Nach dem Versand erscheint der Hinweis „Ergebnisse gesendet", damit du weisst, dass die Uebertragung erfolgt ist." />
+                               Text="Die Ergebnisse werden dir nach dem Scan in der Anwendung (Seite „Funde“) angezeigt und zusaetzlich an die hinterlegte Adresse des Veranstalters/Administrators gesendet, sofern dort eine Adresse eingetragen ist. Das Ergebnis wird dem eingegebenen PIN zugeordnet. Nach dem Versand erscheint der Hinweis „Ergebnisse gesendet“, damit du weisst, dass die Uebertragung erfolgt ist." />
 
                     <TextBlock Text="3. Was ZeroTrace nicht tut" Foreground="{StaticResource AccentBrush}"
                                FontWeight="SemiBold" Margin="0,14,0,3" />
@@ -94,7 +94,7 @@
                     <TextBlock Text="6. Entfernen" Foreground="{StaticResource AccentBrush}"
                                FontWeight="SemiBold" Margin="0,14,0,3" />
                     <TextBlock TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}" LineHeight="20"
-                               Text="Ueber die Schaltflaeche „ZeroTrace entfernen" kannst du das Programm jederzeit selbst von diesem PC loeschen: Der Datenordner (Datenbank und Berichte) sowie die Programmdatei werden vollstaendig entfernt. Das Entfernen geschieht nur, wenn du es selbst ausloest - es passiert nicht automatisch." />
+                               Text="Ueber die Schaltflaeche „ZeroTrace entfernen“ kannst du das Programm jederzeit selbst von diesem PC loeschen: Der Datenordner (Datenbank und Berichte) sowie die Programmdatei werden vollstaendig entfernt. Das Entfernen geschieht nur, wenn du es selbst ausloest - es passiert nicht automatisch." />
                 </StackPanel>
             </ScrollViewer>
         </Border>
