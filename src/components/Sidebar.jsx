@@ -52,8 +52,6 @@ export default function Sidebar() {
         { to: '/dashboard', label: t('nav.dashboard'), icon: LayoutGrid },
         { to: '/pins', label: t('nav.pins'), icon: Pin },
         { to: '/strings', label: t('nav.strings'), icon: FileText },
-        // Cheat database is admin-only.
-        ...(isAdmin ? [{ to: '/database', label: t('nav.database'), icon: Database }] : []),
         { to: '/tools', label: t('nav.tools'), icon: Wrench },
         { to: '/scoreboard', label: t('nav.scoreboard'), icon: Trophy },
         { to: '/compare', label: t('nav.compare'), icon: GitCompareArrows },
@@ -73,6 +71,7 @@ export default function Sidebar() {
           {
             label: t('cat.admin'),
             items: [
+              { to: '/database', label: t('nav.database'), icon: Database },
               { to: '/keys', label: t('nav.keys'), icon: KeyRound },
               { to: '/admin/analytics', label: t('nav.analytics'), icon: BarChart3 },
               { to: '/admin/blacklists', label: t('nav.blacklists'), icon: Ban },
