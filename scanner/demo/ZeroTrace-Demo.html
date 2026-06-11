@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ZeroTrace</title>
+<style>
+  *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:100%;min-height:100%;background:#1a1d22;font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif}
+  body{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:18px}
+
+  .panel{width:100%;max-width:400px;background:#21252e;border-radius:12px;overflow:hidden;position:relative;
+    border:1px solid rgba(78,188,210,.15);box-shadow:0 24px 60px rgba(0,0,0,.55);transition:border-color .5s}
+  .panel.done{border-color:rgba(34,204,102,.25)}
+  .top-line{height:2px;background:linear-gradient(90deg,transparent,#4ebcd2,transparent);transition:background .5s}
+  .panel.done .top-line{background:linear-gradient(90deg,transparent,#22cc66,transparent)}
+  #bgCanvas{position:absolute;inset:0;pointer-events:none;z-index:0}
+  .content{position:relative;z-index:1;padding:12px 18px 12px}
+
+  .logo-row{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:4px}
+  .logo-icon{width:28px;height:28px;flex-shrink:0}
+  .logo-name{font-size:16px;font-weight:700;line-height:1}
+  .logo-name .a{color:#4ebcd2}.logo-name .b{color:#8a9aaa}
+  .sub{font-size:12px;color:#5a6772;text-align:center}
+  .version{font-size:11px;color:#3a444e;text-align:center;margin-top:3px}
+
+  .view{display:none}.view.show{display:block;animation:fadeUp .35s ease both}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+  /* consent (license-agreement style) */
+  .consent{margin-top:10px}
+  .consent .ctitle{font-size:14px;font-weight:700;color:#e6edf2;text-align:center}
+  .consent .csub{font-size:11px;color:#5a6772;text-align:center;margin:2px 0 8px}
+  .terms{background:#191d24;border:1px solid #2a3038;border-radius:7px;padding:11px 13px;
+    height:60px;overflow-y:auto;font-size:11px;line-height:1.5;color:#9aaab4}
+  .terms h4{font-size:12px;color:#c8d4dc;letter-spacing:.03em;margin:0 0 8px}
+  .terms b{color:#c8d4dc}
+  .terms p{margin:0 0 9px}
+  .terms .sec{color:#4ebcd2;font-weight:600;margin:12px 0 4px}
+  .terms .ok{color:#22cc66}
+  .terms::-webkit-scrollbar{width:9px}
+  .terms::-webkit-scrollbar-thumb{background:#33404a;border-radius:5px}
+  .decline-note{font-size:11px;color:#f59e0b;text-align:center;margin-top:8px;min-height:14px}
+  .cbtns{display:flex;gap:10px;justify-content:center;margin-top:10px}
+  .cbtn{display:flex;align-items:center;gap:7px;font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;font-size:12.5px;
+    font-weight:600;padding:9px 22px;border:none;border-radius:6px;cursor:pointer;transition:.15s}
+  .cbtn .g{font-size:13px}
+  .accept{background:#4ebcd2;color:#0e1418}.accept:hover{background:#5ecce2}
+  .decline{background:#2a313a;color:#c2ccd4}.decline:hover{background:#343c46}
+
+  /* game select (before PIN) — name-only tiles, side by side */
+  .game{margin-top:10px}
+  .game .gtitle{font-size:13px;font-weight:600;color:#8a9aaa;text-align:center;margin-bottom:10px;letter-spacing:.02em}
+  .game-grid{display:flex;flex-direction:row;gap:10px;justify-content:center;align-items:stretch}
+  .game-btn{display:flex;align-items:center;justify-content:center;
+    width:110px;height:86px;background:rgba(25,29,36,.38);border:1px solid rgba(130,150,160,.18);border-radius:14px;cursor:pointer;transition:.16s;padding:0;backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px)}
+  .game-btn:hover{border-color:#4ebcd2;background:rgba(40,52,64,.55);transform:translateY(-2px);box-shadow:0 8px 22px rgba(0,0,0,.4)}
+  .game-btn:active{transform:translateY(0)}
+  .game-btn .glabel{font-size:15px;font-weight:700;color:#c8d4dc;letter-spacing:.02em}
+
+  /* scan (minimal) */
+  .scan-section{margin-top:16px}
+  .bar-meta{display:flex;align-items:baseline;gap:8px;margin-bottom:7px;min-height:18px}
+  .bar-pct{font-size:13px;font-weight:700;color:#c8d4dc;min-width:38px;font-variant-numeric:tabular-nums}
+  .bar-lbl{font-size:11px;color:#5a6772;text-transform:uppercase;letter-spacing:.05em}
+  .bar-track{width:100%;height:16px;background:#191d24;border-radius:3px;overflow:hidden}
+  .bar-fill{height:100%;background:#dde8ee;border-radius:3px;width:0%;transition:width .2s}
+  .nowscan{margin-top:18px;font-size:11px;color:#5a6772;text-transform:uppercase;letter-spacing:.06em}
+  .nowpath{margin-top:6px;font-size:15px;font-weight:600;color:#c8d4dc;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-height:20px}
+  .sentbadge{display:flex;align-items:center;gap:7px;justify-content:center;background:rgba(34,204,102,.12);
+    border:1px solid rgba(34,204,102,.40);color:#22cc66;font-size:12.5px;font-weight:600;
+    padding:9px;border-radius:7px;margin-bottom:12px}
+
+  /* done */
+  .done-section{flex-direction:column;align-items:center;gap:6px;margin-top:14px}
+  .done-section.show{display:flex}
+  .check-wrap{width:60px;height:60px}.done-label{font-size:11px;font-weight:600;color:#5a6772;letter-spacing:.08em;text-transform:uppercase;margin-bottom:7px}
+  .done-sent{display:none}
+  .pinline{text-align:center;font-size:10.5px;color:#8a9aaa;margin:6px 0 9px}
+  .pinline b{color:#c8d2da;letter-spacing:.06em}
+  .yesno{text-align:center;margin:2px 0 4px}
+  .yesno .badge{display:inline-flex;align-items:center;gap:7px;font-weight:800;font-size:17px;letter-spacing:.05em;padding:7px 18px;border-radius:999px;border:1px solid}
+  .yesno .vsub{display:block;font-size:11px;color:#8a9aaa;margin-top:5px}
+  .yesno.bad .badge{color:#f97316;background:rgba(249,115,22,.13);border-color:rgba(249,115,22,.5)}
+  .yesno.ok .badge{color:#22cc66;background:rgba(34,204,102,.13);border-color:rgba(34,204,102,.5)}
+  .lvlbar{display:flex;align-items:center;gap:7px;justify-content:center;font-size:10px;color:#5a6772;margin-bottom:9px;flex-wrap:wrap}
+  .lvlbar select{background:#191d24;border:1px solid #2a3038;color:#c8d2da;border-radius:5px;font-size:11px;padding:4px 6px;font-family:inherit}
+  .pin-input{width:170px;text-align:center;letter-spacing:.35em;font-size:18px;font-weight:700;
+    background:#191d24;border:1px solid #2a3038;color:#c8d2da;border-radius:8px;padding:11px;font-family:inherit;margin:14px auto 0;display:block}
+  .pin-input:focus{outline:none;border-color:#22d3ee}
+  .pin-err{color:#ef5350;font-size:11px;text-align:center;margin-top:8px;min-height:14px}
+  .pin-note{color:#5a6772;font-size:10px;text-align:center;margin-top:8px;line-height:1.4}
+  .pin-embed{display:block;margin:12px auto 0;background:transparent;color:#6a7a84;border:1px solid #2a3038;
+    font-family:inherit;font-size:11px;font-weight:600;padding:6px 12px;border-radius:6px;cursor:pointer}
+  .pin-embed:hover{color:#c8d2da}
+  .pin-frame{border:1px solid #2a3038;border-radius:11px;padding:10px 12px;margin:2px auto 0;
+    max-width:240px;background:rgba(255,255,255,.012)}
+  .pin-cap{text-align:center;font-size:10.5px;color:#8a9aaa;margin-bottom:9px}
+  .pin-row{display:flex;gap:6px;justify-content:center}
+  .pin-cell{width:26px;height:31px;border:1px solid #3a4350;border-radius:5px;background:transparent;
+    color:#c8d2da;text-align:center;font-size:15px;font-weight:700;font-family:inherit;caret-color:#22d3ee;transition:border-color .15s}
+  .pin-cell:focus{outline:none;border-color:#22d3ee}
+  .pin-cell.filled{border-color:#5a6675}
+  .cbtn.accept:disabled{opacity:.4;cursor:default}
+  .pin-foot{display:flex;justify-content:space-between;align-items:center;margin-top:16px;font-size:10px;color:#5a6772}
+  @keyframes popIn{0%{transform:scale(.7);opacity:0}70%{transform:scale(1.05)}100%{transform:scale(1);opacity:1}}
+  .check-wrap.pop{animation:popIn .5s cubic-bezier(.2,.9,.25,1) both}
+  .check-poly{stroke-dasharray:200;stroke-dashoffset:200}
+  .check-poly.draw{animation:drawCheck .6s cubic-bezier(.2,.9,.25,1) .2s forwards}
+  @keyframes drawCheck{to{stroke-dashoffset:0}}
+
+  /* result (visible to the user) */
+  .result{margin-top:12px}
+  .counts{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  .cbox{background:#191d24;border-radius:7px;padding:6px 4px;text-align:center}
+  .cbox .n{font-size:19px;font-weight:700}.cbox .l{font-size:9.5px;color:#5a6772;margin-top:3px;text-transform:uppercase}
+  .crit{color:#ef4444}.high{color:#f97316}.med{color:#f59e0b}.low{color:#3b82f6}
+  .flist{margin-top:9px;display:flex;flex-direction:column;gap:5px;max-height:140px;overflow:auto}
+  .fitem{display:flex;gap:10px;align-items:flex-start;background:#191d24;border-radius:7px;padding:9px 11px}
+  .pill{flex-shrink:0;border-radius:999px;padding:2px 8px;font-size:10px;font-weight:700;color:#0b0e12;margin-top:1px}
+  .p-crit{background:#ef4444}.p-high{background:#f97316}.p-med{background:#f59e0b}.p-low{background:#3b82f6}
+  .fitem .t{font-size:12.5px;font-weight:600;color:#c8d4dc;line-height:1.3}
+  .fitem .loc{font-size:10.5px;color:#5a6772;font-family:ui-monospace,Consolas,monospace;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+  .done-count{text-align:center;font-size:11px;color:#8a9aaa;margin-top:9px}
+  .btn-keep{display:block;margin:8px auto 0;background:transparent;color:#6a7a84;border:1px solid #2a3038;
+    font-family:inherit;font-size:12px;font-weight:600;padding:7px 16px;border-radius:6px;cursor:pointer}
+  .btn-keep:hover{color:#c8d2da}
+
+  /* send */
+  .send h3{font-size:13px;color:#c8d4dc;margin-bottom:4px;margin-top:18px}
+  .warn{font-size:11px;line-height:1.5;color:#8a9aaa;background:#191d24;border-left:2px solid #4ebcd2;padding:9px 11px;border-radius:4px;margin:8px 0}
+  label.f{display:block;font-size:11px;color:#5a6772;margin:10px 0 4px}
+  .send input,.send textarea{width:100%;background:#191d24;border:1px solid #2a3038;color:#c8d4dc;border-radius:6px;padding:9px 10px;font-family:ui-monospace,Consolas,monospace;font-size:11.5px}
+  .send input:focus,.send textarea:focus{outline:none;border-color:#4ebcd2}
+  .send textarea{height:120px;resize:vertical;line-height:1.45}
+  .status{font-size:11.5px;margin-top:9px;min-height:16px}
+  .status.ok{color:#22cc66}.status.err{color:#ef4444}.status.pend{color:#4ebcd2}
+
+  .btns{display:flex;gap:8px;justify-content:center;margin-top:16px;flex-wrap:wrap}
+  .btn{font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;font-size:12.5px;font-weight:600;padding:10px 22px;border:none;outline:none;border-radius:6px;cursor:pointer;transition:.15s}
+  .btn-primary{background:#4ebcd2;color:#111418}.btn-primary:hover{background:#5ecce2}
+  .btn-primary:disabled{background:#2a3038;color:#3a4450;cursor:default}
+  .btn-ghost{background:transparent;color:#6a7a84;border:1px solid #2a3038}.btn-ghost:hover{color:#9aaab4;border-color:#3a444e}
+  .btn-send{background:#22cc66;color:#0b0e12}.btn-send:hover{background:#33dd77}.btn-send:disabled{background:#2a3038;color:#3a4450;cursor:default}
+</style>
+</head>
+<body>
+
+<div class="panel" id="panel">
+  <div class="top-line"></div>
+  <canvas id="bgCanvas"></canvas>
+  <div class="content">
+    <div class="logo-row">
+      <svg class="logo-icon" viewBox="0 0 52 52" fill="none">
+        <circle cx="26" cy="26" r="22" stroke="#4ebcd2" stroke-width="2.5"/>
+        <circle cx="26" cy="26" r="5.5" stroke="#4ebcd2" stroke-width="2"/>
+        <circle cx="26" cy="26" r="2" fill="#4ebcd2"/>
+        <line x1="26" y1="3" x2="26" y2="13" stroke="#4ebcd2" stroke-width="2.5" stroke-linecap="round"/>
+        <line x1="26" y1="39" x2="26" y2="49" stroke="#4ebcd2" stroke-width="2.5" stroke-linecap="round"/>
+        <line x1="3" y1="26" x2="13" y2="26" stroke="#4ebcd2" stroke-width="2.5" stroke-linecap="round"/>
+        <line x1="39" y1="26" x2="49" y2="26" stroke="#4ebcd2" stroke-width="2.5" stroke-linecap="round"/>
+      </svg>
+      <div class="logo-name"><span class="a">Zero</span><span class="b">Trace</span></div>
+    </div>
+    <div class="sub" id="sub"></div>
+    <div class="version" id="ver">v1.3</div>
+
+    <!-- 0) GAME SELECT (before the PIN) -->
+    <div class="view game show" id="gameView">
+      <div class="gtitle">Spiel auswählen</div>
+      <div class="game-grid">
+        <button class="game-btn" aria-label="FiveM" title="FiveM" onclick="selectGame('FiveM')">
+          <span class="glabel">FiveM</span>
+        </button>
+        <button class="game-btn" aria-label="alt:V" title="alt:V" onclick="selectGame('alt:V')">
+          <span class="glabel">alt:V</span>
+        </button>
+        <button class="game-btn" aria-label="RageMP" title="RageMP" onclick="selectGame('RageMP')">
+          <span class="glabel">RageMP</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 1) PIN (required before the scan) -->
+    <div class="view pin" id="pinView">
+      <div class="pin-frame">
+      <div class="pin-cap">Gib deinen 6-stelligen PIN ein</div>
+      <div class="pin-row">
+        <input class="pin-cell" maxlength="1" inputmode="numeric" autocomplete="off" oninput="pinDigit(event,0)" onkeydown="pinKey(event,0)" onfocus="this.select()">
+        <input class="pin-cell" maxlength="1" inputmode="numeric" autocomplete="off" oninput="pinDigit(event,1)" onkeydown="pinKey(event,1)" onfocus="this.select()">
+        <input class="pin-cell" maxlength="1" inputmode="numeric" autocomplete="off" oninput="pinDigit(event,2)" onkeydown="pinKey(event,2)" onfocus="this.select()">
+        <input class="pin-cell" maxlength="1" inputmode="numeric" autocomplete="off" oninput="pinDigit(event,3)" onkeydown="pinKey(event,3)" onfocus="this.select()">
+        <input class="pin-cell" maxlength="1" inputmode="numeric" autocomplete="off" oninput="pinDigit(event,4)" onkeydown="pinKey(event,4)" onfocus="this.select()">
+        <input class="pin-cell" maxlength="1" inputmode="numeric" autocomplete="off" oninput="pinDigit(event,5)" onkeydown="pinKey(event,5)" onfocus="this.select()">
+      </div></div>
+      <div class="pin-err" id="pinErr"></div>
+      <button id="pinNext" class="cbtn accept" style="display:block;margin:6px auto 0" onclick="submitPin()" disabled>Weiter</button>
+      <div class="pin-note">Demo-PIN: <b style="color:#c8d2da;letter-spacing:.08em">123456</b></div>
+    </div>
+
+    <!-- 1) CONSENT -->
+    <div class="view consent" id="consentView">
+      <div class="ctitle">Lizenzvereinbarung &amp; Datenschutz</div>
+      <div class="csub">Bitte lies die Bedingungen, bevor du fortfährst.</div>
+      <div class="terms" id="terms">
+        <h4>ENDBENUTZER-LIZENZ- UND DATENSCHUTZVEREINBARUNG</h4>
+        <p>ZeroTrace ist ein lokales Analysewerkzeug, das diesen PC auf Hinweise für Cheats und Manipulationen untersucht. Mit „Akzeptieren" stimmst du der nachfolgend beschriebenen Prüfung zu.</p>
+        <p class="sec">1. Was geprüft wird</p>
+        <p>Laufende Prozesse samt geladener und injizierter Module, Autostart-Einträge, ausgewählte Registry-Schlüssel, die Verzeichnisse von <b>FiveM, RageMP und alt:V</b>, der Downloads-Ordner sowie Dateien auf festen Laufwerken. Zusätzlich wird der lokale <b>Browser-Verlauf</b> auf Besuche bekannter Cheat-/Reseller-Domains geprüft – dabei wird <span class="ok">ausschließlich eine getroffene Domain erfasst, nicht der übrige Verlauf</span>. Erfasst werden u. a. Dateipfade, Datei-Hashes (SHA-256), Signatur- und Herkunftsstatus (Mark-of-the-Web) sowie Prozess- und Autostart-Informationen.</p>
+        <p class="sec">2. Was mit den Ergebnissen geschieht</p>
+        <p><span class="ok">Die Ergebnisse werden dir nach dem Scan in der Anwendung angezeigt</span> und zusätzlich an die hinterlegte Adresse des Veranstalters/Administrators gesendet. Nach dem Versand erscheint der Hinweis „Ergebnisse gesendet", damit du weißt, dass die Übertragung erfolgt ist.</p>
+        <p class="sec">3. Was ZeroTrace nicht tut</p>
+        <p>Keine Änderungen an Prozessen, Dateien oder der Registry – ZeroTrace liest ausschließlich. Kein automatischer Download von Signaturen aus dem Internet. Es werden <b>keine Discord-Daten oder Tokens</b> ausgelesen.</p>
+        <p class="sec">4. Hinweis</p>
+        <p>Funde sind Indizien, <b>kein Beweis</b> für Cheating. Fehlalarme (False Positives) sind möglich.</p>
+        <p class="sec">5. Zulässiger Einsatz</p>
+        <p>Nur auf eigenen Systemen oder mit ausdrücklicher Zustimmung des Eigentümers verwenden.</p>
+        <p class="sec">6. Entfernen</p>
+        <p>Über die Schaltfläche „ZeroTrace entfernen" kannst du das Programm jederzeit selbst von diesem PC löschen: Der Datenordner (Datenbank und Berichte) sowie die Programmdatei werden vollständig entfernt. Das Entfernen geschieht nur, wenn du es selbst auslöst – es passiert nicht automatisch.</p>
+        <p style="color:#5a6772">Scrolle bis ans Ende, um die vollständigen Bedingungen gelesen zu haben.</p>
+      </div>
+      <div class="decline-note" id="declineNote"></div>
+      <div class="cbtns">
+        <button class="cbtn accept" onclick="startScan()"><span class="g">✔</span> Akzeptieren</button>
+        <button class="cbtn decline" onclick="onDecline()"><span class="g">✖</span> Ablehnen</button>
+      </div>
+    </div>
+
+    <!-- 2) SCAN (minimal: only what is being checked) -->
+    <div class="view scan-section" id="scanView">
+      <div class="bar-meta"><span class="bar-pct" id="pct"></span><span class="bar-lbl">läuft</span></div>
+      <div class="bar-track"><div class="bar-fill" id="barFill"></div></div>
+      <div class="nowscan">Scanne gerade</div>
+      <div class="nowpath" id="nowpath">…</div>
+    </div>
+
+    <!-- 4) RESULT (always shown to the person at the PC) -->
+    <div class="view result" id="resultView">
+      <div class="check-wrap" id="checkWrap" style="margin:0 auto">
+        <svg viewBox="0 0 140 140" fill="none" width="50" height="50">
+          <circle cx="70" cy="70" r="55" stroke="#22cc66" stroke-width="1.5" opacity=".15"/>
+          <polyline class="check-poly" id="checkPoly" points="38,70 58,90 102,48" stroke="#22cc66" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </svg>
+      </div>
+      <div class="done-label" style="text-align:center">Scan abgeschlossen</div>
+      <div class="yesno" id="yesno"></div>
+      <div class="pinline" id="pinline"></div>
+      <div class="lvlbar">
+        <span>Anzeige fuer Nutzer (vom Veranstalter eingestellt):</span>
+        <select id="lvl" onchange="renderResult()">
+          <option value="yesno" selected>Nur Ja/Nein</option>
+          <option value="cat">Kategorien</option>
+          <option value="full">Vollstaendig</option>
+        </select>
+      </div>
+      <div class="counts">
+        <div class="cbox"><div class="n crit" id="r-crit">0</div><div class="l">Critical</div></div>
+        <div class="cbox"><div class="n high" id="r-high">0</div><div class="l">High</div></div>
+        <div class="cbox"><div class="n med" id="r-med">0</div><div class="l">Medium</div></div>
+        <div class="cbox"><div class="n low" id="r-low">0</div><div class="l">Low</div></div>
+      </div>
+      <div class="flist" id="flist"></div>
+      <div class="done-count" id="doneCount">Fenster schliesst in 10 s</div>
+      <button class="btn-keep" id="keepBtn" onclick="keepOpen()">Offen lassen</button>
+
+      <!-- 5) SEND (transparent, manual) -->
+      <div class="send" id="sendBlock" style="display:none">
+        <h3>Ergebnisse senden</h3>
+        <div class="warn">Es wird <b>genau das Folgende</b> an die unten angegebene Adresse gesendet – und nur, wenn du „Jetzt senden" drückst.</div>
+        <label class="f">Ziel-Adresse (Webhook / Website)</label>
+        <input id="url" placeholder="https://deine-domain.example/webhook"/>
+        <label class="f">Diese Daten werden übertragen (Vorschau)</label>
+        <textarea id="payload" readonly></textarea>
+        <div class="status" id="sendStatus"></div>
+        <div class="btns">
+          <button class="btn btn-ghost" onclick="document.getElementById('sendBlock').style.display='none'">Abbrechen</button>
+          <button class="btn btn-send" id="sendBtn" onclick="doSend()">Jetzt senden</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="btns" id="mainBtns">
+  <button class="btn btn-ghost" id="againBtn" style="display:none" onclick="toConsent()">Erneut scannen</button>
+  <button class="btn btn-ghost" id="openSendBtn" style="display:none" onclick="openSend()">Ergebnisse senden…</button>
+  <button class="btn btn-ghost" id="removeBtn" style="display:none" onclick="removeSelf()">ZeroTrace entfernen</button>
+</div>
+
+<script>
+var selectedGame='FiveM';
+
+/* findings common to every platform */
+const GENERIC=[
+ {risk:'Critical',title:'Cheat-Signatur im Datei-Inhalt (umbenannt)',loc:'C:\\Users\\max\\Downloads\\svc_host64.exe · String "redengine" · auch erkannt von: Ausfuehrungsverlauf'},
+ {risk:'High',title:'Test-Signing aktiv (Treiber-Signatur-Bypass)',loc:'Code Integrity · bcdedit testsigning'},
+ {risk:'High',title:'Scanner wird debuggt (Manipulationsversuch)',loc:'ZeroTrace-Prozess · remote debugger'},
+ {risk:'High',title:'Gescanntes Verzeichnis umgeleitet (Junction/Symlink)',loc:'…\\Downloads · Reparse-Punkt'},
+ {risk:'High',title:'Dienst-Install (EVTX 7045)',loc:'System-Log · \\??\\C:\\Temp\\drv64.sys · unsigniert'},
+ {risk:'High',title:'Im Papierkorb (wiederherstellbar): HWID-Spoofer',loc:'$Recycle.Bin · spoofer.exe · gelöscht 02.06.'},
+ {risk:'High',title:'Cheat-Domain im Browser-Verlauf',loc:'redengine.cc · Chrome · nur Domain erfasst'},
+ {risk:'Medium',title:'Ausgeführt laut Amcache',loc:'Amcache · …\\Downloads\\kdmapper.exe · evtl. gelöscht'},
+ {risk:'Medium',title:'Ausgeführt laut ShimCache',loc:'ShimCache · …\\Temp\\manualmap.exe'},
+ {risk:'Medium',title:'Ausgeführt laut PCA',loc:'PCA · …\\Downloads\\dsefix.exe'},
+ {risk:'Medium',title:'Anti-Cheat-/Telemetrie-Domain in hosts geblockt',loc:'hosts · 0.0.0.0 cfx.re'},
+ {risk:'Medium',title:'Unsignierte EXE aus dem Internet',loc:'%Temp%\\loader.exe · Mark-of-the-Web'},
+ {risk:'Medium',title:'Indikator: Injector (Prozessname)',loc:'PID 6677 · injector64.exe'},
+];
+/* findings specific to the chosen platform */
+const PERGAME={
+ 'FiveM':[
+  {risk:'High',title:'Injizierte DLL in FiveM-Prozess',loc:'PID 8124 · FiveM \u2190 d3d11hook.dll (untrusted)'},
+  {risk:'Low',title:'Signierte Dritt-DLL im FiveM-Verzeichnis',loc:'…\\FiveM.app\\plugins\\OpenIV.asi'},
+ ],
+ 'RageMP':[
+  {risk:'High',title:'Inhalts-Signatur "aimbot" (RageMP)',loc:'…\\RAGE Multiplayer\\client_packages\\lua_exec.lua'},
+  {risk:'Low',title:'Signierte Dritt-DLL im RageMP-Verzeichnis',loc:'…\\RAGE Multiplayer\\plugins\\helper.dll'},
+ ],
+ 'alt:V':[
+  {risk:'High',title:'Ungültig signierte DLL (alt:V)',loc:'…\\altv\\resources\\core_x.dll · Signatur ungültig'},
+  {risk:'Low',title:'Signierte Dritt-DLL im alt:V-Verzeichnis',loc:'…\\altv\\modules\\js-module.dll'},
+ ],
+};
+function buildFindings(game){return GENERIC.concat(PERGAME[game]||PERGAME['FiveM']);}
+let findings=buildFindings(selectedGame);
+const PILL={Critical:'p-crit',High:'p-high',Medium:'p-med',Low:'p-low'};
+
+/* what is being checked right now – only this is shown during the scan */
+function buildProbes(game){return[
+ 'Laufende Prozesse','Prozess-Speicher & Strings','Injizierte DLLs','Geladene Module (.dll)',
+ 'Echte Signatur-Prüfung (Authenticode + Katalog)','Autostart-Einträge','Geplante Aufgaben',
+ 'Dienste','Registry-Schlüssel',game,game+'-Plugins / Ressourcen',
+ 'Inhalts-Signaturen (Cheat-Strings)','Downloads-Ordner','Mark-of-the-Web (Herkunft)',
+ 'Browser-Verlauf (Cheat-Domains)','Datei-Hashes (SHA-256)','Bekannte Muster & Indikatoren',
+ 'Kernel-Treiber & Signaturen','Code-Integrität / Test-Signing (Bypass)',
+ 'Prefetch / Amcache / ShimCache','BAM (Hintergrund-Aktivität)','EVTX-Logs (Dienst-Installationen)',
+ 'PCA-Logs (Programmstarts)','hosts-Datei','Papierkorb (gelöschte Cheats)',
+ 'DMA / Hardware (Hinweis)','Scan-Manipulation (Anti-Tamper)',
+ 'Bericht wird erstellt'];}
+let PROBES=buildProbes(selectedGame);
+
+const $=id=>document.getElementById(id);
+const panel=$('panel'),barFill=$('barFill'),pct=$('pct'),nowpath=$('nowpath'),
+  gameView=$('gameView'),pinView=$('pinView'),consentView=$('consentView'),scanView=$('scanView'),resultView=$('resultView'),
+  sub=$('sub'),ver=$('ver'),againBtn=$('againBtn'),openSendBtn=$('openSendBtn'),
+  checkPoly=$('checkPoly'),checkWrap=$('checkWrap'),canvas=$('bgCanvas'),cx=canvas.getContext('2d');
+
+function showOnly(el){[gameView,pinView,consentView,scanView,resultView].forEach(v=>{v.classList.remove('show');});
+  if(el)el.classList.add('show');}
+
+/* game selection -> PIN */
+function selectGame(game){
+  selectedGame=game;
+  findings=buildFindings(game);
+  PROBES=buildProbes(game);
+  if(sub){sub.textContent='Host-Scanner · '+game;sub.style.display='block';}
+  ver.style.display='block';
+  showOnly(pinView);
+  startBg();
+}
+
+/* particles */
+let particles=[],pRaf=null;
+function initParticles(){const W=canvas.width,H=canvas.height;particles=[];
+  for(let i=0;i<26;i++)particles.push({x:Math.random()*W,y:Math.random()*H,r:1+Math.random()*2,
+    vx:(Math.random()-.5)*.4,vy:(Math.random()-.5)*.4,a:Math.random(),da:.005+Math.random()*.008,dir:Math.random()>.5?1:-1});}
+function drawParticles(){const W=canvas.width,H=canvas.height;cx.clearRect(0,0,W,H);
+  for(let i=0;i<particles.length;i++)for(let j=i+1;j<particles.length;j++){
+    const dx=particles[i].x-particles[j].x,dy=particles[i].y-particles[j].y,d=Math.hypot(dx,dy);
+    if(d<82){cx.beginPath();cx.strokeStyle=`rgba(78,188,210,${(1-d/82)*.08})`;cx.lineWidth=.8;
+      cx.moveTo(particles[i].x,particles[i].y);cx.lineTo(particles[j].x,particles[j].y);cx.stroke();}}
+  for(const p of particles){p.a+=p.da*p.dir;if(p.a>.45||p.a<.05)p.dir*=-1;
+    cx.beginPath();cx.arc(p.x,p.y,p.r,0,Math.PI*2);cx.fillStyle=`rgba(78,188,210,${p.a})`;cx.fill();
+    p.x+=p.vx;p.y+=p.vy;if(p.x<0||p.x>W)p.vx*=-1;if(p.y<0||p.y>H)p.vy*=-1;}}
+function pLoop(){drawParticles();pRaf=requestAnimationFrame(pLoop);}
+function resize(){canvas.width=panel.offsetWidth;canvas.height=panel.offsetHeight;}
+let bgRunning=false;
+function startBg(){resize();initParticles();if(!bgRunning){bgRunning=true;pLoop();}}
+function stopBg(){if(pRaf)cancelAnimationFrame(pRaf);bgRunning=false;}
+
+/* PIN gate */
+var scanPin='';
+var DEMO_PIN='123456';
+function pinBoxes(){return Array.prototype.slice.call(document.querySelectorAll('.pin-cell'));}
+function collectPin(){return pinBoxes().map(function(b){return b.value;}).join('');}
+function updatePinState(){
+  pinBoxes().forEach(function(b){b.classList.toggle('filled', !!b.value);});
+  var btn=$('pinNext'); if(btn) btn.disabled=!/^\d{6}$/.test(collectPin());
+}
+function pinDigit(e,idx){
+  var boxes=pinBoxes();
+  var v=(e.target.value||'').replace(/\D/g,'');
+  e.target.value=v.slice(-1);
+  if(e.target.value && idx<boxes.length-1) boxes[idx+1].focus();
+  $('pinErr').textContent='';
+  updatePinState();
+}
+function pinKey(e,idx){
+  var boxes=pinBoxes();
+  if(e.key==='Backspace' && !e.target.value && idx>0){boxes[idx-1].focus();}
+}
+function submitPin(){
+  var pin=collectPin();
+  if(!/^\d{6}$/.test(pin)){$('pinErr').textContent='Bitte den 6-stelligen PIN eingeben.';return;}
+  if(pin!==DEMO_PIN){$('pinErr').textContent='Falscher PIN. (Demo-PIN: '+DEMO_PIN+')';return;}
+  scanPin=pin;$('pinErr').textContent='';
+  sub.style.display='block';ver.style.display='block';
+  showOnly(consentView);
+  startBg();
+}
+
+/* flow */
+function toConsent(){
+  if(countdownInt){clearInterval(countdownInt);countdownInt=null;}
+  cancelAnimationFrame(sRaf);
+  panel.classList.remove('done');
+  againBtn.style.display='none';openSendBtn.style.display='none';
+  $('sendBlock').style.display='none';
+  $('declineNote').textContent='';
+  var tm=$('terms');if(tm)tm.scrollTop=0;
+  sub.style.display='block';ver.style.display='block';
+  showOnly(consentView);
+  startBg();
+}
+function onDecline(){
+  $('declineNote').textContent='Abgelehnt – es wird kein Scan durchgeführt und nichts erfasst.';
+}
+function removeSelf(){
+  stopBg();
+  showOnly(null);
+  panel.classList.remove('done');
+  sub.style.display='none';ver.style.display='none';
+  ['againBtn','openSendBtn','removeBtn'].forEach(id=>$(id).style.display='none');
+  document.querySelector('.content').innerHTML +=
+    '<div style="text-align:center;padding:30px 10px">'+
+    '<div style="font-size:14px;font-weight:600;color:#c8d4dc">ZeroTrace wurde von diesem PC entfernt.</div>'+
+    '<div style="font-size:11.5px;color:#5a6772;margin-top:6px">Datenordner und Programmdatei gelöscht. (Vorschau – im Browser wird nichts wirklich gelöscht.)</div></div>';
+}
+
+let sRaf=null,t0=null;const DUR=10000;
+let countdownInt=null;
+function startScan(){
+  t0=performance.now();
+  showOnly(scanView);
+  barFill.style.width='0%';pct.textContent='0%';nowpath.textContent='…';
+  startBg();loop();
+}
+function loop(){
+  const raw=Math.min((performance.now()-t0)/DUR,1);
+  const e=raw<.5?2*raw*raw:1-Math.pow(-2*raw+2,2)/2;
+  const p=Math.round(e*100);
+  barFill.style.width=p+'%';pct.textContent=p+'%';
+  nowpath.textContent=PROBES[Math.min(PROBES.length-1,Math.floor(e*PROBES.length))];
+  if(raw<1)sRaf=requestAnimationFrame(loop);else onDone();
+}
+function onDone(){
+  stopBg();cx.clearRect(0,0,canvas.width,canvas.height);
+  panel.classList.add('done');
+  var pin=scanPin||'----';
+  var pl=$('pinline'); if(pl)pl.innerHTML='Zuerst an Dashboard gesendet \u00b7 PIN <b>'+pin+'</b>';
+  renderResult();
+  showOnly(resultView);
+  sub.style.display='none';ver.style.display='none';
+  againBtn.style.display='inline-block';openSendBtn.style.display='inline-block';
+  var rb=$('removeBtn'); if(rb)rb.style.display='inline-block';
+  var cw=$('checkWrap'),cp=$('checkPoly');
+  if(cw)cw.classList.add('pop'); if(cp)cp.classList.add('draw');
+  startCountdown();
+}
+function renderResult(){
+  const c={Critical:0,High:0,Medium:0,Low:0};findings.forEach(f=>c[f.risk]++);
+  const total=findings.length;
+  const lvlEl=$('lvl'); const lvl=lvlEl?lvlEl.value:'cat';
+
+  // Guaranteed minimum: the scanned person ALWAYS sees yes/no.
+  const yn=$('yesno');
+  if(total>0){yn.className='yesno bad';yn.innerHTML='<span class="badge">\u26A0 JA</span><span class="vsub">Auffaelligkeiten gefunden: '+total+'</span>';}
+  else{yn.className='yesno ok';yn.innerHTML='<span class="badge">\u2713 NEIN</span><span class="vsub">Keine Auffaelligkeiten gefunden</span>';}
+
+  const counts=document.querySelector('#resultView .counts');
+  const flist=$('flist');
+  const showCounts=(lvl!=='yesno');
+  const showList=(lvl!=='yesno');
+  if(counts)counts.style.display=showCounts?'':'none';
+  $('r-crit').textContent=c.Critical;$('r-high').textContent=c.High;$('r-med').textContent=c.Medium;$('r-low').textContent=c.Low;
+
+  if(!showList){flist.innerHTML='';flist.style.display='none';return;}
+  flist.style.display='';
+  const withLoc=(lvl==='full');
+  flist.innerHTML=findings.map(f=>
+    '<div class="fitem"><span class="pill '+PILL[f.risk]+'">'+f.risk+'</span>'+
+    '<div style="min-width:0"><div class="t">'+f.title+'</div>'+
+    (withLoc?('<div class="loc">'+f.loc+'</div>'):'')+'</div></div>').join('');
+}
+
+/* auto-close countdown (only closes the window; never deletes anything) */
+function startCountdown(){
+  var secs=10; var c=$('doneCount');
+  if(c)c.textContent='Fenster schliesst in '+secs+' s';
+  if(countdownInt)clearInterval(countdownInt);
+  countdownInt=setInterval(function(){
+    secs--; if(c)c.textContent='Fenster schliesst in '+secs+' s';
+    if(secs<=0){clearInterval(countdownInt);countdownInt=null;showClosed();}
+  },1000);
+}
+function keepOpen(){
+  if(countdownInt){clearInterval(countdownInt);countdownInt=null;}
+  var c=$('doneCount'); if(c)c.textContent='Fenster bleibt offen.';
+  var k=$('keepBtn'); if(k)k.style.display='none';
+}
+function showClosed(){
+  document.querySelector('.content').innerHTML =
+    '<div style="text-align:center;padding:38px 10px">'+
+    '<div style="font-size:14px;font-weight:600;color:#c8d2da">Fenster geschlossen</div>'+
+    '<div style="font-size:11.5px;color:#5a6772;margin-top:6px">(Vorschau \u2013 das echte Programm beendet sich hier von selbst.)</div></div>';
+  ['againBtn','openSendBtn','removeBtn'].forEach(function(id){var e=$(id); if(e)e.style.display='none';});
+}
+
+/* transparent send */
+function buildPayload(){
+  const c={Critical:0,High:0,Medium:0,Low:0};findings.forEach(f=>c[f.risk]++);
+  return{tool:"ZeroTrace",version:"1.3",game:selectedGame,scanId:1042,machine:"DESKTOP-7F3KQ2",
+  os:"Windows 11 Pro 23H2",result:"Completed",
+  pc:{system:"Windows 11 Pro 23H2 \u00b7 64-bit",hwid:"<SHA-256, vom Scanner>",localIp:"192.168.x.x",
+      bootTime:"vom Scanner",installDate:"vom Scanner",vpn:"Heuristik vom Scanner",
+      region:"System-Region",game:selectedGame,hardware:"CPU/GPU/RAM vom Scanner",
+      note:"Oeffentliche IP/Land serverseitig aus der Verbindung erfassen."},
+  counts:{critical:c.Critical,high:c.High,medium:c.Medium,low:c.Low,total:findings.length},
+  findings:findings.map(f=>({risk:f.risk,title:f.title,location:f.loc})),
+  disclaimer:"Funde sind Hinweise, kein Beweis. False Positives moeglich."};}
+function openSend(){$('payload').value=JSON.stringify(buildPayload(),null,2);
+  $('sendStatus').textContent='';$('sendStatus').className='status';
+  $('sendBlock').style.display='block';$('sendBlock').scrollIntoView({behavior:'smooth',block:'nearest'});}
+async function doSend(){
+  const url=$('url').value.trim(),st=$('sendStatus');
+  if(!url){st.className='status err';st.textContent='Bitte zuerst eine Ziel-Adresse eingeben.';return;}
+  if(!/^https?:\/\//i.test(url)){st.className='status err';st.textContent='Adresse muss mit http:// oder https:// beginnen.';return;}
+  $('sendBtn').disabled=true;st.className='status pend';st.textContent='Sende an '+url+' …';
+  try{const res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:$('payload').value});
+    if(res.ok){st.className='status ok';st.textContent='Erfolgreich gesendet (HTTP '+res.status+').';}
+    else{st.className='status err';st.textContent='Server antwortete mit HTTP '+res.status+'.';}
+  }catch(err){st.className='status err';st.textContent='Senden fehlgeschlagen: '+err.message+' (Adresse erreichbar? CORS erlaubt?)';}
+  finally{$('sendBtn').disabled=false;}
+}
+startBg();
+window.addEventListener('resize',function(){if(bgRunning)startBg();});
+</script>
+</body>
+</html>

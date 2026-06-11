@@ -1,0 +1,94 @@
+<UserControl x:Class="ZeroTrace.App.Views.DashboardView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="28,24">
+        <StackPanel>
+            <TextBlock Text="Dashboard" Style="{StaticResource H1}" />
+            <TextBlock Text="Ueberblick ueber System und letzten Scan"
+                       Style="{StaticResource Muted}" Margin="0,2,0,20" />
+
+            <!-- Start scan -->
+            <Border Style="{StaticResource Card}" Margin="0,0,0,16">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                        <TextBlock Text="Systemscan starten" Style="{StaticResource H2}" Margin="0" />
+                        <TextBlock Style="{StaticResource Muted}" TextWrapping="Wrap"
+                                   Text="Prueft Prozesse, Autostart, Registry, FiveM, Downloads und Dateien auf Hinweise." />
+                    </StackPanel>
+                    <Button Grid.Column="1" Content="Scan starten" Style="{StaticResource PrimaryButton}"
+                            Command="{Binding StartScanCommand}" VerticalAlignment="Center" />
+                </Grid>
+            </Border>
+
+            <!-- Last scan summary -->
+            <TextBlock Text="Letzter Scan" Style="{StaticResource H2}" />
+            <Border Style="{StaticResource Card}" Margin="0,0,0,8">
+                <StackPanel>
+                    <TextBlock Text="{Binding LastScanText}" TextWrapping="Wrap" />
+                    <UniformGrid Columns="5" Margin="0,14,0,0"
+                                 Visibility="{Binding HasLastScan, Converter={StaticResource BoolToVis}}">
+                        <StackPanel>
+                            <TextBlock Text="{Binding TotalFindings}" FontSize="26" FontWeight="Bold" />
+                            <TextBlock Text="Funde" Style="{StaticResource Muted}" />
+                        </StackPanel>
+                        <StackPanel>
+                            <TextBlock Text="{Binding Critical}" FontSize="26" FontWeight="Bold"
+                                       Foreground="{StaticResource CriticalBrush}" />
+                            <TextBlock Text="Critical" Style="{StaticResource Muted}" />
+                        </StackPanel>
+                        <StackPanel>
+                            <TextBlock Text="{Binding High}" FontSize="26" FontWeight="Bold"
+                                       Foreground="{StaticResource HighBrush}" />
+                            <TextBlock Text="High" Style="{StaticResource Muted}" />
+                        </StackPanel>
+                        <StackPanel>
+                            <TextBlock Text="{Binding Medium}" FontSize="26" FontWeight="Bold"
+                                       Foreground="{StaticResource MediumBrush}" />
+                            <TextBlock Text="Medium" Style="{StaticResource Muted}" />
+                        </StackPanel>
+                        <StackPanel>
+                            <TextBlock Text="{Binding Low}" FontSize="26" FontWeight="Bold"
+                                       Foreground="{StaticResource LowBrush}" />
+                            <TextBlock Text="Low" Style="{StaticResource Muted}" />
+                        </StackPanel>
+                    </UniformGrid>
+                </StackPanel>
+            </Border>
+
+            <!-- System info -->
+            <TextBlock Text="System" Style="{StaticResource H2}" Margin="0,16,0,8" />
+            <Border Style="{StaticResource Card}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="Maschine" Style="{StaticResource Muted}" />
+                        <TextBlock Text="{Binding MachineName}" Margin="0,0,0,10" />
+                        <TextBlock Text="Benutzer" Style="{StaticResource Muted}" />
+                        <TextBlock Text="{Binding UserName}" Margin="0,0,0,10" />
+                        <TextBlock Text="Indikatoren in DB" Style="{StaticResource Muted}" />
+                        <TextBlock Text="{Binding IndicatorCount}" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1">
+                        <TextBlock Text="Betriebssystem" Style="{StaticResource Muted}" />
+                        <TextBlock Text="{Binding OsVersion}" TextWrapping="Wrap" Margin="0,0,0,10" />
+                        <TextBlock Text="Architektur / CPUs" Style="{StaticResource Muted}" />
+                        <TextBlock Margin="0,0,0,10">
+                            <Run Text="{Binding Architecture, Mode=OneWay}" />
+                            <Run Text=" / " />
+                            <Run Text="{Binding ProcessorCount, Mode=OneWay}" />
+                        </TextBlock>
+                        <TextBlock Text="GTA-MP (FiveM / RageMP / alt:V)" Style="{StaticResource Muted}" />
+                        <TextBlock Text="{Binding FiveMStatus}" TextWrapping="Wrap" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

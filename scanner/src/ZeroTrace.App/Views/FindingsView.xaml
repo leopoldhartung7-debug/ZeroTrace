@@ -1,0 +1,137 @@
+<UserControl x:Class="ZeroTrace.App.Views.FindingsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid Margin="28,24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <StackPanel Grid.Row="0">
+            <TextBlock Text="{Binding HeaderText}" Style="{StaticResource H1}" />
+            <TextBlock Text="Jeder Fund nennt seinen Grund. Funde sind Hinweise, kein Beweis."
+                       Style="{StaticResource Muted}" Margin="0,2,0,0" />
+
+            <!-- Guaranteed minimum the scanned person always sees -->
+            <Border Background="{StaticResource PanelAltBrush}" BorderBrush="{StaticResource AccentBrush}"
+                    BorderThickness="1" CornerRadius="7" Padding="12,9" Margin="0,10,0,0"
+                    HorizontalAlignment="Left">
+                <TextBlock Text="{Binding SummaryText}" FontWeight="Bold" FontSize="14"
+                           Foreground="{StaticResource TextBrush}" />
+            </Border>
+            <Border Background="#1A2E22" BorderBrush="#22CC66" BorderThickness="1" CornerRadius="7"
+                    Padding="10,6" Margin="0,10,0,0" HorizontalAlignment="Left"
+                    Visibility="{Binding Banner, Converter={StaticResource NullToVis}}">
+                <StackPanel Orientation="Horizontal">
+                    <Path Data="M 0,5 L 4,9 L 11,1" Stroke="#22CC66" StrokeThickness="2.4"
+                          StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                          VerticalAlignment="Center" Margin="0,0,8,0" />
+                    <TextBlock Text="{Binding Banner}" Foreground="#22CC66" FontWeight="SemiBold" />
+                </StackPanel>
+            </Border>
+
+            <Border Background="{StaticResource PanelAltBrush}" BorderBrush="{StaticResource LineBrush}"
+                    BorderThickness="1" CornerRadius="7" Padding="10,7" Margin="0,8,0,0"
+                    HorizontalAlignment="Left"
+                    Visibility="{Binding IsClosing, Converter={StaticResource BoolToVis}}">
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding CloseText}" Style="{StaticResource Muted}"
+                               VerticalAlignment="Center" Margin="0,0,12,0" />
+                    <Button Content="Offen lassen" Style="{StaticResource GhostButton}"
+                            Command="{Binding KeepOpenCommand}" Padding="10,5" />
+                </StackPanel>
+            </Border>
+        </StackPanel>
+
+        <!-- Filter bar -->
+        <Grid Grid.Row="1" Margin="0,16,0,12"
+              Visibility="{Binding ShowGrid, Converter={StaticResource BoolToVis}}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBox Grid.Column="0" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                     VerticalContentAlignment="Center" />
+            <ComboBox Grid.Column="1" Width="140" Margin="8,0"
+                      ItemsSource="{Binding RiskFilters}" SelectedItem="{Binding SelectedRisk}" />
+            <Button Grid.Column="2" Content="Zuruecksetzen" Style="{StaticResource GhostButton}"
+                    Command="{Binding ClearFiltersCommand}" />
+        </Grid>
+
+        <!-- Master/detail -->
+        <Grid Grid.Row="2" Visibility="{Binding ShowGrid, Converter={StaticResource BoolToVis}}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <DataGrid Grid.Column="0" ItemsSource="{Binding FindingsView}"
+                      SelectedItem="{Binding SelectedFinding}" Margin="0,0,12,0">
+                <DataGrid.Columns>
+                    <DataGridTemplateColumn Header="Risiko" Width="92">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Border Style="{StaticResource RiskPill}"
+                                        Background="{Binding Risk, Converter={StaticResource RiskToBrush}}">
+                                    <TextBlock Text="{Binding Risk}" Foreground="#06121A"
+                                               FontWeight="Bold" FontSize="11" />
+                                </Border>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTextColumn Header="Titel" Binding="{Binding Title}" Width="*" />
+                    <DataGridTextColumn Header="Modul" Binding="{Binding Module}" Width="110" />
+                    <DataGridTextColumn Header="Empfehlung" Binding="{Binding Recommendation}" Width="110" />
+                </DataGrid.Columns>
+            </DataGrid>
+
+            <Border Grid.Column="1" Width="360" Style="{StaticResource Card}"
+                    Visibility="{Binding ShowDetail, Converter={StaticResource BoolToVis}}">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Visibility="{Binding SelectedFinding, Converter={StaticResource NullToVis}}">
+                        <TextBlock Text="Detail" Style="{StaticResource H2}" />
+                        <Border Style="{StaticResource RiskPill}" Margin="0,0,0,12"
+                                Background="{Binding SelectedFinding.Risk, Converter={StaticResource RiskToBrush}}">
+                            <TextBlock Text="{Binding SelectedFinding.Risk}" Foreground="#06121A"
+                                       FontWeight="Bold" FontSize="11" />
+                        </Border>
+
+                        <TextBlock Text="{Binding SelectedFinding.Title}" FontWeight="SemiBold"
+                                   TextWrapping="Wrap" Margin="0,0,0,10" />
+
+                        <TextBlock Text="Modul" Style="{StaticResource Muted}" />
+                        <TextBlock Text="{Binding SelectedFinding.Module}" Margin="0,0,0,10" />
+
+                        <TextBlock Text="Ort" Style="{StaticResource Muted}" />
+                        <TextBlock Text="{Binding SelectedFinding.Location}" TextWrapping="Wrap" Margin="0,0,0,10" />
+
+                        <TextBlock Text="Dateiname" Style="{StaticResource Muted}"
+                                   Visibility="{Binding SelectedFinding.FileName, Converter={StaticResource NullToVis}}" />
+                        <TextBlock Text="{Binding SelectedFinding.FileName}" TextWrapping="Wrap" Margin="0,0,0,10"
+                                   Visibility="{Binding SelectedFinding.FileName, Converter={StaticResource NullToVis}}" />
+
+                        <TextBlock Text="SHA-256" Style="{StaticResource Muted}"
+                                   Visibility="{Binding SelectedFinding.Sha256, Converter={StaticResource NullToVis}}" />
+                        <TextBlock Text="{Binding SelectedFinding.Sha256}" TextWrapping="Wrap" FontSize="11"
+                                   Foreground="{StaticResource AccentBrush}" Margin="0,0,0,10"
+                                   Visibility="{Binding SelectedFinding.Sha256, Converter={StaticResource NullToVis}}" />
+
+                        <TextBlock Text="Grund" Style="{StaticResource Muted}" />
+                        <TextBlock Text="{Binding SelectedFinding.Reason}" TextWrapping="Wrap" Margin="0,0,0,10" />
+
+                        <TextBlock Text="Zusatzinfo" Style="{StaticResource Muted}"
+                                   Visibility="{Binding SelectedFinding.Detail, Converter={StaticResource NullToVis}}" />
+                        <TextBlock Text="{Binding SelectedFinding.Detail}" TextWrapping="Wrap" Margin="0,0,0,10"
+                                   Visibility="{Binding SelectedFinding.Detail, Converter={StaticResource NullToVis}}" />
+
+                        <TextBlock Text="Empfehlung" Style="{StaticResource Muted}" />
+                        <TextBlock Text="{Binding SelectedFinding.Recommendation}" FontWeight="SemiBold" />
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>

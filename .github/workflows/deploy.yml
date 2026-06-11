@@ -2,6 +2,9 @@ name: Build & Deploy to GitHub Pages
 
 # Baut die Seite bei jedem Push auf den Quellcode-Branch und
 # veröffentlicht das Ergebnis automatisch auf dem gh-pages-Branch.
+# Zusätzlich wird der ZeroTrace-Scanner (WPF) auf einem Windows-Runner
+# kompiliert und als ZeroTrace.exe mit auf die Seite gelegt, damit der
+# "Download Scanner"-Button im Dashboard funktioniert.
 on:
   push:
     branches:
@@ -16,7 +19,39 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # ---------------------------------------------------------------------
+  # Scanner (WPF, net8.0-windows) — lässt sich NUR auf Windows bauen.
+  # Framework-dependent Single-File: kleine ZeroTrace.exe (< 100 MB), die
+  # auf GitHub Pages gehostet und im Browser zu einem ZIP (exe + .pin)
+  # gebündelt werden kann. Spieler benötigen die .NET 8 Desktop Runtime.
+  # ---------------------------------------------------------------------
+  build-scanner:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Publish ZeroTrace.exe (single file, framework-dependent)
+        run: >
+          dotnet publish scanner/src/ZeroTrace.App/ZeroTrace.App.csproj
+          -c Release -r win-x64 --self-contained false
+          -p:PublishSingleFile=true -p:DebugType=none
+          -o scanner-publish
+
+      - name: Upload scanner artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: zerotrace-exe
+          path: scanner-publish/ZeroTrace.exe
+          if-no-files-found: error
+
   build-deploy:
+    needs: build-scanner
     runs-on: ubuntu-latest
     steps:
       - name: Checkout source
@@ -30,6 +65,12 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Download scanner artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: zerotrace-exe
+          path: public
 
       - name: Build
         run: npm run build

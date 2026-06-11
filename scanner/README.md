@@ -1,73 +1,78 @@
-# ZeroTrace FiveM Scanner (C++)
+# ZeroTrace
 
-A consent-based usermode anti-cheat **screenshare** tool for FiveM, with a
-Dear ImGui (DirectX 11) UI. It scans the local machine for known cheat
-indicators and produces a signed result **token** that the server admin
-imports on the website (Pins → Import Result).
+**ZeroTrace** ist ein lokales Windows-Analysewerkzeug (Host-Scanner), das einen PC auf
+Hinweise für Cheats, Manipulationen und verdächtige Software untersucht und einen
+nachvollziehbaren Bericht erstellt.
 
-> ⚠️ Usermode scanners **cannot** detect kernel-mode, DMA or external
-> (second-PC) cheats. Treat results as indicators, not absolute proof.
-> Only run this with the user's consent (that's what the session code is for).
+> **Wichtig:** ZeroTrace ist ein **Analyse- und Hinweis**-Werkzeug. Funde sind *Indizien*,
+> kein Beweis für Cheating. Es gibt keine Garantie, dass alle Cheats erkannt werden, und
+> False Positives sind möglich. Jede Maßnahme liegt in der Verantwortung des Betreibers.
 
-## What it checks
+## Was es tut
 
-- Running processes + full image paths (known cheat / loader / debug-tool names)
-- Modules loaded **inside** the FiveM process (signature match)
-- Unsigned, non-system DLLs injected into FiveM (Authenticode via WinVerifyTrust)
-- Visible window titles (cheat menu / overlay heuristics)
-- Common drop locations: `%TEMP%`, `%LOCALAPPDATA%`, `Downloads`
-- Aggregated verdict: Clean / Suspicious / Cheating
+- **Prozesse** – laufende Prozesse (über WMI), Eltern-Kind-Beziehungen, unsignierte Images aus Benutzerpfaden
+- **Autostart** – Registry-Run-Keys, Autostart-Ordner, geplante Aufgaben, Dienste
+- **Registry** – dokumentierte Persistenz-/Hijack-Stellen (AppInit_DLLs, Winlogon, IFEO-Debugger)
+- **FiveM** – lokale Integritätshinweise im FiveM-Verzeichnis (unsignierte/untrusted DLLs)
+- **Downloads** – ausführbare Dateien und Archive im Downloads-Ordner
+- **Laufwerke/Dateien** – gezielte Schlüsselverzeichnisse (Standard) oder vollständiger Tiefen-Scan (optional), SHA-256-Hashing
 
-## Build (Windows, x64)
+Jeder Fund erhält ein **Risiko** (Low/Medium/High/Critical), einen **Grund** und eine
+**Empfehlung** (Ignorieren/Prüfen/Entfernen).
 
-Prerequisites: **Visual Studio 2022** (Desktop C++), **CMake ≥ 3.20**, **vcpkg**.
+## Erkennungslogik (bewusst transparent)
 
-```bat
-:: 1. install the UI dependency
-vcpkg install imgui[dx11-binding,win32-binding]:x64-windows-static
+Zwei kombinierte Quellen:
 
-:: 2. configure + build
-cd scanner
-cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE=C:/path/to/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows-static
-cmake --build build --config Release
+1. **Eingebaute Heuristiken** – signaturfrei, z. B. „unsignierte ausführbare Datei in einem
+   beschreibbaren Benutzerpfad". Beschreiben Muster, keine konkreten Cheat-Produkte.
+2. **Lokale Indikator-Datenbank** – vom Administrator pflegbar (Hashes, Dateinamen,
+   Schlüsselwörter, Prozessnamen). Vollständig editierbar in den Einstellungen.
+
+**Updates erfolgen ausschließlich lokal** über JSON-Import. Es werden **keine Signaturen
+automatisch aus dem Internet geladen** – das vermeidet False-Positive-Lawinen und
+Malware-Köderlisten und hält das Tool seriös und auditierbar.
+
+## Ergebnisse senden (offen & zustimmungsbasiert)
+
+Ist auf der Seite **Berichte** eine Webhook-/Website-Adresse hinterlegt, werden die
+Ergebnisse nach Abschluss eines Scans automatisch dorthin gesendet. Das ist **vorab in der
+Einwilligung (EULA-/Datenschutzfenster) genannt**, sodass die geprüfte Person vor dem Start
+zustimmt. Nach dem Versand erscheint auf der Seite **Funde** der Hinweis **„Ergebnisse
+gesendet"**, und die vollständigen Ergebnisse bleiben dort einsehbar – die Person sieht also
+sowohl *was* gefunden wurde als auch *dass* es übertragen wurde. Ist keine Adresse hinterlegt,
+wird nichts gesendet. Zusätzlich lässt sich ein Bericht jederzeit manuell an eine Adresse
+senden (mit sichtbarer Nutzlast-Vorschau) oder als HTML/JSON/TXT exportieren.
+
+## Technik
+
+- **C# / .NET 8**, **WPF** (Dark Theme, MVVM)
+- **SQLite** (`Microsoft.Data.Sqlite`, reines SQL) für Indikatoren, Scans und Funde
+- **WMI** (`System.Management`) für Prozesse/Dienste, **COM** (Schedule.Service / WScript.Shell)
+  für Aufgabenplanung und Verknüpfungen – alles dokumentierte Windows-APIs
+- Zwei Projekte: `ZeroTrace.Core` (gesamte Logik) und `ZeroTrace.App` (Oberfläche)
+
+## Schnellstart
+
+```powershell
+# .NET 8 SDK vorausgesetzt (siehe docs/BUILD.md)
+dotnet build -c Release
+dotnet run --project src/ZeroTrace.App
 ```
 
-The executable is `scanner/build/Release/OceanScanner.exe`.
+Die App fordert beim Start Administratorrechte an (für vollständige Scans). Beim ersten
+Start wird die lokale Datenbank unter `%LocalAppData%\ZeroTrace\zerotrace.db` angelegt und
+mit Standard-Heuristiken befüllt.
 
-## Usage (end-to-end)
+## Dokumentation
 
-1. **Admin** opens the website → **Pins** → **Create Pin**. The
-   "Pin Created Successfully" dialog shows the 8-char code and a
-   **Download** button that saves an `OceanScan-<PIN>.ocean` session file.
-2. **User** opens that `.ocean` file with `OceanScanner.exe` (or drags it
-   onto the exe). The pin is filled in automatically — the user only
-   accepts the consent notice and presses **Start Scan**. *(Manually
-   typing the code still works too.)*
-3. The tool shows the verdict + detections and a `OCEAN1.…` token.
-4. User sends the token back; **admin** pastes it on the website
-   (**Pins → Import Result**). The pin, dashboard and activity log update
-   automatically — no backend required.
-5. *(Optional)* If you run your own backend, paste its URL in the tool and
-   press **Upload** to POST the JSON directly (`POST … application/json`).
+- [docs/BUILD.md](docs/BUILD.md) – Bauen mit CLI oder Visual Studio
+- [docs/INSTALL.md](docs/INSTALL.md) – Installation und Ausführung
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) – Aufbau, Module, Datenfluss
+- [docs/Schema.sql](docs/Schema.sql) – Datenbankschema (Referenz)
 
-## Token format
+## Rechtliches / Ethik
 
-`OCEAN1.` + Base64( JSON ):
-
-```json
-{ "v":1, "code":"F1T5F8C0", "game":"FIVEM", "host":"PC-01",
-  "os":"Windows 10 (build 19045)", "verdict":"Cheating",
-  "fivemRunning":true, "processCount":142, "moduleCount":88,
-  "scannedAt":1700000000000,
-  "detections":[ { "name":"Eulen","type":"Paid Menu",
-                   "severity":"Critical","detail":"Process: eulen.exe" } ] }
-```
-
-## Files
-
-| File | Purpose |
-|------|---------|
-| `src/main.cpp` | ImGui/DX11 UI + scan threading |
-| `src/scanner.*` | Detection logic |
-| `src/report.*` | JSON + Base64 token + optional WinHTTP upload |
-| `src/signatures.hpp` | Known FiveM cheat signatures |
+Nur auf eigenen Systemen bzw. mit ausdrücklicher Zustimmung des Eigentümers einsetzen.
+Das Tool liest Systeminformationen, verändert aber nichts an Prozessen, Dateien oder der
+Registry. Es trifft keine automatischen Maßnahmen.

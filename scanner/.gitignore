@@ -1,0 +1,26 @@
+## .NET / Visual Studio
+bin/
+obj/
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+## Build output
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+publish/
+*.dll
+*.exe
+*.pdb
+
+## Rider
+.idea/
+
+## Local data (never commit a real scan database)
+*.db
+*.db-wal
+*.db-shm

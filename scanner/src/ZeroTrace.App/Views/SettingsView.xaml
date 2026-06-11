@@ -1,0 +1,153 @@
+<UserControl x:Class="ZeroTrace.App.Views.SettingsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="28,24">
+        <StackPanel>
+            <TextBlock Text="Einstellungen" Style="{StaticResource H1}" />
+            <TextBlock Text="Scan-Optionen und lokale Indikator-Datenbank"
+                       Style="{StaticResource Muted}" Margin="0,2,0,20" />
+
+            <!-- Scan options -->
+            <TextBlock Text="Scan-Module" Style="{StaticResource H2}" />
+            <Border Style="{StaticResource Card}" Margin="0,0,0,16">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0">
+                        <CheckBox Content="Prozesse" IsChecked="{Binding ScanProcesses}" />
+                        <CheckBox Content="Autostart" IsChecked="{Binding ScanAutostart}" />
+                        <CheckBox Content="Registry" IsChecked="{Binding ScanRegistry}" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1">
+                        <CheckBox Content="FiveM / RageMP / alt:V" IsChecked="{Binding ScanFiveM}" />
+                        <CheckBox Content="Downloads" IsChecked="{Binding ScanDownloads}" />
+                        <CheckBox Content="Browser-Verlauf" IsChecked="{Binding ScanBrowserHistory}" />
+                        <CheckBox Content="System &amp; Schutz (Defender aus/an, An/Aus-Zeiten)" IsChecked="{Binding ScanSecurityTimeline}" />
+                        <CheckBox Content="PowerShell / Befehle (Loader, Download-Cradle, Defender-Abschalten)" IsChecked="{Binding ScanPowerShell}" />
+                        <CheckBox Content="Kernel-Treiber (unsigniert, fremder Pfad, BYOVD-Muster)" IsChecked="{Binding ScanKernelDrivers}" />
+                        <CheckBox Content="Ausfuehrungsverlauf (Prefetch/BAM/UserAssist – auch geloeschte)" IsChecked="{Binding ScanExecutionHistory}" />
+                        <CheckBox Content="DMA / Hardware (Hinweis, kein Beweis – PCIe-Geraete &amp; DMA-Schutz)" IsChecked="{Binding ScanDmaRisk}" />
+                        <CheckBox Content="Inventar (Prozesse, Treiber, VM, Aufnahme-SW, USB – fuers Dashboard)" IsChecked="{Binding ScanInventory}" />
+                        <CheckBox Content="Tarnung &amp; Reste (hosts-Datei, Papierkorb – auch geloeschte Cheats)" IsChecked="{Binding ScanRemnants}" />
+                        <CheckBox Content="Scan-Manipulation (Debugger, Ordner-Umleitung, gehookte Listen, Zeit-Trick)" IsChecked="{Binding ScanTamper}" />
+                        <CheckBox Content="Forensische Spuren (RecentDocs, MUICache, .lnk, WER, versteckte Datenstroeme)" IsChecked="{Binding ScanForensicTraces}" />
+                        <CheckBox Content="NTFS-Aenderungsjournal (USN – auch geloeschte Dateien, Admin)" IsChecked="{Binding ScanUsnJournal}" />
+                        <CheckBox Content="Netzwerk (aktive Verbindungen verdaechtiger Prozesse, DNS-Cache)" IsChecked="{Binding ScanNetwork}" />
+                        <CheckBox Content="Overlay / ESP (klick-durchlaessige Always-on-Top-Fenster)" IsChecked="{Binding ScanOverlay}" />
+                        <CheckBox Content="WMI-Persistenz (fileless Autostart ueber Event-Abos)" IsChecked="{Binding ScanWmiPersistence}" />
+                        <CheckBox Content="Speicher-Scan des Spiels (interne/injizierte Cheats ohne Datei – langsamer)" IsChecked="{Binding ScanMemory}" />
+                        <CheckBox Content="Laufwerke / Dateien" IsChecked="{Binding ScanDrives}" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <TextBlock Text="Laufwerks-Scan" Style="{StaticResource H2}" />
+            <Border Style="{StaticResource Card}" Margin="0,0,0,16">
+                <StackPanel>
+                    <CheckBox Content="Tiefen-Scan (ganze Laufwerke statt nur Schluesselverzeichnisse - deutlich langsamer)"
+                              IsChecked="{Binding DeepDriveScan}" />
+                    <TextBlock Text="Laufwerke (z. B. C, D - leer = alle festen Laufwerke)"
+                               Style="{StaticResource Muted}" Margin="0,12,0,4" />
+                    <TextBox Text="{Binding DrivesText, UpdateSourceTrigger=LostFocus}" />
+                    <TextBlock Text="Relevante Dateiendungen" Style="{StaticResource Muted}" Margin="0,12,0,4" />
+                    <TextBox Text="{Binding ExtensionsText, UpdateSourceTrigger=LostFocus}" />
+                    <TextBlock Text="Maximale Verzeichnistiefe (Tiefen-Scan)" Style="{StaticResource Muted}" Margin="0,12,0,4" />
+                    <TextBox Width="80" HorizontalAlignment="Left"
+                             Text="{Binding MaxDepth, UpdateSourceTrigger=LostFocus}" />
+                </StackPanel>
+            </Border>
+
+            <!-- What the scanned person sees -->
+            <TextBlock Text="Anzeige fuer den gescannten Nutzer" Style="{StaticResource H2}" />
+            <Border Style="{StaticResource Card}" Margin="0,0,0,16">
+                <StackPanel>
+                    <TextBlock TextWrapping="Wrap" Style="{StaticResource Muted}"
+                               Text="Das Ergebnis geht zuerst mit PIN an das Dashboard und wird dann dem Nutzer angezeigt. Der Nutzer sieht IMMER mindestens 'Auffaelligkeiten gefunden: ja/nein'. Wie viel mehr sichtbar ist, legst du hier fest." />
+                    <ComboBox Width="220" HorizontalAlignment="Left" Margin="0,12,0,0"
+                              ItemsSource="{Binding DisplayLevels}" SelectedItem="{Binding UserDisplayLevel}" />
+                    <TextBlock Margin="0,8,0,0" Style="{StaticResource Muted}" TextWrapping="Wrap"
+                               Text="YesNo = nur ja/nein · Categories = zusaetzlich Kategorien &amp; Risiko · Full = vollstaendige Liste mit Pfaden." />
+                </StackPanel>
+            </Border>
+
+            <!-- Indicator management -->
+            <TextBlock Text="Indikator-Datenbank" Style="{StaticResource H2}" />
+            <Border Style="{StaticResource Card}" Margin="0,0,0,16">
+                <StackPanel>
+                    <TextBlock TextWrapping="Wrap" Style="{StaticResource Muted}"
+                               Text="Updates erfolgen bewusst lokal: importiere geprüfte Indikatoren als JSON. Es wird nichts automatisch aus dem Internet geladen." />
+
+                    <!-- Add form -->
+                    <Grid Margin="0,14,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <ComboBox Grid.Row="0" Grid.Column="0" Width="170"
+                                  ItemsSource="{Binding IndicatorTypes}" SelectedItem="{Binding NewType}" />
+                        <TextBox Grid.Row="0" Grid.Column="1" Margin="8,0"
+                                 Text="{Binding NewPattern, UpdateSourceTrigger=PropertyChanged}"
+                                 VerticalContentAlignment="Center" />
+                        <ComboBox Grid.Row="0" Grid.Column="2" Width="110"
+                                  ItemsSource="{Binding RiskLevels}" SelectedItem="{Binding NewRisk}" />
+                        <Button Grid.Row="0" Grid.Column="3" Content="Hinzufuegen" Margin="8,0,0,0"
+                                Style="{StaticResource PrimaryButton}" Command="{Binding AddIndicatorCommand}" />
+
+                        <TextBox Grid.Row="1" Grid.Column="0" Margin="0,8,8,0" Width="170"
+                                 Text="{Binding NewCategory, UpdateSourceTrigger=PropertyChanged}" />
+                        <TextBox Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="3" Margin="0,8,0,0"
+                                 Text="{Binding NewDescription, UpdateSourceTrigger=PropertyChanged}"
+                                 VerticalContentAlignment="Center" />
+                    </Grid>
+
+                    <!-- Grid -->
+                    <DataGrid ItemsSource="{Binding Indicators}" SelectedItem="{Binding SelectedIndicator}"
+                              IsReadOnly="False" CanUserAddRows="False" Margin="0,14,0,0" MaxHeight="320">
+                        <DataGrid.Columns>
+                            <DataGridCheckBoxColumn Header="Aktiv" Binding="{Binding Enabled}" Width="56" />
+                            <DataGridTextColumn Header="Typ" Binding="{Binding Type}" Width="150" IsReadOnly="True" />
+                            <DataGridTextColumn Header="Muster" Binding="{Binding Pattern}" Width="*" />
+                            <DataGridTextColumn Header="Risiko" Binding="{Binding Risk}" Width="90" IsReadOnly="True" />
+                            <DataGridTextColumn Header="Kategorie" Binding="{Binding Category}" Width="120" />
+                            <DataGridTextColumn Header="Beschreibung" Binding="{Binding Description}" Width="2*" />
+                            <DataGridTextColumn Header="Quelle" Binding="{Binding Source}" Width="120" IsReadOnly="True" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+
+                    <!-- Actions -->
+                    <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                        <Button Content="Aenderungen speichern" Style="{StaticResource PrimaryButton}"
+                                Command="{Binding SaveAllCommand}" Margin="0,0,8,0" />
+                        <Button Content="Ausgewaehlten loeschen" Style="{StaticResource GhostButton}"
+                                Command="{Binding DeleteIndicatorCommand}" Margin="0,0,8,0" />
+                        <Button Content="Importieren (JSON)" Style="{StaticResource GhostButton}"
+                                Command="{Binding ImportCommand}" Margin="0,0,8,0" />
+                        <Button Content="Exportieren (JSON)" Style="{StaticResource GhostButton}"
+                                Command="{Binding ExportCommand}" />
+                    </StackPanel>
+
+                    <TextBlock Text="{Binding StatusText}" Style="{StaticResource Muted}" Margin="0,12,0,0" />
+                </StackPanel>
+            </Border>
+
+            <!-- Database path -->
+            <TextBlock Text="Speicherort" Style="{StaticResource H2}" />
+            <Border Style="{StaticResource Card}">
+                <StackPanel>
+                    <TextBlock Text="Datenbank" Style="{StaticResource Muted}" />
+                    <TextBlock Text="{Binding DatabasePath}" TextWrapping="Wrap"
+                               Foreground="{StaticResource AccentBrush}" />
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

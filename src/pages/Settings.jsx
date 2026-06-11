@@ -89,7 +89,7 @@ function General() {
               <input
                 value={state.settings.scannerUrl || ''}
                 onChange={(e) => dispatch({ type: 'set-setting', key: 'scannerUrl', value: e.target.value })}
-                placeholder="https://…/ZeroTraceChecker.exe"
+                placeholder="https://…/ZeroTrace.exe"
                 className="bd tile txt w-full rounded-lg border px-3 py-2.5 text-sm focus:outline-none"
               />
             </Row>

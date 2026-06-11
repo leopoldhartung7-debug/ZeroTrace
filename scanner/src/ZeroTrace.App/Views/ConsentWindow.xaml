@@ -1,0 +1,110 @@
+<Window x:Class="ZeroTrace.App.Views.ConsentWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Lizenzvereinbarung &amp; Datenschutz"
+        Height="338" Width="470"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize" ShowInTaskbar="False"
+        Background="{StaticResource BgBrush}" FontFamily="Segoe UI">
+    <Window.Resources>
+        <Style x:Key="PinBox" TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+            <Setter Property="Width" Value="28" />
+            <Setter Property="Height" Value="32" />
+            <Setter Property="Margin" Value="3,0" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="MaxLength" Value="1" />
+            <Setter Property="TextAlignment" Value="Center" />
+            <Setter Property="FontSize" Value="15" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+    </Window.Resources>
+    <Grid Margin="14">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Text="Lizenzvereinbarung &amp; Datenschutz"
+                   FontSize="15" FontWeight="SemiBold" HorizontalAlignment="Center"
+                   Foreground="{StaticResource TextBrush}" />
+        <TextBlock Grid.Row="1" Text="PIN eingeben und Bedingungen lesen, dann fortfahren."
+                   Style="{StaticResource Muted}" HorizontalAlignment="Center" Margin="0,2,0,8" />
+
+        <!-- PIN (required; no scan without a valid 6-digit PIN) -->
+        <StackPanel Grid.Row="2" HorizontalAlignment="Center" Margin="0,0,0,8">
+            <Border BorderBrush="{StaticResource LineBrush}" BorderThickness="1" CornerRadius="12" Padding="12,10" HorizontalAlignment="Center">
+                <StackPanel>
+                    <TextBlock Text="Gib deinen 6-stelligen PIN ein" HorizontalAlignment="Center"
+                               Foreground="{StaticResource MutedBrush}" FontSize="11" Margin="0,0,0,9" />
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <TextBox x:Name="P0" Style="{StaticResource PinBox}" TextChanged="Pin_Changed" PreviewKeyDown="Pin_KeyDown" GotFocus="Pin_GotFocus" />
+                        <TextBox x:Name="P1" Style="{StaticResource PinBox}" TextChanged="Pin_Changed" PreviewKeyDown="Pin_KeyDown" GotFocus="Pin_GotFocus" />
+                        <TextBox x:Name="P2" Style="{StaticResource PinBox}" TextChanged="Pin_Changed" PreviewKeyDown="Pin_KeyDown" GotFocus="Pin_GotFocus" />
+                        <TextBox x:Name="P3" Style="{StaticResource PinBox}" TextChanged="Pin_Changed" PreviewKeyDown="Pin_KeyDown" GotFocus="Pin_GotFocus" />
+                        <TextBox x:Name="P4" Style="{StaticResource PinBox}" TextChanged="Pin_Changed" PreviewKeyDown="Pin_KeyDown" GotFocus="Pin_GotFocus" />
+                        <TextBox x:Name="P5" Style="{StaticResource PinBox}" TextChanged="Pin_Changed" PreviewKeyDown="Pin_KeyDown" GotFocus="Pin_GotFocus" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+            <TextBlock x:Name="PinHint" HorizontalAlignment="Center" Margin="0,8,0,0"
+                       Foreground="{StaticResource MutedBrush}" FontSize="11" Text="Gib deinen 6-stelligen PIN ein" />
+        </StackPanel>
+
+        <!-- Scrollable terms -->
+        <Border Grid.Row="3" Background="{StaticResource PanelAltBrush}"
+                BorderBrush="{StaticResource LineBrush}" BorderThickness="1" CornerRadius="8">
+            <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="16,14">
+                <StackPanel>
+                    <TextBlock Text="ENDBENUTZER-LIZENZ- UND DATENSCHUTZVEREINBARUNG"
+                               FontWeight="SemiBold" Foreground="{StaticResource TextBrush}" Margin="0,0,0,8" />
+                    <TextBlock TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}" LineHeight="20"
+                               Text="ZeroTrace ist ein lokales Analysewerkzeug, das diesen PC auf Hinweise fuer Cheats und Manipulationen untersucht. Mit „Akzeptieren" stimmst du der nachfolgend beschriebenen Pruefung zu." />
+
+                    <TextBlock Text="1. Was geprueft wird" Foreground="{StaticResource AccentBrush}"
+                               FontWeight="SemiBold" Margin="0,14,0,3" />
+                    <TextBlock TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}" LineHeight="20"
+                               Text="Laufende Prozesse, Autostart-Eintraege, ausgewaehlte Registry-Schluessel, das FiveM-Verzeichnis, der Downloads-Ordner sowie Dateien auf festen Laufwerken. Erfasst werden dabei u. a. Dateipfade, Datei-Hashes (SHA-256) sowie Prozess- und Autostart-Informationen." />
+
+                    <TextBlock Text="2. Was mit den Ergebnissen geschieht" Foreground="{StaticResource AccentBrush}"
+                               FontWeight="SemiBold" Margin="0,14,0,3" />
+                    <TextBlock TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}" LineHeight="20"
+                               Text="Die Ergebnisse werden dir nach dem Scan in der Anwendung (Seite „Funde") angezeigt und zusaetzlich an die hinterlegte Adresse des Veranstalters/Administrators gesendet, sofern dort eine Adresse eingetragen ist. Das Ergebnis wird dem eingegebenen PIN zugeordnet. Nach dem Versand erscheint der Hinweis „Ergebnisse gesendet", damit du weisst, dass die Uebertragung erfolgt ist." />
+
+                    <TextBlock Text="3. Was ZeroTrace nicht tut" Foreground="{StaticResource AccentBrush}"
+                               FontWeight="SemiBold" Margin="0,14,0,3" />
+                    <TextBlock TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}" LineHeight="20"
+                               Text="Keine Aenderungen an Prozessen, Dateien oder der Registry - ZeroTrace liest ausschliesslich. Kein automatischer Download von Signaturen aus dem Internet." />
+
+                    <TextBlock Text="4. Hinweis" Foreground="{StaticResource AccentBrush}"
+                               FontWeight="SemiBold" Margin="0,14,0,3" />
+                    <TextBlock TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}" LineHeight="20"
+                               Text="Funde sind Indizien, kein Beweis fuer Cheating. Fehlalarme (False Positives) sind moeglich." />
+
+                    <TextBlock Text="5. Zulaessiger Einsatz" Foreground="{StaticResource AccentBrush}"
+                               FontWeight="SemiBold" Margin="0,14,0,3" />
+                    <TextBlock TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}" LineHeight="20"
+                               Text="Nur auf eigenen Systemen oder mit ausdruecklicher Zustimmung des Eigentuemers verwenden." />
+
+                    <TextBlock Text="6. Entfernen" Foreground="{StaticResource AccentBrush}"
+                               FontWeight="SemiBold" Margin="0,14,0,3" />
+                    <TextBlock TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}" LineHeight="20"
+                               Text="Ueber die Schaltflaeche „ZeroTrace entfernen" kannst du das Programm jederzeit selbst von diesem PC loeschen: Der Datenordner (Datenbank und Berichte) sowie die Programmdatei werden vollstaendig entfernt. Das Entfernen geschieht nur, wenn du es selbst ausloest - es passiert nicht automatisch." />
+                </StackPanel>
+            </ScrollViewer>
+        </Border>
+
+        <!-- Buttons -->
+        <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,12,0,0">
+            <Button x:Name="AcceptBtn" Content="✔  Akzeptieren" Style="{StaticResource PrimaryButton}"
+                    Click="Accept_Click" Margin="0,0,10,0" MinWidth="150" IsEnabled="False" />
+            <Button Content="✖  Ablehnen" Style="{StaticResource GhostButton}"
+                    Click="Decline_Click" MinWidth="150" />
+        </StackPanel>
+    </Grid>
+</Window>

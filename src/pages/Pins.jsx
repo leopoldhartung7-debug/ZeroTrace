@@ -8,6 +8,7 @@ import {
 import Tabs from '../components/Tabs.jsx'
 import { Modal, Menu, Select, useToast } from '../components/ui.jsx'
 import { useStore, useStats, useT, generatePinCode, deriveScanReport } from '../store.jsx'
+import { makeZip } from '../lib/zip.js'
 
 const GAMES = ['HYTALE', 'MINECRAFT', 'CS2', 'VALORANT', 'RUST', 'FIVEM']
 
@@ -182,26 +183,39 @@ export default function Pins() {
     toast({ type: 'success', title: 'Session file downloaded', body: `ZeroTraceScan-${c.pin}.zerotrace` })
   }
 
-  // Download the scanner with the PIN baked into the .exe (appended as
-  // "ZTPIN:<pin>" — harmless trailing bytes the scanner reads from itself).
+  // Where the scanner exe is hosted. Defaults to the build bundled with the
+  // site (same-origin → no CORS), unless an admin set a custom URL.
+  const scannerBase = () => state.settings?.scannerUrl || 'ZeroTrace.exe'
+
+  // A copy-paste link to the scanner with the PIN carried in the query string
+  // (e.g. https://site/ZeroTrace.exe?pin=4821). Handy to send to a player —
+  // the PIN stays visible/traceable in the link itself.
+  const scannerLink = (c) => {
+    const abs = new URL(scannerBase(), window.location.href).href
+    return abs + (abs.includes('?') ? '&' : '?') + 'pin=' + encodeURIComponent(c.pin)
+  }
+
+  // Download the scanner with the PIN baked in. The new ZeroTrace scanner
+  // reads the PIN from a "zerotrace.pin" file next to the exe, so we hand the
+  // player a single .zip containing ZeroTrace.exe + zerotrace.pin. On first
+  // launch the PIN is pre-filled and locked.
   const downloadScannerWithPin = async (c) => {
-    // Default to the scanner bundled with the site (same-origin → no CORS),
-    // unless an admin set a custom hosting URL.
-    const base0 = state.settings?.scannerUrl || 'ZeroTraceChecker.exe'
+    const base0 = scannerBase()
     // Cache-bust so the browser never serves an old scanner build.
     const url = base0 + (base0.includes('?') ? '&' : '?') + 't=' + Date.now()
     try {
       toast({ type: 'info', title: 'Preparing scanner…' })
       const res = await fetch(url, { cache: 'no-store' })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      const base = new Uint8Array(await res.arrayBuffer())
-      const marker = new TextEncoder().encode(`\nZTPIN:${c.pin}\n`)
-      const out = new Uint8Array(base.length + marker.length)
-      out.set(base, 0)
-      out.set(marker, base.length)
+      const exeBytes = new Uint8Array(await res.arrayBuffer())
+      const pinBytes = new TextEncoder().encode(String(c.pin))
+      const zip = makeZip([
+        { name: 'ZeroTrace.exe', data: exeBytes },
+        { name: 'zerotrace.pin', data: pinBytes },
+      ])
       const a = document.createElement('a')
-      a.href = URL.createObjectURL(new Blob([out], { type: 'application/octet-stream' }))
-      a.download = `ZeroTraceChecker-${c.pin}.exe`
+      a.href = URL.createObjectURL(zip)
+      a.download = `ZeroTrace-${c.pin}.zip`
       a.click()
       URL.revokeObjectURL(a.href)
       toast({ type: 'success', title: 'Scanner ready', body: `PIN ${c.pin} is built in` })
@@ -829,10 +843,44 @@ export default function Pins() {
                 <Download size={15} /> Download Scanner (PIN built in)
               </button>
               <p className="muted mt-2 text-xs">
-                One file: <span className="txt font-mono">ZeroTraceChecker-{created.pin}.exe</span> — the PIN is
-                already inside it. The player just runs it, accepts the consent prompt and scans. Their result
-                token comes back to you → paste it under <span className="txt">Import Result</span>.
+                One archive: <span className="txt font-mono">ZeroTrace-{created.pin}.zip</span> — it contains{' '}
+                <span className="txt font-mono">ZeroTrace.exe</span> and a{' '}
+                <span className="txt font-mono">zerotrace.pin</span> file. The player extracts both into the same
+                folder and runs <span className="txt font-mono">ZeroTrace.exe</span> — the PIN is pre-filled and
+                locked. Requires the{' '}
+                <a
+                  href="https://dotnet.microsoft.com/download/dotnet/8.0"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-sky-400 underline-offset-2 hover:underline"
+                >
+                  .NET 8 Desktop Runtime
+                </a>
+                . Their result token comes back to you → paste it under{' '}
+                <span className="txt">Import Result</span>.
               </p>
+
+              <div className="mt-4">
+                <p className="txt mb-1.5 text-xs font-semibold">Or copy a download link (PIN in the URL)</p>
+                <div className="flex items-center gap-2">
+                  <input
+                    readOnly
+                    value={scannerLink(created)}
+                    onFocus={(e) => e.target.select()}
+                    className="bd txt min-w-0 flex-1 rounded-lg border bg-transparent px-3 py-2 font-mono text-xs"
+                  />
+                  <button
+                    onClick={() => copyText(scannerLink(created), 'Scanner link')}
+                    className="bd txt flex shrink-0 items-center gap-2 rounded-lg border px-3 py-2 text-sm hover:border-sky-500"
+                  >
+                    <Link2 size={15} /> Copy
+                  </button>
+                </div>
+                <p className="muted mt-1.5 text-xs">
+                  Sends the player to the scanner with the PIN visible in the link. Note: a plain static link
+                  only carries the PIN for reference — the embedded PIN above is what auto-fills the scanner.
+                </p>
+              </div>
 
               <button
                 onClick={() => downloadSession(created)}
