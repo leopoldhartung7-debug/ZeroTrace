@@ -1644,6 +1644,18 @@ export default function Casino() {
           <div>
             <p className="caps-label">Jackpot pool</p>
             <p className="mt-1 text-xl font-bold text-yellow-400">{(state.jackpot || 0).toLocaleString()}</p>
+            {state.role === 'admin' && (
+              <button
+                type="button"
+                onClick={() => {
+                  dispatch({ type: 'reset-jackpot', role: state.role })
+                  toast?.({ type: 'success', title: 'Jackpot reset', body: 'Pool set back to 5,000.' })
+                }}
+                className="bd muted hover:txt mt-2 rounded-md border px-2 py-1 text-xs"
+              >
+                Reset jackpot
+              </button>
+            )}
           </div>
           <Sparkles size={26} className="text-yellow-400" />
         </Card>

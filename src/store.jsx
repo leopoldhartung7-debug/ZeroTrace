@@ -251,6 +251,7 @@ function seed() {
       lastDigestAt: 0,
       casinoSound: true,
       scannerUrl: '',
+      scannerApiUrl: '',
     },
     notifications: [
       { id: 'n1', title: 'Scan finished', body: 'Pin F1T5F8C0 returned: Cheating', time: now - 3600000, read: false },
@@ -1215,6 +1216,16 @@ function reducer(state, action) {
           },
         },
         notifications: note(state, 'JACKPOT!', `${action.name || 'A player'} won the ${pool.toLocaleString()} coin jackpot!`, null),
+      }
+    }
+
+    case 'reset-jackpot': {
+      // Admin-only: reset the jackpot pool back to its 5000 base.
+      if (action.role !== 'admin') return state
+      return {
+        ...state,
+        jackpot: 5000,
+        notifications: note(state, 'Jackpot reset', 'An admin reset the jackpot pool to 5,000 coins.', null),
       }
     }
 

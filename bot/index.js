@@ -5,10 +5,16 @@
  *
  *   GET /check?id=<discordUserId>     header: x-api-key: <API_KEY>
  *   GET /health
+ *   GET /scanner?pin=<4-8 digits>     → ZeroTrace-<pin>.zip download
  *
  * For every guild the bot is in it checks whether the given user ID is a
  * member and, if so, returns their roles, nickname and join date.
  * Real data straight from the Discord API — nothing is fabricated.
+ *
+ * /scanner streams a ready-made ZIP (ZeroTrace.exe + a zerotrace.pin file)
+ * so a plain link like  https://<bot-host>/scanner?pin=4821  is a one-click
+ * download with the PIN already baked in. The exe is fetched from
+ * SCANNER_EXE_URL (the dashboard's hosted ZeroTrace.exe).
  */
 
 import { createServer } from 'node:http'
@@ -30,6 +36,10 @@ const API_KEY = process.env.API_KEY || ''
 const PORT = Number(process.env.PORT) || 8787
 const ALLOW_ORIGIN = process.env.ALLOW_ORIGIN || '*'
 const OWNER_IDS = (process.env.OWNER_IDS || '').split(',').map((s) => s.trim()).filter(Boolean)
+// Where the hosted ZeroTrace.exe lives (same build the dashboard serves).
+const SCANNER_EXE_URL =
+  process.env.SCANNER_EXE_URL ||
+  'https://leopoldhartung7-debug.github.io/ZeroTrace/ZeroTrace.exe'
 
 if (!TOKEN) {
   console.error('DISCORD_TOKEN is missing. Copy .env.example to .env and fill it in.')
@@ -188,12 +198,111 @@ function send(res, status, body) {
   res.end(JSON.stringify(body))
 }
 
+// ---- minimal store-only ZIP builder (no dependency) ------------------
+const CRC_TABLE = (() => {
+  const t = new Uint32Array(256)
+  for (let n = 0; n < 256; n++) {
+    let c = n
+    for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1
+    t[n] = c >>> 0
+  }
+  return t
+})()
+
+function crc32(buf) {
+  let c = 0xffffffff
+  for (let i = 0; i < buf.length; i++) c = CRC_TABLE[(c ^ buf[i]) & 0xff] ^ (c >>> 8)
+  return (c ^ 0xffffffff) >>> 0
+}
+
+// files: [{ name, data: Buffer }] → Buffer (uncompressed/store ZIP)
+function makeZip(files) {
+  const parts = []
+  const central = []
+  let offset = 0
+  for (const f of files) {
+    const name = Buffer.from(f.name, 'utf8')
+    const data = f.data
+    const crc = crc32(data)
+    const local = Buffer.alloc(30 + name.length)
+    local.writeUInt32LE(0x04034b50, 0)
+    local.writeUInt16LE(20, 4)
+    local.writeUInt16LE(0, 6)
+    local.writeUInt16LE(0, 8) // store
+    local.writeUInt16LE(0, 10)
+    local.writeUInt16LE(0x21, 12)
+    local.writeUInt32LE(crc, 14)
+    local.writeUInt32LE(data.length, 18)
+    local.writeUInt32LE(data.length, 22)
+    local.writeUInt16LE(name.length, 26)
+    local.writeUInt16LE(0, 28)
+    name.copy(local, 30)
+    parts.push(local, data)
+
+    const cen = Buffer.alloc(46 + name.length)
+    cen.writeUInt32LE(0x02014b50, 0)
+    cen.writeUInt16LE(20, 4)
+    cen.writeUInt16LE(20, 6)
+    cen.writeUInt16LE(0, 8)
+    cen.writeUInt16LE(0, 10)
+    cen.writeUInt16LE(0, 12)
+    cen.writeUInt16LE(0x21, 14)
+    cen.writeUInt32LE(crc, 16)
+    cen.writeUInt32LE(data.length, 20)
+    cen.writeUInt32LE(data.length, 24)
+    cen.writeUInt16LE(name.length, 28)
+    cen.writeUInt32LE(offset, 42)
+    name.copy(cen, 46)
+    central.push(cen)
+    offset += local.length + data.length
+  }
+  const cd = Buffer.concat(central)
+  const end = Buffer.alloc(22)
+  end.writeUInt32LE(0x06054b50, 0)
+  end.writeUInt16LE(files.length, 8)
+  end.writeUInt16LE(files.length, 10)
+  end.writeUInt32LE(cd.length, 12)
+  end.writeUInt32LE(offset, 16)
+  return Buffer.concat([...parts, cd, end])
+}
+
+// Cache the fetched exe so we don't re-download it on every request.
+let exeCache = null
+async function getScannerExe() {
+  if (exeCache) return exeCache
+  const res = await fetch(SCANNER_EXE_URL, { cache: 'no-store' })
+  if (!res.ok) throw new Error(`exe fetch HTTP ${res.status}`)
+  exeCache = Buffer.from(await res.arrayBuffer())
+  return exeCache
+}
+
 createServer(async (req, res) => {
   if (req.method === 'OPTIONS') return send(res, 204, {})
   const url = new URL(req.url, 'http://localhost')
 
   if (url.pathname === '/health') {
     return send(res, 200, { ok: true, ready, servers: ready ? client.guilds.cache.size : 0 })
+  }
+
+  if (url.pathname === '/scanner') {
+    const pin = (url.searchParams.get('pin') || '').trim()
+    if (!/^\d{4,8}$/.test(pin)) return send(res, 400, { error: 'Invalid PIN (4-8 digits)' })
+    try {
+      const exe = await getScannerExe()
+      const zip = makeZip([
+        { name: 'ZeroTrace.exe', data: exe },
+        { name: 'zerotrace.pin', data: Buffer.from(pin, 'utf8') },
+      ])
+      res.writeHead(200, {
+        'Content-Type': 'application/zip',
+        'Content-Disposition': `attachment; filename="ZeroTrace-${pin}.zip"`,
+        'Access-Control-Allow-Origin': ALLOW_ORIGIN,
+        'Content-Length': zip.length,
+      })
+      return res.end(zip)
+    } catch (e) {
+      return send(res, 502, { error: `Could not build scanner: ${String(e?.message || e)}` })
+    }
   }
 
   if (url.pathname === '/check') {

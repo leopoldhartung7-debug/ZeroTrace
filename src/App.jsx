@@ -139,7 +139,7 @@ export default function App() {
             <Route path="/pins" element={<Pins />} />
             <Route path="/scan/:id" element={<ScanResults />} />
             <Route path="/strings" element={<Strings />} />
-            <Route path="/database" element={<CheatDatabase />} />
+            <Route path="/database" element={<AdminRoute><CheatDatabase /></AdminRoute>} />
             <Route path="/tools" element={<Tools />} />
             <Route path="/history" element={<History />} />
             <Route path="/support" element={<Support />} />

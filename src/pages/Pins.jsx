@@ -187,10 +187,15 @@ export default function Pins() {
   // site (same-origin → no CORS), unless an admin set a custom URL.
   const scannerBase = () => state.settings?.scannerUrl || 'ZeroTrace.exe'
 
-  // A copy-paste link to the scanner with the PIN carried in the query string
-  // (e.g. https://site/ZeroTrace.exe?pin=4821). Handy to send to a player —
-  // the PIN stays visible/traceable in the link itself.
+  // A copy-paste link to the scanner with the PIN in the URL. If a Scanner API
+  // (the bot's /scanner endpoint) is configured, the link is a real one-click
+  // ZIP download with the PIN already baked in. Otherwise it falls back to a
+  // static link that just carries the PIN for reference.
   const scannerLink = (c) => {
+    const api = state.settings?.scannerApiUrl?.trim()
+    if (api) {
+      return api.replace(/\/+$/, '') + '/scanner?pin=' + encodeURIComponent(c.pin)
+    }
     const abs = new URL(scannerBase(), window.location.href).href
     return abs + (abs.includes('?') ? '&' : '?') + 'pin=' + encodeURIComponent(c.pin)
   }
@@ -877,8 +882,9 @@ export default function Pins() {
                   </button>
                 </div>
                 <p className="muted mt-1.5 text-xs">
-                  Sends the player to the scanner with the PIN visible in the link. Note: a plain static link
-                  only carries the PIN for reference — the embedded PIN above is what auto-fills the scanner.
+                  {state.settings?.scannerApiUrl?.trim()
+                    ? 'One-click download via your Scanner API — the ZIP comes with the PIN already baked in.'
+                    : 'Static link carrying the PIN for reference. Set a Scanner API URL in Settings to make this a one-click download with the PIN built in.'}
                 </p>
               </div>
 

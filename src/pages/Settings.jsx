@@ -94,6 +94,16 @@ function General() {
               />
             </Row>
           )}
+          {state.role === 'admin' && (
+            <Row title="Scanner API URL (optional)" desc="Bot URL hosting /scanner?pin= — makes the copyable pin link a one-click ZIP download. Leave empty for the static link.">
+              <input
+                value={state.settings.scannerApiUrl || ''}
+                onChange={(e) => dispatch({ type: 'set-setting', key: 'scannerApiUrl', value: e.target.value })}
+                placeholder="https://your-bot-host"
+                className="bd tile txt w-full rounded-lg border px-3 py-2.5 text-sm focus:outline-none"
+              />
+            </Row>
+          )}
         </Card>
 
         <Card className="p-6">
