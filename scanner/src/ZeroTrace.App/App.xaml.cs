@@ -1,3 +1,4 @@
+using System.IO;
 using System.Windows;
 using ZeroTrace.App.ViewModels;
 using ZeroTrace.App.Views;
