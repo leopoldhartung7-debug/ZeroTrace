@@ -1106,6 +1106,17 @@ function reducer(state, action) {
       }
     }
 
+    case 'clear-blacklist': {
+      // Empty one blacklist (hwids / discordIds / emailDomains) in one go.
+      return {
+        ...state,
+        blacklists: {
+          ...(state.blacklists || {}),
+          [action.list]: [],
+        },
+      }
+    }
+
     case 'complete-onboarding':
       return { ...state, onboardingDone: true }
 

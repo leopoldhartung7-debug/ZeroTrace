@@ -37,6 +37,13 @@ function BlacklistTab({ listKey }) {
     logAdminAction(dispatch, state, 'blacklist-remove', `${listKey}:${v}`)
   }
 
+  const clearAll = () => {
+    if (list.length === 0) return
+    if (!window.confirm(`Clear all ${list.length} entries from this blacklist? This cannot be undone.`)) return
+    dispatch({ type: 'clear-blacklist', list: listKey })
+    logAdminAction(dispatch, state, 'blacklist-clear', `${listKey}:${list.length} entries`)
+  }
+
   return (
     <div>
       <Card className="p-4">
@@ -61,7 +68,19 @@ function BlacklistTab({ listKey }) {
         {err && <p className="mt-2 text-xs text-red-500">{err}</p>}
       </Card>
 
-      <Card className="mt-4 p-0">
+      {list.length > 0 && (
+        <div className="mt-4 flex items-center justify-between">
+          <p className="muted text-xs">{list.length} {list.length === 1 ? 'entry' : 'entries'}</p>
+          <button
+            onClick={clearAll}
+            className="inline-flex items-center gap-1.5 rounded-md border border-red-600/40 px-3 py-1.5 text-xs font-medium text-red-500 hover:bg-red-600/10"
+          >
+            <Trash2 size={13} /> Clear all
+          </button>
+        </div>
+      )}
+
+      <Card className="mt-2 p-0">
         {list.length === 0 ? (
           <p className="muted py-12 text-center text-sm">No entries on this list.</p>
         ) : (
