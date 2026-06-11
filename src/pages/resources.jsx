@@ -349,7 +349,7 @@ export function Pricing() {
         <PriceCard
           title="ZeroTrace FiveM - Yearly Personal"
           desc="Specific license that supports scans for the game FiveM, including its respective detection modules."
-          price="$79.99"
+          price="$59.99"
           period="/year"
           features={personalFeatures}
           onBuy={() => buy('Yearly Personal')}
@@ -357,7 +357,7 @@ export function Pricing() {
         <PriceCard
           title="ZeroTrace FiveM - 6 Month Personal"
           desc="Specific license that supports scans for the game FiveM, including its respective detection modules."
-          price="$44.99"
+          price="$34.99"
           period="/6 months"
           features={personalFeatures}
           onBuy={() => buy('6 Month Personal')}
@@ -365,7 +365,7 @@ export function Pricing() {
         <PriceCard
           title="ZeroTrace FiveM - Monthly Personal"
           desc="Specific license that supports scans for the game FiveM, including its respective detection modules."
-          price="$10"
+          price="$8"
           period="/month"
           features={personalFeatures}
           onBuy={() => buy('Monthly Personal')}
@@ -381,7 +381,7 @@ export function Pricing() {
         <PriceCard
           title="ZeroTrace FiveM - Enterprise+ (6 months) 20 Slots"
           desc="Team license for organisations. Supports FiveM scans across multiple operators."
-          price="$249.99"
+          price="$199.99"
           period="/6 months"
           features={['20 slots', 'Team / organisation use', 'FIVEM access', 'Unlimited pin generation', 'Shared pins & access', 'Priority support']}
           onBuy={() => buy('Enterprise+ 20 Slots')}
@@ -389,7 +389,7 @@ export function Pricing() {
         <PriceCard
           title="ZeroTrace FiveM - Enterprise (6 months) 10 Slots"
           desc="Team license for organisations. Supports FiveM scans across multiple operators."
-          price="$149.99"
+          price="$119.99"
           period="/6 months"
           features={['10 slots', 'Team / organisation use', 'FIVEM access', 'Unlimited pin generation', 'Shared pins & access', 'Priority support']}
           onBuy={() => buy('Enterprise 10 Slots')}
