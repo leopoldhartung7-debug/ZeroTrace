@@ -15,6 +15,7 @@ public sealed class ScheduledTaskScanModule : IScanModule
 {
     public string Name => "Geplante Aufgaben";
     public double Weight => 0.4;
+    public bool ParallelSafe => true;
 
     public Task RunAsync(ScanContext ctx, CancellationToken ct)
     {

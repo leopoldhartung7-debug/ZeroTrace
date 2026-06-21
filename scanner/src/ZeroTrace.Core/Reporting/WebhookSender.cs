@@ -1,4 +1,5 @@
 using System.Net.Http;
+using System.Security.Cryptography;
 using System.Text;
 using ZeroTrace.Core.Models;
 
@@ -12,6 +13,11 @@ namespace ZeroTrace.Core.Reporting;
 /// user (showing the exact target URL and the exact payload) before calling
 /// <see cref="SendAsync"/>. Nothing is transmitted automatically or in the
 /// background.
+///
+/// When an HMAC key is provided the payload is signed with HMAC-SHA256 and the
+/// signature is sent as the X-ZeroTrace-Signature request header
+/// (format: "sha256=&lt;hex&gt;"). The dashboard can verify this to confirm the
+/// report was not tampered with in transit.
 /// </summary>
 public sealed class WebhookSender
 {
@@ -24,10 +30,13 @@ public sealed class WebhookSender
 
     /// <summary>
     /// POSTs <paramref name="json"/> to <paramref name="url"/>. Validates the URL
-    /// scheme (http/https only) and reports a clear result. Throws nothing on
-    /// network failure - it is reported via the returned record.
+    /// scheme (http/https only) and reports a clear result. When
+    /// <paramref name="hmacKey"/> is non-empty the payload is signed with
+    /// HMAC-SHA256 and the signature is sent in X-ZeroTrace-Signature header.
+    /// Throws nothing on network failure – it is reported via the returned record.
     /// </summary>
-    public static async Task<SendResult> SendAsync(string url, string json, CancellationToken ct = default)
+    public static async Task<SendResult> SendAsync(
+        string url, string json, string? hmacKey = null, CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(url))
             return new SendResult(false, 0, "Keine Ziel-Adresse angegeben.");
@@ -39,6 +48,13 @@ public sealed class WebhookSender
         try
         {
             using var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            if (!string.IsNullOrEmpty(hmacKey))
+            {
+                var sig = ComputeHmac(json, hmacKey);
+                content.Headers.Add("X-ZeroTrace-Signature", $"sha256={sig}");
+            }
+
             using var response = await Http.PostAsync(uri, content, ct);
             var code = (int)response.StatusCode;
             return response.IsSuccessStatusCode
@@ -53,5 +69,13 @@ public sealed class WebhookSender
         {
             return new SendResult(false, 0, "Senden fehlgeschlagen: " + ex.Message);
         }
+    }
+
+    private static string ComputeHmac(string payload, string key)
+    {
+        var keyBytes = Encoding.UTF8.GetBytes(key);
+        var payloadBytes = Encoding.UTF8.GetBytes(payload);
+        using var hmac = new HMACSHA256(keyBytes);
+        return Convert.ToHexString(hmac.ComputeHash(payloadBytes)).ToLowerInvariant();
     }
 }

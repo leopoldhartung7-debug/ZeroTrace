@@ -38,8 +38,11 @@ public sealed class TamperScanModule : IScanModule
 
     public Task RunAsync(ScanContext ctx, CancellationToken ct)
     {
+        CheckOwnIntegrity(ctx);
+        ctx.Report(0.08, "Eigenintegritaet", "Eigene Integritaet geprueft");
+
         CheckDebugger(ctx);
-        ctx.Report(0.11, "Debugger", "Selbstschutz geprueft");
+        ctx.Report(0.16, "Debugger", "Selbstschutz geprueft");
 
         CheckRedirectedFolders(ctx);
         ctx.Report(0.22, "Verzeichnisse", "Verzeichnis-Umleitungen geprueft");
@@ -63,6 +66,69 @@ public sealed class TamperScanModule : IScanModule
         ctx.Report(1.0, "Spuren loeschen", "Spurenbeseitigung geprueft");
 
         return Task.CompletedTask;
+    }
+
+    // --- scanner self-integrity: own .exe hash vs sidecar file ----------------
+
+    private void CheckOwnIntegrity(ScanContext ctx)
+    {
+        try
+        {
+            // Get the running scanner executable path.
+            string? exePath = null;
+            try { exePath = System.Diagnostics.Process.GetCurrentProcess().MainModule?.FileName; }
+            catch { }
+            if (string.IsNullOrEmpty(exePath) || !File.Exists(exePath)) return;
+
+            // Look for "ZeroTrace.sha256" sidecar file next to the exe.
+            var dir = Path.GetDirectoryName(exePath) ?? AppContext.BaseDirectory;
+            var sidecar = Path.Combine(dir, "ZeroTrace.sha256");
+            if (!File.Exists(sidecar)) return;
+
+            var expected = File.ReadAllText(sidecar).Trim().ToLowerInvariant();
+            if (expected.Length != 64 || !expected.All(c =>
+                (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f')))
+            {
+                // Malformed sidecar – report it, don't silently skip.
+                ctx.AddFinding(new Finding
+                {
+                    Module = Name,
+                    Title = "Integritaets-Sidecar ungueltig",
+                    Risk = RiskLevel.Medium,
+                    Location = sidecar,
+                    Reason = "Die Datei 'ZeroTrace.sha256' neben dem Scanner-Executable " +
+                             "enthaelt keinen gueltigen SHA-256-Hash (64 Hex-Zeichen). " +
+                             "Sie koennte manipuliert worden sein."
+                });
+                return;
+            }
+
+            // Compute the actual hash.
+            string? actual = null;
+            try
+            {
+                using var stream = File.OpenRead(exePath);
+                var hash = System.Security.Cryptography.SHA256.HashData(stream);
+                actual = Convert.ToHexString(hash).ToLowerInvariant();
+            }
+            catch { return; }
+
+            if (!string.Equals(expected, actual, StringComparison.Ordinal))
+            {
+                ctx.AddFinding(new Finding
+                {
+                    Module = Name,
+                    Title = "Scanner-Executable veraendert (Hash-Mismatch)",
+                    Risk = RiskLevel.Critical,
+                    Location = exePath,
+                    Reason = "Der SHA-256-Hash des laufenden Scanners weicht vom Referenzwert " +
+                             "in 'ZeroTrace.sha256' ab. Das Executable wurde moeglicherweise " +
+                             "nach der Verteilung manipuliert, um Scan-Ergebnisse zu faelschen.",
+                    Detail = $"Erwartet: {expected} · Aktuell: {actual}"
+                });
+            }
+        }
+        catch { /* integrity check is best-effort */ }
     }
 
     // --- hosts file: blocked AC / game server domains -------------------------

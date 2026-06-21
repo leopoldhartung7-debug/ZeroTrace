@@ -47,4 +47,10 @@ public sealed class Finding
     public Recommendation Recommendation { get; set; } = Recommendation.Review;
 
     public DateTime DetectedUtc { get; set; } = DateTime.UtcNow;
+
+    /// <summary>
+    /// Combined confidence 0-100 based on how many independent signals agreed.
+    /// 0 means the field was not computed by this detection path.
+    /// </summary>
+    public int ConfidenceScore { get; set; }
 }

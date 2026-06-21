@@ -83,6 +83,9 @@ public sealed class ProcessScanModule : IScanModule
                 }
             }
 
+            // #5 — Ghost-DLL check: modules mapped into memory but deleted from disk.
+            ModuleInspection.CheckGhostModules((int)p.Pid, p.Name, hostIsMp, ctx);
+
             // Always gather candidate modules for this process (even if the image
             // already produced a finding): the injected DLL is the real signal.
             foreach (var modPath in ModuleInspection.EnumerateCandidateModules((int)p.Pid, ctx))

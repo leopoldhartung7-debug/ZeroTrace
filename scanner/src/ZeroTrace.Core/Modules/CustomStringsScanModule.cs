@@ -81,48 +81,34 @@ public sealed class CustomStringsScanModule : IScanModule
         {
             ".exe", ".dll", ".sys", ".bin", ".dat", ".cfg", ".ini",
             ".lua", ".luac", ".asi", ".js", ".node",
-            // Script files that often carry custom strings in plain text
             ".bat", ".cmd", ".ps1", ".vbs", ".wsf",
-            // Config and log formats that may contain cheat tokens / download URLs
             ".json", ".xml", ".txt", ".log"
         };
 
+        // Collect candidates sequentially first (keeps the seen-set simple).
+        var allFiles = new List<string>();
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        int scanned = 0;
 
         foreach (var root in KnownPaths.TargetedScanRoots())
         {
             if (ct.IsCancellationRequested) break;
-            ScanDirectory(root, ctx, matcher, extensions, seen, ref scanned, ct, depth: 0);
+            CollectFiles(root, allFiles, extensions, seen, ct, depth: 0, maxCount: 5000);
         }
-    }
 
-    private static void ScanDirectory(
-        string dir,
-        ScanContext ctx,
-        IndicatorMatcher matcher,
-        HashSet<string> extensions,
-        HashSet<string> seen,
-        ref int scanned,
-        CancellationToken ct,
-        int depth)
-    {
-        if (depth > 6 || ct.IsCancellationRequested || scanned > 5000) return;
-
-        string[] files;
-        try { files = Directory.GetFiles(dir); }
-        catch { files = Array.Empty<string>(); }
-
-        foreach (var f in files)
+        // Process candidates in parallel — ContentSignatureScanner is stateless.
+        var parallelOptions = new ParallelOptions
         {
-            if (ct.IsCancellationRequested || scanned > 5000) return;
-            if (!extensions.Contains(Path.GetExtension(f))) continue;
-            if (!seen.Add(f)) continue;
-            scanned++;
+            CancellationToken = ct,
+            MaxDegreeOfParallelism = Math.Max(2, Environment.ProcessorCount)
+        };
+
+        Parallel.ForEach(allFiles, parallelOptions, f =>
+        {
+            if (ct.IsCancellationRequested) return;
             ctx.IncrementFiles();
 
             var ind = ContentSignatureScanner.Scan(f, matcher);
-            if (ind is null) continue;
+            if (ind is null) return;
 
             ctx.AddFinding(new Finding
             {
@@ -134,6 +120,30 @@ public sealed class CustomStringsScanModule : IScanModule
                 Reason = $"Der benutzerdefinierte String '{ind.Pattern}' wurde in der Datei " +
                          $"'{Path.GetFileName(f)}' gefunden. {ind.Description}",
             });
+        });
+    }
+
+    private static void CollectFiles(
+        string dir,
+        List<string> result,
+        HashSet<string> extensions,
+        HashSet<string> seen,
+        CancellationToken ct,
+        int depth,
+        int maxCount)
+    {
+        if (depth > 6 || ct.IsCancellationRequested || result.Count >= maxCount) return;
+
+        string[] files;
+        try { files = Directory.GetFiles(dir); }
+        catch { files = Array.Empty<string>(); }
+
+        foreach (var f in files)
+        {
+            if (ct.IsCancellationRequested || result.Count >= maxCount) return;
+            if (!extensions.Contains(Path.GetExtension(f))) continue;
+            if (!seen.Add(f)) continue;
+            result.Add(f);
         }
 
         string[] subdirs;
@@ -142,8 +152,8 @@ public sealed class CustomStringsScanModule : IScanModule
 
         foreach (var sub in subdirs)
         {
-            if (ct.IsCancellationRequested || scanned > 5000) break;
-            ScanDirectory(sub, ctx, matcher, extensions, seen, ref scanned, ct, depth + 1);
+            if (ct.IsCancellationRequested || result.Count >= maxCount) break;
+            CollectFiles(sub, result, extensions, seen, ct, depth + 1, maxCount);
         }
     }
 }

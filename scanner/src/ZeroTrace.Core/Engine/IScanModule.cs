@@ -14,6 +14,13 @@ public interface IScanModule
     double Weight { get; }
 
     Task RunAsync(ScanContext context, CancellationToken ct);
+
+    /// <summary>
+    /// When true the engine may run this module concurrently with other
+    /// parallel-safe siblings. The module must not depend on sibling results and
+    /// must use only thread-safe ScanContext APIs (all of which already are).
+    /// </summary>
+    bool ParallelSafe => false;
 }
 
 /// <summary>

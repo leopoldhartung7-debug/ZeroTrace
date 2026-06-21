@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using ZeroTrace.Core.Detection;
 using ZeroTrace.Core.Engine;
+using ZeroTrace.Core.Models;
 
 namespace ZeroTrace.Core.Modules;
 
@@ -53,5 +54,49 @@ internal static class ModuleInspection
         return ctx.Matcher.MatchFileName(fn) is not null
             || ctx.Matcher.MatchFileNameKeyword(fn) is not null
             || ctx.Matcher.MatchPathKeyword(path) is not null;
+    }
+
+    /// <summary>
+    /// Checks all loaded modules of a process for the "ghost DLL" pattern:
+    /// a module that was mapped into the process but whose on-disk file no
+    /// longer exists. This is used by some cheat loaders to reduce forensic
+    /// traces — they inject a DLL then delete the file immediately.
+    /// Adds findings directly to <paramref name="ctx"/>.
+    /// </summary>
+    public static void CheckGhostModules(int pid, string processName, bool isMpProcess, ScanContext ctx)
+    {
+        if (pid <= 4) return;
+        try
+        {
+            using var proc = Process.GetProcessById(pid);
+            foreach (ProcessModule m in proc.Modules)
+            {
+                string? fn = null;
+                try { fn = m.FileName; } catch { }
+                if (string.IsNullOrEmpty(fn)) continue;
+
+                // Ghost DLL: path looks real but file is gone.
+                if (!File.Exists(fn) && fn.Contains('\\') && fn.Length > 4)
+                {
+                    var risk = isMpProcess ? RiskLevel.Critical : RiskLevel.High;
+                    ctx.AddFinding(new Finding
+                    {
+                        Module = "Prozesse",
+                        Title = $"Geladenes Modul ohne Datei auf Datentraeger: {Path.GetFileName(fn)}",
+                        Risk = risk,
+                        Location = fn,
+                        FileName = Path.GetFileName(fn),
+                        Reason = $"Das Modul '{Path.GetFileName(fn)}' ist in Prozess '{processName}' " +
+                                 $"(PID {pid}) geladen, die zugehoerige Datei existiert aber nicht mehr " +
+                                 "auf dem Datentraeger. Dieses 'Ghost-DLL'-Muster wird von Cheat-Loadern " +
+                                 "genutzt, die die Datei nach dem Injizieren sofort loeschen, um Spuren " +
+                                 "zu verwischen.",
+                        Detail = $"Prozess: {processName} (PID {pid})" +
+                                 (isMpProcess ? " · In Multiplayer-Framework-Prozess!" : "")
+                    });
+                }
+            }
+        }
+        catch { }
     }
 }

@@ -6,9 +6,11 @@ using ZeroTrace.Core.Util;
 namespace ZeroTrace.Core.Engine;
 
 /// <summary>
-/// Builds the active module set from the options, runs them sequentially while
-/// reporting weighted progress, and returns a complete report. Sequential
-/// execution keeps disk/IO load predictable and progress meaningful.
+/// Builds the active module set from the options, executes them while reporting
+/// weighted progress, and returns a complete report. Modules that declare
+/// <see cref="IScanModule.ParallelSafe"/> are grouped and run concurrently to
+/// shorten scan time on multi-core machines. Sequential execution is preserved
+/// for all other modules to keep disk/IO load predictable.
 /// </summary>
 public sealed class ScanEngine
 {
@@ -27,6 +29,7 @@ public sealed class ScanEngine
     /// it is recorded as a low-risk note and the scan continues with the rest, so
     /// a single flaky module can no longer abort the whole scan. Only a
     /// cancellation aborts the run. An optional callback receives findings live.
+    /// Consecutive parallel-safe modules run as a group with Task.WhenAll.
     /// </summary>
     public async Task<ScanReport> RunAsync(
         ScanOptions options,
@@ -56,60 +59,47 @@ public sealed class ScanEngine
         double totalWeight = modules.Sum(m => m.Weight);
         double consumed = 0;
 
+        // Build execution pipeline: consecutive parallel-safe modules are grouped.
+        var pipeline = BuildPipeline(modules);
+
         try
         {
-            foreach (var module in modules)
+            foreach (var stage in pipeline)
             {
                 ct.ThrowIfCancellationRequested();
-                context.CurrentModule = module.Name;
-                context.ModuleBaseline = totalWeight <= 0 ? 0 : consumed / totalWeight;
-                context.ModuleSpan = totalWeight <= 0 ? 1 : module.Weight / totalWeight;
 
-                context.Report(0, $"Starte Modul: {module.Name}");
+                if (stage is IScanModule single)
+                {
+                    context.CurrentModule = single.Name;
+                    context.ModuleBaseline = totalWeight <= 0 ? 0 : consumed / totalWeight;
+                    context.ModuleSpan = totalWeight <= 0 ? 1 : single.Weight / totalWeight;
 
-                // Give each module its own time budget. A linked token lets us tell
-                // a per-module timeout apart from a user-requested cancellation.
-                using var moduleCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
-                if (options.ModuleTimeoutSeconds > 0)
-                    moduleCts.CancelAfter(TimeSpan.FromSeconds(options.ModuleTimeoutSeconds));
+                    context.Report(0, $"Starte Modul: {single.Name}");
+                    await ExecuteModuleAsync(single, context, options, ct);
+                    context.Report(1, $"Modul abgeschlossen: {single.Name}");
 
-                try
-                {
-                    await module.RunAsync(context, moduleCts.Token).ConfigureAwait(false);
+                    consumed += single.Weight;
                 }
-                catch (OperationCanceledException) when (ct.IsCancellationRequested)
+                else if (stage is List<IScanModule> group)
                 {
-                    throw; // the user cancelled the whole scan
-                }
-                catch (OperationCanceledException)
-                {
-                    // The module exceeded its time budget: skip it, keep scanning.
-                    context.AddFinding(new Finding
-                    {
-                        Module = module.Name,
-                        Title = "Modul uebersprungen (Zeitueberschreitung)",
-                        Risk = RiskLevel.Low,
-                        Location = "intern",
-                        Reason = $"Modul '{module.Name}' hat das Zeitlimit von " +
-                                 $"{options.ModuleTimeoutSeconds}s ueberschritten und wurde uebersprungen."
-                    });
-                }
-                catch (Exception ex)
-                {
-                    // Isolate the failure: skip this module, keep scanning the rest.
-                    context.AddFinding(new Finding
-                    {
-                        Module = module.Name,
-                        Title = "Modul uebersprungen (Fehler)",
-                        Risk = RiskLevel.Low,
-                        Location = "intern",
-                        Reason = $"Modul '{module.Name}' wurde wegen eines Fehlers uebersprungen: {ex.Message}"
-                    });
-                }
-                context.Report(1, $"Modul abgeschlossen: {module.Name}");
+                    double groupWeight = group.Sum(m => m.Weight);
+                    context.CurrentModule = $"Parallele Analyse ({group.Count} Module)";
+                    context.ModuleBaseline = totalWeight <= 0 ? 0 : consumed / totalWeight;
+                    context.ModuleSpan = totalWeight <= 0 ? 1 : groupWeight / totalWeight;
 
-                consumed += module.Weight;
+                    context.Report(0, "", $"{group.Count} Module laufen parallel");
+
+                    // Each module runs on a thread-pool thread. ScanContext is
+                    // thread-safe; progress reporting from multiple modules is
+                    // harmlessly interleaved.
+                    await Task.WhenAll(group.Select(m =>
+                        Task.Run(() => ExecuteModuleAsync(m, context, options, ct), ct)));
+
+                    context.Report(1, "", "Parallele Analyse abgeschlossen");
+                    consumed += groupWeight;
+                }
             }
+
             report.Result = ScanPhase.Completed;
         }
         catch (OperationCanceledException)
@@ -147,6 +137,78 @@ public sealed class ScanEngine
         });
 
         return report;
+    }
+
+    /// <summary>
+    /// Executes one module with its own cancellation deadline and isolates any
+    /// exception so a single broken module cannot abort the whole scan.
+    /// </summary>
+    private static async Task ExecuteModuleAsync(
+        IScanModule module, ScanContext context, ScanOptions options, CancellationToken ct)
+    {
+        using var moduleCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        if (options.ModuleTimeoutSeconds > 0)
+            moduleCts.CancelAfter(TimeSpan.FromSeconds(options.ModuleTimeoutSeconds));
+
+        try
+        {
+            await module.RunAsync(context, moduleCts.Token).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw; // the user cancelled the whole scan
+        }
+        catch (OperationCanceledException)
+        {
+            context.AddFinding(new Finding
+            {
+                Module = module.Name,
+                Title = "Modul uebersprungen (Zeitueberschreitung)",
+                Risk = RiskLevel.Low,
+                Location = "intern",
+                Reason = $"Modul '{module.Name}' hat das Zeitlimit von " +
+                         $"{options.ModuleTimeoutSeconds}s ueberschritten und wurde uebersprungen."
+            });
+        }
+        catch (Exception ex)
+        {
+            context.AddFinding(new Finding
+            {
+                Module = module.Name,
+                Title = "Modul uebersprungen (Fehler)",
+                Risk = RiskLevel.Low,
+                Location = "intern",
+                Reason = $"Modul '{module.Name}' wurde wegen eines Fehlers uebersprungen: {ex.Message}"
+            });
+        }
+    }
+
+    /// <summary>
+    /// Groups consecutive parallel-safe modules into List&lt;IScanModule&gt; stages;
+    /// single or non-safe modules remain as bare IScanModule stages.
+    /// </summary>
+    private static List<object> BuildPipeline(List<IScanModule> modules)
+    {
+        var pipeline = new List<object>();
+        int i = 0;
+        while (i < modules.Count)
+        {
+            if (modules[i].ParallelSafe)
+            {
+                var group = new List<IScanModule>();
+                while (i < modules.Count && modules[i].ParallelSafe)
+                    group.Add(modules[i++]);
+
+                // A single-item group runs sequentially (no overhead).
+                if (group.Count == 1) pipeline.Add(group[0]);
+                else pipeline.Add(group);
+            }
+            else
+            {
+                pipeline.Add(modules[i++]);
+            }
+        }
+        return pipeline;
     }
 
     private static List<IScanModule> BuildModules(ScanOptions o)

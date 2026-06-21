@@ -84,6 +84,12 @@ public sealed class ScanOptions
     /// and skipped so the overall scan can never freeze. 0 disables the limit.
     /// </summary>
     public int ModuleTimeoutSeconds { get; set; } = 240;
+
+    /// <summary>
+    /// Controls result verbosity: 0=minimal (Critical+High only),
+    /// 1=standard (all findings), 2=verbose (all findings + extended detail).
+    /// </summary>
+    public int DisplayLevel { get; set; } = 1;
 }
 
 /// <summary>Progress snapshot emitted via IProgress during a scan.</summary>

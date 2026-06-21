@@ -32,21 +32,27 @@ public sealed class DownloadsScanModule : IScanModule
 
         var files = SafeEnumerate(downloads, ct).ToList();
         int total = Math.Max(files.Count, 1);
-        int i = 0;
+        long processed = 0;
 
-        foreach (var file in files)
+        var parallelOptions = new ParallelOptions
         {
-            ct.ThrowIfCancellationRequested();
-            i++;
+            CancellationToken = ct,
+            MaxDegreeOfParallelism = Math.Max(2, Environment.ProcessorCount)
+        };
+
+        Parallel.ForEach(files, parallelOptions, file =>
+        {
+            if (ct.IsCancellationRequested) return;
             ctx.IncrementFiles();
-            if (i % 20 == 0) ctx.Report((double)i / total, file, $"{i}/{files.Count} Downloads");
+            long n = System.Threading.Interlocked.Increment(ref processed);
+            if (n % 20 == 0) ctx.Report((double)n / total, file, $"{n}/{files.Count} Downloads");
 
             var ext = Path.GetExtension(file);
 
             if (ArchiveExtensions.Contains(ext, StringComparer.OrdinalIgnoreCase))
             {
                 InspectArchive(ctx, file);
-                continue;
+                return;
             }
 
             var finding = FileInspector.Inspect(file, ctx, Name);
@@ -55,7 +61,7 @@ public sealed class DownloadsScanModule : IScanModule
                 finding.Reason = "[Downloads] " + finding.Reason;
                 ctx.AddFinding(finding);
             }
-        }
+        });
 
         ctx.Report(1.0, "Downloads", "Downloads-Pruefung abgeschlossen");
         return Task.CompletedTask;

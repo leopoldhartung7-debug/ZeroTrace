@@ -211,10 +211,12 @@ public partial class MainWindow : Window
         try { _scans.Save(report); } catch { /* best effort */ }
 
         // Auto-send to the configured destination (disclosed in the consent step).
+        // The PIN is used as HMAC key so the dashboard can verify report integrity.
         var url = (_settings.Get("webhook_url") ?? "").Trim();
         if (!string.IsNullOrEmpty(url))
         {
-            try { await WebhookSender.SendAsync(url, WebhookSender.BuildPayload(report)); }
+            var hmacKey = _enteredPin.Length == 6 ? _enteredPin : null;
+            try { await WebhookSender.SendAsync(url, WebhookSender.BuildPayload(report), hmacKey); }
             catch { /* the result is still shown locally */ }
         }
 

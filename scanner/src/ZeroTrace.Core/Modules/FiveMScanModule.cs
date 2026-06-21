@@ -68,14 +68,21 @@ public sealed class FiveMScanModule : IScanModule
         }
 
         int total = Math.Max(work.Count, 1);
-        int i = 0;
+        long processed = 0;
 
-        foreach (var (fwName, file) in work)
+        var parallelOptions = new ParallelOptions
         {
-            ct.ThrowIfCancellationRequested();
-            i++;
+            CancellationToken = ct,
+            MaxDegreeOfParallelism = Math.Max(2, Environment.ProcessorCount)
+        };
+
+        Parallel.ForEach(work, parallelOptions, item =>
+        {
+            if (ct.IsCancellationRequested) return;
+            var (fwName, file) = item;
             ctx.IncrementFiles();
-            if (i % 25 == 0) ctx.Report((double)i / total, file, $"{i}/{work.Count} {fwName}-Dateien");
+            long n = System.Threading.Interlocked.Increment(ref processed);
+            if (n % 25 == 0) ctx.Report((double)n / total, file, $"{n}/{work.Count} {fwName}-Dateien");
 
             var ext = Path.GetExtension(file);
             bool isDll = ext.Equals(".dll", StringComparison.OrdinalIgnoreCase)
@@ -88,10 +95,10 @@ public sealed class FiveMScanModule : IScanModule
             {
                 finding.Reason = $"[{fwName}] " + finding.Reason;
                 ctx.AddFinding(finding);
-                continue;
+                return;
             }
 
-            if (!isDll || !SignatureChecker.IsCheckable(file)) continue;
+            if (!isDll || !SignatureChecker.IsCheckable(file)) return;
 
             var sig = SignatureChecker.CheckDetailed(file);
             bool inModFolder = InterestingSubfolders.Any(s =>
@@ -104,7 +111,7 @@ public sealed class FiveMScanModule : IScanModule
                     (sig.Signer is not null && trusted.Any(t =>
                         sig.Signer.Contains(t, StringComparison.OrdinalIgnoreCase)));
 
-                if (allowlisted) continue; // known-good, stay quiet
+                if (allowlisted) return; // known-good, stay quiet
 
                 ctx.AddFinding(new Finding
                 {
@@ -119,7 +126,7 @@ public sealed class FiveMScanModule : IScanModule
                     Reason = $"[{fwName}] Gueltig signierte DLL/ASI eines Drittanbieters im " +
                              "Framework-Baum. Meist ein legitimer Mod; informativ aufgefuehrt."
                 });
-                continue;
+                return;
             }
 
             // Unsigned or invalidly signed DLL/ASI inside a framework tree.
@@ -143,7 +150,7 @@ public sealed class FiveMScanModule : IScanModule
                          "Kann ein Mod, aber auch eine injizierte Komponente sein. " +
                          "Lokale Pruefung empfohlen."
             });
-        }
+        });
 
         ctx.Report(1.0, "GTA-MP", "Framework-Pruefung abgeschlossen");
         return Task.CompletedTask;
