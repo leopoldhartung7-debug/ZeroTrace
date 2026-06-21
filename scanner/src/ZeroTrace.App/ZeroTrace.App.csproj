@@ -12,6 +12,12 @@
     <RootNamespace>ZeroTrace.App</RootNamespace>
     <Version>1.18.0</Version>
     <UseWindowsForms>false</UseWindowsForms>
+
+    <!-- Single-file publish: native libraries bundled inside the exe (e.g. SQLite's
+         e_sqlite3) must be extracted to a temp dir at startup so they can be loaded.
+         Without this, the single-file build fails on launch with
+         "Unable to load DLL 'e_sqlite3'" (DllNotFoundException). -->
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
   </PropertyGroup>
 
   <ItemGroup>
