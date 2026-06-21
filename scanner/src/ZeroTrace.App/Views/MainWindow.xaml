@@ -5,7 +5,6 @@
         xmlns:views="clr-namespace:ZeroTrace.App.Views"
         Title="ZeroTrace" Height="760" Width="1180"
         WindowStartupLocation="CenterScreen"
-        ResizeMode="NoResize" SizeToContent="Manual"
         Background="{StaticResource BgBrush}"
         FontFamily="Segoe UI">
 
@@ -80,20 +79,5 @@
 
         <!-- ===== Content host ===== -->
         <ContentControl Grid.Column="1" Content="{Binding CurrentViewModel}" Margin="0" />
-
-        <!-- ===== Completion overlay =====
-             After a scan finishes, the whole window shows ONLY a green check and
-             "Scan abgeschlossen"; the program then closes itself after 5 seconds. -->
-        <Border Grid.Column="0" Grid.ColumnSpan="2" Background="{StaticResource BgBrush}"
-                Visibility="{Binding LiveScan.IsCompleted, Converter={StaticResource BoolToVis}}">
-            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                <Path Data="M 0,18 L 14,32 L 40,4" Stroke="#22CC66" StrokeThickness="7"
-                      StrokeStartLineCap="Round" StrokeEndLineCap="Round"
-                      Stretch="Uniform" Width="132" Height="110" HorizontalAlignment="Center" />
-                <TextBlock Text="Scan abgeschlossen" Foreground="#22CC66"
-                           FontSize="30" FontWeight="SemiBold"
-                           HorizontalAlignment="Center" Margin="0,30,0,0" />
-            </StackPanel>
-        </Border>
     </Grid>
 </Window>

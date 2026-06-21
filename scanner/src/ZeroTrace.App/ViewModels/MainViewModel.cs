@@ -1,5 +1,3 @@
-using System;
-using System.Windows.Threading;
 using ZeroTrace.App.Mvvm;
 using ZeroTrace.Core.Data;
 using ZeroTrace.Core.Models;
@@ -58,17 +56,15 @@ public sealed class MainViewModel : ViewModelBase
         Reports = new ReportsViewModel(scans, settings);
         Settings = new SettingsViewModel(db, indicators, settings);
 
-        // After a scan completes, refresh dependent pages in the background (the
-        // results are already sent to the dashboard from LiveScanViewModel) and show
-        // only a green check + "Scan abgeschlossen". The program then closes itself
-        // after 5 seconds.
+        // After a scan completes, refresh dependent pages and jump to findings.
         LiveScan.ScanCompleted += report =>
         {
             Dashboard.Refresh();
             Reports.Refresh();
             Findings.Banner = LiveScan.LastSendStatus;
             Findings.LoadScan(report.Id);
-            StartShutdown(5);
+            Navigate("Findings");
+            Findings.StartAutoClose(10);
         };
 
         // Dashboard "start scan" shortcut.
@@ -86,24 +82,6 @@ public sealed class MainViewModel : ViewModelBase
             System.Windows.Application.Current?.Shutdown();
         });
         _currentViewModel = Dashboard;
-    }
-
-    private DispatcherTimer? _shutdownTimer;
-
-    /// <summary>
-    /// Closes the application after the given number of seconds. Used after a scan
-    /// finishes so the user only sees the completion screen briefly.
-    /// </summary>
-    private void StartShutdown(int seconds)
-    {
-        _shutdownTimer?.Stop();
-        _shutdownTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(seconds) };
-        _shutdownTimer.Tick += (_, _) =>
-        {
-            _shutdownTimer?.Stop();
-            System.Windows.Application.Current?.Shutdown();
-        };
-        _shutdownTimer.Start();
     }
 
     private void Navigate(string page)
