@@ -203,7 +203,7 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            NowPath.Text = "Fehler: " + ex.Message;
+            NowModule.Text = "Fehler: " + ex.Message;
             return;
         }
 
