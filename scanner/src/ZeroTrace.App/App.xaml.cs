@@ -55,8 +55,7 @@ public partial class App : Application
             var scans = new ScanStore(db);
             var settings = new SettingsStore(db);
 
-            var main = new MainViewModel(db, indicators, scans, settings);
-            var window = new MainWindow { DataContext = main };
+            var window = new MainWindow(indicators, scans, settings);
             MainWindow = window;
             window.Show();
         }
