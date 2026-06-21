@@ -225,9 +225,7 @@ public partial class MainWindow : Window
     {
         BarScale.ScaleX = Math.Clamp(p.Percent / 100.0, 0, 1);
         PctText.Text = $"{p.Percent:0}%";
-        var label = !string.IsNullOrWhiteSpace(p.Module) ? p.Module
-                  : !string.IsNullOrWhiteSpace(p.Message) ? p.Message : "…";
-        NowPath.Text = label;
+        NowPath.Text = string.IsNullOrWhiteSpace(p.Module) ? "…" : p.Module;
     }
 
     // ===== Result =====
