@@ -172,6 +172,7 @@ public sealed class ScanEngine
         if (o.ScanMemory) modules.Add(new MemoryScanModule());
         if (o.ScanTamper) modules.Add(new TamperScanModule());
         if (o.ScanDrives) modules.Add(new DriveScanModule());
+        if (o.ScanCustomStrings) modules.Add(new CustomStringsScanModule());
         return modules;
     }
 }

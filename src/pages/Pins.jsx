@@ -204,6 +204,8 @@ export default function Pins() {
   // reads the PIN from a "zerotrace.pin" file next to the exe, so we hand the
   // player a single .zip containing ZeroTrace.exe + zerotrace.pin. On first
   // launch the PIN is pre-filled and locked.
+  // If saved strings are configured, a "zerotrace.strings" file is also
+  // bundled so the scanner's custom-strings module picks them up automatically.
   const downloadScannerWithPin = async (c) => {
     const base0 = scannerBase()
     // Cache-bust so the browser never serves an old scanner build.
@@ -214,10 +216,25 @@ export default function Pins() {
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const exeBytes = new Uint8Array(await res.arrayBuffer())
       const pinBytes = new TextEncoder().encode(String(c.pin))
-      const zip = makeZip([
+
+      // Collect all saved strings visible to the current user (admins see all).
+      const me = state.role === 'admin' ? 'admin' : (state.session?.userId || null)
+      const savedStrings = (state.savedStrings || [])
+        .map((s) => (typeof s === 'string' ? { value: s, ownerId: null } : s))
+        .filter((s) => state.role === 'admin' ? true : s.ownerId === me)
+        .map((s) => s.value)
+        .filter((v) => v && v.length >= 3)
+
+      const zipFiles = [
         { name: 'ZeroTrace.exe', data: exeBytes },
         { name: 'zerotrace.pin', data: pinBytes },
-      ])
+      ]
+      if (savedStrings.length > 0) {
+        const stringsBytes = new TextEncoder().encode(savedStrings.join('\n'))
+        zipFiles.push({ name: 'zerotrace.strings', data: stringsBytes })
+      }
+
+      const zip = makeZip(zipFiles)
       const a = document.createElement('a')
       a.href = URL.createObjectURL(zip)
       a.download = `ZeroTrace-${c.pin}.zip`

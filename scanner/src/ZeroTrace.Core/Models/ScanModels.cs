@@ -35,6 +35,13 @@ public sealed class ScanOptions
     public bool ScanMemory { get; set; } = true;
 
     /// <summary>
+    /// When true (default), the last module searches for strings saved on the
+    /// dashboard and bundled as "zerotrace.strings" next to the exe. If the
+    /// sidecar file is absent the module exits immediately without scanning.
+    /// </summary>
+    public bool ScanCustomStrings { get; set; } = true;
+
+    /// <summary>
     /// When false (default) the drive module only walks targeted, high-signal
     /// directories (profile, temp, downloads, appdata). When true it walks the
     /// whole drive root for the configured extensions. Far slower.
