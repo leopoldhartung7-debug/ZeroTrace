@@ -30,12 +30,6 @@ public sealed class ScanOptions
     public bool ScanForensicTraces { get; set; } = true;
     public bool ScanUsnJournal { get; set; } = true;
     public bool ScanNetwork { get; set; } = true;
-
-    /// <summary>
-    /// When true, the Windows hosts file is checked for entries that block
-    /// (loopback) or redirect anti-cheat / game / launcher domains.
-    /// </summary>
-    public bool ScanHostsFile { get; set; } = true;
     public bool ScanOverlay { get; set; } = true;
     public bool ScanWmiPersistence { get; set; } = true;
     public bool ScanMemory { get; set; } = true;
@@ -69,6 +63,13 @@ public sealed class ScanOptions
 
     /// <summary>Files larger than this (bytes) are not hashed (default 200 MB).</summary>
     public long MaxHashFileSizeBytes { get; set; } = 200L * 1024 * 1024;
+
+    /// <summary>
+    /// Per-module time budget in seconds. If a single module runs longer (e.g. it
+    /// hangs on a locked file or an unresponsive WMI provider), it is cancelled
+    /// and skipped so the overall scan can never freeze. 0 disables the limit.
+    /// </summary>
+    public int ModuleTimeoutSeconds { get; set; } = 240;
 }
 
 /// <summary>Progress snapshot emitted via IProgress during a scan.</summary>

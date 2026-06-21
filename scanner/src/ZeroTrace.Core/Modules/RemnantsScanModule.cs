@@ -78,22 +78,43 @@ public sealed class RemnantsScanModule : IScanModule
                     continue;
                 }
 
-                // (b) anti-cheat / telemetry domain redirected to a null IP
+                // (b)/(c) anti-cheat / telemetry / game domain pinned in hosts.
                 var hl = host.ToLowerInvariant();
-                if (NullIps.Contains(ip) && AntiCheatTokens.Any(t => hl.Contains(t)))
+                if (AntiCheatTokens.Any(t => hl.Contains(t)))
                 {
-                    ctx.AddFinding(new Finding
+                    if (NullIps.Contains(ip))
                     {
-                        Module = Name,
-                        Title = "Anti-Cheat-/Telemetrie-Domain in hosts geblockt",
-                        Risk = RiskLevel.Medium,
-                        Recommendation = Recommendation.Review,
-                        Location = hosts,
-                        Reason = $"'{host}' wird in der hosts-Datei auf {ip} umgeleitet (geblockt). " +
-                                 "Das Blocken von Anti-Cheat-/Telemetrie-Domains ist ein typisches " +
-                                 "Verschleierungs-Muster.",
-                        Detail = $"Zeile: {line}"
-                    });
+                        // (b) blocked via a null/loopback address.
+                        ctx.AddFinding(new Finding
+                        {
+                            Module = Name,
+                            Title = "Anti-Cheat-/Telemetrie-Domain in hosts geblockt",
+                            Risk = RiskLevel.Medium,
+                            Recommendation = Recommendation.Review,
+                            Location = hosts,
+                            Reason = $"'{host}' wird in der hosts-Datei auf {ip} umgeleitet (geblockt). " +
+                                     "Das Blocken von Anti-Cheat-/Telemetrie-Domains ist ein typisches " +
+                                     "Verschleierungs-Muster.",
+                            Detail = $"Zeile: {line}"
+                        });
+                    }
+                    else
+                    {
+                        // (c) redirected to a FOREIGN ip — possible license/auth/update
+                        // server spoofing. Much stronger signal than a simple block.
+                        ctx.AddFinding(new Finding
+                        {
+                            Module = Name,
+                            Title = "Anti-Cheat-/Spiel-Domain in hosts umgeleitet",
+                            Risk = RiskLevel.Critical,
+                            Recommendation = Recommendation.Review,
+                            Location = hosts,
+                            Reason = $"'{host}' wird in der hosts-Datei auf die fremde IP {ip} umgeleitet. " +
+                                     "Das Umbiegen von Lizenz-/Authentifizierungs-/Update-Servern ist ein " +
+                                     "starkes Manipulations-Signal.",
+                            Detail = $"Zeile: {line}"
+                        });
+                    }
                 }
             }
         }

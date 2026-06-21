@@ -66,13 +66,33 @@ public sealed class ScanEngine
                 context.ModuleSpan = totalWeight <= 0 ? 1 : module.Weight / totalWeight;
 
                 context.Report(0, $"Starte Modul: {module.Name}");
+
+                // Give each module its own time budget. A linked token lets us tell
+                // a per-module timeout apart from a user-requested cancellation.
+                using var moduleCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+                if (options.ModuleTimeoutSeconds > 0)
+                    moduleCts.CancelAfter(TimeSpan.FromSeconds(options.ModuleTimeoutSeconds));
+
                 try
                 {
-                    await module.RunAsync(context, ct).ConfigureAwait(false);
+                    await module.RunAsync(context, moduleCts.Token).ConfigureAwait(false);
+                }
+                catch (OperationCanceledException) when (ct.IsCancellationRequested)
+                {
+                    throw; // the user cancelled the whole scan
                 }
                 catch (OperationCanceledException)
                 {
-                    throw; // a cancellation must abort the whole scan
+                    // The module exceeded its time budget: skip it, keep scanning.
+                    context.AddFinding(new Finding
+                    {
+                        Module = module.Name,
+                        Title = "Modul uebersprungen (Zeitueberschreitung)",
+                        Risk = RiskLevel.Low,
+                        Location = "intern",
+                        Reason = $"Modul '{module.Name}' hat das Zeitlimit von " +
+                                 $"{options.ModuleTimeoutSeconds}s ueberschritten und wurde uebersprungen."
+                    });
                 }
                 catch (Exception ex)
                 {
@@ -147,7 +167,6 @@ public sealed class ScanEngine
         if (o.ScanForensicTraces) modules.Add(new ForensicTraceScanModule());
         if (o.ScanUsnJournal) modules.Add(new UsnJournalScanModule());
         if (o.ScanNetwork) modules.Add(new NetworkScanModule());
-        if (o.ScanHostsFile) modules.Add(new HostsFileScanModule());
         if (o.ScanOverlay) modules.Add(new OverlayScanModule());
         if (o.ScanWmiPersistence) modules.Add(new WmiPersistenceScanModule());
         if (o.ScanMemory) modules.Add(new MemoryScanModule());
