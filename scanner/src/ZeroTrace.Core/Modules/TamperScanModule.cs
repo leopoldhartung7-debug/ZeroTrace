@@ -22,19 +22,39 @@ public sealed class TamperScanModule : IScanModule
     public string Name => "Scan-Manipulation";
     public double Weight => 0.4;
 
+    // Anti-Cheat and game server domains that should NOT appear in the hosts file.
+    private static readonly string[] AcDomains =
+    {
+        "easyanticheat", "easy.anticheat", "eac.io",
+        "battleye.com", "battleye.net",
+        "cfx.re", "fivem.net", "citizenfx",
+        "rockstargames.com", "socialclub.rockstar",
+        "punkbuster.com", "evenbalance.com",
+        "steampowered.com", "steamcommunity.com",
+        "faceit.com", "esea.net",
+        "riotgames.com", "vanguard.riotgames",
+        "mhyprot", "hoyoverse.com", "mihoyo.com"
+    };
+
     public Task RunAsync(ScanContext ctx, CancellationToken ct)
     {
         CheckDebugger(ctx);
-        ctx.Report(0.15, "Debugger", "Selbstschutz geprueft");
+        ctx.Report(0.11, "Debugger", "Selbstschutz geprueft");
 
         CheckRedirectedFolders(ctx);
-        ctx.Report(0.30, "Verzeichnisse", "Verzeichnis-Umleitungen geprueft");
+        ctx.Report(0.22, "Verzeichnisse", "Verzeichnis-Umleitungen geprueft");
 
         CheckEnumerationSanity(ctx);
-        ctx.Report(0.50, "Enumeration", "Sichtbarkeit geprueft");
+        ctx.Report(0.35, "Enumeration", "Sichtbarkeit geprueft");
 
         CheckClockRollback(ctx, ct);
-        ctx.Report(0.65, "Systemzeit", "Zeit-Manipulation geprueft");
+        ctx.Report(0.46, "Systemzeit", "Zeit-Manipulation geprueft");
+
+        CheckHostsFile(ctx);
+        ctx.Report(0.57, "Hosts-Datei", "Hosts-Datei geprueft");
+
+        CheckHvci(ctx);
+        ctx.Report(0.68, "HVCI", "Memory-Integrity geprueft");
 
         CheckRecycleBinCleared(ctx);
         ctx.Report(0.80, "Papierkorb", "Papierkorb-Leerung geprueft");
@@ -43,6 +63,113 @@ public sealed class TamperScanModule : IScanModule
         ctx.Report(1.0, "Spuren loeschen", "Spurenbeseitigung geprueft");
 
         return Task.CompletedTask;
+    }
+
+    // --- hosts file: blocked AC / game server domains -------------------------
+
+    private void CheckHostsFile(ScanContext ctx)
+    {
+        var hostsPath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.Windows),
+            "System32", "drivers", "etc", "hosts");
+
+        string[] lines;
+        try { lines = File.ReadAllLines(hostsPath); }
+        catch { return; }
+
+        foreach (var line in lines)
+        {
+            var trimmed = line.Trim();
+            if (trimmed.Length == 0 || trimmed[0] == '#') continue;
+
+            // Strip inline comments
+            var noComment = trimmed.Contains('#')
+                ? trimmed[..trimmed.IndexOf('#')].Trim()
+                : trimmed;
+
+            var parts = noComment.Split(new[] { ' ', '\t' },
+                StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length < 2) continue;
+
+            var host = parts[1].ToLowerInvariant();
+            var match = AcDomains.FirstOrDefault(d =>
+                host.Contains(d, StringComparison.OrdinalIgnoreCase));
+            if (match is null) continue;
+
+            ctx.AddFinding(new Finding
+            {
+                Module = Name,
+                Title = "Hosts-Datei: Anti-Cheat-/Game-Domain blockiert oder umgeleitet",
+                Risk = RiskLevel.High,
+                Location = hostsPath,
+                Reason = $"Die Hosts-Datei leitet '{host}' auf '{parts[0]}' um. " +
+                         "Das blockiert Anti-Cheat-Telemetrie oder Game-Server und " +
+                         "unterbricht Bann-Kommunikation. Entspricht Muster '{match}'.",
+                Detail = $"Zeile: {noComment}"
+            });
+        }
+    }
+
+    // --- HVCI / Memory Integrity deaktiviert ----------------------------------
+
+    private void CheckHvci(ScanContext ctx)
+    {
+        // VBS main switch
+        try
+        {
+            using var key = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(
+                @"SYSTEM\CurrentControlSet\Control\DeviceGuard");
+            if (key is not null)
+            {
+                ctx.IncrementRegistryKeys();
+                if (key.GetValue("EnableVirtualizationBasedSecurity") is int v && v == 0)
+                {
+                    ctx.AddFinding(new Finding
+                    {
+                        Module = Name,
+                        Title = "Virtualization Based Security (VBS) deaktiviert",
+                        Risk = RiskLevel.High,
+                        Location = @"HKLM\SYSTEM\...\Control\DeviceGuard",
+                        Reason = "VBS ist manuell ausgeschaltet. Ohne VBS koennen Kernel-Cheats " +
+                                 "unsignierten Code in den Kernel laden, der normalerweise durch " +
+                                 "Hypervisor-Schutz blockiert wuerde. Die Deaktivierung ist ein " +
+                                 "typischer erster Schritt vor dem Installieren eines Kernel-Cheats.",
+                        Detail = "EnableVirtualizationBasedSecurity = 0"
+                    });
+                }
+            }
+        }
+        catch { }
+
+        // HVCI-specific scenario key
+        try
+        {
+            using var key = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(
+                @"SYSTEM\CurrentControlSet\Control\DeviceGuard\Scenarios\HypervisorEnforcedCodeIntegrity");
+            if (key is not null)
+            {
+                ctx.IncrementRegistryKeys();
+                if (key.GetValue("Enabled") is int e && e == 0)
+                {
+                    var wasBy = key.GetValue("WasEnabledBy")?.ToString();
+                    ctx.AddFinding(new Finding
+                    {
+                        Module = Name,
+                        Title = "Memory Integrity (HVCI) deaktiviert",
+                        Risk = RiskLevel.High,
+                        Location = @"HKLM\SYSTEM\...\HypervisorEnforcedCodeIntegrity",
+                        Reason = "Memory Integrity (HVCI) wurde deaktiviert. HVCI verhindert das " +
+                                 "Laden unsignierter Kernel-Seiten und ist die wichtigste " +
+                                 "Barriere gegen Kernel-Cheats (BYOVD, manuelle Treiber-Injektion). " +
+                                 "Die Deaktivierung erfordert einen Neustart und deutet auf " +
+                                 "eine gezielte Vorbereitung fuer einen Kernel-Cheat hin.",
+                        Detail = "Enabled = 0" +
+                                 (wasBy is null ? "" : $" · WasEnabledBy: {wasBy}")
+                    });
+                }
+            }
+        }
+        catch { }
     }
 
     // --- debugger attached to the scanner --------------------------------------

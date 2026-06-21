@@ -170,6 +170,12 @@ public sealed class ScanEngine
         if (o.ScanOverlay) modules.Add(new OverlayScanModule());
         if (o.ScanWmiPersistence) modules.Add(new WmiPersistenceScanModule());
         if (o.ScanScheduledTasks) modules.Add(new ScheduledTaskScanModule());
+        if (o.ScanUsbDevices) modules.Add(new UsbDeviceScanModule());
+        if (o.ScanDllHijack) modules.Add(new DllHijackScanModule());
+        if (o.ScanBrowserExtensions) modules.Add(new BrowserExtensionScanModule());
+        if (o.ScanRootCertificates) modules.Add(new RootCertificateScanModule());
+        if (o.ScanVirtualMachine) modules.Add(new VirtualMachineScanModule());
+        if (o.ScanHiddenDrivers) modules.Add(new HiddenDriverScanModule());
         if (o.ScanMemory) modules.Add(new MemoryScanModule());
         if (o.ScanTamper) modules.Add(new TamperScanModule());
         if (o.ScanDrives) modules.Add(new DriveScanModule());

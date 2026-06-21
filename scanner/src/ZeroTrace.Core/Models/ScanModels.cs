@@ -33,6 +33,12 @@ public sealed class ScanOptions
     public bool ScanOverlay { get; set; } = true;
     public bool ScanWmiPersistence { get; set; } = true;
     public bool ScanScheduledTasks { get; set; } = true;
+    public bool ScanUsbDevices { get; set; } = true;
+    public bool ScanDllHijack { get; set; } = true;
+    public bool ScanBrowserExtensions { get; set; } = true;
+    public bool ScanRootCertificates { get; set; } = true;
+    public bool ScanVirtualMachine { get; set; } = true;
+    public bool ScanHiddenDrivers { get; set; } = true;
     public bool ScanMemory { get; set; } = true;
 
     /// <summary>
