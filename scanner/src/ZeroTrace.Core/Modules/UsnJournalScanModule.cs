@@ -39,9 +39,37 @@ public sealed class UsnJournalScanModule : IScanModule
 
     public Task RunAsync(ScanContext ctx, CancellationToken ct)
     {
-        try { ScanVolume(ctx, 'C', ct); } catch { }
-        ctx.Report(1.0, "USN", "Aenderungsjournal geprueft");
+        var drives = GetFixedDriveLetters();
+        for (int i = 0; i < drives.Count; i++)
+        {
+            if (ct.IsCancellationRequested) break;
+            try { ScanVolume(ctx, drives[i], ct); } catch { }
+            ctx.Report((double)(i + 1) / drives.Count, "USN", $"Laufwerk {drives[i]}: geprueft");
+        }
         return Task.CompletedTask;
+    }
+
+    private static List<char> GetFixedDriveLetters()
+    {
+        var result = new List<char>();
+        try
+        {
+            foreach (var d in DriveInfo.GetDrives())
+            {
+                char letter;
+                try
+                {
+                    if (d.DriveType != DriveType.Fixed || !d.IsReady) continue;
+                    letter = d.RootDirectory.FullName[0];
+                }
+                catch { continue; }
+                result.Add(char.ToUpperInvariant(letter));
+            }
+        }
+        catch { }
+        // Fallback to C: if nothing found
+        if (result.Count == 0) result.Add('C');
+        return result;
     }
 
     private void ScanVolume(ScanContext ctx, char letter, CancellationToken ct)
