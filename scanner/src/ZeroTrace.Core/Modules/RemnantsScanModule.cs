@@ -23,7 +23,11 @@ public sealed class RemnantsScanModule : IScanModule
     {
         "battleye", "easyanticheat", "easy-anti-cheat", "anticheat", "anti-cheat",
         "cfx.re", "fivem", "rockstargames", "ragemp", "altv.mp", "faceit",
-        "valve", "steampowered", "punkbuster"
+        "valve", "steampowered", "punkbuster",
+        // additional anti-cheat/game-integrity services
+        "gameguard", "nprotect", "xigncode", "hackshield",
+        "mhyprot", "vanguard", "ricochet-anticheat",
+        "citizenfx", "trueplay", "warden.valvesoftware"
     };
 
     public Task RunAsync(ScanContext ctx, CancellationToken ct)

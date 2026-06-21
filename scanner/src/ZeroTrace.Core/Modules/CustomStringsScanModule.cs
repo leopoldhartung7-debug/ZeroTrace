@@ -80,7 +80,9 @@ public sealed class CustomStringsScanModule : IScanModule
         var extensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
             ".exe", ".dll", ".sys", ".bin", ".dat", ".cfg", ".ini",
-            ".lua", ".luac", ".asi", ".js", ".node"
+            ".lua", ".luac", ".asi", ".js", ".node",
+            // Script files that often carry custom strings in plain text
+            ".bat", ".cmd", ".ps1", ".vbs", ".wsf"
         };
 
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);

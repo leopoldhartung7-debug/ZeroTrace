@@ -28,13 +28,16 @@ public sealed class ForensicTraceScanModule : IScanModule
     {
         ScanRecentDocs(ctx);
         ScanMuiCache(ctx);
-        ctx.Report(0.4, "Zuletzt geoeffnet", "RecentDocs/MUICache geprueft");
+        ctx.Report(0.25, "Zuletzt geoeffnet", "RecentDocs/MUICache geprueft");
 
         ScanRecentLnk(ctx);
-        ctx.Report(0.6, "Verknuepfungen", "Recent-Verknuepfungen geprueft");
+        ctx.Report(0.45, "Verknuepfungen", "Recent-Verknuepfungen geprueft");
 
         ScanWer(ctx, ct);
-        ctx.Report(0.8, "Absturzberichte", "WER-Berichte geprueft");
+        ctx.Report(0.6, "Absturzberichte", "WER-Berichte geprueft");
+
+        ScanPrefetch(ctx, ct);
+        ctx.Report(0.8, "Prefetch", "Prefetch-Dateien geprueft");
 
         ScanAlternateDataStreams(ctx, ct);
         ctx.Report(1.0, "ADS", "Alternative Datenstroeme geprueft");
@@ -174,6 +177,45 @@ public sealed class ForensicTraceScanModule : IScanModule
                     }
                 }
             }
+        }
+    }
+
+    // --- Windows Prefetch files ------------------------------------------------
+
+    private void ScanPrefetch(ScanContext ctx, CancellationToken ct)
+    {
+        var prefetchDir = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.Windows), "Prefetch");
+        if (!Directory.Exists(prefetchDir)) return;
+
+        string[] files;
+        try { files = Directory.GetFiles(prefetchDir, "*.pf"); }
+        catch { return; }
+
+        foreach (var f in files)
+        {
+            if (ct.IsCancellationRequested || _emitted >= MaxFindings) return;
+
+            // Prefetch file names follow the pattern "APP.EXE-XXXXXXXX.pf".
+            // Strip the hash suffix to recover the original executable name.
+            var pfName = Path.GetFileNameWithoutExtension(f);
+            var dashIdx = pfName.LastIndexOf('-');
+            var exeName = dashIdx > 0 ? pfName[..dashIdx] : pfName;
+            if (string.IsNullOrEmpty(exeName)) continue;
+
+            var ind = ctx.Matcher.MatchFileName(exeName)
+                      ?? ctx.Matcher.MatchFileNameKeyword(exeName)
+                      ?? ctx.Matcher.MatchPathKeyword(exeName);
+            if (ind is null) continue;
+
+            DateTime? lastRun = null;
+            try { lastRun = File.GetLastWriteTimeUtc(f); } catch { }
+
+            Emit(ctx, $"Prefetch: {ind.Category}", ind.Risk, f, exeName,
+                $"Eine Windows-Prefetch-Datei fuer '{exeName}' wurde gefunden. " +
+                $"Entspricht dem Indikator '{ind.Pattern}'. {ind.Description} " +
+                "Prefetch-Eintraege bleiben auch nach dem Loeschen des Programms erhalten." +
+                (lastRun is null ? "" : $" Letzte Ausfuehrung ca.: {lastRun:yyyy-MM-dd HH:mm} UTC."));
         }
     }
 

@@ -165,11 +165,17 @@ public static class KnownPaths
             Downloads,
             Temp,
             Path.Combine(LocalAppData, "Temp"),
+            // System temp — written by SYSTEM-level processes and loaders
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "Temp"),
             Path.Combine(UserProfile, "Desktop"),
             Path.Combine(UserProfile, "Documents"),
             Path.Combine(RoamingAppData),
             Path.Combine(LocalAppData)
         };
+
+        // C:\Users\Public — accessible to all users, occasionally used for multi-user cheat drops
+        var pub = Environment.GetEnvironmentVariable("PUBLIC");
+        if (!string.IsNullOrEmpty(pub)) roots.Add(pub);
 
         var fivem = FindFiveMDirectory();
         if (fivem is not null) roots.Add(fivem);

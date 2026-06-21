@@ -22,7 +22,8 @@ public sealed class NetworkScanModule : IScanModule
 
     public Task RunAsync(ScanContext ctx, CancellationToken ct)
     {
-        try { ScanTcp(ctx); } catch { }
+        try { ScanTcp(ctx, AF_INET); } catch { }
+        try { ScanTcp(ctx, AF_INET6); } catch { }
         ctx.Report(0.6, "Verbindungen", "Aktive Verbindungen geprueft");
         try { ScanDnsCache(ctx); } catch { }
         ctx.Report(1.0, "DNS", "DNS-Cache geprueft");
@@ -35,30 +36,56 @@ public sealed class NetworkScanModule : IScanModule
     private static extern uint GetExtendedTcpTable(byte[]? table, ref int size, bool order,
         int af, int tableClass, uint reserved);
 
-    private void ScanTcp(ScanContext ctx)
-    {
-        const int AF_INET = 2;
-        const int TCP_TABLE_OWNER_PID_ALL = 5;
-        const uint STATE_ESTABLISHED = 5;
+    private const int AF_INET = 2;
+    private const int AF_INET6 = 23;
+    private const int TCP_TABLE_OWNER_PID_ALL = 5;
+    private const uint STATE_ESTABLISHED = 5;
 
+    // MIB_TCPROW_OWNER_PID (IPv4): dwState(4) + localAddr(4) + localPort(4) + remoteAddr(4) + remotePort(4) + pid(4) = 24 bytes
+    private const int IPv4RowSize = 24;
+
+    // MIB_TCP6ROW_OWNER_PID (IPv6): localAddr(16) + localScopeId(4) + localPort(4) + remoteAddr(16) + remoteScopeId(4) + remotePort(4) + dwState(4) + pid(4) = 56 bytes
+    private const int IPv6RowSize = 56;
+
+    private void ScanTcp(ScanContext ctx, int af)
+    {
         int size = 0;
-        GetExtendedTcpTable(null, ref size, false, AF_INET, TCP_TABLE_OWNER_PID_ALL, 0);
+        GetExtendedTcpTable(null, ref size, false, af, TCP_TABLE_OWNER_PID_ALL, 0);
         if (size <= 4) return;
         var buf = new byte[size];
-        if (GetExtendedTcpTable(buf, ref size, false, AF_INET, TCP_TABLE_OWNER_PID_ALL, 0) != 0) return;
+        if (GetExtendedTcpTable(buf, ref size, false, af, TCP_TABLE_OWNER_PID_ALL, 0) != 0) return;
 
         int count = BitConverter.ToInt32(buf, 0);
         int off = 4;
-        const int rowSize = 24; // dwState,localAddr,localPort,remoteAddr,remotePort,owningPid
+        int rowSize = af == AF_INET ? IPv4RowSize : IPv6RowSize;
 
         for (int i = 0; i < count && off + rowSize <= buf.Length; i++, off += rowSize)
         {
-            uint state = BitConverter.ToUInt32(buf, off);
-            if (state != STATE_ESTABLISHED) continue;
+            int pid;
+            uint state;
+            string remoteEndpoint;
 
-            uint remoteAddr = BitConverter.ToUInt32(buf, off + 12);
-            int remotePort = ((buf[off + 16] << 8) | buf[off + 17]); // network byte order
-            int pid = BitConverter.ToInt32(buf, off + 20);
+            if (af == AF_INET)
+            {
+                state = BitConverter.ToUInt32(buf, off);
+                if (state != STATE_ESTABLISHED) continue;
+                uint remoteAddr = BitConverter.ToUInt32(buf, off + 12);
+                int remotePort = (buf[off + 16] << 8) | buf[off + 17]; // network byte order
+                pid = BitConverter.ToInt32(buf, off + 20);
+                remoteEndpoint = $"{new IPAddress(BitConverter.GetBytes(remoteAddr))}:{remotePort}";
+            }
+            else
+            {
+                // IPv6: localAddr(16) + localScopeId(4) + localPort(4) + remoteAddr(16) + remoteScopeId(4) + remotePort(4) + dwState(4) + pid(4)
+                var remoteAddrBytes = new byte[16];
+                Array.Copy(buf, off + 24, remoteAddrBytes, 0, 16);
+                int remotePort = (buf[off + 44] << 8) | buf[off + 45]; // network byte order
+                state = BitConverter.ToUInt32(buf, off + 48);
+                if (state != STATE_ESTABLISHED) continue;
+                pid = BitConverter.ToInt32(buf, off + 52);
+                remoteEndpoint = $"[{new IPAddress(remoteAddrBytes)}]:{remotePort}";
+            }
+
             if (pid <= 4) continue;
 
             string procName;
@@ -68,16 +95,15 @@ public sealed class NetworkScanModule : IScanModule
             var ind = ctx.Matcher.MatchProcessName(procName) ?? ctx.Matcher.MatchFileName(procName);
             if (ind is null) continue;
 
-            var ip = new IPAddress(BitConverter.GetBytes(remoteAddr)).ToString();
             ctx.AddFinding(new Finding
             {
                 Module = Name,
                 Title = $"Aktive Verbindung eines verdaechtigen Prozesses: {ind.Category}",
                 Risk = ind.Risk,
-                Location = $"{procName} (PID {pid}) \u2192 {ip}:{remotePort}",
+                Location = $"{procName} (PID {pid}) \u2192 {remoteEndpoint}",
                 FileName = procName,
                 Reason = $"Der Prozess '{procName}' entspricht dem Indikator '{ind.Pattern}' und hat eine " +
-                         $"aktive Verbindung zu {ip}:{remotePort}. {ind.Description}"
+                         $"aktive {(af == AF_INET6 ? "IPv6-" : "")}Verbindung zu {remoteEndpoint}. {ind.Description}"
             });
         }
     }
