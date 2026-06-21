@@ -30,6 +30,12 @@ public sealed class ScanOptions
     public bool ScanForensicTraces { get; set; } = true;
     public bool ScanUsnJournal { get; set; } = true;
     public bool ScanNetwork { get; set; } = true;
+
+    /// <summary>
+    /// When true, the Windows hosts file is checked for entries that block
+    /// (loopback) or redirect anti-cheat / game / launcher domains.
+    /// </summary>
+    public bool ScanHostsFile { get; set; } = true;
     public bool ScanOverlay { get; set; } = true;
     public bool ScanWmiPersistence { get; set; } = true;
     public bool ScanMemory { get; set; } = true;

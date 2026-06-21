@@ -16,92 +16,17 @@ public sealed class ScanEngine
 
     public ScanEngine(IndicatorMatcher matcher) => _matcher = matcher;
 
-    public async Task<ScanReport> RunAsync(
+    public Task<ScanReport> RunAsync(
         ScanOptions options,
         IProgress<ScanProgress>? progress,
         CancellationToken ct)
-    {
-        var modules = BuildModules(options);
-        var context = new ScanContext(options, _matcher, progress);
-
-        var report = new ScanReport
-        {
-            StartedUtc = DateTime.UtcNow,
-            Elevated = PrivilegeChecker.IsElevated(),
-            System = SystemInfo.Capture(),
-            Inventory = options.ScanInventory ? HostInventoryCollector.Collect() : new()
-        };
-
-        // Surface findings to subscribers (live view) by re-raising on the context.
-        // (FindingAdded is wired by the caller before RunAsync if needed.)
-
-        progress?.Report(new ScanProgress
-        {
-            Phase = ScanPhase.Initializing,
-            Message = $"{modules.Count} Module werden ausgefuehrt",
-            Percent = 0
-        });
-
-        double totalWeight = modules.Sum(m => m.Weight);
-        double consumed = 0;
-
-        try
-        {
-            foreach (var module in modules)
-            {
-                ct.ThrowIfCancellationRequested();
-                context.CurrentModule = module.Name;
-                context.ModuleBaseline = totalWeight <= 0 ? 0 : consumed / totalWeight;
-                context.ModuleSpan = totalWeight <= 0 ? 1 : module.Weight / totalWeight;
-
-                context.Report(0, $"Starte Modul: {module.Name}");
-                await module.RunAsync(context, ct).ConfigureAwait(false);
-                context.Report(1, $"Modul abgeschlossen: {module.Name}");
-
-                consumed += module.Weight;
-            }
-            report.Result = ScanPhase.Completed;
-        }
-        catch (OperationCanceledException)
-        {
-            report.Result = ScanPhase.Cancelled;
-        }
-        catch (Exception ex)
-        {
-            report.Result = ScanPhase.Failed;
-            context.AddFinding(new Finding
-            {
-                Module = "Engine",
-                Title = "Scan-Fehler",
-                Risk = RiskLevel.Low,
-                Location = "intern",
-                Reason = "Ein Modul hat eine Ausnahme ausgeloest: " + ex.Message
-            });
-        }
-
-        report.FinishedUtc = DateTime.UtcNow;
-        report.FilesScanned = context.FilesScanned;
-        report.ProcessesScanned = context.ProcessesScanned;
-        report.RegistryKeysScanned = context.RegistryKeysScanned;
-        report.Findings = context.Findings.OrderByDescending(f => f.Risk).ToList();
-
-        progress?.Report(new ScanProgress
-        {
-            Phase = report.Result,
-            Percent = 100,
-            Message = "Scan beendet",
-            FilesScanned = report.FilesScanned,
-            ProcessesScanned = report.ProcessesScanned,
-            RegistryKeysScanned = report.RegistryKeysScanned,
-            FindingsCount = report.Findings.Count
-        });
-
-        return report;
-    }
+        => RunAsync(options, progress, null, ct);
 
     /// <summary>
-    /// Lets the caller subscribe to live findings: returns a context-less engine
-    /// run is not possible, so we expose this overload that wires the event.
+    /// Runs the module pipeline. Each module is isolated: if one module throws,
+    /// it is recorded as a low-risk note and the scan continues with the rest, so
+    /// a single flaky module can no longer abort the whole scan. Only a
+    /// cancellation aborts the run. An optional callback receives findings live.
     /// </summary>
     public async Task<ScanReport> RunAsync(
         ScanOptions options,
@@ -109,9 +34,6 @@ public sealed class ScanEngine
         Action<Finding>? onFinding,
         CancellationToken ct)
     {
-        // Build a context up front so we can attach the live callback, then run
-        // the same pipeline. We duplicate minimal orchestration here to keep the
-        // primary RunAsync clean.
         var modules = BuildModules(options);
         var context = new ScanContext(options, _matcher, progress);
         if (onFinding is not null) context.FindingAdded += onFinding;
@@ -144,7 +66,26 @@ public sealed class ScanEngine
                 context.ModuleSpan = totalWeight <= 0 ? 1 : module.Weight / totalWeight;
 
                 context.Report(0, $"Starte Modul: {module.Name}");
-                await module.RunAsync(context, ct).ConfigureAwait(false);
+                try
+                {
+                    await module.RunAsync(context, ct).ConfigureAwait(false);
+                }
+                catch (OperationCanceledException)
+                {
+                    throw; // a cancellation must abort the whole scan
+                }
+                catch (Exception ex)
+                {
+                    // Isolate the failure: skip this module, keep scanning the rest.
+                    context.AddFinding(new Finding
+                    {
+                        Module = module.Name,
+                        Title = "Modul uebersprungen (Fehler)",
+                        Risk = RiskLevel.Low,
+                        Location = "intern",
+                        Reason = $"Modul '{module.Name}' wurde wegen eines Fehlers uebersprungen: {ex.Message}"
+                    });
+                }
                 context.Report(1, $"Modul abgeschlossen: {module.Name}");
 
                 consumed += module.Weight;
@@ -164,7 +105,7 @@ public sealed class ScanEngine
                 Title = "Scan-Fehler",
                 Risk = RiskLevel.Low,
                 Location = "intern",
-                Reason = "Ein Modul hat eine Ausnahme ausgeloest: " + ex.Message
+                Reason = "Unerwarteter Fehler in der Scan-Engine: " + ex.Message
             });
         }
 
@@ -206,6 +147,7 @@ public sealed class ScanEngine
         if (o.ScanForensicTraces) modules.Add(new ForensicTraceScanModule());
         if (o.ScanUsnJournal) modules.Add(new UsnJournalScanModule());
         if (o.ScanNetwork) modules.Add(new NetworkScanModule());
+        if (o.ScanHostsFile) modules.Add(new HostsFileScanModule());
         if (o.ScanOverlay) modules.Add(new OverlayScanModule());
         if (o.ScanWmiPersistence) modules.Add(new WmiPersistenceScanModule());
         if (o.ScanMemory) modules.Add(new MemoryScanModule());
