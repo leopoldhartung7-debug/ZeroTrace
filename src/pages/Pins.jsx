@@ -233,6 +233,11 @@ export default function Pins() {
         const stringsBytes = new TextEncoder().encode(savedStrings.join('\n'))
         zipFiles.push({ name: 'zerotrace.strings', data: stringsBytes })
       }
+      const reportUrl = state.settings?.scannerApiUrl?.trim()
+      if (reportUrl) {
+        const webhookUrl = reportUrl.replace(/\/+$/, '') + '/report'
+        zipFiles.push({ name: 'zerotrace.webhook', data: new TextEncoder().encode(webhookUrl) })
+      }
 
       const zip = makeZip(zipFiles)
       const a = document.createElement('a')

@@ -141,6 +141,24 @@ export default function ScanResults() {
     if (pin) dispatch({ type: 'push-recent-pin', pinId: pin.id, ownerId: state.session?.userId || null })
   }, [pin?.id, dispatch])
 
+  // Auto-fetch scan result from the bot when the dashboard API URL is set.
+  useEffect(() => {
+    if (!pin || report) return
+    const apiUrl = state.settings?.scannerApiUrl?.trim()
+    if (!apiUrl) return
+    let alive = true
+    const url = apiUrl.replace(/\/+$/, '') + '/result?pin=' + encodeURIComponent(pin.pin)
+    fetch(url)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((payload) => {
+        if (alive && payload && payload.code) {
+          dispatch({ type: 'import-scan', payload })
+        }
+      })
+      .catch(() => {})
+    return () => { alive = false }
+  }, [pin?.pin, state.settings?.scannerApiUrl, report, dispatch])
+
   useEffect(() => {
     if (!pin || !report || !report.pc.ip || report.pc.ip === '—' || pin.geo) return
     let alive = true

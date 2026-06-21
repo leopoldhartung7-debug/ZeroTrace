@@ -3,9 +3,11 @@
  * Invite this bot to the cheat / reselling Discords you want to monitor.
  * It exposes a tiny HTTP API the ZeroTrace dashboard calls:
  *
- *   GET /check?id=<discordUserId>     header: x-api-key: <API_KEY>
- *   GET /health
- *   GET /scanner?pin=<4-8 digits>     → ZeroTrace-<pin>.zip download
+ *   GET  /check?id=<discordUserId>    header: x-api-key: <API_KEY>
+ *   GET  /health
+ *   GET  /scanner?pin=<4-8 digits>   → ZeroTrace-<pin>.zip download
+ *   POST /report                     → receive & store a ZeroTrace scan result
+ *   GET  /result?pin=<PIN>           → retrieve stored result for the dashboard
  *
  * For every guild the bot is in it checks whether the given user ID is a
  * member and, if so, returns their roles, nickname and join date.
@@ -18,10 +20,88 @@
  */
 
 import { createServer } from 'node:http'
-import { readFileSync } from 'node:fs'
+import { readFileSync, mkdirSync, writeFileSync, existsSync } from 'node:fs'
+import { createHmac } from 'node:crypto'
+import { join, dirname } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import {
   Client, GatewayIntentBits, ApplicationCommandOptionType, MessageFlags,
 } from 'discord.js'
+
+// ---- scan-result store (persisted as JSON files in ./reports/) --------
+const __dirname = dirname(fileURLToPath(import.meta.url))
+const REPORTS_DIR = join(__dirname, 'reports')
+try { mkdirSync(REPORTS_DIR, { recursive: true }) } catch { /* already exists */ }
+
+function storeReport(pin, payload) {
+  writeFileSync(join(REPORTS_DIR, pin.toUpperCase() + '.json'), JSON.stringify(payload), 'utf8')
+}
+
+function loadReport(pin) {
+  const f = join(REPORTS_DIR, pin.toUpperCase() + '.json')
+  if (!existsSync(f)) return null
+  try { return JSON.parse(readFileSync(f, 'utf8')) } catch { return null }
+}
+
+// Read the full POST body as a string.
+function readBody(req) {
+  return new Promise((resolve, reject) => {
+    const chunks = []
+    req.on('data', (c) => chunks.push(c))
+    req.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')))
+    req.on('error', reject)
+  })
+}
+
+// Verify HMAC-SHA256 sent by the scanner (optional — absent = skip check).
+function verifyHmac(body, pin, header) {
+  if (!header) return true
+  const expected = 'sha256=' + createHmac('sha256', pin).update(body).digest('hex')
+  return header === expected
+}
+
+// Convert the scanner's ScanReport JSON into the dashboard import-scan payload.
+function toPayload(report, clientIp) {
+  const findings = Array.isArray(report.Findings) ? report.Findings : []
+  const detections = findings.map((f) => ({
+    name: f.Title || f.Module || 'Unknown',
+    severity: f.Risk || 'Low',
+    detail: [f.Reason, f.Location ? 'Location: ' + f.Location : ''].filter(Boolean).join(' | '),
+  }))
+
+  const hasCritHigh = findings.some((f) => f.Risk === 'Critical' || f.Risk === 'High')
+  const hasMedium = findings.some((f) => f.Risk === 'Medium')
+  const verdict = hasCritHigh ? 'Cheating' : hasMedium ? 'Suspicious' : 'Clean'
+
+  const sys = report.System || {}
+  const inv = report.Inventory || {}
+  const ip = clientIp || (Array.isArray(sys.IpAddresses) ? sys.IpAddresses[0] : '') || ''
+
+  return {
+    code: report.Pin || '',
+    verdict,
+    detections,
+    game: sys.Game || 'FIVEM',
+    host: report.MachineName || '',
+    os: sys.System || report.OsVersion || '',
+    ip,
+    bootTime: sys.BootTime || '',
+    installDate: sys.InstallDate || '',
+    hardware: sys.HardwareStats || null,
+    processes: (inv.Processes || []).map((p) => ({
+      pid: p.Pid, name: p.Name, path: p.Path || '', signed: p.Signed ?? null,
+    })),
+    drivers: (inv.Drivers || []).map((d) => ({
+      name: d.Name, publisher: '', signed: d.Signed ?? null,
+    })),
+    vm: inv.Vm ? { detected: inv.Vm.Detected, vendor: inv.Vm.Verdict, signals: inv.Vm.Indicators || [] } : null,
+    usb: (inv.UsbDevices || []).map((u) => ({
+      device: u.Name, serial: u.Serial || '', action: 'Seen', time: '', contents: [],
+    })),
+    scannedAt: report.FinishedUtc ? new Date(report.FinishedUtc).getTime() : Date.now(),
+    discordServers: [],
+  }
+}
 
 // ---- minimal .env loader (no extra dependency) -----------------------
 try {
@@ -192,8 +272,8 @@ function send(res, status, body) {
   res.writeHead(status, {
     'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': ALLOW_ORIGIN,
-    'Access-Control-Allow-Headers': 'x-api-key, content-type',
-    'Access-Control-Allow-Methods': 'GET, OPTIONS',
+    'Access-Control-Allow-Headers': 'x-api-key, content-type, x-zerotrace-signature',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
   })
   res.end(JSON.stringify(body))
 }
@@ -303,6 +383,37 @@ createServer(async (req, res) => {
     } catch (e) {
       return send(res, 502, { error: `Could not build scanner: ${String(e?.message || e)}` })
     }
+  }
+
+  // ---- POST /report — scanner sends completed scan result ---------------
+  if (url.pathname === '/report' && req.method === 'POST') {
+    try {
+      const body = await readBody(req)
+      const report = JSON.parse(body)
+      const pin = (report.Pin || '').trim()
+      if (!pin) return send(res, 400, { error: 'Missing Pin in report' })
+
+      const sig = req.headers['x-zerotrace-signature']
+      if (!verifyHmac(body, pin, sig)) return send(res, 401, { error: 'Invalid signature' })
+
+      const clientIp = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim()
+      const payload = toPayload(report, clientIp)
+      storeReport(pin, payload)
+
+      console.log(`[report] stored PIN ${pin.toUpperCase()} — ${payload.verdict}, ${payload.detections.length} detection(s)`)
+      return send(res, 200, { ok: true, pin: pin.toUpperCase(), detections: payload.detections.length, verdict: payload.verdict })
+    } catch (e) {
+      return send(res, 400, { error: String(e?.message || e) })
+    }
+  }
+
+  // ---- GET /result?pin=X — dashboard fetches stored result -------------
+  if (url.pathname === '/result') {
+    const pin = (url.searchParams.get('pin') || '').trim()
+    if (!pin) return send(res, 400, { error: 'Missing pin parameter' })
+    const payload = loadReport(pin)
+    if (!payload) return send(res, 404, { error: 'No result stored for this PIN' })
+    return send(res, 200, payload)
   }
 
   if (url.pathname === '/check') {

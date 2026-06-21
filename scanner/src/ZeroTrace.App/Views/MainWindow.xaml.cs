@@ -189,7 +189,6 @@ public partial class MainWindow : Window
         BarScale.ScaleX = 0;
         PctText.Text = "0%";
         NowModule.Text = "…";
-        NowPath.Text = "…";
 
         var options = _settings.LoadOptions();
         var matcher = new IndicatorMatcher(_indicators.GetEnabled());
@@ -212,8 +211,9 @@ public partial class MainWindow : Window
         try { _scans.Save(report); } catch { /* best effort */ }
 
         // Auto-send to the configured destination (disclosed in the consent step).
+        // A "zerotrace.webhook" sidecar next to the exe overrides the stored URL.
         // The PIN is used as HMAC key so the dashboard can verify report integrity.
-        var url = (_settings.Get("webhook_url") ?? "").Trim();
+        var url = (LoadSidecarWebhook() ?? _settings.Get("webhook_url") ?? "").Trim();
         if (!string.IsNullOrEmpty(url))
         {
             var hmacKey = _enteredPin.Length == 6 ? _enteredPin : null;
@@ -230,9 +230,21 @@ public partial class MainWindow : Window
         PctText.Text = $"{p.Percent:0}%";
         if (!string.IsNullOrWhiteSpace(p.Module))
             NowModule.Text = p.Module;
-        var item = !string.IsNullOrWhiteSpace(p.CurrentItem) ? p.CurrentItem
-                 : !string.IsNullOrWhiteSpace(p.Message) ? p.Message : "…";
-        NowPath.Text = item;
+    }
+
+    private static string? LoadSidecarWebhook()
+    {
+        try
+        {
+            var file = System.IO.Path.Combine(AppContext.BaseDirectory, "zerotrace.webhook");
+            if (File.Exists(file))
+            {
+                var url = File.ReadAllText(file).Trim();
+                if (!string.IsNullOrEmpty(url)) return url;
+            }
+        }
+        catch { }
+        return null;
     }
 
     // ===== Result =====

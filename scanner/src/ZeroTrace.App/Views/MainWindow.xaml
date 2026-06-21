@@ -297,10 +297,8 @@
                                     </Border.RenderTransform>
                                 </Border>
                             </Border>
-                            <TextBlock x:Name="NowModule" Text="…" Foreground="#4EBCD2" FontSize="11"
+                            <TextBlock x:Name="NowModule" Text="…" Foreground="#4EBCD2" FontSize="13"
                                        FontWeight="SemiBold" Margin="0,16,0,0" />
-                            <TextBlock x:Name="NowPath" Text="…" Foreground="#9AAAB4" FontSize="12"
-                                       TextTrimming="CharacterEllipsis" Margin="0,3,0,0" />
                         </StackPanel>
 
                         <!-- 4) RESULT -->
