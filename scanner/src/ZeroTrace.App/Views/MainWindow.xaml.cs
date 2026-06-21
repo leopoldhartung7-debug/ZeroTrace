@@ -98,7 +98,7 @@ public partial class MainWindow : Window
 
             if (pin is null)
             {
-                var file = Path.Combine(AppContext.BaseDirectory, "zerotrace.pin");
+                var file = System.IO.Path.Combine(AppContext.BaseDirectory, "zerotrace.pin");
                 if (File.Exists(file)) pin = File.ReadAllText(file).Trim();
             }
 
