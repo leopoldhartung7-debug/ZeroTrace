@@ -275,21 +275,32 @@
 
                         <!-- 3) SCAN -->
                         <StackPanel x:Name="ScanView" Visibility="Collapsed" VerticalAlignment="Center">
-                            <StackPanel Orientation="Horizontal" Margin="0,0,0,7">
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                                 <TextBlock x:Name="PctText" Text="0%" Foreground="#C8D4DC" FontSize="13" FontWeight="Bold" Width="42" />
                                 <TextBlock Text="LÄUFT" Foreground="#5A6772" FontSize="11" VerticalAlignment="Center" />
                             </StackPanel>
-                            <Border Height="16" Background="#191D24" CornerRadius="3" ClipToBounds="True">
-                                <Border x:Name="BarFill" Background="#DDE8EE" CornerRadius="3"
-                                        HorizontalAlignment="Stretch" RenderTransformOrigin="0,0">
+                            <Border Height="8" Background="#0E1620" CornerRadius="4" ClipToBounds="True">
+                                <Border x:Name="BarFill" CornerRadius="4"
+                                        HorizontalAlignment="Stretch" RenderTransformOrigin="0,0.5">
+                                    <Border.Background>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                            <GradientStop Color="#2BA8C0" Offset="0" />
+                                            <GradientStop Color="#4EBCD2" Offset="0.55" />
+                                            <GradientStop Color="#72D4E8" Offset="1" />
+                                        </LinearGradientBrush>
+                                    </Border.Background>
+                                    <Border.Effect>
+                                        <DropShadowEffect Color="#4EBCD2" BlurRadius="10" ShadowDepth="0" Opacity="0.75" />
+                                    </Border.Effect>
                                     <Border.RenderTransform>
                                         <ScaleTransform x:Name="BarScale" ScaleX="0" />
                                     </Border.RenderTransform>
                                 </Border>
                             </Border>
-                            <TextBlock Text="Scanne gerade" Foreground="#5A6772" FontSize="11" Margin="0,18,0,0" />
-                            <TextBlock x:Name="NowPath" Text="…" Foreground="#C8D4DC" FontSize="15"
-                                       FontWeight="SemiBold" TextTrimming="CharacterEllipsis" Margin="0,6,0,0" />
+                            <TextBlock x:Name="NowModule" Text="…" Foreground="#4EBCD2" FontSize="11"
+                                       FontWeight="SemiBold" Margin="0,16,0,0" />
+                            <TextBlock x:Name="NowPath" Text="…" Foreground="#9AAAB4" FontSize="12"
+                                       TextTrimming="CharacterEllipsis" Margin="0,3,0,0" />
                         </StackPanel>
 
                         <!-- 4) RESULT -->
