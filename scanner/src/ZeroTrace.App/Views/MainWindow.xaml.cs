@@ -255,17 +255,70 @@ public partial class MainWindow : Window
         {
             YesNo.Text = $"⚠  Auffälligkeiten gefunden: {count}";
             YesNo.Foreground = new SolidColorBrush(Color.FromRgb(0xF9, 0x73, 0x16));
+            BuildFindingsList(report);
+            FindingsBox.Visibility = Visibility.Visible;
         }
         else
         {
             YesNo.Text = "✓  Keine Auffälligkeiten gefunden";
             YesNo.Foreground = new SolidColorBrush(Color.FromRgb(0x22, 0xCC, 0x66));
+            FindingsBox.Visibility = Visibility.Collapsed;
         }
 
         ShowStep(ResultView);
         PlayCheckAnimation();
-        StartCloseCountdown(5);
+        // Give the user time to read the findings before the window closes.
+        StartCloseCountdown(count > 0 ? 20 : 5);
     }
+
+    // Renders each finding as a coloured risk badge + title, highest risk first.
+    private void BuildFindingsList(ScanReport report)
+    {
+        FindingsList.Children.Clear();
+
+        foreach (var f in report.Findings.OrderByDescending(x => x.Risk).ThenBy(x => x.Module))
+        {
+            var (bg, label) = RiskStyle(f.Risk);
+
+            var badge = new Border
+            {
+                Background = new SolidColorBrush(bg),
+                CornerRadius = new CornerRadius(4),
+                Padding = new Thickness(6, 1, 6, 1),
+                VerticalAlignment = VerticalAlignment.Center,
+                Child = new TextBlock
+                {
+                    Text = label,
+                    Foreground = new SolidColorBrush(Color.FromRgb(0x0E, 0x14, 0x18)),
+                    FontSize = 9.5,
+                    FontWeight = FontWeights.Bold
+                }
+            };
+
+            var title = new TextBlock
+            {
+                Text = f.Title,
+                Foreground = new SolidColorBrush(Color.FromRgb(0xC8, 0xD4, 0xDC)),
+                FontSize = 11.5,
+                Margin = new Thickness(8, 0, 0, 0),
+                VerticalAlignment = VerticalAlignment.Center,
+                TextTrimming = TextTrimming.CharacterEllipsis
+            };
+
+            var row = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 3, 0, 3) };
+            row.Children.Add(badge);
+            row.Children.Add(title);
+            FindingsList.Children.Add(row);
+        }
+    }
+
+    private static (Color Bg, string Label) RiskStyle(RiskLevel risk) => risk switch
+    {
+        RiskLevel.Critical => (Color.FromRgb(0xEF, 0x44, 0x44), "KRITISCH"),
+        RiskLevel.High     => (Color.FromRgb(0xF9, 0x73, 0x16), "HOCH"),
+        RiskLevel.Medium   => (Color.FromRgb(0xEA, 0xB3, 0x08), "MITTEL"),
+        _                  => (Color.FromRgb(0x4E, 0xBC, 0xD2), "NIEDRIG"),
+    };
 
     private void PlayCheckAnimation()
     {
