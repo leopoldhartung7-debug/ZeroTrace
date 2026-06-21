@@ -5,6 +5,7 @@
         xmlns:views="clr-namespace:ZeroTrace.App.Views"
         Title="ZeroTrace" Height="760" Width="1180"
         WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize" SizeToContent="Manual"
         Background="{StaticResource BgBrush}"
         FontFamily="Segoe UI">
 
@@ -79,5 +80,66 @@
 
         <!-- ===== Content host ===== -->
         <ContentControl Grid.Column="1" Content="{Binding CurrentViewModel}" Margin="0" />
+
+        <!-- ===== Completion overlay =====
+             After a scan finishes, the whole window shows ONLY a green check and
+             "Scan abgeschlossen"; the program then closes itself after 5 seconds.
+             The check pops in (scale + fade) and draws itself, matching the demo. -->
+        <Border Grid.Column="0" Grid.ColumnSpan="2" Background="{StaticResource BgBrush}"
+                Visibility="{Binding LiveScan.IsCompleted, Converter={StaticResource BoolToVis}}">
+            <Border.Resources>
+                <!-- Length of the check path so StrokeDashOffset can "draw" it. -->
+                <Storyboard x:Key="CompleteAnim">
+                    <DoubleAnimation Storyboard.TargetName="DoneContent"
+                                     Storyboard.TargetProperty="Opacity"
+                                     From="0" To="1" Duration="0:0:0.35" />
+                    <DoubleAnimation Storyboard.TargetName="DoneScale"
+                                     Storyboard.TargetProperty="ScaleX"
+                                     From="0.7" To="1" Duration="0:0:0.5">
+                        <DoubleAnimation.EasingFunction>
+                            <BackEase Amplitude="0.7" EasingMode="EaseOut" />
+                        </DoubleAnimation.EasingFunction>
+                    </DoubleAnimation>
+                    <DoubleAnimation Storyboard.TargetName="DoneScale"
+                                     Storyboard.TargetProperty="ScaleY"
+                                     From="0.7" To="1" Duration="0:0:0.5">
+                        <DoubleAnimation.EasingFunction>
+                            <BackEase Amplitude="0.7" EasingMode="EaseOut" />
+                        </DoubleAnimation.EasingFunction>
+                    </DoubleAnimation>
+                    <DoubleAnimation Storyboard.TargetName="CheckMark"
+                                     Storyboard.TargetProperty="StrokeDashOffset"
+                                     From="60" To="0" BeginTime="0:0:0.18" Duration="0:0:0.55">
+                        <DoubleAnimation.EasingFunction>
+                            <CubicEase EasingMode="EaseOut" />
+                        </DoubleAnimation.EasingFunction>
+                    </DoubleAnimation>
+                </Storyboard>
+            </Border.Resources>
+            <Border.Style>
+                <Style TargetType="Border">
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding LiveScan.IsCompleted}" Value="True">
+                            <DataTrigger.EnterActions>
+                                <BeginStoryboard Storyboard="{StaticResource CompleteAnim}" />
+                            </DataTrigger.EnterActions>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Border.Style>
+            <StackPanel x:Name="DoneContent" VerticalAlignment="Center" HorizontalAlignment="Center"
+                        Opacity="0" RenderTransformOrigin="0.5,0.5">
+                <StackPanel.RenderTransform>
+                    <ScaleTransform x:Name="DoneScale" ScaleX="0.7" ScaleY="0.7" />
+                </StackPanel.RenderTransform>
+                <Path x:Name="CheckMark" Data="M 0,18 L 14,32 L 40,4" Stroke="#22CC66" StrokeThickness="7"
+                      StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                      StrokeDashArray="60 60" StrokeDashOffset="60"
+                      Stretch="Uniform" Width="132" Height="110" HorizontalAlignment="Center" />
+                <TextBlock Text="Scan abgeschlossen" Foreground="#22CC66"
+                           FontSize="30" FontWeight="SemiBold"
+                           HorizontalAlignment="Center" Margin="0,30,0,0" />
+            </StackPanel>
+        </Border>
     </Grid>
 </Window>

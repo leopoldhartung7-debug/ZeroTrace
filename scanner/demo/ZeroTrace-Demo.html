@@ -9,13 +9,15 @@
   html,body{width:100%;min-height:100%;background:#1a1d22;font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif}
   body{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:18px}
 
-  .panel{width:100%;max-width:400px;background:#21252e;border-radius:12px;overflow:hidden;position:relative;
+  /* Fixed size: the window stays the same on every step (game/pin/consent/scan/result). */
+  .panel{width:100%;max-width:400px;height:288px;display:flex;flex-direction:column;
+    background:#21252e;border-radius:12px;overflow:hidden;position:relative;
     border:1px solid rgba(78,188,210,.15);box-shadow:0 24px 60px rgba(0,0,0,.55);transition:border-color .5s}
   .panel.done{border-color:rgba(34,204,102,.25)}
   .top-line{height:2px;background:linear-gradient(90deg,transparent,#4ebcd2,transparent);transition:background .5s}
   .panel.done .top-line{background:linear-gradient(90deg,transparent,#22cc66,transparent)}
   #bgCanvas{position:absolute;inset:0;pointer-events:none;z-index:0}
-  .content{position:relative;z-index:1;padding:12px 18px 12px}
+  .content{position:relative;z-index:1;padding:12px 18px 12px;flex:1;display:flex;flex-direction:column;min-height:0}
 
   .logo-row{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:4px}
   .logo-icon{width:28px;height:28px;flex-shrink:0}
@@ -24,7 +26,8 @@
   .sub{font-size:12px;color:#5a6772;text-align:center}
   .version{font-size:11px;color:#3a444e;text-align:center;margin-top:3px}
 
-  .view{display:none}.view.show{display:block;animation:fadeUp .35s ease both}
+  .view{display:none}
+  .view.show{display:flex;flex-direction:column;justify-content:center;flex:1 1 auto;min-height:0;overflow:auto;animation:fadeUp .35s ease both}
   @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 
   /* consent (license-agreement style) */
@@ -75,7 +78,7 @@
   /* done */
   .done-section{flex-direction:column;align-items:center;gap:6px;margin-top:14px}
   .done-section.show{display:flex}
-  .check-wrap{width:60px;height:60px}.done-label{font-size:11px;font-weight:600;color:#5a6772;letter-spacing:.08em;text-transform:uppercase;margin-bottom:7px}
+  .check-wrap{width:104px;height:104px}.done-label{font-size:21px;font-weight:700;color:#c8d2da;letter-spacing:.02em;text-transform:uppercase;margin-top:18px}
   .done-sent{display:none}
   .pinline{text-align:center;font-size:10.5px;color:#8a9aaa;margin:6px 0 9px}
   .pinline b{color:#c8d2da;letter-spacing:.06em}
@@ -239,7 +242,7 @@
     <!-- 4) RESULT (always shown to the person at the PC) -->
     <div class="view result" id="resultView">
       <div class="check-wrap" id="checkWrap" style="margin:0 auto">
-        <svg viewBox="0 0 140 140" fill="none" width="50" height="50">
+        <svg viewBox="0 0 140 140" fill="none" width="100%" height="100%">
           <circle cx="70" cy="70" r="55" stroke="#22cc66" stroke-width="1.5" opacity=".15"/>
           <polyline class="check-poly" id="checkPoly" points="38,70 58,90 102,48" stroke="#22cc66" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
         </svg>
@@ -458,16 +461,18 @@ function loop(){
 function onDone(){
   stopBg();cx.clearRect(0,0,canvas.width,canvas.height);
   panel.classList.add('done');
-  var pin=scanPin||'----';
-  var pl=$('pinline'); if(pl)pl.innerHTML='Zuerst an Dashboard gesendet · PIN <b>'+pin+'</b>';
-  renderResult();
   showOnly(resultView);
   sub.style.display='none';ver.style.display='none';
-  againBtn.style.display='inline-block';openSendBtn.style.display='inline-block';
-  var rb=$('removeBtn'); if(rb)rb.style.display='inline-block';
+  // Minimal completion screen: only the green check + "Scan abgeschlossen".
+  ['yesno','pinline','flist','doneCount','keepBtn','sendBlock'].forEach(function(id){var e=$(id); if(e)e.style.display='none';});
+  var lb=document.querySelector('#resultView .lvlbar'); if(lb)lb.style.display='none';
+  var ct=document.querySelector('#resultView .counts'); if(ct)ct.style.display='none';
+  ['againBtn','openSendBtn','removeBtn'].forEach(function(id){var e=$(id); if(e)e.style.display='none';});
   var cw=$('checkWrap'),cp=$('checkPoly');
   if(cw)cw.classList.add('pop'); if(cp)cp.classList.add('draw');
-  startCountdown();
+  // Close automatically after 5 seconds.
+  if(countdownInt){clearInterval(countdownInt);countdownInt=null;}
+  setTimeout(showClosed,5000);
 }
 function renderResult(){
   const c={Critical:0,High:0,Medium:0,Low:0};findings.forEach(f=>c[f.risk]++);
