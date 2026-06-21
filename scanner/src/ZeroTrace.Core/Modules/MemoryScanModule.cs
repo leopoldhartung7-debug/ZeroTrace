@@ -22,8 +22,11 @@ public sealed class MemoryScanModule : IScanModule
     private const uint PROCESS_QUERY_INFORMATION = 0x0400;
     private const uint PROCESS_VM_READ = 0x0010;
     private const uint MEM_COMMIT = 0x1000;
+    private const uint MEM_PRIVATE = 0x20000;
     private const uint PAGE_NOACCESS = 0x01;
     private const uint PAGE_GUARD = 0x100;
+    private const uint PAGE_EXECUTE_READWRITE = 0x40;
+    private const uint PAGE_EXECUTE_WRITECOPY = 0x80;
 
     private const long MaxBytesPerProcess = 512L * 1024 * 1024;
     private const int ChunkSize = 1 * 1024 * 1024;
@@ -87,6 +90,8 @@ public sealed class MemoryScanModule : IScanModule
 
         try
         {
+            CheckManualMaps(ctx, h, name, ct);
+
             long scanned = 0;
             ulong addr = 0x10000; // skip the null region
             int mbiSize = Marshal.SizeOf<MEMORY_BASIC_INFORMATION64>();
@@ -114,6 +119,56 @@ public sealed class MemoryScanModule : IScanModule
             }
         }
         finally { CloseHandle(h); }
+    }
+
+    /// <summary>
+    /// Looks for committed, private, executable+writable memory regions that have
+    /// no module backing (PAGE_EXECUTE_READWRITE / PAGE_EXECUTE_WRITECOPY in a
+    /// MEM_PRIVATE region ≥ 64 KB). This is the hallmark of a manually mapped DLL:
+    /// the payload is injected directly without going through LoadLibrary, so no
+    /// module entry appears in the module list — but the writable+executable
+    /// footprint is still visible via VirtualQueryEx.
+    /// </summary>
+    private void CheckManualMaps(ScanContext ctx, IntPtr h, string procName, CancellationToken ct)
+    {
+        const ulong MinSize = 64 * 1024; // 64 KB minimum to filter tiny JIT stubs
+        const int MaxHitsPerProcess = 3;
+        int hits = 0;
+
+        ulong addr = 0x10000;
+        int mbiSize = Marshal.SizeOf<MEMORY_BASIC_INFORMATION64>();
+
+        while (hits < MaxHitsPerProcess && !ct.IsCancellationRequested)
+        {
+            if (VirtualQueryEx(h, (IntPtr)addr, out var mbi, mbiSize) == 0) break;
+            if (mbi.RegionSize == 0) break;
+
+            if (mbi.State == MEM_COMMIT &&
+                mbi.Type == MEM_PRIVATE &&
+                mbi.RegionSize >= MinSize &&
+                (mbi.Protect == PAGE_EXECUTE_READWRITE || mbi.Protect == PAGE_EXECUTE_WRITECOPY))
+            {
+                ctx.AddFinding(new Finding
+                {
+                    Module = Name,
+                    Title = $"Verdaechtige RWX-Speicherregion (moegliche manuelle Injektion): {procName}",
+                    Risk = RiskLevel.High,
+                    Location = $"{procName} · 0x{mbi.BaseAddress:X16}",
+                    FileName = procName,
+                    Reason = $"Im Prozess '{procName}' wurde eine {mbi.RegionSize / 1024} KB grosse " +
+                             "private, ausfuehrbare und beschreibbare (RWX) Speicherregion ohne " +
+                             "Modul-Deckung gefunden. Das ist das charakteristische Merkmal einer " +
+                             "manuell gemappten DLL (Injektion ohne LoadLibrary/LdrLoadDll), " +
+                             "die keinen Modul-Eintrag hinterlaesst.",
+                    Detail = $"Basisadresse: 0x{mbi.BaseAddress:X16} · Groesse: {mbi.RegionSize / 1024} KB · Schutz: 0x{mbi.Protect:X}"
+                });
+                hits++;
+            }
+
+            ulong next = mbi.BaseAddress + mbi.RegionSize;
+            if (next <= addr) break;
+            addr = next;
+        }
     }
 
     private bool ScanRegion(ScanContext ctx, IntPtr h, ulong baseAddr, ulong size,

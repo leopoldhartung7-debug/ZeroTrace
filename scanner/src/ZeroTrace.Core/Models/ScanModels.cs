@@ -32,6 +32,7 @@ public sealed class ScanOptions
     public bool ScanNetwork { get; set; } = true;
     public bool ScanOverlay { get; set; } = true;
     public bool ScanWmiPersistence { get; set; } = true;
+    public bool ScanScheduledTasks { get; set; } = true;
     public bool ScanMemory { get; set; } = true;
 
     /// <summary>

@@ -82,7 +82,9 @@ public sealed class CustomStringsScanModule : IScanModule
             ".exe", ".dll", ".sys", ".bin", ".dat", ".cfg", ".ini",
             ".lua", ".luac", ".asi", ".js", ".node",
             // Script files that often carry custom strings in plain text
-            ".bat", ".cmd", ".ps1", ".vbs", ".wsf"
+            ".bat", ".cmd", ".ps1", ".vbs", ".wsf",
+            // Config and log formats that may contain cheat tokens / download URLs
+            ".json", ".xml", ".txt", ".log"
         };
 
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);

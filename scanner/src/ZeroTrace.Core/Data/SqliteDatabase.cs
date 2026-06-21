@@ -130,7 +130,64 @@ public sealed class SqliteDatabase
             (IndicatorType.UrlDomainKeyword, "hxcheats",      RiskLevel.High,   "Cheat-Shop", "Besuch einer Hx-Cheats-Domain."),
             (IndicatorType.UrlDomainKeyword, "cherax",        RiskLevel.High,   "Cheat-Shop", "Besuch einer Cherax-Domain (GTA-Mod-Menu)."),
             (IndicatorType.UrlDomainKeyword, "unknowncheats", RiskLevel.Medium, "Cheat-Forum", "Besuch von unknowncheats (Cheat-Forum)."),
-            (IndicatorType.UrlDomainKeyword, "elitepvpers",   RiskLevel.Low,    "Cheat-Forum", "Besuch von elitepvpers (Handels-/Cheat-Forum).")
+            (IndicatorType.UrlDomainKeyword, "elitepvpers",   RiskLevel.Low,    "Cheat-Forum", "Besuch von elitepvpers (Handels-/Cheat-Forum)."),
+
+            // --- zusaetzliche FiveM-Cheats (Dateiname-Keywords) ------------------
+            (IndicatorType.FileNameKeyword, "eulen",      RiskLevel.High,   "FiveM-Cheat", "Bekannter FiveM-Cheat 'Eulen' im Dateinamen."),
+            (IndicatorType.FileNameKeyword, "hammafia",   RiskLevel.High,   "FiveM-Cheat", "Bekannter FiveM-Cheat 'Hammafia' im Dateinamen."),
+            (IndicatorType.FileNameKeyword, "desudo",     RiskLevel.High,   "FiveM-Cheat", "Bekannter FiveM-Cheat 'Desudo' im Dateinamen."),
+            (IndicatorType.FileNameKeyword, "impaught",   RiskLevel.High,   "FiveM-Cheat", "Bekannter FiveM-Cheat 'Impaught' im Dateinamen."),
+            (IndicatorType.FileNameKeyword, "scarlet",    RiskLevel.Medium, "FiveM-Cheat", "FiveM-Cheat 'Scarlet' (frueherer Hammafia-Name) im Dateinamen."),
+            (IndicatorType.FileNameKeyword, "kiddion",    RiskLevel.High,   "GTA-Cheat",   "GTA-Online-Cheat 'Kiddion Modest Menu' im Dateinamen."),
+            (IndicatorType.FileNameKeyword, "phantom-x",  RiskLevel.High,   "FiveM-Cheat", "FiveM/GTA-Cheat 'Phantom-X' im Dateinamen."),
+
+            // --- Debugger / Analyse-Werkzeuge (Dateiname-Keywords) ---------------
+            (IndicatorType.FileNameKeyword, "x64dbg",      RiskLevel.High, "Debugger",  "Dateiname enthaelt 'x64dbg' (Debugger, haeufig beim Reverse-Engineering)."),
+            (IndicatorType.FileNameKeyword, "x32dbg",      RiskLevel.High, "Debugger",  "Dateiname enthaelt 'x32dbg' (Debugger)."),
+            (IndicatorType.FileNameKeyword, "cheatengine",  RiskLevel.High, "Debugger",  "Dateiname enthaelt 'cheatengine' (Speicher-Scanner/Trainer)."),
+            (IndicatorType.FileNameKeyword, "dbk64",        RiskLevel.High, "Kernel-Treiber", "Cheat-Engine-Kernel-Treiber 'dbk64.sys' im Dateinamen."),
+
+            // --- anfaellige / exploit-faehige Treiber (Dateiname-Keywords) -------
+            (IndicatorType.FileNameKeyword, "physmem",    RiskLevel.High,     "Kernel-Exploit", "Physischer-Speicher-Treiber (oft fuer Kernel-Exploits missbraucht)."),
+            (IndicatorType.FileNameKeyword, "mhyprot",    RiskLevel.High,     "Vulnerable-Driver", "Anfaelliger miHoYo-Treiber 'mhyprot2.sys' im Dateinamen."),
+
+            // --- genaue Dateinamen fuer bekannte Exploit-Treiber -----------------
+            (IndicatorType.FileName, "capcom.sys",    RiskLevel.Critical, "Kernel-Exploit", "Capcom-Treiber – bekannter Kernel-Exploit (BYOVD)."),
+            (IndicatorType.FileName, "mhyprot2.sys",  RiskLevel.Critical, "Vulnerable-Driver", "Anfaelliger miHoYo-Treiber (wird fuer Kernel-Exploits missbraucht)."),
+            (IndicatorType.FileName, "dbk64.sys",     RiskLevel.Critical, "Kernel-Treiber", "Cheat-Engine-Kernel-Treiber (laedt unsignierten Code in den Kernel)."),
+
+            // --- Inhalts-Signaturen: weitere bekannte Cheat-Wasserzeichen --------
+            (IndicatorType.ContentString, "eulen",          RiskLevel.High,   "FiveM-Cheat",   "FiveM-Cheat-Wasserzeichen 'Eulen' im Datei-Inhalt."),
+            (IndicatorType.ContentString, "hammafia",       RiskLevel.High,   "FiveM-Cheat",   "FiveM-Cheat-Token 'Hammafia' im Datei-Inhalt."),
+            (IndicatorType.ContentString, "desudo",         RiskLevel.High,   "FiveM-Cheat",   "FiveM-Cheat-Token 'Desudo' im Datei-Inhalt."),
+            (IndicatorType.ContentString, "impaught",       RiskLevel.High,   "FiveM-Cheat",   "FiveM-Cheat-Token 'Impaught' im Datei-Inhalt."),
+            (IndicatorType.ContentString, "kiddion",        RiskLevel.High,   "GTA-Cheat",     "GTA-Cheat-Token 'Kiddion' im Datei-Inhalt."),
+            (IndicatorType.ContentString, "phantom-x",      RiskLevel.High,   "FiveM-Cheat",   "FiveM-Cheat-Token 'Phantom-X' im Datei-Inhalt."),
+            (IndicatorType.ContentString, "cheat engine",   RiskLevel.High,   "Debugger",      "'Cheat Engine'-Token im Datei-Inhalt."),
+            (IndicatorType.ContentString, "bypass anticheat", RiskLevel.High, "AC-Bypass",     "Anti-Cheat-Bypass-Token im Datei-Inhalt."),
+
+            // --- Cheat-Menue-Heuristik: generische UI-Strings --------------------
+            (IndicatorType.ContentString, "speedhack",     RiskLevel.Medium, "Speed-Hack",    "Speedhack-String im Datei-/Spiel-Inhalt."),
+            (IndicatorType.ContentString, "bhop",          RiskLevel.Medium, "Movement-Hack", "Bunny-Hop-Hack-String im Datei-/Spiel-Inhalt."),
+            (IndicatorType.ContentString, "noclip",        RiskLevel.Medium, "Movement-Hack", "NoClip-Hack-String im Datei-/Spiel-Inhalt."),
+            (IndicatorType.ContentString, "esp menu",      RiskLevel.Medium, "Cheat-Menue",   "ESP-Menue-String im Datei-/Spiel-Inhalt."),
+            (IndicatorType.ContentString, "fly hack",      RiskLevel.Medium, "Movement-Hack", "'Fly Hack'-String im Datei-/Spiel-Inhalt."),
+            (IndicatorType.ContentString, "dll inject",    RiskLevel.High,   "Injector",      "DLL-Injektions-String im Datei-Inhalt."),
+
+            // --- URL-Domain-Signaturen: weitere bekannte Cheat-Domaenen ---------
+            (IndicatorType.UrlDomainKeyword, "hammafia",   RiskLevel.High,   "Cheat-Shop", "Besuch einer Hammafia-Domain (FiveM-Cheat)."),
+            (IndicatorType.UrlDomainKeyword, "desudo",     RiskLevel.High,   "Cheat-Shop", "Besuch einer Desudo-Domain (FiveM-Cheat)."),
+            (IndicatorType.UrlDomainKeyword, "eulen.ac",   RiskLevel.High,   "Cheat-Shop", "Besuch von eulen.ac (FiveM-Cheat)."),
+            (IndicatorType.UrlDomainKeyword, "impaught",   RiskLevel.High,   "Cheat-Shop", "Besuch einer Impaught-Domain (FiveM-Cheat)."),
+            (IndicatorType.UrlDomainKeyword, "gamepay",    RiskLevel.Medium, "Cheat-Shop", "Besuch einer GamePay-Cheat-Domain."),
+            (IndicatorType.UrlDomainKeyword, "phantom-x",  RiskLevel.High,   "Cheat-Shop", "Besuch einer Phantom-X-Domain (FiveM-Cheat)."),
+            (IndicatorType.UrlDomainKeyword, "lynxcheats", RiskLevel.High,   "Cheat-Shop", "Besuch einer LynxCheats-Domain."),
+
+            // --- Prozess-Indikatoren: Debugger / Analyse-Werkzeuge ---------------
+            (IndicatorType.ProcessName, "processhacker",   RiskLevel.Medium, "Tool",      "Process Hacker laeuft (erweiterte Prozess-/Speicheranalyse)."),
+            (IndicatorType.ProcessName, "x64dbg",          RiskLevel.High,   "Debugger",  "x64dbg-Debugger laeuft waehrend des Spiels."),
+            (IndicatorType.ProcessName, "x32dbg",          RiskLevel.High,   "Debugger",  "x32dbg-Debugger laeuft waehrend des Spiels."),
+            (IndicatorType.ProcessName, "windbg",          RiskLevel.High,   "Debugger",  "WinDbg-Debugger laeuft waehrend des Spiels.")
         };
 
         using var tx = conn.BeginTransaction();

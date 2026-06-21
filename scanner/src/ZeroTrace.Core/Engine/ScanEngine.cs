@@ -169,6 +169,7 @@ public sealed class ScanEngine
         if (o.ScanNetwork) modules.Add(new NetworkScanModule());
         if (o.ScanOverlay) modules.Add(new OverlayScanModule());
         if (o.ScanWmiPersistence) modules.Add(new WmiPersistenceScanModule());
+        if (o.ScanScheduledTasks) modules.Add(new ScheduledTaskScanModule());
         if (o.ScanMemory) modules.Add(new MemoryScanModule());
         if (o.ScanTamper) modules.Add(new TamperScanModule());
         if (o.ScanDrives) modules.Add(new DriveScanModule());
