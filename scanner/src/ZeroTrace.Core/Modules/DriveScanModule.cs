@@ -24,28 +24,42 @@ public sealed class DriveScanModule : IScanModule
         long processed = 0;
         int rootIndex = 0;
 
+        // Hashing and Authenticode checks dominate the scan time and are fully
+        // independent per file, so inspect files concurrently across all CPU
+        // cores. The scan context is thread-safe (locked AddFinding, Interlocked
+        // counters) and FileInspector.Inspect holds no shared state.
+        var parallelOptions = new ParallelOptions
+        {
+            CancellationToken = ct,
+            MaxDegreeOfParallelism = Math.Max(2, Environment.ProcessorCount)
+        };
+
         foreach (var root in roots)
         {
             ct.ThrowIfCancellationRequested();
             double rootBase = roots.Count == 0 ? 0 : (double)rootIndex / roots.Count;
             double rootSpan = roots.Count == 0 ? 1 : 1.0 / roots.Count;
 
-            foreach (var file in EnumerateFiles(root, ctx.Options.MaxDepth, excluded, ct))
-            {
-                ct.ThrowIfCancellationRequested();
+            var files = EnumerateFiles(root, ctx.Options.MaxDepth, excluded, ct)
+                .Where(f => extSet.Count == 0 || extSet.Contains(Path.GetExtension(f)));
 
-                if (extSet.Count > 0 && !extSet.Contains(Path.GetExtension(file)))
-                    continue;
+            Parallel.ForEach(files, parallelOptions, file =>
+            {
+                if (ct.IsCancellationRequested) return;
 
                 ctx.IncrementFiles();
-                processed++;
+                long n = System.Threading.Interlocked.Increment(ref processed);
 
-                var finding = FileInspector.Inspect(file, ctx, Name);
-                if (finding is not null) ctx.AddFinding(finding);
+                try
+                {
+                    var finding = FileInspector.Inspect(file, ctx, Name);
+                    if (finding is not null) ctx.AddFinding(finding);
+                }
+                catch { /* skip this one file, keep scanning the rest */ }
 
-                if (processed % 200 == 0)
-                    ctx.Report(rootBase + rootSpan * 0.5, file, $"{processed} Dateien geprueft");
-            }
+                if (n % 200 == 0)
+                    ctx.Report(rootBase + rootSpan * 0.5, file, $"{n} Dateien geprueft");
+            });
 
             rootIndex++;
             ctx.Report(rootBase + rootSpan, root, $"Wurzel abgeschlossen: {root}");

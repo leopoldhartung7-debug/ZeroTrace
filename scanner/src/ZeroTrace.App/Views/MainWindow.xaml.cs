@@ -58,7 +58,10 @@ public partial class MainWindow : Window
     }
 
     // ===== Window chrome =====
-    private void Header_Drag(object sender, MouseButtonEventArgs e)
+    // The whole window is draggable: this bubbling handler only fires for clicks
+    // on non-interactive areas (background, particle field, labels). Buttons and
+    // text boxes mark the event handled, so their clicks keep working.
+    private void Window_Drag(object sender, MouseButtonEventArgs e)
     {
         if (e.ChangedButton == MouseButton.Left)
         {
