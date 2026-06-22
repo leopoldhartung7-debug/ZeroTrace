@@ -231,18 +231,6 @@ public partial class MainWindow : Window
     // ===== Result =====
     private void ShowResult(ScanReport report)
     {
-        int count = report.Findings.Count;
-        if (count > 0)
-        {
-            YesNo.Text = $"⚠  Auffälligkeiten gefunden: {count}";
-            YesNo.Foreground = new SolidColorBrush(Color.FromRgb(0xF9, 0x73, 0x16));
-        }
-        else
-        {
-            YesNo.Text = "✓  Keine Auffälligkeiten gefunden";
-            YesNo.Foreground = new SolidColorBrush(Color.FromRgb(0x22, 0xCC, 0x66));
-        }
-
         ShowStep(ResultView);
         PlayCheckAnimation();
         StartCloseCountdown(5);

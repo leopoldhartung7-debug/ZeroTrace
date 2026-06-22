@@ -310,8 +310,6 @@
                                 </Viewbox>
                                 <TextBlock Text="Scan abgeschlossen" Foreground="#C8D2DA" FontSize="19"
                                            FontWeight="Bold" HorizontalAlignment="Center" Margin="0,14,0,0" />
-                                <TextBlock x:Name="YesNo" HorizontalAlignment="Center" FontSize="13"
-                                           FontWeight="SemiBold" Margin="0,8,0,0" />
                                 <TextBlock x:Name="CountText" Foreground="#5A6772" FontSize="11"
                                            HorizontalAlignment="Center" Margin="0,8,0,0" />
                             </StackPanel>
