@@ -20,6 +20,7 @@ public sealed class LiveScanViewModel : ViewModelBase
     private readonly IndicatorStore _indicators;
     private readonly ScanStore _scans;
     private readonly SettingsStore _settings;
+    private readonly HashWhitelistStore? _whitelist;
     private readonly Dispatcher _dispatcher;
 
     private CancellationTokenSource? _cts;
@@ -60,11 +61,12 @@ public sealed class LiveScanViewModel : ViewModelBase
     public AsyncRelayCommand StartScanCommand { get; }
     public RelayCommand CancelScanCommand { get; }
 
-    public LiveScanViewModel(IndicatorStore indicators, ScanStore scans, SettingsStore settings)
+    public LiveScanViewModel(IndicatorStore indicators, ScanStore scans, SettingsStore settings, HashWhitelistStore? whitelist = null)
     {
         _indicators = indicators;
         _scans = scans;
         _settings = settings;
+        _whitelist = whitelist;
         _dispatcher = Application.Current?.Dispatcher ?? Dispatcher.CurrentDispatcher;
 
         StartScanCommand = new AsyncRelayCommand(RunScanAsync, () => !IsScanning);
@@ -102,7 +104,7 @@ public sealed class LiveScanViewModel : ViewModelBase
 
         var options = _settings.LoadOptions();
         var matcher = new IndicatorMatcher(_indicators.GetEnabled());
-        var engine = new ScanEngine(matcher);
+        var engine = new ScanEngine(matcher, _whitelist);
 
         // Created on the UI thread => Report callbacks marshal back automatically.
         var progress = new Progress<ScanProgress>(OnProgress);

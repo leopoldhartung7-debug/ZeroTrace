@@ -90,3 +90,16 @@ public enum DisplayLevel
     /// <summary>The full finding list including locations and details.</summary>
     Full = 2
 }
+
+/// <summary>
+/// Controls which modules are active and how deep the scan goes.
+/// Quick = fast low-impact modules only.
+/// Standard = the default balanced set.
+/// Deep = everything including memory, deep drive scan, and extended timeouts.
+/// </summary>
+public enum ScanProfile
+{
+    Quick = 0,
+    Standard = 1,
+    Deep = 2
+}

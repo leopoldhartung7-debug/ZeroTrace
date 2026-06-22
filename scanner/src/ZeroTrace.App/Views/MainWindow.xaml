@@ -222,6 +222,20 @@
                                 <Button Style="{StaticResource GameBtn}" Tag="alt:V"  Click="Game_Click" Content="alt:V" />
                                 <Button Style="{StaticResource GameBtn}" Tag="RageMP" Click="Game_Click" Content="RageMP" />
                             </StackPanel>
+                            <!-- Profile selector -->
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,16,0,0">
+                                <TextBlock Text="Scan-Profil:" Foreground="#5A6772" FontSize="11"
+                                           VerticalAlignment="Center" Margin="0,0,8,0" />
+                                <ComboBox x:Name="ProfileComboBox" Width="120" FontSize="11"
+                                          Background="#1A2028" Foreground="#C8D4DC"
+                                          BorderBrush="#2A3038" BorderThickness="1"
+                                          SelectedIndex="1"
+                                          SelectionChanged="ProfileComboBox_SelectionChanged">
+                                    <ComboBoxItem Content="Quick" Tag="Quick" />
+                                    <ComboBoxItem Content="Standard" Tag="Standard" IsSelected="True" />
+                                    <ComboBoxItem Content="Deep" Tag="Deep" />
+                                </ComboBox>
+                            </StackPanel>
                         </StackPanel>
 
                         <!-- 1) PIN -->

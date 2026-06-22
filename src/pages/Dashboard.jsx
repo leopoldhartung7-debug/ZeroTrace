@@ -221,7 +221,7 @@ export default function Dashboard() {
         </div>
 
         <div className="mt-10">
-          <Tabs tabs={['Overview', 'Trends', 'By Game']} active={subTab} onChange={setSubTab} />
+          <Tabs tabs={['Overview', 'Trends', 'By Game', 'Activity']} active={subTab} onChange={setSubTab} />
         </div>
 
         {subTab === 'Overview' && (
@@ -312,6 +312,57 @@ export default function Dashboard() {
                   <Bar dataKey="scans" fill="#38bdf8" name="Scans" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
+            </div>
+          </div>
+        )}
+
+        {subTab === 'Activity' && (
+          <div className="mt-8 grid grid-cols-1 gap-10 lg:grid-cols-2">
+            <div>
+              <h3 className="txt mb-6 text-base font-medium">Scans by Hour of Day</h3>
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={(() => {
+                    const counts = Array.from({ length: 24 }, (_, h) => ({ hour: String(h).padStart(2, '0') + ':00', count: 0 }))
+                    ;(state.scans || []).forEach(s => {
+                      const d = new Date(s.importedAt || s.createdAt || s.date)
+                      if (!isNaN(d)) counts[d.getHours()].count += 1
+                    })
+                    return counts
+                  })()}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                    <XAxis dataKey="hour" tick={{ fill: 'var(--muted)', fontSize: 10 }} stroke="var(--border)" interval={2} />
+                    <YAxis tick={{ fill: 'var(--muted)', fontSize: 11 }} stroke="var(--border)" allowDecimals={false} />
+                    <Tooltip content={<ChartTooltip />} cursor={{ fill: 'var(--hover)' }} />
+                    <Bar dataKey="count" fill="#38bdf8" name="Scans" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+            <div>
+              <h3 className="txt mb-6 text-base font-medium">Scans by Day of Week</h3>
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={(() => {
+                    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+                    const counts = days.map(d => ({ day: d, count: 0 }))
+                    ;(state.scans || []).forEach(s => {
+                      const d = new Date(s.importedAt || s.createdAt || s.date)
+                      if (!isNaN(d)) {
+                        const dow = (d.getDay() + 6) % 7 // 0=Mon
+                        counts[dow].count += 1
+                      }
+                    })
+                    return counts
+                  })()}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                    <XAxis dataKey="day" tick={{ fill: 'var(--muted)', fontSize: 11 }} stroke="var(--border)" />
+                    <YAxis tick={{ fill: 'var(--muted)', fontSize: 11 }} stroke="var(--border)" allowDecimals={false} />
+                    <Tooltip content={<ChartTooltip />} cursor={{ fill: 'var(--hover)' }} />
+                    <Bar dataKey="count" fill="#22c55e" name="Scans" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
             </div>
           </div>
         )}

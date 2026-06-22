@@ -6,6 +6,9 @@ namespace ZeroTrace.Core.Models;
 /// </summary>
 public sealed class ScanOptions
 {
+    /// <summary>Which profile this option set was created from. Informational only.</summary>
+    public ScanProfile Profile { get; set; } = ScanProfile.Standard;
+
     public bool ScanDrives { get; set; } = true;
     public bool ScanProcesses { get; set; } = true;
     public bool ScanAutostart { get; set; } = true;
@@ -132,6 +135,70 @@ public sealed class ScanOptions
     public int ModuleTimeoutSeconds { get; set; } = 240;
 }
 
+public static class ScanProfiles
+{
+    public static ScanOptions Quick() => new ScanOptions
+    {
+        Profile = ScanProfile.Quick,
+        ScanProcesses = true,
+        ScanAutostart = true,
+        ScanRegistry = true,
+        ScanDownloads = true,
+        ScanBrowserHistory = true,
+        ScanDrives = true,
+        ScanFiveM = true,
+        ScanNetwork = true,
+        ScanScheduledTasks = true,
+        ScanInstalledSoftware = true,
+        // All memory/deep/slow modules off
+        ScanMemory = false,
+        ScanUsnJournal = false,
+        ScanDmaRisk = false,
+        ScanRemnants = false,
+        ScanForensicTraces = false,
+        ScanWmiPersistence = false,
+        ScanHiddenDrivers = false,
+        ScanTamper = false,
+        ScanVirtualMachine = false,
+        ScanDllHijack = false,
+        ScanOverlay = false,
+        ScanPrefetch = false,
+        ScanPowerShell = false,
+        ScanSecurityTimeline = false,
+        ScanBrowserExtensions = false,
+        ScanRootCertificates = false,
+        ScanUsbDevices = false,
+        ScanExecutionHistory = false,
+        ScanCustomStrings = false,
+        ScanSteam = false,
+        ScanKernelDrivers = false,
+        ScanNamedResources = false,
+        ScanClipboard = false,
+        ScanAppData = false,
+        ScanSuspiciousExecutables = true,
+        DeepDriveScan = false,
+        ModuleTimeoutSeconds = 60,
+    };
+
+    public static ScanOptions Standard() => new ScanOptions(); // defaults
+
+    public static ScanOptions Deep() => new ScanOptions
+    {
+        Profile = ScanProfile.Deep,
+        // All true (inherit defaults) plus:
+        DeepDriveScan = true,
+        ModuleTimeoutSeconds = 600,
+        MaxDepth = 20,
+    };
+
+    public static ScanOptions FromProfile(ScanProfile profile) => profile switch
+    {
+        ScanProfile.Quick    => Quick(),
+        ScanProfile.Deep     => Deep(),
+        _                    => Standard(),
+    };
+}
+
 /// <summary>Progress snapshot emitted via IProgress during a scan.</summary>
 public sealed class ScanProgress
 {
@@ -165,6 +232,9 @@ public sealed class ScanReport
     public string MachineName { get; set; } = Environment.MachineName;
     public string OsVersion { get; set; } = Environment.OSVersion.VersionString;
     public bool Elevated { get; set; }
+
+    /// <summary>The profile that was used for this scan.</summary>
+    public ScanProfile Profile { get; set; } = ScanProfile.Standard;
 
     /// <summary>Read-only PC information for the dashboard (system, HWID, etc.).</summary>
     public SystemSnapshot System { get; set; } = new();

@@ -326,7 +326,7 @@ const CHEAT_DB = [
   { name: 'Aimware', type: 'Paid Client', game: 'CS2', severity: 'Critical', signatures: ['aimware.net', 'aw_overlay'], notes: 'CS2 paid cheat with overlay.' },
   { name: 'Fecurity', type: 'Paid Client', game: 'CS2', severity: 'Critical', signatures: ['fecurity', 'fec_loader'], notes: 'External CS2 cheat.' },
   { name: 'Cheat Engine', type: 'External Tool', game: 'RUST', severity: 'Medium', signatures: ['cheatengine', 'CE_'], notes: 'Generic memory editor.' },
-].map((c, i) => ({ id: 'cdb' + i, builtin: true, ...c }))
+].map((c, i) => ({ id: 'cdb' + i, builtin: true, active: true, detectionCount: 0, relatedTo: [], version: '', ...c }))
 
 function seed() {
   const now = Date.now()
@@ -353,6 +353,7 @@ function seed() {
       casinoSound: true,
       scannerUrl: '',
       scannerApiUrl: '',
+      autoApproveThreshold: 10,
     },
     notifications: [
       { id: 'n1', title: 'Scan finished', body: 'Pin F1T5F8C0 returned: Cheating', time: now - 3600000, read: false },
@@ -1053,10 +1054,24 @@ function reducer(state, action) {
             })
           }
         })
+        // Auto-approve proposals that exceed the threshold
+        const autoThreshold = state.settings?.autoApproveThreshold ?? 10
+        const existingSigsForAuto = new Set((state.customCheats || []).flatMap(c => c.signatures || []))
+        const autoCheats = [...(state.customCheats || [])]
+        const autoApprovedProposals = newProposals.map(prop => {
+          if (prop.status === 'pending' && prop.seenCount >= autoThreshold && !existingSigsForAuto.has(prop.pattern)) {
+            existingSigsForAuto.add(prop.pattern)
+            autoCheats.push(proposalToCheat(prop))
+            return { ...prop, status: 'approved', adminComment: 'Auto-approved by threshold' }
+          }
+          return prop
+        })
         // Store proposals for use in the return below
-        var extractedProposals = newProposals
+        var extractedProposals = autoApprovedProposals
+        var extractedCheats = autoCheats
       } else {
         var extractedProposals = state.proposals || []
+        var extractedCheats = state.customCheats || []
         p = raw
       }
       const result =
@@ -1116,10 +1131,17 @@ function reducer(state, action) {
             'admin',
           )
         : null
+      // Increment detectionCount for matching customCheats
+      const updatedCheatsWithCounts = (extractedCheats || state.customCheats || []).map(cheat => {
+        const sigSet = new Set((cheat.signatures || []).map(s => s.toLowerCase()))
+        const matched = dets.some(d => sigSet.has((d.name || '').toLowerCase()) || sigSet.has((d.fileName || '').toLowerCase()))
+        return matched ? { ...cheat, detectionCount: (cheat.detectionCount || 0) + 1 } : cheat
+      })
       return {
         ...state,
         pins,
         proposals: extractedProposals,
+        customCheats: updatedCheatsWithCounts,
         scans: [
           { id: 's' + Date.now(), date: new Date().toISOString().slice(0, 10), game, result, detections: dets.length },
           ...state.scans,
@@ -1332,12 +1354,20 @@ function reducer(state, action) {
     case 'add-cheat':
       return {
         ...state,
-        customCheats: [{ id: 'c' + Date.now(), builtin: false, ...action.cheat }, ...state.customCheats],
+        customCheats: [{ id: 'c' + Date.now(), builtin: false, active: true, detectionCount: 0, relatedTo: [], version: '', ...action.cheat }, ...state.customCheats],
         events: ev(state, 'db', 'Cheat added', action.cheat.name, 'admin'),
       }
 
     case 'delete-cheat':
       return { ...state, customCheats: state.customCheats.filter((c) => c.id !== action.id) }
+
+    case 'toggle-cheat-active':
+      return {
+        ...state,
+        customCheats: state.customCheats.map((c) =>
+          c.id === action.id ? { ...c, active: !c.active } : c
+        ),
+      }
 
     case 'add-ticket': {
       const ownerId = state.session?.userId || (state.role === 'admin' ? 'admin' : null)
@@ -1354,6 +1384,7 @@ function reducer(state, action) {
         rating: null,
         replies: [],
         history: [{ status: 'Open', at: Date.now(), by: ownerId }],
+        relatedTo: [],
       }
       return {
         ...state,
@@ -1387,6 +1418,12 @@ function reducer(state, action) {
         internal: action.internal || false,
         createdAt: Date.now(),
       }
+      const ticket = state.tickets.find(t => t.id === action.id)
+      const hasMention = action.message && action.message.includes('@')
+      let notifs = note(state, `Ticket reply: ${action.id}`, action.message.slice(0, 80), replyOwnerId)
+      if (hasMention && ticket && ticket.ownerId) {
+        notifs = note({ ...state, notifications: notifs }, 'You were mentioned', `You were mentioned in ticket ${action.id}`, ticket.ownerId)
+      }
       return {
         ...state,
         tickets: state.tickets.map((t) => {
@@ -1395,7 +1432,7 @@ function reducer(state, action) {
           const history = newStatus !== t.status ? [...(t.history || []), { status: newStatus, at: Date.now(), by: 'admin' }] : (t.history || [])
           return { ...t, replies: [...(t.replies || []), reply], updatedAt: Date.now(), status: newStatus, history }
         }),
-        notifications: note(state, `Ticket reply: ${action.id}`, action.message.slice(0, 80), replyOwnerId),
+        notifications: notifs,
       }
     }
 
@@ -1414,6 +1451,17 @@ function reducer(state, action) {
           t.id === action.id ? { ...t, assignedTo: action.assignee, updatedAt: Date.now() } : t
         ),
       }
+
+    case 'link-ticket': {
+      return {
+        ...state,
+        tickets: state.tickets.map((t) =>
+          t.id === action.id
+            ? { ...t, relatedTo: [...new Set([...(t.relatedTo || []), action.relatedId])], updatedAt: Date.now() }
+            : t
+        ),
+      }
+    }
 
     case 'delete-ticket':
       return { ...state, tickets: state.tickets.filter((t) => t.id !== action.id) }
@@ -2146,12 +2194,12 @@ function reducer(state, action) {
         : (state.customCheats || [])
       return {
         ...state,
-        proposals: (state.proposals || []).map(p => p.id === action.id ? { ...p, status: 'approved' } : p),
+        proposals: (state.proposals || []).map(p => p.id === action.id ? { ...p, status: 'approved', adminComment: action.comment || '' } : p),
         customCheats: newCheats,
       }
     }
     case 'reject-proposal':
-      return { ...state, proposals: (state.proposals || []).map(p => p.id === action.id ? { ...p, status: 'rejected' } : p) }
+      return { ...state, proposals: (state.proposals || []).map(p => p.id === action.id ? { ...p, status: 'rejected', adminComment: action.comment || '' } : p) }
     case 'bulk-approve-proposals': {
       const toApprove = (state.proposals || []).filter(p => action.ids.includes(p.id) && p.status !== 'approved')
       const existingSigs = new Set((state.customCheats || []).flatMap(c => c.signatures || []))
@@ -2170,6 +2218,18 @@ function reducer(state, action) {
       return { ...state, proposals: (state.proposals || []).filter(p => p.status !== 'rejected') }
     case 'reset-proposal':
       return { ...state, proposals: (state.proposals || []).map(p => p.id === action.id ? { ...p, status: 'pending' } : p) }
+
+    case 'import-backup': {
+      const d = action.data || {}
+      return {
+        ...state,
+        tickets: d.tickets || state.tickets,
+        proposals: d.proposals || state.proposals,
+        customCheats: d.customCheats || state.customCheats,
+        pins: d.pins || state.pins,
+        scans: d.scans || state.scans,
+      }
+    }
 
     default:
       return state

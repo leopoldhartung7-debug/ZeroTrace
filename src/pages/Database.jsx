@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Database, Plus, Search, Trash2, ShieldAlert, Lock } from 'lucide-react'
+import { Database, Plus, Search, Trash2, ShieldAlert, Lock, ExternalLink, Flame } from 'lucide-react'
 import { PageHeader, Card, Badge, EmptyState, StatTile, Field, Input } from '../components/kit.jsx'
 import { Modal, Select, useToast } from '../components/ui.jsx'
 import { useStore, ALL_GAMES } from '../store.jsx'
@@ -16,20 +16,22 @@ export default function CheatDatabase() {
   const [open, setOpen] = useState(false)
   const [bulkOpen, setBulkOpen] = useState(false)
   const [bulkText, setBulkText] = useState('')
+  const [activeOnly, setActiveOnly] = useState(false)
   const [form, setForm] = useState({
-    name: '', type: 'Free Client', game: 'MINECRAFT', severity: 'Medium', signatures: '', notes: '',
+    name: '', type: 'Free Client', game: 'MINECRAFT', severity: 'Medium', signatures: '', notes: '', version: '', relatedTo: [],
   })
 
   const rows = useMemo(
     () =>
       state.customCheats.filter((c) => {
+        if (activeOnly && c.active === false) return false
         if (q && !`${c.name} ${c.notes} ${c.signatures.join(' ')}`.toLowerCase().includes(q.toLowerCase()))
           return false
         if (game !== 'all' && c.game !== game) return false
         if (sev !== 'all' && c.severity !== sev) return false
         return true
       }),
-    [state.customCheats, q, game, sev],
+    [state.customCheats, q, game, sev, activeOnly],
   )
 
   const critical = state.customCheats.filter((c) => c.severity === 'Critical').length
@@ -45,7 +47,7 @@ export default function CheatDatabase() {
       },
     })
     toast({ type: 'success', title: 'Cheat added', body: form.name })
-    setForm({ name: '', type: 'Free Client', game: 'MINECRAFT', severity: 'Medium', signatures: '', notes: '' })
+    setForm({ name: '', type: 'Free Client', game: 'MINECRAFT', severity: 'Medium', signatures: '', notes: '', version: '', relatedTo: [] })
     setOpen(false)
   }
 
@@ -106,13 +108,19 @@ export default function CheatDatabase() {
             onChange={setSev}
             options={[{ value: 'all', label: 'All Severity' }, ...SEVERITIES.map((s) => ({ value: s, label: s }))]}
           />
+          <button
+            onClick={() => setActiveOnly(v => !v)}
+            className={`rounded-lg border px-3 py-2.5 text-sm font-medium transition-colors ${activeOnly ? 'border-green-600/40 bg-green-600/15 text-green-500' : 'bd txt'}`}
+          >
+            {activeOnly ? 'Active only' : 'Show all'}
+          </button>
         </div>
 
         <div className="mt-5 overflow-x-auto">
           <table className="w-full min-w-[760px] text-left">
             <thead>
               <tr className="caps-label bd border-b">
-                {['Name', 'Type', 'Game', 'Severity', 'Signatures', 'Notes', ''].map((h) => (
+                {['', 'Name', 'Version', 'Type', 'Game', 'Severity', 'Signatures', 'Notes', ''].map((h) => (
                   <th key={h} className="px-3 py-3 font-semibold">{h}</th>
                 ))}
               </tr>
@@ -120,17 +128,44 @@ export default function CheatDatabase() {
             <tbody>
               {rows.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="muted px-3 py-12 text-center text-sm">
+                  <td colSpan={9} className="muted px-3 py-12 text-center text-sm">
                     No entries match your filters.
                   </td>
                 </tr>
               )}
               {rows.map((c) => (
                 <tr key={c.id} className="hoverable bd border-b align-top text-sm">
-                  <td className="txt px-3 py-4 font-medium">
-                    {c.name}
-                    {c.builtin && <Lock size={11} className="muted ml-1.5 inline" />}
+                  <td className="px-3 py-4">
+                    <button
+                      onClick={() => dispatch({ type: 'toggle-cheat-active', id: c.id })}
+                      title={c.active === false ? 'Inactive (click to activate)' : 'Active (click to deactivate)'}
+                      className="flex items-center justify-center"
+                    >
+                      <span className={`h-2.5 w-2.5 rounded-full ${c.active === false ? 'bg-white/20' : 'bg-green-500'}`} />
+                    </button>
                   </td>
+                  <td className="txt px-3 py-4 font-medium">
+                    <div className="flex items-center gap-2">
+                      <span>
+                        {c.name}
+                        {c.builtin && <Lock size={11} className="muted ml-1.5 inline" />}
+                      </span>
+                      {(c.detectionCount || 0) > 0 && (
+                        <span className={`flex items-center gap-0.5 rounded-full border px-1.5 py-0.5 text-[10px] font-semibold ${(c.detectionCount || 0) > 5 ? 'text-red-400 bg-red-400/10 border-red-400/20' : 'text-orange-400 bg-orange-400/10 border-orange-400/20'}`}>
+                          {(c.detectionCount || 0) > 5 && <Flame size={9} />}
+                          {c.detectionCount}
+                        </span>
+                      )}
+                    </div>
+                    {(c.relatedTo || []).length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {(c.relatedTo || []).map(r => (
+                          <span key={r} className="rounded-full bg-white/5 border bd px-1.5 py-0.5 text-[10px] muted">{r}</span>
+                        ))}
+                      </div>
+                    )}
+                  </td>
+                  <td className="muted px-3 py-4 text-xs">{c.version || ''}</td>
                   <td className="muted px-3 py-4">{c.type}</td>
                   <td className="px-3 py-4">
                     <span className="bd txt rounded-md border px-2 py-0.5 text-xs">{c.game}</span>
@@ -147,17 +182,39 @@ export default function CheatDatabase() {
                   </td>
                   <td className="muted max-w-[220px] px-3 py-4 text-xs">{c.notes}</td>
                   <td className="px-3 py-4">
-                    {!c.builtin && (
-                      <button
-                        className="muted hover:text-red-500"
-                        onClick={() => {
-                          dispatch({ type: 'delete-cheat', id: c.id })
-                          toast({ type: 'success', title: 'Removed', body: c.name })
-                        }}
+                    <div className="flex items-center gap-2">
+                      <a
+                        href={`https://www.virustotal.com/gui/search/${encodeURIComponent(c.name)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="muted hover:text-sky-400"
+                        title="Search on VirusTotal"
                       >
-                        <Trash2 size={15} />
-                      </button>
-                    )}
+                        <ExternalLink size={14} />
+                      </a>
+                      {c.signatures && c.signatures.some(s => /^[0-9a-f]{32,}$/i.test(s)) && (
+                        <a
+                          href={`https://www.virustotal.com/gui/search/${encodeURIComponent(c.signatures.find(s => /^[0-9a-f]{32,}$/i.test(s)))}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="muted hover:text-purple-400"
+                          title="Hash lookup on VirusTotal"
+                        >
+                          <ExternalLink size={12} />
+                        </a>
+                      )}
+                      {!c.builtin && (
+                        <button
+                          className="muted hover:text-red-500"
+                          onClick={() => {
+                            dispatch({ type: 'delete-cheat', id: c.id })
+                            toast({ type: 'success', title: 'Removed', body: c.name })
+                          }}
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -201,6 +258,14 @@ export default function CheatDatabase() {
           </Field>
           <Field label="Notes">
             <Input value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Detection guidance" />
+          </Field>
+          <Field label="Version (optional)">
+            <Input value={form.version} onChange={(e) => setForm({ ...form, version: e.target.value })} placeholder="e.g. 4.2+" />
+          </Field>
+          <Field label="Related Cheats (comma separated names, optional)">
+            <Input value={Array.isArray(form.relatedTo) ? form.relatedTo.join(', ') : form.relatedTo}
+              onChange={(e) => setForm({ ...form, relatedTo: e.target.value.split(',').map(s => s.trim()).filter(Boolean) })}
+              placeholder="e.g. Vape V4, Novoline" />
           </Field>
         </div>
       </Modal>

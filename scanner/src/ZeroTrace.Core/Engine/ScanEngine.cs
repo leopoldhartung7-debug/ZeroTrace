@@ -1,3 +1,4 @@
+using ZeroTrace.Core.Data;
 using ZeroTrace.Core.Detection;
 using ZeroTrace.Core.Models;
 using ZeroTrace.Core.Modules;
@@ -13,8 +14,13 @@ namespace ZeroTrace.Core.Engine;
 public sealed class ScanEngine
 {
     private readonly IndicatorMatcher _matcher;
+    private readonly HashWhitelistStore? _whitelist;
 
-    public ScanEngine(IndicatorMatcher matcher) => _matcher = matcher;
+    public ScanEngine(IndicatorMatcher matcher, HashWhitelistStore? whitelist = null)
+    {
+        _matcher = matcher;
+        _whitelist = whitelist;
+    }
 
     public Task<ScanReport> RunAsync(
         ScanOptions options,
@@ -42,6 +48,7 @@ public sealed class ScanEngine
         {
             StartedUtc = DateTime.UtcNow,
             Elevated = PrivilegeChecker.IsElevated(),
+            Profile = options.Profile,
             System = SystemInfo.Capture(),
             Inventory = options.ScanInventory ? HostInventoryCollector.Collect() : new()
         };
@@ -136,7 +143,16 @@ public sealed class ScanEngine
         report.FilesScanned = context.FilesScanned;
         report.ProcessesScanned = context.ProcessesScanned;
         report.RegistryKeysScanned = context.RegistryKeysScanned;
-        report.Findings = context.Findings.OrderByDescending(f => f.Risk).ToList();
+
+        // Filter out any findings whose file hash is on the admin whitelist.
+        var allFindings = context.Findings;
+        if (_whitelist is not null)
+        {
+            allFindings = allFindings
+                .Where(f => f.Sha256 is null || !_whitelist.IsWhitelisted(f.Sha256))
+                .ToList();
+        }
+        report.Findings = allFindings.OrderByDescending(f => f.Risk).ToList();
 
         progress?.Report(new ScanProgress
         {

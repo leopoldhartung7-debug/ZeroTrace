@@ -27,6 +27,7 @@ function General() {
   const { state, dispatch } = useStore()
   const toast = useToast()
   const fileRef = useRef(null)
+  const backupFileRef = useRef(null)
 
   const exportData = () => {
     const a = document.createElement('a')
@@ -156,6 +157,71 @@ function General() {
           <p>Build <span className="txt">client-side SPA</span></p>
           <p>Storage <span className="txt">localStorage</span></p>
         </div>
+      </Card>
+
+      <Card className="mt-6 p-6">
+        <h3 className="txt mb-1 text-lg font-semibold">Data Backup</h3>
+        <p className="muted mb-4 text-sm">Export or import a selective backup (tickets, proposals, cheats, pins and scans only).</p>
+        <Row title="Export selective backup" desc="Downloads as zerotrace-backup-{date}.json, excludes theme/lang settings">
+          <button
+            onClick={() => {
+              const { settings: s } = state
+              const { theme, lang, ...otherSettings } = s
+              const exportObj = {
+                tickets: state.tickets,
+                proposals: state.proposals,
+                customCheats: state.customCheats,
+                pins: state.pins,
+                scans: state.scans,
+                settings: otherSettings,
+              }
+              const date = new Date().toISOString().slice(0, 10)
+              const a = document.createElement('a')
+              a.href = URL.createObjectURL(new Blob([JSON.stringify(exportObj, null, 2)], { type: 'application/json' }))
+              a.download = `zerotrace-backup-${date}.json`
+              a.click()
+              URL.revokeObjectURL(a.href)
+              toast({ type: 'success', title: 'Backup exported' })
+            }}
+            className="bd txt flex w-full items-center justify-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-medium"
+          >
+            <Download size={16} /> Export
+          </button>
+        </Row>
+        <Row title="Import & merge backup" desc="Merges imported tickets, proposals, cheats, pins and scans with existing data.">
+          <>
+            <p className="mb-2 rounded-lg border border-yellow-500/20 bg-yellow-500/10 px-3 py-2 text-xs text-yellow-400">
+              ⚠ This will merge imported data with your existing data.
+            </p>
+            <input
+              ref={backupFileRef}
+              type="file"
+              accept="application/json"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0]
+                if (!file) return
+                const fr = new FileReader()
+                fr.onload = () => {
+                  try {
+                    const data = JSON.parse(fr.result)
+                    dispatch({ type: 'import-backup', data })
+                    toast({ type: 'success', title: 'Backup merged' })
+                  } catch {
+                    toast({ type: 'error', title: 'Invalid backup file' })
+                  }
+                }
+                fr.readAsText(file)
+              }}
+            />
+            <button
+              onClick={() => backupFileRef.current?.click()}
+              className="bd txt flex w-full items-center justify-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-medium"
+            >
+              <Upload size={16} /> Import & Merge
+            </button>
+          </>
+        </Row>
       </Card>
     </div>
   )

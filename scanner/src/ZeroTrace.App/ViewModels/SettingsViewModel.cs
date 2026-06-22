@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Text.RegularExpressions;
 using System.Windows;
 using ZeroTrace.App.Mvvm;
 using ZeroTrace.Core.Data;
@@ -17,6 +18,7 @@ public sealed class SettingsViewModel : ViewModelBase
     private readonly SqliteDatabase _db;
     private readonly IndicatorStore _indicators;
     private readonly SettingsStore _settings;
+    private readonly HashWhitelistStore? _whitelist;
     private ScanOptions _options;
     private bool _suppressSave;
 
@@ -29,6 +31,15 @@ public sealed class SettingsViewModel : ViewModelBase
     // always shows at least the yes/no summary, so this can never hide everything.
     public Array DisplayLevels => Enum.GetValues(typeof(DisplayLevel));
 
+    public Array ScanProfileValues => Enum.GetValues(typeof(ScanProfile));
+
+    private ScanProfile _selectedProfile = ScanProfile.Standard;
+    public ScanProfile SelectedProfile
+    {
+        get => _selectedProfile;
+        set => SetProperty(ref _selectedProfile, value);
+    }
+
     private DisplayLevel _displayLevel = DisplayLevel.YesNo;
     public DisplayLevel UserDisplayLevel
     {
@@ -40,7 +51,7 @@ public sealed class SettingsViewModel : ViewModelBase
         }
     }
 
-    public ObservableCollection<Indicator> Indicators { get; } = new();
+    public ObservableCollection<Indicator> Indicators { get; } = new ObservableCollection<Indicator>();
 
     private Indicator? _selectedIndicator;
     public Indicator? SelectedIndicator { get => _selectedIndicator; set => SetProperty(ref _selectedIndicator, value); }
@@ -119,17 +130,53 @@ public sealed class SettingsViewModel : ViewModelBase
         }
     }
 
+    // --- Hash Whitelist ---
+    public ObservableCollection<WhitelistEntry> WhitelistEntries { get; } = new ObservableCollection<WhitelistEntry>();
+
+    private WhitelistEntry? _selectedWhitelistEntry;
+    public WhitelistEntry? SelectedWhitelistEntry
+    {
+        get => _selectedWhitelistEntry;
+        set => SetProperty(ref _selectedWhitelistEntry, value);
+    }
+
+    private string _newWhitelistHash = "";
+    public string NewWhitelistHash
+    {
+        get => _newWhitelistHash;
+        set => SetProperty(ref _newWhitelistHash, value);
+    }
+
+    private string _newWhitelistNote = "";
+    public string NewWhitelistNote
+    {
+        get => _newWhitelistNote;
+        set => SetProperty(ref _newWhitelistNote, value);
+    }
+
+    private string _whitelistStatus = "";
+    public string WhitelistStatus
+    {
+        get => _whitelistStatus;
+        private set => SetProperty(ref _whitelistStatus, value);
+    }
+
     public RelayCommand AddIndicatorCommand { get; }
     public RelayCommand DeleteIndicatorCommand { get; }
     public RelayCommand SaveAllCommand { get; }
     public RelayCommand ImportCommand { get; }
     public RelayCommand ExportCommand { get; }
+    public RelayCommand ApplyProfileCommand { get; }
+    public RelayCommand AddWhitelistCommand { get; }
+    public RelayCommand DeleteWhitelistCommand { get; }
+    public RelayCommand ImportWhitelistCommand { get; }
 
-    public SettingsViewModel(SqliteDatabase db, IndicatorStore indicators, SettingsStore settings)
+    public SettingsViewModel(SqliteDatabase db, IndicatorStore indicators, SettingsStore settings, HashWhitelistStore? whitelist = null)
     {
         _db = db;
         _indicators = indicators;
         _settings = settings;
+        _whitelist = whitelist;
         _options = settings.LoadOptions();
         if (Enum.TryParse<DisplayLevel>(settings.Get("display_level"), ignoreCase: true, out var lvl))
             _displayLevel = lvl;
@@ -139,6 +186,10 @@ public sealed class SettingsViewModel : ViewModelBase
         SaveAllCommand = new RelayCommand(SaveAll);
         ImportCommand = new RelayCommand(Import);
         ExportCommand = new RelayCommand(Export);
+        ApplyProfileCommand = new RelayCommand(ApplyProfile);
+        AddWhitelistCommand = new RelayCommand(AddWhitelist, () => _whitelist is not null && !string.IsNullOrWhiteSpace(NewWhitelistHash));
+        DeleteWhitelistCommand = new RelayCommand(DeleteWhitelist, () => _whitelist is not null && SelectedWhitelistEntry is not null);
+        ImportWhitelistCommand = new RelayCommand(ImportWhitelist, () => _whitelist is not null);
 
         Reload();
     }
@@ -147,6 +198,8 @@ public sealed class SettingsViewModel : ViewModelBase
     {
         _suppressSave = true;
         _options = _settings.LoadOptions();
+        _selectedProfile = _options.Profile;
+        OnPropertyChanged(nameof(SelectedProfile));
         // Refresh all option-bound properties.
         foreach (var name in new[]
                  {
@@ -160,6 +213,11 @@ public sealed class SettingsViewModel : ViewModelBase
 
         Indicators.Clear();
         foreach (var ind in _indicators.GetAll()) Indicators.Add(ind);
+
+        WhitelistEntries.Clear();
+        if (_whitelist is not null)
+            foreach (var e in _whitelist.GetAll()) WhitelistEntries.Add(e);
+
         StatusText = $"{Indicators.Count} Indikatoren geladen.";
     }
 
@@ -248,6 +306,115 @@ public sealed class SettingsViewModel : ViewModelBase
         catch (Exception ex)
         {
             StatusText = "Export fehlgeschlagen: " + ex.Message;
+        }
+    }
+
+    private void ApplyProfile()
+    {
+        _suppressSave = true;
+        var preset = ScanProfiles.FromProfile(SelectedProfile);
+        _options = preset;
+        // Notify every option-bound property so the checkboxes update immediately.
+        foreach (var name in new[]
+                 {
+                     nameof(ScanDrives), nameof(ScanProcesses), nameof(ScanAutostart),
+                     nameof(ScanFiveM), nameof(ScanRegistry), nameof(ScanDownloads),
+                     nameof(ScanBrowserHistory), nameof(ScanSecurityTimeline), nameof(ScanPowerShell),
+                     nameof(ScanKernelDrivers), nameof(ScanExecutionHistory), nameof(ScanDmaRisk),
+                     nameof(ScanInventory), nameof(ScanRemnants), nameof(ScanTamper),
+                     nameof(ScanForensicTraces), nameof(ScanUsnJournal), nameof(ScanNetwork),
+                     nameof(ScanOverlay), nameof(ScanWmiPersistence), nameof(ScanMemory),
+                     nameof(DeepDriveScan), nameof(MaxDepth), nameof(DrivesText), nameof(ExtensionsText)
+                 })
+            OnPropertyChanged(name);
+        _suppressSave = false;
+        _settings.SaveOptions(_options);
+        StatusText = $"Profil '{SelectedProfile}' angewendet.";
+    }
+
+    // ===== Hash Whitelist methods =====
+
+    private static readonly Regex Sha256Regex = new Regex(@"^[0-9a-fA-F]{64}$", RegexOptions.Compiled);
+
+    private void AddWhitelist()
+    {
+        if (_whitelist is null) return;
+        var hash = NewWhitelistHash.Trim();
+        if (!Sha256Regex.IsMatch(hash))
+        {
+            WhitelistStatus = "Ungueltig: bitte einen 64-stelligen SHA-256-Hash eingeben.";
+            return;
+        }
+        try
+        {
+            _whitelist.Add(hash, NewWhitelistNote.Trim());
+            // Reload the full list so the new entry (with normalized hash) is shown.
+            WhitelistEntries.Clear();
+            foreach (var e in _whitelist.GetAll()) WhitelistEntries.Add(e);
+            NewWhitelistHash = "";
+            NewWhitelistNote = "";
+            WhitelistStatus = "Hash hinzugefuegt.";
+        }
+        catch (Exception ex)
+        {
+            WhitelistStatus = "Fehler: " + ex.Message;
+        }
+    }
+
+    private void DeleteWhitelist()
+    {
+        if (_whitelist is null || SelectedWhitelistEntry is null) return;
+        var entry = SelectedWhitelistEntry;
+        try
+        {
+            _whitelist.Remove(entry.Sha256);
+            WhitelistEntries.Remove(entry);
+            WhitelistStatus = $"Hash entfernt: {entry.Sha256[..8]}…";
+        }
+        catch (Exception ex)
+        {
+            WhitelistStatus = "Fehler beim Loeschen: " + ex.Message;
+        }
+    }
+
+    private void ImportWhitelist()
+    {
+        if (_whitelist is null) return;
+        var dialog = new OpenFileDialog
+        {
+            Filter = "Textdatei (*.txt)|*.txt|Alle Dateien (*.*)|*.*",
+            Title = "SHA-256-Hashes importieren (eine Zeile = ein Hash)"
+        };
+        if (dialog.ShowDialog() != true) return;
+        try
+        {
+            var lines = File.ReadAllLines(dialog.FileName);
+            int added = 0;
+            int skipped = 0;
+            foreach (var line in lines)
+            {
+                var hash = line.Trim();
+                if (string.IsNullOrEmpty(hash) || hash.StartsWith('#')) continue;
+                if (!Sha256Regex.IsMatch(hash)) { skipped++; continue; }
+                try
+                {
+                    _whitelist.Add(hash);
+                    added++;
+                }
+                catch
+                {
+                    // Duplicate or other constraint violation — skip silently.
+                    skipped++;
+                }
+            }
+            // Refresh the displayed list.
+            WhitelistEntries.Clear();
+            foreach (var e in _whitelist.GetAll()) WhitelistEntries.Add(e);
+            WhitelistStatus = $"{added} Hash(es) importiert, {skipped} uebersprungen.";
+        }
+        catch (Exception ex)
+        {
+            WhitelistStatus = "Import fehlgeschlagen: " + ex.Message;
         }
     }
 }

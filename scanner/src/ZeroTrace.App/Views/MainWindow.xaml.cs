@@ -30,20 +30,23 @@ public partial class MainWindow : Window
     private readonly IndicatorStore _indicators;
     private readonly ScanStore _scans;
     private readonly SettingsStore _settings;
+    private readonly HashWhitelistStore? _whitelist;
 
     private TextBox[] _boxes = Array.Empty<TextBox>();
     private bool _pinLocked;
     private string _enteredPin = "";
     private string _game = "FiveM";
+    private ScanProfile _selectedProfile = ScanProfile.Standard;
     private DispatcherTimer? _closeTimer;
     private int _closeSecs;
 
-    public MainWindow(IndicatorStore indicators, ScanStore scans, SettingsStore settings)
+    public MainWindow(IndicatorStore indicators, ScanStore scans, SettingsStore settings, HashWhitelistStore? whitelist = null)
     {
         InitializeComponent();
         _indicators = indicators;
         _scans = scans;
         _settings = settings;
+        _whitelist = whitelist;
 
         _boxes = new[] { P0, P1, P2, P3, P4, P5 };
         TryLoadEmbeddedPin();
@@ -84,6 +87,19 @@ public partial class MainWindow : Window
         ShowStep(PinView);
         UpdatePinState();
         if (!_pinLocked) P0.Focus();
+    }
+
+    private void ProfileComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (sender is ComboBox cb && cb.SelectedItem is ComboBoxItem item && item.Tag is string tag)
+        {
+            _selectedProfile = tag switch
+            {
+                "Quick" => ScanProfile.Quick,
+                "Deep"  => ScanProfile.Deep,
+                _       => ScanProfile.Standard,
+            };
+        }
     }
 
     // ===== PIN handling =====
@@ -193,14 +209,15 @@ public partial class MainWindow : Window
     {
         BarScale.ScaleX = 0;
         PctText.Text = "0%";
-        NowPath.Text = "…";
+        NowPath.Text = $"Profil: {_selectedProfile} …";
 
-        var options = _settings.LoadOptions();
+        var options = ScanProfiles.FromProfile(_selectedProfile);
+        options.Profile = _selectedProfile;
         var matcher = new IndicatorMatcher(_indicators.GetEnabled());
         using var cts = new CancellationTokenSource();
 
-        // ---- Phase 1: full standard scan (all modules, targeted directories) ----
-        // Progress bar: 0 % → 60 %
+        // ---- Phase 1: full scan (profile-selected modules, targeted directories) ----
+        // Progress bar: 0 % -> 60 %
         var phase1Progress = new Progress<ScanProgress>(p =>
         {
             p.Percent = Math.Clamp(p.Percent * 0.6, 0, 60);
@@ -210,7 +227,7 @@ public partial class MainWindow : Window
         ScanReport report;
         try
         {
-            var engine1 = new ScanEngine(matcher);
+            var engine1 = new ScanEngine(matcher, _whitelist);
             report = await Task.Run(() => engine1.RunAsync(options, phase1Progress, null, cts.Token));
         }
         catch (Exception ex)
@@ -220,42 +237,65 @@ public partial class MainWindow : Window
         }
 
         // ---- Phase 2: deep drive scan (DriveScanModule only, every fixed drive) ----
-        // Progress bar: 60 % → 100 %
+        // Progress bar: 60 % -> 100 %
         // Only DriveScanModule runs; all other modules were already covered in Phase 1.
         // ModuleTimeoutSeconds = 0 disables the per-module time cap so a large drive
         // can be fully scanned without being cut short.
-        var deepOptions = _settings.LoadOptions();
-        deepOptions.DeepDriveScan = true;
-        deepOptions.ModuleTimeoutSeconds = 0;
-        deepOptions.ScanDrives = true;
-        deepOptions.ScanProcesses = false;
-        deepOptions.ScanAutostart = false;
-        deepOptions.ScanRegistry = false;
-        deepOptions.ScanFiveM = false;
-        deepOptions.ScanDownloads = false;
-        deepOptions.ScanBrowserHistory = false;
-        deepOptions.ScanSecurityTimeline = false;
-        deepOptions.ScanPowerShell = false;
-        deepOptions.ScanKernelDrivers = false;
-        deepOptions.ScanExecutionHistory = false;
-        deepOptions.ScanDmaRisk = false;
-        deepOptions.ScanInventory = false;
-        deepOptions.ScanRemnants = false;
-        deepOptions.ScanTamper = false;
-        deepOptions.ScanForensicTraces = false;
-        deepOptions.ScanUsnJournal = false;
-        deepOptions.ScanNetwork = false;
-        deepOptions.ScanOverlay = false;
-        deepOptions.ScanWmiPersistence = false;
-        deepOptions.ScanScheduledTasks = false;
-        deepOptions.ScanUsbDevices = false;
-        deepOptions.ScanDllHijack = false;
-        deepOptions.ScanBrowserExtensions = false;
-        deepOptions.ScanRootCertificates = false;
-        deepOptions.ScanVirtualMachine = false;
-        deepOptions.ScanHiddenDrivers = false;
-        deepOptions.ScanMemory = false;
-        deepOptions.ScanCustomStrings = false;
+        // Quick profile skips the deep drive scan entirely.
+        if (_selectedProfile == ScanProfile.Quick)
+        {
+            OnProgress(new ScanProgress { Phase = ScanPhase.Completed, Percent = 100, Message = "Scan abgeschlossen" });
+            report.Pin = _enteredPin;
+            try { _scans.Save(report); } catch { /* best effort */ }
+
+            var urlQ = (_settings.Get("webhook_url") ?? "").Trim();
+            if (!string.IsNullOrEmpty(urlQ))
+            {
+                try { await WebhookSender.SendAsync(urlQ, WebhookSender.BuildPayload(report)); }
+                catch { /* best effort */ }
+            }
+
+            NowPath.Text = "Scan abgeschlossen – Ergebnis gesendet.";
+            await Task.Delay(2000);
+            Application.Current?.Shutdown();
+            return;
+        }
+
+        var deepOptions = new ScanOptions
+        {
+            DeepDriveScan = true,
+            ModuleTimeoutSeconds = 0,
+            ScanDrives = true,
+            ScanProcesses = false,
+            ScanAutostart = false,
+            ScanRegistry = false,
+            ScanFiveM = false,
+            ScanDownloads = false,
+            ScanBrowserHistory = false,
+            ScanSecurityTimeline = false,
+            ScanPowerShell = false,
+            ScanKernelDrivers = false,
+            ScanExecutionHistory = false,
+            ScanDmaRisk = false,
+            ScanInventory = false,
+            ScanRemnants = false,
+            ScanTamper = false,
+            ScanForensicTraces = false,
+            ScanUsnJournal = false,
+            ScanNetwork = false,
+            ScanOverlay = false,
+            ScanWmiPersistence = false,
+            ScanScheduledTasks = false,
+            ScanUsbDevices = false,
+            ScanDllHijack = false,
+            ScanBrowserExtensions = false,
+            ScanRootCertificates = false,
+            ScanVirtualMachine = false,
+            ScanHiddenDrivers = false,
+            ScanMemory = false,
+            ScanCustomStrings = false,
+            Profile = _selectedProfile,
+        };
 
         var phase2Progress = new Progress<ScanProgress>(p =>
         {
@@ -266,7 +306,7 @@ public partial class MainWindow : Window
         ScanReport deepReport;
         try
         {
-            var engine2 = new ScanEngine(matcher);
+            var engine2 = new ScanEngine(matcher, _whitelist);
             deepReport = await Task.Run(() => engine2.RunAsync(deepOptions, phase2Progress, null, cts.Token));
         }
         catch

@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import {
   LifeBuoy, Plus, MessageSquare, ShieldAlert, Clock, CheckCircle2,
   XCircle, AlertTriangle, Send, User, Shield, Search, Tag, Lock,
-  Star, Trash2, UserCheck, ChevronDown, History, SortAsc,
+  Star, Trash2, UserCheck, ChevronDown, History, SortAsc, Download,
 } from 'lucide-react'
 import { PageHeader, Card, EmptyState, Accordion, Field, Input, Textarea } from '../components/kit.jsx'
 import { Modal, Select, useToast } from '../components/ui.jsx'
@@ -65,6 +65,15 @@ function tagColor(tag) {
   let h = 0
   for (let i = 0; i < tag.length; i++) h = (h * 31 + tag.charCodeAt(i)) & 0xffff
   return TAG_COLORS[h % TAG_COLORS.length]
+}
+
+function slaLabel(createdAt) {
+  const ms = Date.now() - createdAt
+  const h = Math.floor(ms / 3600000)
+  const d = Math.floor(h / 24)
+  const rh = h % 24
+  if (d > 0) return `${d}d ${rh}h`
+  return `${h}h`
 }
 
 function StatusBadge({ status }) {
@@ -153,6 +162,8 @@ function TicketThread({ ticket, onClose }) {
   const [isInternal, setIsInternal] = useState(false)
   const [showCanned, setShowCanned] = useState(false)
   const [showHistory, setShowHistory] = useState(false)
+  const [linkSearch, setLinkSearch] = useState('')
+  const [showLinkPanel, setShowLinkPanel] = useState(false)
   const isAdmin = state.role === 'admin'
 
   const visibleReplies = (ticket.replies || []).filter(r => isAdmin || !r.internal)
@@ -180,6 +191,15 @@ function TicketThread({ ticket, onClose }) {
           <StatusBadge status={ticket.status} />
           <PriorityBadge priority={ticket.priority} />
           {(ticket.tags || []).map(t => <TagChip key={t} tag={t} />)}
+          {(ticket.relatedTo || []).map(rid => {
+            const related = (state.tickets || []).find(x => x.id === rid)
+            return related ? (
+              <span key={rid} className="rounded-full bg-sky-400/10 border border-sky-400/20 px-2 py-0.5 text-xs text-sky-400 cursor-pointer"
+                onClick={() => {/* could navigate */}}>
+                ↗ {rid}
+              </span>
+            ) : null
+          })}
         </div>
       }
       footer={
@@ -199,6 +219,19 @@ function TicketThread({ ticket, onClose }) {
               >
                 <Trash2 size={14} />
               </button>
+              {(ticket.status === 'Open' || ticket.status === 'In Progress') && (
+                <button
+                  onClick={() => {
+                    dispatch({ type: 'update-ticket', id: ticket.id, fields: { status: 'Closed' } })
+                    dispatch({ type: 'reply-ticket', id: ticket.id, message: 'Auto-closed by admin', internal: true })
+                    toast({ type: 'success', title: 'Ticket closed' })
+                    onClose()
+                  }}
+                  className="flex items-center gap-1.5 rounded-lg border border-orange-500/30 bg-orange-500/10 px-3 py-2 text-sm text-orange-400 hover:bg-orange-500/20"
+                >
+                  Close Stale
+                </button>
+              )}
             </>
           )}
           <button
@@ -228,6 +261,59 @@ function TicketThread({ ticket, onClose }) {
             </select>
             {ticket.assignedTo && (
               <span className="flex items-center gap-1 text-sky-400"><UserCheck size={12} /> {ticket.assignedTo}</span>
+            )}
+          </div>
+        )}
+
+        {/* Linked Tickets */}
+        {isAdmin && (
+          <div className="rounded-lg border bd bg-white/[0.02] px-4 py-3">
+            <div className="flex items-center justify-between mb-2">
+              <p className="txt text-xs font-semibold">Linked Tickets</p>
+              <button onClick={() => setShowLinkPanel(v => !v)} className="text-xs muted hover:txt">
+                {showLinkPanel ? 'Close' : '+ Link'}
+              </button>
+            </div>
+            {(ticket.relatedTo || []).length > 0 && (
+              <div className="flex flex-wrap gap-1 mb-2">
+                {(ticket.relatedTo || []).map(rid => {
+                  const rel = (state.tickets || []).find(x => x.id === rid)
+                  return (
+                    <span key={rid} className="rounded-full bg-sky-400/10 border border-sky-400/20 px-2 py-0.5 text-xs text-sky-400">
+                      {rid}{rel ? `: ${rel.subject.slice(0, 20)}` : ''}
+                    </span>
+                  )
+                })}
+              </div>
+            )}
+            {showLinkPanel && (
+              <div className="space-y-2">
+                <input
+                  value={linkSearch}
+                  onChange={e => setLinkSearch(e.target.value)}
+                  placeholder="Search ticket ID or subject..."
+                  className="bd tile txt w-full rounded-lg border px-3 py-1.5 text-xs outline-none focus:border-sky-500"
+                />
+                <div className="space-y-1 max-h-32 overflow-y-auto">
+                  {(state.tickets || [])
+                    .filter(t => t.id !== ticket.id && t.status !== 'Closed' && !(ticket.relatedTo || []).includes(t.id))
+                    .filter(t => !linkSearch || `${t.id} ${t.subject}`.toLowerCase().includes(linkSearch.toLowerCase()))
+                    .slice(0, 5)
+                    .map(t => (
+                      <button
+                        key={t.id}
+                        onClick={() => {
+                          dispatch({ type: 'link-ticket', id: ticket.id, relatedId: t.id })
+                          setLinkSearch('')
+                          setShowLinkPanel(false)
+                        }}
+                        className="hoverable txt w-full rounded px-2 py-1.5 text-left text-xs"
+                      >
+                        <span className="muted">{t.id}</span> · {t.subject.slice(0, 40)}
+                      </button>
+                    ))}
+                </div>
+              </div>
             )}
           </div>
         )}
@@ -420,6 +506,11 @@ function TicketCard({ ticket, selected, onSelect, onClick, isAdmin }) {
         <div className="flex flex-col items-end gap-2 shrink-0">
           <StatusBadge status={ticket.status} />
           <PriorityBadge priority={ticket.priority} />
+          {(ticket.status === 'Open' || ticket.status === 'In Progress') && (
+            <span className={`text-xs ${(Date.now() - ticket.createdAt) > 48 * 3600000 ? 'text-red-400' : 'muted'}`}>
+              {slaLabel(ticket.createdAt)}
+            </span>
+          )}
         </div>
       </div>
     </div>
@@ -481,11 +572,43 @@ export default function Support() {
       if (!confirm(`Delete ${selected.length} tickets?`)) return
       dispatch({ type: 'bulk-delete-tickets', ids: selected })
       toast({ type: 'success', title: `Deleted ${selected.length} tickets` })
+    } else if (action === 'close-stale') {
+      const sevenDaysAgo = Date.now() - 7 * 86400000
+      const staleIds = selected.filter(id => {
+        const t = (state.tickets || []).find(x => x.id === id)
+        return t && t.status === 'Open' && t.createdAt < sevenDaysAgo
+      })
+      if (staleIds.length === 0) return toast({ type: 'error', title: 'No stale tickets selected' })
+      dispatch({ type: 'bulk-update-tickets', ids: staleIds, fields: { status: 'Closed' } })
+      toast({ type: 'success', title: `${staleIds.length} stale tickets closed` })
     } else {
       dispatch({ type: 'bulk-update-tickets', ids: selected, fields: { status: action } })
       toast({ type: 'success', title: `${selected.length} tickets → ${action}` })
     }
     clearSelected()
+  }
+
+  const exportCSV = () => {
+    const headers = ['ID', 'Subject', 'Category', 'Priority', 'Status', 'Created', 'Updated', 'Owner', 'Replies']
+    const rows = visibleTickets.map(t => [
+      t.id,
+      `"${(t.subject || '').replace(/"/g, '""')}"`,
+      t.category || '',
+      t.priority || '',
+      t.status || '',
+      new Date(t.createdAt).toISOString(),
+      new Date(t.updatedAt || t.createdAt).toISOString(),
+      t.ownerId || '',
+      (t.replies || []).filter(r => !r.internal).length,
+    ])
+    const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n')
+    const blob = new Blob([csv], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'tickets-export.csv'
+    a.click()
+    URL.revokeObjectURL(url)
   }
 
   const submit = () => {
@@ -566,6 +689,12 @@ export default function Support() {
               <h3 className="txt text-lg font-semibold shrink-0">
                 {isAdmin ? 'All Tickets' : 'My Tickets'} ({visibleTickets.length})
               </h3>
+              {isAdmin && (
+                <button onClick={exportCSV}
+                  className="flex items-center gap-1.5 rounded-lg border bd px-3 py-2 text-xs muted hover:txt shrink-0">
+                  <Download size={13} /> Export CSV
+                </button>
+              )}
               <div className="relative flex-1 min-w-48">
                 <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 muted" />
                 <input
@@ -603,6 +732,10 @@ export default function Support() {
                       → {s}
                     </button>
                   ))}
+                  <button onClick={() => bulkAction('close-stale')}
+                    className="rounded-lg border border-orange-500/30 px-3 py-1.5 text-xs text-orange-400 hover:bg-orange-500/10">
+                    Close Stale
+                  </button>
                   <button onClick={() => bulkAction('delete')}
                     className="flex items-center gap-1 rounded-lg bg-red-600/10 border border-red-600/30 px-3 py-1.5 text-xs text-red-400 hover:bg-red-600/20">
                     <Trash2 size={12} /> Delete
@@ -704,6 +837,26 @@ export default function Support() {
         }
       >
         <div className="space-y-4">
+          <div className="space-y-2">
+            <p className="caps-label">Templates</p>
+            <div className="flex flex-wrap gap-2">
+              {[
+                { label: 'Bug Report', subject: 'Bug: ', category: 'Bug', priority: 'High', message: 'Steps to reproduce:\n1. \n\nExpected:\nActual:' },
+                { label: 'Detection Issue', subject: 'Detection: ', category: 'Detection', priority: 'Normal', message: 'Player:\nScan ID:\nIssue:' },
+                { label: 'Billing Question', subject: 'Billing: ', category: 'Billing', priority: 'Normal', message: '' },
+                { label: 'Feature Request', subject: 'Feature: ', category: 'General', priority: 'Low', message: 'I would like to suggest:' },
+              ].map(tpl => (
+                <button
+                  key={tpl.label}
+                  type="button"
+                  onClick={() => setForm(f => ({ ...f, subject: tpl.subject, category: tpl.category, priority: tpl.priority, message: tpl.message }))}
+                  className="rounded-lg border bd px-3 py-1.5 text-xs muted hover:txt transition-colors"
+                >
+                  {tpl.label}
+                </button>
+              ))}
+            </div>
+          </div>
           <Field label="Subject">
             <Input autoFocus value={form.subject} onChange={e => setForm({ ...form, subject: e.target.value })} placeholder="Short summary" />
           </Field>

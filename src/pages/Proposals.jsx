@@ -1,7 +1,23 @@
 import { useState } from 'react'
 import { useStore } from '../store.jsx'
 import { Card } from '../components/kit.jsx'
+import { Modal } from '../components/ui.jsx'
 import { CheckCircle2, XCircle, RotateCcw, Download, ListChecks, User } from 'lucide-react'
+
+function isSimilar(a, b) {
+  const la = (a || '').toLowerCase()
+  const lb = (b || '').toLowerCase()
+  if (la === lb) return false // same is not "similar warning"
+  if (la.includes(lb) || lb.includes(la)) return true
+  // Levenshtein distance <= 2
+  if (Math.abs(la.length - lb.length) > 2) return false
+  const m = la.length, n = lb.length
+  const dp = Array.from({ length: m + 1 }, (_, i) => Array.from({ length: n + 1 }, (_, j) => i === 0 ? j : j === 0 ? i : 0))
+  for (let i = 1; i <= m; i++) for (let j = 1; j <= n; j++) {
+    dp[i][j] = la[i-1] === lb[j-1] ? dp[i-1][j-1] : 1 + Math.min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1])
+  }
+  return dp[m][n] <= 2
+}
 
 const TYPE_LABELS = {
   FileName: 'Exact Filename',
@@ -44,6 +60,8 @@ export default function ProposalsPage() {
   const [filter, setFilter] = useState('pending')
   const [sort, setSort] = useState('seenCount')
   const [selected, setSelected] = useState([])
+  const [commentModal, setCommentModal] = useState(null) // { id, action: 'approve' | 'reject' }
+  const [commentText, setCommentText] = useState('')
 
   const pending = proposals.filter(p => p.status === 'pending')
   const approved = proposals.filter(p => p.status === 'approved')
@@ -56,6 +74,9 @@ export default function ProposalsPage() {
       if (sort === 'risk') return RISK_NUMBERS[b.risk] - RISK_NUMBERS[a.risk]
       return b.firstSeen - a.firstSeen
     })
+
+  const thirtyDaysAgo = Date.now() - 30 * 86400000
+  const stale = proposals.filter(p => p.status === 'pending' && (p.firstSeen || 0) < thirtyDaysAgo)
 
   const allSelectedPending = selected.length > 0 && selected.every(id =>
     proposals.find(p => p.id === id)?.status === 'pending'
@@ -77,7 +98,7 @@ export default function ProposalsPage() {
       </div>
 
       {/* Stats row */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-5 gap-4">
         <Card className="p-4 text-center">
           <p className="text-3xl font-bold text-yellow-400">{pending.length}</p>
           <p className="muted text-sm mt-1">Pending</p>
@@ -93,6 +114,10 @@ export default function ProposalsPage() {
         <Card className="p-4 text-center">
           <p className="text-3xl font-bold text-sky-400">{proposals.filter(p => p.source === 'user').length}</p>
           <p className="muted text-sm mt-1">User Reports</p>
+        </Card>
+        <Card className="p-4 text-center">
+          <p className="text-3xl font-bold text-orange-400">{stale.length}</p>
+          <p className="muted text-sm mt-1">Stale</p>
         </Card>
       </div>
 
@@ -117,6 +142,20 @@ export default function ProposalsPage() {
           <option value="risk">Sort: Highest Risk</option>
           <option value="firstSeen">Sort: Newest</option>
         </select>
+
+        {state.role === 'admin' && (
+          <div className="flex items-center gap-2 text-sm">
+            <span className="muted text-xs">Auto-approve if seen in ≥</span>
+            <input
+              type="number"
+              min="1"
+              value={state.settings?.autoApproveThreshold ?? 10}
+              onChange={e => dispatch({ type: 'set-setting', key: 'autoApproveThreshold', value: Number(e.target.value) || 10 })}
+              className="bd tile txt rounded-lg border px-2 py-1 text-sm w-16 focus:outline-none"
+            />
+            <span className="muted text-xs">scans</span>
+          </div>
+        )}
 
         <div className="ml-auto flex gap-2">
           {selected.length > 0 && allSelectedPending && (
@@ -185,7 +224,11 @@ export default function ProposalsPage() {
                 </tr>
               </thead>
               <tbody>
-                {visible.map(p => (
+                {visible.map(p => {
+                  const similar = p.status === 'pending'
+                    ? proposals.filter(x => x.status === 'approved' && x.id !== p.id).find(x => isSimilar(p.pattern, x.pattern))
+                    : null
+                  return (
                   <tr key={p.id} className={`bd border-b last:border-0 hover:bg-white/[0.02] ${selected.includes(p.id) ? 'bg-sky-600/5' : ''}`}>
                     <td className="px-4 py-3">
                       {p.status === 'pending' && (
@@ -195,6 +238,9 @@ export default function ProposalsPage() {
                     </td>
                     <td className="px-4 py-3">
                       <span className="txt font-mono font-medium">{p.pattern}</span>
+                      {similar && (
+                        <div className="text-xs text-orange-400 mt-0.5">⚠ Similar: {similar.pattern}</div>
+                      )}
                     </td>
                     <td className="px-4 py-3">
                       <span className="muted text-xs">{TYPE_LABELS[p.type] || p.type}</span>
@@ -218,9 +264,15 @@ export default function ProposalsPage() {
                     </td>
                     <td className="px-4 py-3 max-w-xs">
                       <span className="muted text-xs line-clamp-2">{p.description}</span>
+                      {p.adminComment && (
+                        <div className="text-xs text-sky-400 mt-0.5 italic">"{p.adminComment}"</div>
+                      )}
                     </td>
                     <td className="px-4 py-3">
                       {p.status === 'pending' && <span className="rounded-full bg-yellow-400/10 border border-yellow-400/20 px-2 py-0.5 text-xs text-yellow-400">Pending</span>}
+                      {p.status === 'pending' && (p.firstSeen || 0) < thirtyDaysAgo && (
+                        <span className="rounded-full bg-orange-400/10 border border-orange-400/20 px-2 py-0.5 text-xs text-orange-400 ml-1">Stale</span>
+                      )}
                       {p.status === 'approved' && <span className="rounded-full bg-green-400/10 border border-green-400/20 px-2 py-0.5 text-xs text-green-400">Approved</span>}
                       {p.status === 'rejected' && <span className="rounded-full bg-red-400/10 border border-red-400/20 px-2 py-0.5 text-xs text-red-400">Rejected</span>}
                     </td>
@@ -228,11 +280,11 @@ export default function ProposalsPage() {
                       <div className="flex justify-end gap-1">
                         {p.status === 'pending' && (
                           <>
-                            <button onClick={() => dispatch({ type: 'approve-proposal', id: p.id })}
+                            <button onClick={() => { setCommentModal({ id: p.id, action: 'approve' }); setCommentText('') }}
                               className="rounded-md bg-green-600/20 border border-green-600/30 p-1.5 text-green-400 hover:bg-green-600/30" title="Approve">
                               <CheckCircle2 size={14} />
                             </button>
-                            <button onClick={() => dispatch({ type: 'reject-proposal', id: p.id })}
+                            <button onClick={() => { setCommentModal({ id: p.id, action: 'reject' }); setCommentText('') }}
                               className="rounded-md bg-red-600/20 border border-red-600/30 p-1.5 text-red-400 hover:bg-red-600/30" title="Reject">
                               <XCircle size={14} />
                             </button>
@@ -247,7 +299,8 @@ export default function ProposalsPage() {
                       </div>
                     </td>
                   </tr>
-                ))}
+                  )
+                })}
               </tbody>
             </table>
           </div>
@@ -265,6 +318,39 @@ export default function ProposalsPage() {
             <li>Indicators appear as source <code className="txt font-mono">community-approved</code> in the scanner</li>
           </ol>
         </Card>
+      )}
+      {commentModal && (
+        <Modal
+          open
+          onClose={() => setCommentModal(null)}
+          title={commentModal.action === 'approve' ? 'Approve Proposal' : 'Reject Proposal'}
+          footer={
+            <>
+              <button onClick={() => setCommentModal(null)} className="bd txt rounded-lg border px-4 py-2 text-sm">Cancel</button>
+              <button
+                onClick={() => {
+                  dispatch({ type: commentModal.action === 'approve' ? 'approve-proposal' : 'reject-proposal', id: commentModal.id, comment: commentText })
+                  setCommentModal(null)
+                  setCommentText('')
+                }}
+                className={`rounded-lg px-4 py-2 text-sm font-semibold text-white ${commentModal.action === 'approve' ? 'bg-green-600 hover:bg-green-500' : 'bg-red-600 hover:bg-red-500'}`}
+              >
+                {commentModal.action === 'approve' ? 'Approve' : 'Reject'}
+              </button>
+            </>
+          }
+        >
+          <div className="space-y-3">
+            <p className="muted text-sm">Leave a comment (optional)</p>
+            <textarea
+              value={commentText}
+              onChange={e => setCommentText(e.target.value)}
+              rows={3}
+              placeholder="Reason for this decision..."
+              className="bd tile txt w-full rounded-lg border px-3 py-2 text-sm focus:outline-none"
+            />
+          </div>
+        </Modal>
       )}
     </div>
   )

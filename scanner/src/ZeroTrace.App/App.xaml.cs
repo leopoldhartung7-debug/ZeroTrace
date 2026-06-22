@@ -72,8 +72,9 @@ public partial class App : Application
 
             var scans = new ScanStore(db);
             var settings = new SettingsStore(db);
+            var whitelist = new HashWhitelistStore(db);
 
-            var window = new MainWindow(indicators, scans, settings);
+            var window = new MainWindow(indicators, scans, settings, whitelist);
             MainWindow = window;
             window.Show();
         }

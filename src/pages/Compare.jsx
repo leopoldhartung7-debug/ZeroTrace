@@ -92,6 +92,7 @@ export default function Compare() {
   const params = new URLSearchParams(loc.search)
   const [a, setA] = useState(params.get('a') || '')
   const [b, setB] = useState(params.get('b') || '')
+  const [timelineDiscordId, setTimelineDiscordId] = useState('')
 
   const pins = useMemo(
     () =>
@@ -129,6 +130,65 @@ export default function Compare() {
       <div className="grid gap-6 md:grid-cols-2">
         <Side pin={pinA} report={reportA} />
         <Side pin={pinB} report={reportB} />
+      </div>
+
+      {/* Player Timeline */}
+      <div className="mt-6">
+        <h3 className="txt text-lg font-semibold mb-4">Player Timeline</h3>
+        <div className="mb-4">
+          <input
+            value={timelineDiscordId}
+            onChange={e => setTimelineDiscordId(e.target.value)}
+            placeholder="Enter Discord ID to view scan timeline..."
+            className="bd tile txt w-full max-w-sm rounded-lg border px-3 py-2 text-sm outline-none focus:border-sky-500"
+          />
+        </div>
+        {!timelineDiscordId.trim() ? (
+          <div className="tile rounded-xl border p-8 text-center">
+            <p className="muted text-sm">Select a player to view their scan timeline</p>
+          </div>
+        ) : (() => {
+          const playerPins = (state.pins || [])
+            .filter(p => p.discordId === timelineDiscordId.trim() || p.pin === timelineDiscordId.trim())
+            .sort((a, b) => (a.scannedAt || a.createdAt || 0) - (b.scannedAt || b.createdAt || 0))
+          if (playerPins.length === 0) {
+            return (
+              <div className="tile rounded-xl border p-8 text-center">
+                <p className="muted text-sm">No scans found for this player</p>
+              </div>
+            )
+          }
+          return (
+            <div className="relative">
+              <div className="absolute left-[11px] top-0 bottom-0 w-0.5 bg-white/10" />
+              <div className="space-y-4">
+                {playerPins.map(p => {
+                  const resultColor = p.result === 'Cheating' ? 'text-red-400 bg-red-400/10 border-red-400/20'
+                    : p.result === 'Suspicious' ? 'text-yellow-400 bg-yellow-400/10 border-yellow-400/20'
+                    : 'text-green-400 bg-green-400/10 border-green-400/20'
+                  return (
+                    <div key={p.id} className="relative flex gap-4">
+                      <div className={`relative z-10 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border ${resultColor}`}>
+                        <span className="h-2 w-2 rounded-full bg-current" />
+                      </div>
+                      <div className="tile flex-1 rounded-xl border p-4">
+                        <div className="flex flex-wrap items-center gap-2 mb-1">
+                          <span className="txt text-sm font-semibold">{p.pin}</span>
+                          <span className={`rounded-full border px-2 py-0.5 text-xs font-semibold ${resultColor}`}>{p.result || p.status}</span>
+                          {(p.detections || 0) > 0 && (
+                            <span className="rounded-full bg-red-400/10 border border-red-400/20 px-2 py-0.5 text-xs text-red-400">{p.detections} findings</span>
+                          )}
+                        </div>
+                        <p className="muted text-xs">{fmt(p.scannedAt || p.createdAt)}</p>
+                        {p.name && <p className="muted text-xs mt-0.5">{p.name}</p>}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )
+        })()}
       </div>
     </div>
   )

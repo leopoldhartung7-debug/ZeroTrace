@@ -48,15 +48,16 @@ public sealed class MainViewModel : ViewModelBase
         SqliteDatabase db,
         IndicatorStore indicators,
         ScanStore scans,
-        SettingsStore settings)
+        SettingsStore settings,
+        HashWhitelistStore? whitelist = null)
     {
         IsElevated = PrivilegeChecker.IsElevated();
 
         Dashboard = new DashboardViewModel(indicators, scans);
-        LiveScan = new LiveScanViewModel(indicators, scans, settings);
+        LiveScan = new LiveScanViewModel(indicators, scans, settings, whitelist);
         Findings = new FindingsViewModel(scans, settings);
         Reports = new ReportsViewModel(scans, settings);
-        Settings = new SettingsViewModel(db, indicators, settings);
+        Settings = new SettingsViewModel(db, indicators, settings, whitelist);
 
         // After a scan completes, refresh dependent pages in the background (the
         // results are already sent to the dashboard from LiveScanViewModel) and show
