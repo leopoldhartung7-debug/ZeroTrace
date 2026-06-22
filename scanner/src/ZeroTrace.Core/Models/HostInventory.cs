@@ -38,8 +38,7 @@ public sealed class VmInfo
 /// <summary>
 /// Read-only host inventory that feeds the dashboard panels (Executable List,
 /// Loaded Drivers, Admin-Executed, Recording Software, VM Detection, USB
-/// Activity). Discord account/server enumeration is deliberately excluded — it
-/// would require stealing the local Discord token; see <see cref="DiscordNote"/>.
+/// Activity).
 /// </summary>
 public sealed class HostInventory
 {
@@ -49,12 +48,4 @@ public sealed class HostInventory
     public List<string> RecordingSoftware { get; set; } = new();
     public VmInfo Vm { get; set; } = new();
     public List<UsbInfo> UsbDevices { get; set; } = new();
-
-    public string DiscordNote { get; set; } =
-        "Discord-Konten/-Server werden bewusst NICHT ausgelesen (das erfordert das lokale " +
-        "Discord-Token = Token-Diebstahl). Nur per freiwilligem Discord-OAuth2 (Scope 'guilds') " +
-        "serverseitig zulaessig.";
-    public string VirusTotalNote { get; set; } =
-        "VirusTotal-Lookup serverseitig: das Dashboard fragt die in den Funden enthaltenen " +
-        "SHA-256-Hashes mit dem eigenen API-Key ab. Der Scanner macht keinen Outbound-Call.";
 }

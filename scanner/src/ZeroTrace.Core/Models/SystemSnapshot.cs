@@ -18,6 +18,15 @@ public sealed class SystemSnapshot
     public string Country { get; set; } = "Unbekannt";       // system region (approx)
     public string Game { get; set; } = "Unbekannt";          // detected MP framework(s)
     public string HardwareStats { get; set; } = "Not available"; // CPU / GPU / RAM
+
+    // Mainboard / BIOS facts for the dashboard "Boot sequence" panel. Read from
+    // WMI (same sources already used for the HWID hash); non-sensitive.
+    public string? BiosVendor { get; set; }
+    public string? BiosVersion { get; set; }
+    public string? BoardManufacturer { get; set; }
+    public string? BoardProduct { get; set; }
+    public string? BoardVersion { get; set; }
+
     public string IpNote { get; set; } =
         "Oeffentliche IP und Land am besten serverseitig aus der Verbindung erfassen (kein Outbound-Call im Scanner).";
 }

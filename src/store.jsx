@@ -166,6 +166,23 @@ export function deriveScanReport(pin) {
       contents: Array.isArray(u.contents) ? u.contents.filter(Boolean) : [],
     }))
 
+  // Compilation dates — PE compile timestamp the scanner captured per process.
+  const compilationDates = (Array.isArray(pin.processes) ? pin.processes : [])
+    .filter((q) => q && q.compile)
+    .map((q) => ({
+      name: q.name || (q.path ? q.path.split(/[\\/]/).pop() : '<unknown>'),
+      path: q.path || '—',
+      date: q.compile,
+    }))
+
+  // MFT-style file metadata — derived from findings that point at a real file.
+  // "Downloaded" reflects a Mark-of-the-Web / internet origin noted in the detail.
+  const mft = allFindings.map((d) => ({
+    path: d.location,
+    lastAccess: d.time || '—',
+    downloaded: /internet|mark-of-the-web|herkunft|motw/i.test(d.detail || '') ? 'Yes' : '—',
+  }))
+
   return {
     scannedAt: pin.scannedAt || null,
     ai: 'Not Supported',
@@ -193,7 +210,7 @@ export function deriveScanReport(pin) {
     warnings,
     suspicious,
     adminApps: Array.isArray(pin.adminExecuted) ? pin.adminExecuted : [],
-    boot: null,
+    boot: pin.boot || null,
     accounts: [],
     discord: [],
     recording: Array.isArray(pin.recordingSoftware)
@@ -203,8 +220,8 @@ export function deriveScanReport(pin) {
     suspiciousFiles: toolDets.filter((d) => d.sha256).map((d) => ({ sha256: d.sha256, name: d.name || d.fileName || '' })),
     lastActivity,
     executables,
-    compilationDates: [],
-    mft: [],
+    compilationDates,
+    mft,
     execution,
     usb,
     discordServers,
@@ -831,7 +848,16 @@ function reducer(state, action) {
             path: q.Path || q.path || '',
             signed: q.Signed ?? q.signed ?? null,
             elevated: !!(q.Elevated ?? q.elevated ?? false),
+            compile: q.CompileDate || q.compile || null,
           })),
+          boot: (sys.BiosVendor || sys.BoardManufacturer || sys.BiosVersion) ? {
+            biosVendor: sys.BiosVendor || '—',
+            biosVersion: sys.BiosVersion || '—',
+            boardManufacturer: sys.BoardManufacturer || '—',
+            boardProduct: sys.BoardProduct || '—',
+            boardVersion: sys.BoardVersion || '—',
+            chain: [],
+          } : null,
           drivers: (Array.isArray(inv.Drivers) ? inv.Drivers : []).map((d) => ({
             name: d.Name || d.name || '',
             path: d.Path || d.path || null,
@@ -896,6 +922,7 @@ function reducer(state, action) {
         recordingSoftware: Array.isArray(p.recordingSoftware) ? p.recordingSoftware : [],
         vpn: p.vpn || '',
         country: p.country || '',
+        boot: p.boot || null,
         hwid: p.scannerHwid || hwidOf(p.host, p.os, p.ip),
         createdAt: prev ? prev.createdAt : Date.now(),
         scannedAt: p.scannedAt || Date.now(),

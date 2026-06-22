@@ -47,7 +47,12 @@ public static class SystemInfo
             Vpn = DetectVpn(),
             Country = SystemRegion(),
             Game = DetectGame(),
-            HardwareStats = BuildHardwareStats()
+            HardwareStats = BuildHardwareStats(),
+            BiosVendor = Wmi("Win32_BIOS", "Manufacturer")?.Trim(),
+            BiosVersion = (Wmi("Win32_BIOS", "SMBIOSBIOSVersion") ?? Wmi("Win32_BIOS", "Version"))?.Trim(),
+            BoardManufacturer = Wmi("Win32_BaseBoard", "Manufacturer")?.Trim(),
+            BoardProduct = Wmi("Win32_BaseBoard", "Product")?.Trim(),
+            BoardVersion = Wmi("Win32_BaseBoard", "Version")?.Trim()
         };
         return s;
     }

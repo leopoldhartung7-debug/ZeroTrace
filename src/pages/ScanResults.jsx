@@ -855,8 +855,20 @@ export default function ScanResults() {
             <Database size={18} /> Compilation dates
           </h2>
           <p className="muted mt-1 text-sm">Executed applications Timestamps</p>
-          {report.compilationDates.length === 0 && (
+          {report.compilationDates.length === 0 ? (
             <p className="muted py-12 text-center text-sm">No Compilation dates data found</p>
+          ) : (
+            <div className="mt-4 space-y-2">
+              {report.compilationDates.map((c, i) => (
+                <div key={i} className="tile flex items-center justify-between gap-3 rounded-lg border px-4 py-3">
+                  <div className="min-w-0">
+                    <p className="txt truncate text-sm font-medium">{c.name}</p>
+                    <p className="muted truncate font-mono text-xs">{c.path}</p>
+                  </div>
+                  <span className="shrink-0 font-mono text-xs text-sky-400">{c.date}</span>
+                </div>
+              ))}
+            </div>
           )}
         </Card>
         <Card className="p-6">
