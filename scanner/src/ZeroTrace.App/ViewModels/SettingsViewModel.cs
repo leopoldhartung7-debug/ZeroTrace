@@ -347,13 +347,11 @@ public sealed class SettingsViewModel : ViewModelBase
         }
         try
         {
-            _whitelist.Add(hash, NewWhitelistNote.Trim());
-            // Reload the full list so the new entry (with normalized hash) is shown.
-            WhitelistEntries.Clear();
-            foreach (var e in _whitelist.GetAll()) WhitelistEntries.Add(e);
+            var entry = _whitelist.Add(hash, NewWhitelistNote.Trim());
+            WhitelistEntries.Insert(0, entry);
             NewWhitelistHash = "";
             NewWhitelistNote = "";
-            WhitelistStatus = "Hash hinzugefuegt.";
+            WhitelistStatus = $"Hash hinzugefuegt (#{entry.Id}).";
         }
         catch (Exception ex)
         {
@@ -367,9 +365,9 @@ public sealed class SettingsViewModel : ViewModelBase
         var entry = SelectedWhitelistEntry;
         try
         {
-            _whitelist.Remove(entry.Sha256);
+            _whitelist.Remove(entry.Id);
             WhitelistEntries.Remove(entry);
-            WhitelistStatus = $"Hash entfernt: {entry.Sha256[..8]}…";
+            WhitelistStatus = $"Hash #{entry.Id} entfernt.";
         }
         catch (Exception ex)
         {
