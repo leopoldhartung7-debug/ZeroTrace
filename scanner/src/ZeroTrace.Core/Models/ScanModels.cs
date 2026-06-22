@@ -68,6 +68,13 @@ public sealed class ScanOptions
     public bool ScanAppData { get; set; } = true;
 
     /// <summary>
+    /// Flag running processes that execute from user-writable locations (Temp, Downloads,
+    /// AppData, Desktop) and carry no Authenticode signature, plus catch processes
+    /// masquerading as Windows system binaries from wrong paths.
+    /// </summary>
+    public bool ScanSuspiciousExecutables { get; set; } = true;
+
+    /// <summary>
     /// When false (default) the drive module only walks targeted, high-signal
     /// directories (profile, temp, downloads, appdata). When true it walks the
     /// whole drive root for the configured extensions. Far slower.

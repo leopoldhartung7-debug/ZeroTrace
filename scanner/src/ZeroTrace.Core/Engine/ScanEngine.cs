@@ -189,6 +189,7 @@ public sealed class ScanEngine
         if (o.ScanNamedResources) modules.Add(new NamedResourceScanModule());
         if (o.ScanClipboard) modules.Add(new ClipboardScanModule());
         if (o.ScanAppData) modules.Add(new AppDataScanModule());
+        if (o.ScanSuspiciousExecutables) modules.Add(new SuspiciousExecutableScanModule());
         return modules;
     }
 }

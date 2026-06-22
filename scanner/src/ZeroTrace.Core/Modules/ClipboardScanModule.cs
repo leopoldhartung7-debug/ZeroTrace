@@ -1,3 +1,4 @@
+using System.Text;
 using System.Text.Json;
 using ZeroTrace.Core.Engine;
 using ZeroTrace.Core.Models;
@@ -50,22 +51,23 @@ public sealed class ClipboardScanModule : IScanModule
                         using var doc = JsonDocument.Parse(json);
                         if (doc.RootElement.TryGetProperty("text", out var t))
                             text = t.GetString();
-                        // Some versions store it under "content"
                         else if (doc.RootElement.TryGetProperty("content", out var c))
                             text = c.GetString();
                     }
-                    catch { text = json; } // fall back to raw text
+                    catch { text = json; }
 
                     if (string.IsNullOrWhiteSpace(text)) continue;
 
-                    var hit = ctx.Matcher.MatchContentString(text)
+                    // Use byte-level MatchContent for content-string indicators,
+                    // plus text-level matchers for URL/filename keywords.
+                    var utf8 = Encoding.UTF8.GetBytes(text);
+                    var hit = ctx.Matcher.MatchContent(utf8, utf8.Length)
                               ?? ctx.Matcher.MatchUrlDomain(text)
                               ?? ctx.Matcher.MatchFileNameKeyword(text)
                               ?? ctx.Matcher.MatchPathKeyword(text);
                     if (hit is null) continue;
 
                     hits++;
-                    // Truncate for display — never log more than 200 chars of clipboard data.
                     var preview = text.Length > 200 ? text[..200] + "…" : text;
 
                     ctx.AddFinding(new Finding

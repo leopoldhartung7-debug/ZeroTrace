@@ -71,7 +71,7 @@ public sealed class SqliteDatabase
     /// </summary>
     public void SeedDefaultsIfEmpty()
     {
-        const int CurrentVersion = 2;
+        const int CurrentVersion = 3;
         using var conn = OpenConnection();
 
         // Check stored seed version.
@@ -308,6 +308,134 @@ public sealed class SqliteDatabase
             (IndicatorType.ProcessName, "dumpcap",              RiskLevel.Medium,  "Sniffer",   "WireShark DumpCap."),
             (IndicatorType.ProcessName, "2take1",               RiskLevel.Critical,"GTA-Cheat", "2Take1-Prozess."),
             (IndicatorType.ProcessName, "kiddionsmm",           RiskLevel.Critical,"GTA-Cheat", "Kiddion Modest Menu."),
+
+            // ── Version 3: Private / Unknown Cheat Detection ─────────────────────
+
+            // File-name keywords for private / home-coded cheats
+            (IndicatorType.FileNameKeyword, "aimlock",          RiskLevel.High,   "Aimbot",         "Dateiname enthaelt 'aimlock'."),
+            (IndicatorType.FileNameKeyword, "autoaim",          RiskLevel.High,   "Aimbot",         "Dateiname enthaelt 'autoaim'."),
+            (IndicatorType.FileNameKeyword, "ragebot",          RiskLevel.High,   "Aimbot",         "Dateiname enthaelt 'ragebot' (Rage-Aimbot)."),
+            (IndicatorType.FileNameKeyword, "legitbot",         RiskLevel.High,   "Aimbot",         "Dateiname enthaelt 'legitbot'."),
+            (IndicatorType.FileNameKeyword, "triggerbot",       RiskLevel.High,   "Aimbot",         "Dateiname enthaelt 'triggerbot'."),
+            (IndicatorType.FileNameKeyword, "spinbot",          RiskLevel.High,   "Anti-Aim",       "Dateiname enthaelt 'spinbot'."),
+            (IndicatorType.FileNameKeyword, "antiaim",          RiskLevel.High,   "Anti-Aim",       "Dateiname enthaelt 'antiaim'."),
+            (IndicatorType.FileNameKeyword, "wallhack",         RiskLevel.High,   "ESP/Wallhack",   "Dateiname enthaelt 'wallhack'."),
+            (IndicatorType.FileNameKeyword, "maphack",          RiskLevel.High,   "Map-Hack",       "Dateiname enthaelt 'maphack'."),
+            (IndicatorType.FileNameKeyword, "hackdll",          RiskLevel.High,   "Cheat-DLL",      "Dateiname enthaelt 'hackdll'."),
+            (IndicatorType.FileNameKeyword, "cheatdll",         RiskLevel.High,   "Cheat-DLL",      "Dateiname enthaelt 'cheatdll'."),
+            (IndicatorType.FileNameKeyword, "privcheat",        RiskLevel.High,   "Privater-Cheat", "Dateiname enthaelt 'privcheat' (privater Cheat)."),
+            (IndicatorType.FileNameKeyword, "internalcheat",    RiskLevel.High,   "Cheat",          "Dateiname enthaelt 'internalcheat'."),
+            (IndicatorType.FileNameKeyword, "externalcheat",    RiskLevel.High,   "Cheat",          "Dateiname enthaelt 'externalcheat'."),
+            (IndicatorType.FileNameKeyword, "vmprotect",        RiskLevel.Medium, "Packer",         "VMProtect-Packer (haeufig bei Cheat-Schutz verwendet)."),
+            (IndicatorType.FileNameKeyword, "themida",          RiskLevel.Medium, "Packer",         "Themida-Packer (haeufig bei Cheat-Schutz verwendet)."),
+            (IndicatorType.FileNameKeyword, "hacktools",        RiskLevel.High,   "Cheat-Tool",     "Dateiname enthaelt 'hacktools'."),
+            (IndicatorType.FileNameKeyword, "skinchanger",      RiskLevel.Medium, "Skin-Hack",      "Dateiname enthaelt 'skinchanger'."),
+            (IndicatorType.FileNameKeyword, "nosteam",          RiskLevel.Medium, "Raubkopie",      "NoSteam-Bypass (Steam-Authentisierung umgehen)."),
+            (IndicatorType.FileNameKeyword, "steamcrack",       RiskLevel.High,   "Raubkopie",      "Steam-Cracker im Dateinamen."),
+            (IndicatorType.FileNameKeyword, "eacbypass",        RiskLevel.Critical,"AC-Bypass",     "EAC-Bypass-Tool."),
+            (IndicatorType.FileNameKeyword, "bebypass",         RiskLevel.Critical,"AC-Bypass",     "BattlEye-Bypass-Tool."),
+
+            // Content strings: hooking / overlay frameworks used in nearly every cheat
+            (IndicatorType.ContentString, "kiero",              RiskLevel.High,   "D3D-Hook",       "Kiero-D3D11-Hook-Bibliothek im Datei-Inhalt (fast nur in Cheats verwendet)."),
+            (IndicatorType.ContentString, "minhook",            RiskLevel.Medium, "Hook-Framework", "MinHook-Bibliothek im Datei-Inhalt (Hooking-Framework)."),
+            (IndicatorType.ContentString, "present hook",       RiskLevel.High,   "D3D-Hook",       "'present hook' – Direct3D Present()-Hook (Cheat-Overlay)."),
+            (IndicatorType.ContentString, "vtable hook",        RiskLevel.High,   "Hook",           "'vtable hook' – virtuelle Tabelle gehooked (Cheat-Technik)."),
+            (IndicatorType.ContentString, "d3d11 hook",         RiskLevel.High,   "D3D-Hook",       "Direct3D-11-Hook im Datei-Inhalt."),
+            (IndicatorType.ContentString, "dx11hook",           RiskLevel.High,   "D3D-Hook",       "DX11-Hook-String im Datei-Inhalt."),
+
+            // Anti-detection strings
+            (IndicatorType.ContentString, "anti obs",           RiskLevel.High,   "Anti-Detection", "'anti obs' – OBS-Erkennung umgehen."),
+            (IndicatorType.ContentString, "anti screenshot",    RiskLevel.High,   "Anti-Detection", "Screenshot-Erkennung umgehen."),
+            (IndicatorType.ContentString, "anti debug",         RiskLevel.High,   "Anti-Detection", "Anti-Debugger-Technik im Datei-Inhalt."),
+            (IndicatorType.ContentString, "isdebuggerpresent",  RiskLevel.Medium, "Anti-Debug",     "IsDebuggerPresent-Aufruf (Anti-Debug-Check)."),
+            (IndicatorType.ContentString, "checkremotedebugger",RiskLevel.Medium, "Anti-Debug",     "CheckRemoteDebuggerPresent (Anti-Debug)."),
+
+            // Anti-cheat bypass strings
+            (IndicatorType.ContentString, "eac bypass",         RiskLevel.Critical,"AC-Bypass",     "Easy Anti-Cheat Bypass im Datei-Inhalt."),
+            (IndicatorType.ContentString, "battleye bypass",    RiskLevel.Critical,"AC-Bypass",     "BattlEye-Bypass im Datei-Inhalt."),
+            (IndicatorType.ContentString, "faceit bypass",      RiskLevel.Critical,"AC-Bypass",     "Faceit-Bypass im Datei-Inhalt."),
+            (IndicatorType.ContentString, "anticheat bypass",   RiskLevel.Critical,"AC-Bypass",     "Generischer Anti-Cheat-Bypass im Datei-Inhalt."),
+            (IndicatorType.ContentString, "vac proof",          RiskLevel.High,    "AC-Bypass",     "'vac proof' – VAC-Umgehungsbehauptung im Datei-Inhalt."),
+            (IndicatorType.ContentString, "be bypass",          RiskLevel.Critical,"AC-Bypass",     "BattlEye-Bypass (be bypass) im Datei-Inhalt."),
+
+            // Aimbot / ESP strings specific to private/self-coded cheats
+            (IndicatorType.ContentString, "ragebot",            RiskLevel.High,   "Aimbot",         "'ragebot' – Rage-Aimbot-Modul im Datei-Inhalt."),
+            (IndicatorType.ContentString, "legitbot",           RiskLevel.High,   "Aimbot",         "'legitbot' – Legit-Aimbot-Modul im Datei-Inhalt."),
+            (IndicatorType.ContentString, "spinbot",            RiskLevel.High,   "Anti-Aim",       "'spinbot' – Spinbot/Anti-Aim im Datei-Inhalt."),
+            (IndicatorType.ContentString, "anti aim",           RiskLevel.High,   "Anti-Aim",       "'anti aim' – Anti-Aim-Feature im Datei-Inhalt."),
+            (IndicatorType.ContentString, "aim resolver",       RiskLevel.High,   "Anti-Aim",       "Aim-Resolver fuer Anti-Aim im Datei-Inhalt."),
+            (IndicatorType.ContentString, "no spread",          RiskLevel.High,   "Aimbot",         "'no spread' – Streuung entfernt im Datei-Inhalt."),
+            (IndicatorType.ContentString, "no recoil",          RiskLevel.High,   "Recoil",         "'no recoil' im Datei-Inhalt."),
+            (IndicatorType.ContentString, "no flash",           RiskLevel.Medium, "Visual-Hack",    "'no flash' – Flash-Entfernung im Datei-Inhalt."),
+            (IndicatorType.ContentString, "aim fov",            RiskLevel.High,   "Aimbot",         "'aim fov' – Aimbot-FOV im Datei-Inhalt."),
+            (IndicatorType.ContentString, "aim step",           RiskLevel.High,   "Aimbot",         "'aim step' – Aimbot-Schrittweite im Datei-Inhalt."),
+            (IndicatorType.ContentString, "aim assist",         RiskLevel.High,   "Aimbot",         "'aim assist' – Zielhilfe im Datei-Inhalt."),
+            (IndicatorType.ContentString, "world to screen",    RiskLevel.High,   "ESP",            "Welt-zu-Screen-Projektion im Datei-Inhalt (ESP-Rendering)."),
+            (IndicatorType.ContentString, "bone matrix",        RiskLevel.High,   "Aimbot",         "Knochen-Matrix fuer Aimbot-Targeting im Datei-Inhalt."),
+            (IndicatorType.ContentString, "skinchanger",        RiskLevel.Medium, "Visual-Hack",    "Skin-Changer im Datei-Inhalt."),
+            (IndicatorType.ContentString, "radar hack",         RiskLevel.High,   "Radar",          "Radar-Hack im Datei-Inhalt."),
+            (IndicatorType.ContentString, "chams",              RiskLevel.High,   "ESP",            "'chams' – Material-ESP im Datei-Inhalt."),
+            (IndicatorType.ContentString, "glow esp",           RiskLevel.High,   "ESP",            "Glow-ESP-Funktion im Datei-Inhalt."),
+
+            // Private cheat loader/DRM strings
+            (IndicatorType.ContentString, "panic key",          RiskLevel.High,   "Cheat-Loader",   "'panic key' – Notfall-Entlade-Taste in privatem Cheat."),
+            (IndicatorType.ContentString, "unload cheat",       RiskLevel.High,   "Cheat-Loader",   "'unload cheat' – Cheat-Entlade-Routine."),
+            (IndicatorType.ContentString, "injection complete", RiskLevel.High,   "Injector",       "'injection complete' – Injektionserfolg-Meldung."),
+            (IndicatorType.ContentString, "inject success",     RiskLevel.High,   "Injector",       "'inject success' im Datei-Inhalt."),
+            (IndicatorType.ContentString, "cheat loader",       RiskLevel.High,   "Cheat-Loader",   "'cheat loader' im Datei-Inhalt."),
+            (IndicatorType.ContentString, "hwid check",         RiskLevel.Medium, "Cheat-DRM",      "HWID-Pruefung (cheat DRM) im Datei-Inhalt."),
+
+            // Stealthy injection APIs (almost never legitimately used in user-space apps)
+            (IndicatorType.ContentString, "NtCreateThreadEx",   RiskLevel.High,   "Injector",       "NtCreateThreadEx – unentdeckte Thread-Injektion."),
+            (IndicatorType.ContentString, "RtlCreateUserThread",RiskLevel.High,   "Injector",       "RtlCreateUserThread – alternative Injektionsmethode."),
+            (IndicatorType.ContentString, "LdrLoadDll",         RiskLevel.High,   "Injector",       "LdrLoadDll – indirektes DLL-Laden (Injektionstechnik)."),
+            (IndicatorType.ContentString, "NtProtectVirtualMemory",RiskLevel.High,"Injector",       "NtProtectVirtualMemory – Speicherschutz-Aenderung (Shellcode-Injektion)."),
+            (IndicatorType.ContentString, "NtWriteVirtualMemory",RiskLevel.High,  "Injector",       "NtWriteVirtualMemory – direktes Speicherschreiben."),
+            (IndicatorType.ContentString, "SetWindowsHookEx",   RiskLevel.Medium, "Hook",           "SetWindowsHookEx – globaler Systemhook (Injektionstechnik)."),
+
+            // Reverse-engineering / developer tools as content strings
+            (IndicatorType.ContentString, "offset_manager",     RiskLevel.High,   "Cheat-Dev",      "Offset-Manager-String im Datei-Inhalt (Cheat-Entwicklung)."),
+            (IndicatorType.ContentString, "entity list",        RiskLevel.High,   "Cheat-Dev",      "Entity-List-Zugriff im Datei-Inhalt (Spielspeicher-Hack)."),
+            (IndicatorType.ContentString, "local player",       RiskLevel.Medium, "Cheat-Dev",      "LocalPlayer-Pointer im Datei-Inhalt (Spielspeicher-Hack)."),
+            (IndicatorType.ContentString, "draw_box",           RiskLevel.High,   "ESP",            "draw_box-Funktion im Datei-Inhalt (ESP-Rendering)."),
+            (IndicatorType.ContentString, "draw_line",          RiskLevel.Medium, "ESP",            "draw_line im Datei-Inhalt (ESP-Hilfslinien)."),
+
+            // More URL domains
+            (IndicatorType.UrlDomainKeyword, "aimware",         RiskLevel.Critical,"CS2-Cheat-Shop","aimware (CS2-Cheat)."),
+            (IndicatorType.UrlDomainKeyword, "fecurity",        RiskLevel.Critical,"CS2-Cheat-Shop","fecurity (CS2-Cheat)."),
+            (IndicatorType.UrlDomainKeyword, "nixware",         RiskLevel.High,    "CS2-Cheat-Shop","nixware (CS2-Cheat)."),
+            (IndicatorType.UrlDomainKeyword, "lumina",          RiskLevel.High,    "CS2-Cheat-Shop","lumina (CS2-Cheat)."),
+            (IndicatorType.UrlDomainKeyword, "aristois",        RiskLevel.High,    "MC-Cheat-Shop", "aristois.net (Minecraft)."),
+            (IndicatorType.UrlDomainKeyword, "sigmaclient",     RiskLevel.High,    "MC-Cheat-Shop", "sigma (Minecraft)."),
+            (IndicatorType.UrlDomainKeyword, "meteorclient",    RiskLevel.High,    "MC-Cheat-Shop", "meteorclient (Minecraft)."),
+            (IndicatorType.UrlDomainKeyword, "lolz.guru",       RiskLevel.Medium,  "Cheat-Forum",   "lolz.guru (russisches Cheat-Forum)."),
+            (IndicatorType.UrlDomainKeyword, "blackhatworld",   RiskLevel.Medium,  "Hack-Forum",    "blackhatworld (Hacking-Forum)."),
+            (IndicatorType.UrlDomainKeyword, "sinisterly",      RiskLevel.Medium,  "Cheat-Forum",   "sinisterly.com (Cheat-Forum)."),
+            (IndicatorType.UrlDomainKeyword, "gamehag",         RiskLevel.Low,     "Cheat-Markt",   "gamehag (teils Cheat-Werbung)."),
+            (IndicatorType.UrlDomainKeyword, "skidrow",         RiskLevel.Medium,  "Raubkopie",     "skidrow (Crack-/Warez-Seite)."),
+            (IndicatorType.UrlDomainKeyword, "crackwatch",      RiskLevel.Medium,  "Raubkopie",     "crackwatch (Crack-Tracker)."),
+            (IndicatorType.UrlDomainKeyword, "cs.money",        RiskLevel.Low,     "CS-Trading",    "cs.money (CS2-Item-Marktplatz, teils RMT-Betrug)."),
+            (IndicatorType.UrlDomainKeyword, "buff.163",        RiskLevel.Low,     "CS-Trading",    "buff.163.com (CS2-Trading)."),
+
+            // Process names: reverse engineering / analysis tools
+            (IndicatorType.ProcessName, "dnspy",                RiskLevel.High,   "RE-Tool",   "dnSpy – .NET-Dekompiler (Reverse Engineering)."),
+            (IndicatorType.ProcessName, "ilspy",                RiskLevel.High,   "RE-Tool",   "ILSpy – .NET-Dekompiler."),
+            (IndicatorType.ProcessName, "dotpeek",              RiskLevel.Medium, "RE-Tool",   "dotPeek – JetBrains .NET-Dekompiler."),
+            (IndicatorType.ProcessName, "ghidra",               RiskLevel.High,   "RE-Tool",   "Ghidra – NSA Reverse-Engineering-Framework."),
+            (IndicatorType.ProcessName, "ida64",                RiskLevel.High,   "Disassembler","IDA Pro x64."),
+            (IndicatorType.ProcessName, "ida",                  RiskLevel.High,   "Disassembler","IDA Pro."),
+            (IndicatorType.ProcessName, "ollydbg",              RiskLevel.High,   "Debugger",  "OllyDbg – Debugger."),
+            (IndicatorType.ProcessName, "pestudio",             RiskLevel.High,   "RE-Tool",   "PE Studio – PE-Analyse-Tool."),
+            (IndicatorType.ProcessName, "hxd",                  RiskLevel.Medium, "Hex-Editor","HxD – Hex-Editor."),
+            (IndicatorType.ProcessName, "010editor",            RiskLevel.Medium, "Hex-Editor","010 Editor – Hex-Editor."),
+            (IndicatorType.ProcessName, "immunity debugger",    RiskLevel.High,   "Debugger",  "Immunity Debugger."),
+            (IndicatorType.ProcessName, "httpdebuggerui",       RiskLevel.Medium, "Proxy",     "HTTP Debugger Pro – HTTP-MITM-Proxy."),
+            (IndicatorType.ProcessName, "charles",              RiskLevel.Medium, "Proxy",     "Charles – HTTP-Proxy-Tool."),
+            (IndicatorType.ProcessName, "mitmproxy",            RiskLevel.Medium, "Proxy",     "mitmproxy – Man-in-the-Middle-Proxy."),
+            (IndicatorType.ProcessName, "apimonitor",           RiskLevel.High,   "RE-Tool",   "API Monitor – API-Aufruf-Logger."),
+            (IndicatorType.ProcessName, "dbgview",              RiskLevel.Medium, "RE-Tool",   "DebugView – OutputDebugString-Logger."),
+            (IndicatorType.ProcessName, "cff explorer",         RiskLevel.Medium, "RE-Tool",   "CFF Explorer – PE-Editor."),
+            (IndicatorType.ProcessName, "resource hacker",      RiskLevel.Medium, "RE-Tool",   "Resource Hacker – PE-Ressourcen-Editor."),
         };
 
         using var tx = conn.BeginTransaction();

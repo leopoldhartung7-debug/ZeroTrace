@@ -230,6 +230,7 @@ export function deriveScanReport(pin) {
   const namedResourceFindings = byModule('Kernel-Objekte')
   const clipboardFindings = byModule('Zwischenablage')
   const appDataFindings = byModule('AppData')
+  const suspiciousExeFindings = byModule('Unsignierte Prozesse')
 
   return {
     scannedAt: pin.scannedAt || null,
@@ -283,6 +284,7 @@ export function deriveScanReport(pin) {
     namedResourceFindings,
     clipboardFindings,
     appDataFindings,
+    suspiciousExeFindings,
     accounts: [],
     discord: [],
     recording: Array.isArray(pin.recordingSoftware)

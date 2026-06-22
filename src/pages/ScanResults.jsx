@@ -1247,6 +1247,23 @@ export default function ScanResults() {
       </Card>
 
       <Card className="p-6">
+        <p className="caps-label">Unknown / Private Cheat Detection</p>
+        <h2 className="txt mt-1 flex items-center gap-2 text-lg font-semibold">
+          <ShieldAlert size={18} /> Unsigned Processes ({report.suspiciousExeFindings.length})
+        </h2>
+        <p className="muted mb-4 mt-1 text-sm">
+          Processes running from user-writable paths (Temp, Downloads, AppData) without a digital
+          signature, and processes masquerading as Windows system binaries. Private / self-coded
+          cheats are never code-signed and typically launch from these locations.
+        </p>
+        {report.suspiciousExeFindings.length === 0 ? (
+          <p className="muted py-10 text-center text-sm">No unsigned processes in suspicious locations found</p>
+        ) : (
+          <ModuleFindingsList findings={report.suspiciousExeFindings} />
+        )}
+      </Card>
+
+      <Card className="p-6">
         <h2 className="txt flex items-center gap-2 text-lg font-semibold">
           <Activity size={18} /> Last Computer Activity
         </h2>
