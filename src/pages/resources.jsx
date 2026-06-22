@@ -838,6 +838,16 @@ export function Legal() {
 /* ------------------------------ Changelog ------------------------------ */
 const VERSIONS = [
   {
+    v: '0.4', title: 'ZeroTrace Update 0.4', date: '22 June 2026', author: 'NotRancio',
+    tags: ['FEATURE', 'IMPROVEMENT'], badge: 'Changelog 4',
+    intro: 'Scanner update with improved UI flow and startup experience.',
+    items: [
+      'Intro animation plays on scanner startup',
+      'Scan progress shows only the current category name, no file paths',
+      'Result screen simplified — no findings count displayed',
+    ],
+  },
+  {
     v: '0.3', title: 'ZeroTrace Changelog 0.3', date: '17 December 2025', author: 'NotRancio',
     tags: ['FEATURE', 'BUGFIX', 'IMPROVEMENT'], badge: 'Changelog 3',
     intro: 'We’ve released a new update bringing general improvements and system enhancements across ZeroTrace.',
