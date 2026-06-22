@@ -845,6 +845,44 @@ export default function Support() {
   }
 
   const submit = () => {
+    if (form.category === 'Cheat Report') {
+      if (!cheatForm.cheatName.trim()) return toast({ type: 'error', title: 'Cheat-Name ist Pflicht' })
+      if (cheatForm.pattern.trim().length < 3) return toast({ type: 'error', title: 'Pattern zu kurz', body: 'Mind. 3 Zeichen.' })
+      const urlVal = cheatForm.evidenceUrl.trim()
+      if (urlVal && !/^https?:\/\/.+/.test(urlVal)) return toast({ type: 'error', title: 'Ungültige URL' })
+      const name    = cheatForm.cheatName.trim()
+      const pattern = cheatForm.pattern.trim().toLowerCase()
+      const notes   = cheatForm.description.trim()
+      dispatch({
+        type: 'add-user-proposal',
+        proposal: { cheatName: name, pattern, type: cheatForm.type, category: cheatForm.category, risk: cheatForm.risk, game: cheatForm.game, evidenceUrl: urlVal, description: notes },
+      })
+      dispatch({
+        type: 'add-ticket',
+        ticket: {
+          subject: `Cheat Report: ${name}`,
+          category: 'Cheat Report',
+          priority: cheatForm.risk === 'Critical' ? 'Urgent' : cheatForm.risk === 'High' ? 'High' : 'Normal',
+          message: [
+            `Cheat / Tool: ${name}`,
+            `Kategorie: ${cheatForm.category}`,
+            `Spiel: ${cheatForm.game}`,
+            `Risiko: ${cheatForm.risk}`,
+            `Pattern: ${pattern}`,
+            `Match-Typ: ${cheatForm.type}`,
+            urlVal ? `Beleg: ${urlVal}` : null,
+            notes ? `\nAnmerkungen:\n${notes}` : null,
+          ].filter(Boolean).join('\n'),
+          tags: ['cheat-related', cheatForm.game.toLowerCase()],
+          cheatData: { cheatName: name, pattern, type: cheatForm.type, category: cheatForm.category, risk: cheatForm.risk, game: cheatForm.game, evidenceUrl: urlVal, description: notes, dbStatus: 'pending' },
+        },
+      })
+      toast({ type: 'success', title: 'Cheat-Report abgeschickt', body: 'Du kannst den Status unter "My Tickets" verfolgen.' })
+      setCheatForm(emptyCheatForm)
+      setForm({ subject: '', category: 'General', priority: 'Normal', message: '', tags: [] })
+      setTicketOpen(false)
+      return
+    }
     if (!form.subject.trim() || !form.message.trim())
       return toast({ type: 'error', title: 'Subject and message required' })
     dispatch({ type: 'add-ticket', ticket: { ...form, subject: form.subject.trim() } })
@@ -1125,63 +1163,50 @@ export default function Support() {
       {openedTicket && <TicketThread ticket={openedTicket} onClose={() => setActiveTicket(null)} />}
 
       {/* New ticket modal */}
-      <Modal open={ticketOpen} onClose={() => setTicketOpen(false)} title="New Support Ticket"
+      <Modal
+        open={ticketOpen}
+        onClose={() => { setTicketOpen(false); setForm({ subject: '', category: 'General', priority: 'Normal', message: '', tags: [] }); setCheatForm(emptyCheatForm) }}
+        title={form.category === 'Cheat Report' ? 'Cheat melden' : 'New Support Ticket'}
         footer={
           <>
-            <button onClick={() => setTicketOpen(false)} className="bd txt rounded-lg border px-4 py-2 text-sm">Cancel</button>
-            <button onClick={submit} className="rounded-lg bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-500">Submit</button>
+            <button
+              onClick={() => { setTicketOpen(false); setForm({ subject: '', category: 'General', priority: 'Normal', message: '', tags: [] }); setCheatForm(emptyCheatForm) }}
+              className="bd txt rounded-lg border px-4 py-2 text-sm"
+            >
+              Abbrechen
+            </button>
+            <button
+              onClick={submit}
+              disabled={form.category === 'Cheat Report' ? !cheatValid : false}
+              className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
+                form.category === 'Cheat Report'
+                  ? cheatValid
+                    ? 'bg-purple-600 text-white hover:bg-purple-500'
+                    : 'bd tile muted cursor-not-allowed opacity-50'
+                  : 'bg-sky-600 text-white hover:bg-sky-500'
+              }`}
+            >
+              {form.category === 'Cheat Report' ? 'Zur Überprüfung einreichen' : 'Submit'}
+            </button>
           </>
         }
       >
         <div className="space-y-4">
-          <div className="space-y-2">
-            <p className="caps-label">Templates</p>
-            <div className="flex flex-wrap gap-2">
-              {[
-                { label: 'Bug Report',       subject: 'Bug: ',      category: 'Bug',       priority: 'High',   message: 'Steps to reproduce:\n1. \n\nExpected:\nActual:' },
-                { label: 'Detection Issue',  subject: 'Detection: ', category: 'Detection', priority: 'Normal', message: 'Player:\nScan ID:\nIssue:' },
-                { label: 'Billing Question', subject: 'Billing: ',  category: 'Billing',   priority: 'Normal', message: '' },
-                { label: 'Feature Request',  subject: 'Feature: ',  category: 'General',   priority: 'Low',    message: 'I would like to suggest:' },
-              ].map(tpl => (
-                <button
-                  key={tpl.label}
-                  type="button"
-                  onClick={() => setForm(f => ({ ...f, subject: tpl.subject, category: tpl.category, priority: tpl.priority, message: tpl.message, tags: tpl.tags || f.tags }))}
-                  className="rounded-lg border bd px-3 py-1.5 text-xs muted hover:txt transition-colors"
-                >
-                  {tpl.label}
-                </button>
-              ))}
-              <button
-                type="button"
-                onClick={() => { setTicketOpen(false); setCheatOpen(true) }}
-                className="rounded-lg border border-purple-500/30 px-3 py-1.5 text-xs text-purple-400 hover:bg-purple-500/10 transition-colors"
-              >
-                <ShieldAlert size={11} className="inline mr-1 -mt-0.5" />
-                Cheat melden
-              </button>
-            </div>
-          </div>
-          <Field label="Subject">
-            <Input autoFocus value={form.subject} onChange={e => setForm({ ...form, subject: e.target.value })} placeholder="Short summary" />
-          </Field>
-          <Field label="Category">
+          {/* Category selector — always visible */}
+          <Field label="Kategorie">
             <div className="grid grid-cols-5 gap-1.5">
               {[
-                { value: 'General',      icon: MessageSquare, label: 'General',   idleCls: '',              selCls: 'border-white/40 bg-white/10 text-white'          },
-                { value: 'Bug',          icon: Bug,           label: 'Bug',        idleCls: '',              selCls: 'border-orange-400/50 bg-orange-400/10 text-orange-400' },
-                { value: 'Billing',      icon: CreditCard,    label: 'Billing',    idleCls: '',              selCls: 'border-green-400/50 bg-green-400/10 text-green-400'   },
-                { value: 'Detection',    icon: Shield,        label: 'Detection',  idleCls: '',              selCls: 'border-sky-400/50 bg-sky-400/10 text-sky-400'         },
-                { value: 'Cheat Report', icon: ShieldAlert,   label: 'Cheat',      idleCls: '',              selCls: 'border-purple-400/50 bg-purple-400/10 text-purple-400'},
+                { value: 'General',      icon: MessageSquare, label: 'General',   selCls: 'border-white/40 bg-white/10 text-white'               },
+                { value: 'Bug',          icon: Bug,           label: 'Bug',        selCls: 'border-orange-400/50 bg-orange-400/10 text-orange-400' },
+                { value: 'Billing',      icon: CreditCard,    label: 'Billing',    selCls: 'border-green-400/50 bg-green-400/10 text-green-400'    },
+                { value: 'Detection',    icon: Shield,        label: 'Detection',  selCls: 'border-sky-400/50 bg-sky-400/10 text-sky-400'          },
+                { value: 'Cheat Report', icon: ShieldAlert,   label: 'Cheat',      selCls: 'border-purple-400/50 bg-purple-400/10 text-purple-400' },
               ].map(cat => {
                 const Icon = cat.icon
                 const sel = form.category === cat.value
                 return (
                   <button key={cat.value} type="button"
-                    onClick={() => {
-                      if (cat.value === 'Cheat Report') { setTicketOpen(false); setCheatOpen(true); return }
-                      setForm({ ...form, category: cat.value })
-                    }}
+                    onClick={() => setForm({ ...form, category: cat.value })}
                     className={`flex flex-col items-center gap-1.5 rounded-xl border py-3 px-1 text-center transition-all ${
                       sel ? cat.selCls : 'bd tile muted hover:txt'
                     }`}
@@ -1193,34 +1218,139 @@ export default function Support() {
               })}
             </div>
           </Field>
-          <Field label="Priority">
-            <div className="grid grid-cols-4 gap-1.5">
-              {[
-                { value: 'Low',    label: 'Low',    selCls: 'border-white/30 bg-white/5 text-white/70'           },
-                { value: 'Normal', label: 'Normal', selCls: 'border-sky-400/40 bg-sky-400/10 text-sky-400'       },
-                { value: 'High',   label: 'High',   selCls: 'border-orange-400/50 bg-orange-400/10 text-orange-400' },
-                { value: 'Urgent', label: 'Urgent', selCls: 'border-red-400/50 bg-red-400/10 text-red-400'       },
-              ].map(p => {
-                const sel = form.priority === p.value
-                return (
-                  <button key={p.value} type="button"
-                    onClick={() => setForm({ ...form, priority: p.value })}
-                    className={`rounded-xl border py-2.5 text-xs font-semibold transition-all ${
-                      sel ? p.selCls : 'bd tile muted hover:txt'
-                    }`}
+
+          {/* Cheat Report: eigene Felder */}
+          {form.category === 'Cheat Report' ? (
+            <>
+              <div className="rounded-lg bg-purple-500/5 border border-purple-500/20 px-4 py-3 text-sm text-purple-300/80">
+                Fülle alle Pflichtfelder <span className="text-red-400 font-bold">*</span> aus. Dein Report wird als Ticket gespeichert — du kannst den Status unter "My Tickets" verfolgen.
+              </div>
+
+              <Field label={<>Name des Cheats / Tools <span className="text-red-400">*</span></>} hint="Der Name, unter dem das Tool bekannt ist.">
+                <Input
+                  autoFocus
+                  value={cheatForm.cheatName}
+                  onChange={e => setCheatForm({ ...cheatForm, cheatName: e.target.value })}
+                  placeholder="z.B. KillAura Pro, SpooferX, ESP-Master"
+                />
+              </Field>
+
+              <div className="grid grid-cols-2 gap-4">
+                <Field label="Kategorie">
+                  <Select value={cheatForm.category} onChange={v => setCheatForm({ ...cheatForm, category: v })}
+                    options={CHEAT_CATEGORIES.map(x => ({ value: x, label: x }))} />
+                </Field>
+                <Field label="Spiel">
+                  <Select value={cheatForm.game} onChange={v => setCheatForm({ ...cheatForm, game: v })}
+                    options={GAMES.map(x => ({ value: x, label: x }))} />
+                </Field>
+              </div>
+
+              <Field
+                label={<>Erkennungs-Pattern <span className="text-red-400">*</span></>}
+                hint="Dateiname, Prozessname oder Schlüsselwort. Mind. 3 Zeichen."
+              >
+                <Input
+                  value={cheatForm.pattern}
+                  onChange={e => setCheatForm({ ...cheatForm, pattern: e.target.value })}
+                  placeholder="z.B. killaura.exe, esp_hook.dll, aimbot"
+                  className="font-mono"
+                />
+              </Field>
+
+              <div className="grid grid-cols-2 gap-4">
+                <Field label="Match-Typ">
+                  <Select value={cheatForm.type} onChange={v => setCheatForm({ ...cheatForm, type: v })}
+                    options={CHEAT_TYPES.map(t => ({ value: t.value, label: t.label }))} />
+                </Field>
+                <Field label="Risiko-Stufe">
+                  <Select value={cheatForm.risk} onChange={v => setCheatForm({ ...cheatForm, risk: v })}
+                    options={RISK_LEVELS.map(x => ({ value: x, label: x }))} />
+                </Field>
+              </div>
+
+              <Field label="Beleg-URL (optional)" hint="Link zu einem Screenshot, Video oder Forum-Beitrag.">
+                <Input
+                  value={cheatForm.evidenceUrl}
+                  onChange={e => setCheatForm({ ...cheatForm, evidenceUrl: e.target.value })}
+                  placeholder="https://…"
+                />
+              </Field>
+
+              <Field label="Weitere Anmerkungen (optional)">
+                <Textarea
+                  rows={3}
+                  value={cheatForm.description}
+                  onChange={e => setCheatForm({ ...cheatForm, description: e.target.value })}
+                  placeholder="Wo hast du den Cheat gesehen? Wie verhält er sich?"
+                />
+              </Field>
+
+              {!cheatValid && (cheatForm.cheatName || cheatForm.pattern) && (
+                <p className="text-xs text-red-400">
+                  {!cheatForm.cheatName.trim()
+                    ? '⚠ Cheat-Name ist erforderlich.'
+                    : cheatForm.pattern.trim().length < 3
+                    ? '⚠ Pattern muss mind. 3 Zeichen lang sein.'
+                    : ''}
+                </p>
+              )}
+            </>
+          ) : (
+            /* Normal ticket fields */
+            <>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { label: 'Bug Report',       subject: 'Bug: ',       category: 'Bug',       priority: 'High',   message: 'Steps to reproduce:\n1. \n\nExpected:\nActual:' },
+                  { label: 'Detection Issue',  subject: 'Detection: ', category: 'Detection', priority: 'Normal', message: 'Player:\nScan ID:\nIssue:' },
+                  { label: 'Billing Question', subject: 'Billing: ',   category: 'Billing',   priority: 'Normal', message: '' },
+                  { label: 'Feature Request',  subject: 'Feature: ',   category: 'General',   priority: 'Low',    message: 'I would like to suggest:' },
+                ].map(tpl => (
+                  <button
+                    key={tpl.label}
+                    type="button"
+                    onClick={() => setForm(f => ({ ...f, subject: tpl.subject, category: tpl.category, priority: tpl.priority, message: tpl.message }))}
+                    className="rounded-lg border bd px-3 py-1.5 text-xs muted hover:txt transition-colors"
                   >
-                    {p.label}
+                    {tpl.label}
                   </button>
-                )
-              })}
-            </div>
-          </Field>
-          <Field label="Tags (optional)">
-            <TagInput tags={form.tags} onChange={tags => setForm({ ...form, tags })} />
-          </Field>
-          <Field label="Message">
-            <Textarea rows={4} value={form.message} onChange={e => setForm({ ...form, message: e.target.value })} placeholder="Describe your issue…" />
-          </Field>
+                ))}
+              </div>
+
+              <Field label="Subject">
+                <Input autoFocus value={form.subject} onChange={e => setForm({ ...form, subject: e.target.value })} placeholder="Short summary" />
+              </Field>
+
+              <Field label="Priority">
+                <div className="grid grid-cols-4 gap-1.5">
+                  {[
+                    { value: 'Low',    label: 'Low',    selCls: 'border-white/30 bg-white/5 text-white/70'            },
+                    { value: 'Normal', label: 'Normal', selCls: 'border-sky-400/40 bg-sky-400/10 text-sky-400'        },
+                    { value: 'High',   label: 'High',   selCls: 'border-orange-400/50 bg-orange-400/10 text-orange-400' },
+                    { value: 'Urgent', label: 'Urgent', selCls: 'border-red-400/50 bg-red-400/10 text-red-400'        },
+                  ].map(p => {
+                    const sel = form.priority === p.value
+                    return (
+                      <button key={p.value} type="button"
+                        onClick={() => setForm({ ...form, priority: p.value })}
+                        className={`rounded-xl border py-2.5 text-xs font-semibold transition-all ${sel ? p.selCls : 'bd tile muted hover:txt'}`}
+                      >
+                        {p.label}
+                      </button>
+                    )
+                  })}
+                </div>
+              </Field>
+
+              <Field label="Tags (optional)">
+                <TagInput tags={form.tags} onChange={tags => setForm({ ...form, tags })} />
+              </Field>
+
+              <Field label="Message">
+                <Textarea rows={4} value={form.message} onChange={e => setForm({ ...form, message: e.target.value })} placeholder="Describe your issue…" />
+              </Field>
+            </>
+          )}
         </div>
       </Modal>
 
