@@ -57,14 +57,10 @@ public sealed class MemoryScanModule : IScanModule
 
     public Task RunAsync(ScanContext ctx, CancellationToken ct)
     {
-        if (!ctx.Matcher.HasContentSignatures)
-        {
-            ctx.Report(1.0, "Speicher", "Keine Inhalts-Signaturen aktiv");
-            return Task.CompletedTask;
-        }
-
         Process[] all;
         try { all = Process.GetProcesses(); } catch { return Task.CompletedTask; }
+
+        bool hasContentSigs = ctx.Matcher.HasContentSignatures;
 
         foreach (var p in all)
         {
@@ -73,27 +69,33 @@ public sealed class MemoryScanModule : IScanModule
             try { name = p.ProcessName + ".exe"; } catch { p.Dispose(); continue; }
             try { path = p.MainModule?.FileName ?? ""; } catch { }
 
-            if (KnownPaths.MpFrameworkForProcess(name, path) is null) { p.Dispose(); continue; }
+            bool isMpProcess = KnownPaths.MpFrameworkForProcess(name, path) is not null;
 
-            try { ScanProcess(ctx, p, name, ct); } catch { }
+            // RWX manual-map check runs on ALL processes (cheap: no ReadProcessMemory).
+            // Content-signature scan is expensive and runs only for detected game processes.
+            try { ScanProcess(ctx, p, name, isMpProcess, hasContentSigs && isMpProcess, ct); }
+            catch { }
             p.Dispose();
         }
 
-        ctx.Report(1.0, "Speicher", "Spiel-Speicher geprueft");
+        ctx.Report(1.0, "Speicher", "Speicher-Scan abgeschlossen");
         return Task.CompletedTask;
     }
 
-    private void ScanProcess(ScanContext ctx, Process p, string name, CancellationToken ct)
+    private void ScanProcess(ScanContext ctx, Process p, string name,
+        bool isMpProcess, bool doContentScan, CancellationToken ct)
     {
         IntPtr h = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, false, p.Id);
         if (h == IntPtr.Zero) return;
 
         try
         {
-            CheckManualMaps(ctx, h, name, ct);
+            CheckManualMaps(ctx, h, name, isMpProcess, ct);
+
+            if (!doContentScan) return;
 
             long scanned = 0;
-            ulong addr = 0x10000; // skip the null region
+            ulong addr = 0x10000;
             int mbiSize = Marshal.SizeOf<MEMORY_BASIC_INFORMATION64>();
             var buffer = new byte[ChunkSize];
 
@@ -110,11 +112,11 @@ public sealed class MemoryScanModule : IScanModule
                 if (readable)
                 {
                     if (ScanRegion(ctx, h, mbi.BaseAddress, regionSize, buffer, name, ref scanned, ct))
-                        return; // one solid hit per process is enough
+                        return;
                 }
 
                 ulong next = mbi.BaseAddress + regionSize;
-                if (next <= addr) break; // guard against wrap/no-progress
+                if (next <= addr) break;
                 addr = next;
             }
         }
@@ -129,9 +131,17 @@ public sealed class MemoryScanModule : IScanModule
     /// module entry appears in the module list — but the writable+executable
     /// footprint is still visible via VirtualQueryEx.
     /// </summary>
-    private void CheckManualMaps(ScanContext ctx, IntPtr h, string procName, CancellationToken ct)
+    /// <summary>
+    /// Walks page table of <paramref name="h"/> looking for private RWX regions ≥ 64 KB
+    /// with no module backing — the classic footprint of a manually-mapped DLL.
+    /// Runs for ALL processes. Risk is High for game processes, Medium for others
+    /// (JIT engines and script runtimes can produce similar regions, so false-positive
+    /// rate is higher for arbitrary processes).
+    /// </summary>
+    private void CheckManualMaps(ScanContext ctx, IntPtr h, string procName,
+        bool isMpProcess, CancellationToken ct)
     {
-        const ulong MinSize = 64 * 1024; // 64 KB minimum to filter tiny JIT stubs
+        const ulong MinSize = 64 * 1024;
         const int MaxHitsPerProcess = 3;
         int hits = 0;
 
@@ -151,15 +161,15 @@ public sealed class MemoryScanModule : IScanModule
                 ctx.AddFinding(new Finding
                 {
                     Module = Name,
-                    Title = $"Verdaechtige RWX-Speicherregion (moegliche manuelle Injektion): {procName}",
-                    Risk = RiskLevel.High,
+                    Title = $"Verdaechtige RWX-Speicherregion (moegliche Injektion): {procName}",
+                    Risk = isMpProcess ? RiskLevel.High : RiskLevel.Medium,
                     Location = $"{procName} · 0x{mbi.BaseAddress:X16}",
                     FileName = procName,
                     Reason = $"Im Prozess '{procName}' wurde eine {mbi.RegionSize / 1024} KB grosse " +
                              "private, ausfuehrbare und beschreibbare (RWX) Speicherregion ohne " +
                              "Modul-Deckung gefunden. Das ist das charakteristische Merkmal einer " +
-                             "manuell gemappten DLL (Injektion ohne LoadLibrary/LdrLoadDll), " +
-                             "die keinen Modul-Eintrag hinterlaesst.",
+                             "manuell gemappten DLL (Injektion ohne LoadLibrary/LdrLoadDll)." +
+                             (isMpProcess ? " Betrifft einen erkannten Spielprozess." : ""),
                     Detail = $"Basisadresse: 0x{mbi.BaseAddress:X16} · Groesse: {mbi.RegionSize / 1024} KB · Schutz: 0x{mbi.Protect:X}"
                 });
                 hits++;

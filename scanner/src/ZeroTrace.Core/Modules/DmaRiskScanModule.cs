@@ -10,39 +10,76 @@ namespace ZeroTrace.Core.Modules;
 /// PCIe bus and reads memory directly, bypassing Windows — so there is usually
 /// no process/file/driver on this PC to detect. This module therefore produces
 /// HINTS, never proof:
-///   1) the platform DMA defenses (Kernel DMA Protection / IOMMU-VT-d) state —
-///      if these are OFF, many DMA attacks are possible;
-///   2) a read-only inventory of PCIe / PnP devices, flagging capture-card /
-///      FPGA-style or otherwise unusual entries that *could* be a DMA board.
-/// Legitimate capture cards look identical to DMA boards from the host side, so
-/// every device hit is reported only as "zur Pruefung" (review), not as a cheat.
-/// Nothing is changed.
+///   1) the platform DMA defenses (Kernel DMA Protection / IOMMU-VT-d) state;
+///   2) Windows service/driver registry artifacts for known DMA software tools
+///      (PCILeech, LeechCore, MemProcFS) and hardware chip drivers (FT600/FT601,
+///      Cypress FX3) — high-confidence if the tool name matches, medium if it is
+///      a DMA-capable chip driver that could also belong to legit hardware;
+///   3) a read-only inventory of PCIe/USB/Thunderbolt devices, first checked
+///      against known DMA-board USB VID/PID pairs (FT601, FX3 dev kits), then
+///      against generic FPGA/capture-card name fragments.
+/// Legitimate capture cards look identical to DMA boards, so every device hit
+/// is reported as review-only, not as proof. Nothing is changed.
 /// </summary>
 public sealed class DmaRiskScanModule : IScanModule
 {
     public string Name => "DMA / Hardware (Hinweis)";
     public double Weight => 0.4;
 
-    // Vendor / name fragments that are over-represented in DMA-board builds or
-    // in capture hardware that DMA boards imitate. Pure heuristic -> review only.
+    // Name/vendor fragments over-represented in DMA-board builds or capture hardware.
     private static readonly string[] SuspectFragments =
     {
-        "fpga", "xilinx", "lattice", "altera", "ft601", "ft60", "screamer",
-        "pcileech", "lambdaconcept", "capture", "video capture", "hdmi capture",
-        "ftdi", "cypress fx3", "fx3", "datalogger", "leetdma", "dma"
+        "fpga", "xilinx", "lattice", "altera", "spartan", "artix",
+        "ft601", "ft600", "ft60", "ftdi",
+        "screamer", "pcileech", "pciescrm", "lambdaconcept",
+        "zdma", "squirrel",
+        "cypress fx3", "fx3", "cyusb", "cyusb3",
+        "datalogger", "leetdma", "dma",
+        "capture", "video capture", "hdmi capture",
+    };
+
+    // Windows service names associated with DMA tools.
+    // highConfidence = true  → named after a known software DMA tool (strong signal)
+    // highConfidence = false → hardware chip driver that DMA boards use (could be legit)
+    private static readonly (string fragment, bool highConfidence)[] DmaServicePatterns =
+    {
+        ("pcileech",  true),
+        ("leechcore", true),
+        ("memprocfs", true),
+        ("screamer",  true),
+        ("zdma",      true),
+        ("FT600",     false),  // FTDI FT600 SuperSpeed USB chip driver
+        ("FT601",     false),  // FTDI FT601 - used in Screamer M2, ZDMA, PCIe Squirrel
+        ("ftdibus",   false),  // FTDI bus driver covering FT600/FT601 family
+        ("cyusb3",    false),  // Cypress FX3 USB SuperSpeed driver
+        ("CyUSB",     false),
+    };
+
+    // USB hardware ID prefixes for chips used almost exclusively in DMA boards.
+    // VID_0403 = FTDI; PID 601E/601F = FT600/FT601 SuperSpeed bridge chips.
+    // VID_04B4 = Cypress Semiconductor; common FX3 development kit PIDs.
+    private static readonly string[] DmaUsbHwIds =
+    {
+        "USB\\VID_0403&PID_601E",  // FTDI FT600
+        "USB\\VID_0403&PID_601F",  // FTDI FT601 (Screamer M2, ZDMA, PCIe Squirrel...)
+        "USB\\VID_04B4&PID_00F3",  // Cypress FX3 SuperSpeed Explorer Kit
+        "USB\\VID_04B4&PID_4720",  // Cypress EZ-USB FX3 Bootloader
     };
 
     public Task RunAsync(ScanContext ctx, CancellationToken ct)
     {
         ReportDmaProtection(ctx);
-        ctx.Report(0.4, "DMA-Schutz", "Plattform-DMA-Schutz geprueft");
+        ctx.Report(0.25, "DMA-Schutz", "Plattform-DMA-Schutz geprueft");
+
+        CheckDmaServiceArtifacts(ctx);
+        ctx.Report(0.5, "DMA-Dienste", "Dienste-Artefakte geprueft");
 
         ScanPnpDevices(ctx, ct);
         ctx.Report(1.0, "PCIe-Geraete", "Geraeteliste geprueft");
         return Task.CompletedTask;
     }
 
-    // --- 1) Platform DMA protection state -------------------------------------
+    // --- 1) Platform DMA protection state ------------------------------------
 
     private void ReportDmaProtection(ScanContext ctx)
     {
@@ -79,20 +116,13 @@ public sealed class DmaRiskScanModule : IScanModule
         }
     }
 
-    /// <summary>
-    /// Best-effort read of Kernel DMA Protection state. True only if we can
-    /// positively confirm it; null/false otherwise (we never claim a false ON).
-    /// </summary>
     private static bool? ReadKernelDmaProtection()
     {
-        // Policy/state is exposed under this key on supported platforms.
         try
         {
             using var baseKey = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Default);
             using var k = baseKey.OpenSubKey(
                 @"SYSTEM\CurrentControlSet\Control\DmaSecurity\AllowedBuses");
-            // Presence of the AllowedBuses policy node indicates DMA protection is
-            // being enforced for external buses.
             if (k is not null && k.GetValueNames().Length >= 0) return true;
         }
         catch { }
@@ -111,7 +141,56 @@ public sealed class DmaRiskScanModule : IScanModule
         return false;
     }
 
-    // --- 2) PCIe / PnP device inventory ---------------------------------------
+    // --- 2) Service/driver registry artifacts for DMA tools/hardware ---------
+
+    private void CheckDmaServiceArtifacts(ScanContext ctx)
+    {
+        const string ServicesKey = @"SYSTEM\CurrentControlSet\Services";
+        try
+        {
+            using var baseKey = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Default);
+            using var svcRoot = baseKey.OpenSubKey(ServicesKey, writable: false);
+            if (svcRoot is null) return;
+
+            foreach (var svcName in svcRoot.GetSubKeyNames())
+            {
+                string? matchFrag = null;
+                bool highConf = false;
+                foreach (var (frag, hc) in DmaServicePatterns)
+                {
+                    if (!svcName.Contains(frag, StringComparison.OrdinalIgnoreCase)) continue;
+                    matchFrag = frag;
+                    highConf = hc;
+                    break;
+                }
+                if (matchFrag is null) continue;
+
+                using var svcKey = svcRoot.OpenSubKey(svcName, writable: false);
+                var imagePath = svcKey?.GetValue("ImagePath")?.ToString();
+
+                ctx.AddFinding(new Finding
+                {
+                    Module = Name,
+                    Title = highConf
+                        ? $"DMA-Tool-Dienst erkannt: {svcName}"
+                        : $"DMA-Hardware-Treiber erkannt: {svcName}",
+                    Risk = highConf ? RiskLevel.High : RiskLevel.Medium,
+                    Location = $@"HKLM\{ServicesKey}\{svcName}",
+                    Reason = highConf
+                        ? $"Windows-Dienst '{svcName}' entspricht einem bekannten DMA-Software-Tool " +
+                          $"(Muster: '{matchFrag}'). PCILeech / LeechCore / MemProcFS sind Werkzeuge " +
+                          "fuer direkten DMA-Speicherzugriff, die auch fuer Cheats eingesetzt werden."
+                        : $"Windows-Dienst '{svcName}' entspricht einem Treiber fuer DMA-faehige " +
+                          $"Hardware-Chips (Muster: '{matchFrag}'). FTDI FT600/FT601 und Cypress FX3 " +
+                          "werden haeufig in DMA-Cheat-Boards verbaut. Kann auch legitime Hardware sein.",
+                    Detail = imagePath is null ? null : $"Image: {imagePath}"
+                });
+            }
+        }
+        catch { }
+    }
+
+    // --- 3) PCIe / PnP device inventory with USB VID/PID matching ------------
 
     private void ScanPnpDevices(ScanContext ctx, CancellationToken ct)
     {
@@ -126,17 +205,40 @@ public sealed class DmaRiskScanModule : IScanModule
                 if (flagged >= 25) break;
 
                 var name = mo["Name"]?.ToString() ?? "";
-                var mfg = mo["Manufacturer"]?.ToString() ?? "";
-                var id = mo["PNPDeviceID"]?.ToString() ?? "";
-                var cls = mo["PNPClass"]?.ToString() ?? "";
-                var hay = (name + " " + mfg + " " + id + " " + cls).ToLowerInvariant();
+                var mfg  = mo["Manufacturer"]?.ToString() ?? "";
+                var id   = mo["PNPDeviceID"]?.ToString() ?? "";
+                var cls  = mo["PNPClass"]?.ToString() ?? "";
+                var hay  = (name + " " + mfg + " " + id + " " + cls).ToLowerInvariant();
 
-                // Only consider PCI / Thunderbolt / USB-bridge devices.
                 bool relevantBus = id.StartsWith("PCI", StringComparison.OrdinalIgnoreCase)
                                    || id.StartsWith("USB", StringComparison.OrdinalIgnoreCase)
                                    || id.StartsWith("TBT", StringComparison.OrdinalIgnoreCase);
                 if (!relevantBus) continue;
 
+                // High-specificity USB VID/PID check: chips used almost only in DMA boards.
+                var hwIdMatch = DmaUsbHwIds.FirstOrDefault(prefix =>
+                    id.StartsWith(prefix, StringComparison.OrdinalIgnoreCase));
+                if (hwIdMatch is not null)
+                {
+                    flagged++;
+                    ctx.AddFinding(new Finding
+                    {
+                        Module = Name,
+                        Title = "DMA-Board-Chip per VID/PID erkannt",
+                        Risk = RiskLevel.Medium,
+                        Recommendation = Recommendation.Review,
+                        Location = string.IsNullOrWhiteSpace(name) ? id : name,
+                        Reason = $"USB-Geraet mit Hardware-ID '{hwIdMatch}' erkannt. " +
+                                 "FTDI FT600/FT601 und Cypress FX3 werden fast ausschliesslich " +
+                                 "als USB-Host-Interface in DMA-Cheat-Boards eingesetzt " +
+                                 "(Screamer M2, ZDMA, PCIe Squirrel u.a.). " +
+                                 "Legitime Geraete mit diesen Chips existieren, sind aber selten.",
+                        Detail = $"Hardware-ID: {id} · Hersteller: {(string.IsNullOrWhiteSpace(mfg) ? "?" : mfg)}"
+                    });
+                    continue;
+                }
+
+                // General fragment match on name/manufacturer/class (lower confidence).
                 var match = SuspectFragments.FirstOrDefault(f => hay.Contains(f));
                 if (match is null) continue;
 
@@ -145,19 +247,19 @@ public sealed class DmaRiskScanModule : IScanModule
                 {
                     Module = Name,
                     Title = "Auffaelliges Geraet (DMA-faehig moeglich)",
-                    Risk = RiskLevel.Low, // hint only; legitimate capture cards match too
+                    Risk = RiskLevel.Low,
                     Recommendation = Recommendation.Review,
                     Location = string.IsNullOrWhiteSpace(name) ? id : name,
                     Reason = $"Ein angeschlossenes Geraet passt zum Muster '{match}'. FPGA-/Capture-" +
                              "aehnliche Geraete koennen fuer DMA missbraucht werden – legitime " +
                              "Capture-Karten sehen aber identisch aus. Nur ein Hinweis zur manuellen " +
                              "Pruefung, KEIN Cheat-Nachweis.",
-                    Detail = $"Hersteller: {(string.IsNullOrWhiteSpace(mfg) ? "?" : mfg)} \u00b7 ID: {id}"
+                    Detail = $"Hersteller: {(string.IsNullOrWhiteSpace(mfg) ? "?" : mfg)} · ID: {id}"
                 });
             }
         }
         catch (OperationCanceledException) { throw; }
-        catch { /* WMI unavailable -> skip */ }
+        catch { }
 
         if (flagged == 0)
         {

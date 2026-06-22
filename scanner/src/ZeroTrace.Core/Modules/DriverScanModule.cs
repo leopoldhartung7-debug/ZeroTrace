@@ -12,6 +12,7 @@ namespace ZeroTrace.Core.Modules;
 /// the normal file inspection (hash, real signature, self-rename, indicators).
 /// A loaded driver gets escalated, and a driver image outside the system driver
 /// folder is flagged on its own. Nothing is changed or unloaded.
+/// File inspection is parallelized across CPU cores to reduce wall-clock time.
 /// </summary>
 public sealed class DriverScanModule : IScanModule
 {
@@ -33,41 +34,44 @@ public sealed class DriverScanModule : IScanModule
             return Task.CompletedTask;
         }
 
-        int total = Math.Max(drivers.Count, 1);
-        int i = 0;
+        // Deduplicate and resolve paths up front (single-threaded, no I/O here).
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
+        var work = new List<(string name, string path, bool running)>();
         foreach (var (name, rawPath, running) in drivers)
         {
-            ct.ThrowIfCancellationRequested();
-            i++;
-            if (i % 10 == 0 || i == drivers.Count)
-                ctx.Report((double)i / total, name, $"{i}/{drivers.Count} Treiber");
-
             var path = NormalizeDriverPath(rawPath);
-            if (string.IsNullOrEmpty(path)) continue;
-            if (!seen.Add(path)) continue;
+            if (string.IsNullOrEmpty(path) || !seen.Add(path!)) continue;
             if (!File.Exists(path)) continue;
+            work.Add((name, path!, running));
+        }
 
+        int total = Math.Max(work.Count, 1);
+        int i = 0;
+
+        var parallelOptions = new ParallelOptions
+        {
+            CancellationToken = ct,
+            MaxDegreeOfParallelism = Math.Max(2, Environment.ProcessorCount)
+        };
+
+        Parallel.ForEach(work, parallelOptions, item =>
+        {
+            var (name, path, running) = item;
             ctx.IncrementFiles();
+            int n = System.Threading.Interlocked.Increment(ref i);
+            if (n % 10 == 0 || n == work.Count)
+                ctx.Report((double)n / total, name, $"{n}/{work.Count} Treiber");
 
-            // Full file inspection (hash / signature / self-rename / indicators /
-            // untrusted-in-user-writable).
             var finding = FileInspector.Inspect(path, ctx, Name);
             if (finding is not null)
             {
                 finding.Title = "Treiber: " + finding.Title;
                 finding.Reason = $"[Kernel-Treiber '{name}'{(running ? ", GELADEN" : "")}] " + finding.Reason;
-                // A loaded (running) kernel driver is the highest-impact surface:
-                // escalate one notch.
                 if (running && finding.Risk < RiskLevel.Critical) finding.Risk++;
                 ctx.AddFinding(finding);
-                continue;
+                return;
             }
 
-            // No indicator/heuristic hit, but the image sits OUTSIDE the system
-            // driver folder. Legit third-party drivers usually live there too, so
-            // this is only notable when the driver is untrusted-signed.
             if (!IsUnderSystemDrivers(path))
             {
                 var sig = SignatureChecker.CheckDetailed(path);
@@ -89,7 +93,7 @@ public sealed class DriverScanModule : IScanModule
                     });
                 }
             }
-        }
+        });
 
         ctx.Report(1.0, "Kernel-Treiber", "Treiber-Pruefung abgeschlossen");
         return Task.CompletedTask;
@@ -110,11 +114,6 @@ public sealed class DriverScanModule : IScanModule
         return list;
     }
 
-    /// <summary>
-    /// Turns the various driver image path formats (\??\C:\..,
-    /// \SystemRoot\System32\drivers\.., system32\.., or relative) into a normal
-    /// absolute path. Returns null if it cannot be resolved.
-    /// </summary>
     private static string? NormalizeDriverPath(string? raw)
     {
         if (string.IsNullOrWhiteSpace(raw)) return null;
