@@ -42,12 +42,41 @@ const TAG_COLORS = [
 const PRESET_TAGS = ['bug', 'billing', 'detection', 'feature-request', 'urgent', 'false-positive', 'cheat-related']
 
 const CANNED_RESPONSES = [
-  { label: 'Looking into it', text: 'Thanks for reaching out! We are looking into this and will update you shortly.' },
-  { label: 'Need more info', text: 'Could you provide more details? Screenshots or exact steps to reproduce would help a lot.' },
-  { label: 'Issue resolved', text: 'This issue has been resolved. Please let us know if you experience any further problems.' },
-  { label: 'Not reproducible', text: "We were unable to reproduce this on our end. Could you check again and provide exact steps?" },
-  { label: 'False positive', text: 'After reviewing, this appears to be a false positive. No action is required on your end.' },
-  { label: 'Escalated', text: 'We have escalated this ticket to our senior team. You will hear back within 24 hours.' },
+  // General
+  { topic: 'General', label: 'Looking into it',    text: 'Thanks for reaching out! We are looking into this and will update you shortly.' },
+  { topic: 'General', label: 'Need more info',     text: 'Could you provide more details? Screenshots or exact steps to reproduce would help a lot.' },
+  { topic: 'General', label: 'Issue resolved',     text: 'This issue has been resolved. Please let us know if you experience any further problems.' },
+  { topic: 'General', label: 'Not reproducible',  text: 'We were unable to reproduce this on our end. Could you check again and provide exact steps?' },
+  { topic: 'General', label: 'Escalated',          text: 'We have escalated this ticket to our senior team. You will hear back within 24 hours.' },
+  { topic: 'General', label: 'Follow-up soon',     text: 'We haven\'t forgotten about you! We are still working on this and will follow up by end of day.' },
+  { topic: 'General', label: 'Closing — no reply', text: 'We haven\'t received a response in a while, so we are closing this ticket. Feel free to reopen it if you need further help.' },
+  // Billing
+  { topic: 'Billing', label: 'Payment confirmed',  text: 'Your payment has been received and confirmed. Your account is fully active — thank you!' },
+  { topic: 'Billing', label: 'License activated',  text: 'Your license key has been activated successfully. You now have access to all features of your plan.' },
+  { topic: 'Billing', label: 'License not found',  text: 'We were unable to find a license linked to your account. Please double-check the key you entered, or contact us with your purchase receipt.' },
+  { topic: 'Billing', label: 'Refund processed',   text: 'Your refund has been processed. It should appear in your account within 5–7 business days depending on your bank.' },
+  { topic: 'Billing', label: 'Renewal reminder',   text: 'Your subscription is due for renewal soon. If you have any questions about pricing or upgrades, we are happy to help.' },
+  { topic: 'Billing', label: 'Plan upgraded',      text: 'Your plan has been upgraded. The new limits and features are active immediately on your account.' },
+  // Detection
+  { topic: 'Detection', label: 'False positive',       text: 'After reviewing the scan, this appears to be a false positive. No action is required on your end — we will update the database.' },
+  { topic: 'Detection', label: 'Detection confirmed',  text: 'The detection is accurate. The scanner found signatures associated with cheating software on the scanned system.' },
+  { topic: 'Detection', label: 'Need scan ID',         text: 'To investigate, could you please share the Scan ID (visible in the scan result details)?' },
+  { topic: 'Detection', label: 'Need file',            text: 'Could you upload or share the file that triggered the detection? This helps us verify whether it is a genuine threat.' },
+  { topic: 'Detection', label: 'Pattern updated',      text: 'We have updated the detection pattern related to this case. Please re-run the scan and let us know if the issue persists.' },
+  { topic: 'Detection', label: 'Inconclusive',         text: 'The scan result is inconclusive based on the available data. We recommend a deeper scan (Full profile) and sharing the file for manual review.' },
+  // Cheat Report
+  { topic: 'Cheat Report', label: 'Under review',       text: 'Thank you for reporting this! Our team is reviewing the signature and will update the detection database if it is confirmed.' },
+  { topic: 'Cheat Report', label: 'Added to database',  text: 'The reported cheat has been verified and added to our detection database. It will be active in the next scanner update — great catch!' },
+  { topic: 'Cheat Report', label: 'Already tracked',    text: 'This cheat is already tracked in our detection database. Thank you for the report — every submission helps us verify coverage!' },
+  { topic: 'Cheat Report', label: 'Pattern rejected',   text: 'After review, we were unable to confirm this as a cheat indicator. If you have additional evidence (video, forum link, VT scan), please resubmit.' },
+  { topic: 'Cheat Report', label: 'Need evidence',      text: 'To process this report, we need more evidence — for example a forum/Discord link, a VirusTotal scan, or a short clip showing the tool in use.' },
+  { topic: 'Cheat Report', label: 'Need file sample',   text: 'Do you have access to the cheat file itself? A sample (even just the filename and hash) would allow us to add a more precise signature.' },
+  // Bug
+  { topic: 'Bug', label: 'Bug confirmed',           text: 'We have confirmed this bug on our end. It is now tracked internally and will be fixed in an upcoming release.' },
+  { topic: 'Bug', label: 'Fixed in next update',   text: 'This bug has been fixed and the fix will go out with the next update. Thank you for reporting it!' },
+  { topic: 'Bug', label: 'Workaround available',   text: 'While we work on a permanent fix, here is a workaround: [describe steps]. We will notify you once the fix is deployed.' },
+  { topic: 'Bug', label: 'Need repro steps',       text: 'To reproduce this bug, we need exact steps. Could you walk us through what you did, what you expected, and what happened instead?' },
+  { topic: 'Bug', label: 'Need screenshot/log',    text: 'A screenshot or the error log would help us diagnose this faster. You can attach files to your next reply.' },
 ]
 
 const CHEAT_TYPES = [
@@ -58,7 +87,9 @@ const CHEAT_TYPES = [
 const CHEAT_CATEGORIES = ['Cheat', 'Spoofer', 'Injector', 'Cleaner', 'FiveM-Cheat', 'Other']
 const RISK_LEVELS    = ['Medium', 'High', 'Critical']
 const GAMES          = ['MINECRAFT', 'CS2', 'RUST', 'VALORANT', 'FORTNITE', 'APEX', 'FiveM', 'OTHER']
-const STATUSES       = ['Open', 'In Progress', 'Resolved', 'Closed']
+const STATUSES        = ['Open', 'In Progress', 'Resolved', 'Closed']
+const TICKET_CATEGORIES = ['General', 'Bug', 'Billing', 'Detection', 'Cheat Report']
+const CANNED_TOPICS   = ['General', 'Billing', 'Detection', 'Cheat Report', 'Bug']
 const emptyCheatForm = { cheatName: '', pattern: '', type: 'FileNameKeyword', category: 'Cheat', risk: 'High', game: 'OTHER', evidenceUrl: '', description: '' }
 
 function tagColor(tag) {
@@ -428,16 +459,27 @@ function TicketThread({ ticket, onClose }) {
                     Canned <ChevronDown size={12} />
                   </button>
                   {showCanned && (
-                    <div className="absolute right-0 top-full mt-1 z-20 w-56 panel rounded-xl border shadow-2xl py-1">
-                      {CANNED_RESPONSES.map(c => (
-                        <button
-                          key={c.label}
-                          onClick={() => { setReply(c.text); setShowCanned(false) }}
-                          className="hoverable txt w-full px-3 py-2 text-left text-xs"
-                        >
-                          {c.label}
-                        </button>
-                      ))}
+                    <div className="absolute right-0 top-full mt-1 z-20 w-64 panel rounded-xl border shadow-2xl py-1.5 max-h-72 overflow-y-auto">
+                      {/* Show ticket's own topic first, then rest */}
+                      {[ticket.category, ...CANNED_TOPICS.filter(t => t !== ticket.category)]
+                        .map(topic => {
+                          const items = CANNED_RESPONSES.filter(c => c.topic === topic)
+                          if (!items.length) return null
+                          return (
+                            <div key={topic}>
+                              <p className="caps-label px-3 pt-2 pb-1">{topic}</p>
+                              {items.map(c => (
+                                <button
+                                  key={c.label}
+                                  onClick={() => { setReply(c.text); setShowCanned(false) }}
+                                  className="hoverable txt w-full px-3 py-2 text-left text-xs"
+                                >
+                                  {c.label}
+                                </button>
+                              ))}
+                            </div>
+                          )
+                        })}
                     </div>
                   )}
                 </div>
@@ -630,20 +672,51 @@ export default function Support() {
     const urlVal = cheatForm.evidenceUrl.trim()
     if (urlVal && !/^https?:\/\/.+/.test(urlVal))
       return toast({ type: 'error', title: 'Invalid URL', body: 'Evidence URL must start with http:// or https://' })
+
+    const name    = cheatForm.cheatName.trim()
+    const pattern = cheatForm.pattern.trim().toLowerCase()
+    const notes   = cheatForm.description.trim()
+
+    // 1. Create proposal for detection-database review (Proposals page)
     dispatch({
       type: 'add-user-proposal',
       proposal: {
-        cheatName: cheatForm.cheatName.trim(),
-        pattern: cheatForm.pattern.trim().toLowerCase(),
+        cheatName: name,
+        pattern,
         type: cheatForm.type,
         category: cheatForm.category,
         risk: cheatForm.risk,
         game: cheatForm.game,
         evidenceUrl: urlVal,
-        description: cheatForm.description.trim() || `User-reported ${cheatForm.category.toLowerCase()}: ${cheatForm.cheatName.trim()}`,
+        description: notes || `User-reported ${cheatForm.category.toLowerCase()}: ${name}`,
       },
     })
-    toast({ type: 'success', title: 'Suggestion submitted', body: 'Pending admin review — thank you!' })
+
+    // 2. Create a support ticket so admins can reply and track the report
+    const ticketMsg = [
+      `Cheat / Tool Name: ${name}`,
+      `Category: ${cheatForm.category}`,
+      `Game: ${cheatForm.game}`,
+      `Risk Level: ${cheatForm.risk}`,
+      '',
+      `Detection Pattern: ${pattern}`,
+      `Match Type: ${cheatForm.type}`,
+      urlVal ? `Evidence URL: ${urlVal}` : null,
+      notes ? `\nNotes:\n${notes}` : null,
+    ].filter(Boolean).join('\n')
+
+    dispatch({
+      type: 'add-ticket',
+      ticket: {
+        subject: `Cheat Report: ${name}`,
+        category: 'Cheat Report',
+        priority: cheatForm.risk === 'Critical' ? 'Urgent' : cheatForm.risk === 'High' ? 'High' : 'Normal',
+        message: ticketMsg,
+        tags: ['cheat-related', cheatForm.game.toLowerCase()],
+      },
+    })
+
+    toast({ type: 'success', title: 'Report submitted', body: 'A ticket has been opened — you can track status in My Tickets.' })
     setCheatForm(emptyCheatForm)
     setCheatOpen(false)
   }
@@ -864,15 +937,16 @@ export default function Support() {
             <p className="caps-label">Templates</p>
             <div className="flex flex-wrap gap-2">
               {[
-                { label: 'Bug Report', subject: 'Bug: ', category: 'Bug', priority: 'High', message: 'Steps to reproduce:\n1. \n\nExpected:\nActual:' },
-                { label: 'Detection Issue', subject: 'Detection: ', category: 'Detection', priority: 'Normal', message: 'Player:\nScan ID:\nIssue:' },
-                { label: 'Billing Question', subject: 'Billing: ', category: 'Billing', priority: 'Normal', message: '' },
-                { label: 'Feature Request', subject: 'Feature: ', category: 'General', priority: 'Low', message: 'I would like to suggest:' },
+                { label: 'Bug Report',       subject: 'Bug: ',      category: 'Bug',          priority: 'High',   message: 'Steps to reproduce:\n1. \n\nExpected:\nActual:' },
+                { label: 'Detection Issue',  subject: 'Detection: ', category: 'Detection',   priority: 'Normal', message: 'Player:\nScan ID:\nIssue:' },
+                { label: 'Billing Question', subject: 'Billing: ',  category: 'Billing',      priority: 'Normal', message: '' },
+                { label: 'Feature Request',  subject: 'Feature: ',  category: 'General',      priority: 'Low',    message: 'I would like to suggest:' },
+                { label: 'Cheat Report',     subject: 'Cheat Report: ', category: 'Cheat Report', priority: 'High', tags: ['cheat-related'], message: 'Cheat / Tool Name:\nGame:\nCategory: (Cheat / Spoofer / Injector)\nRisk: (Medium / High / Critical)\n\nDetection Pattern (filename or process):\n\nEvidence (link or description):' },
               ].map(tpl => (
                 <button
                   key={tpl.label}
                   type="button"
-                  onClick={() => setForm(f => ({ ...f, subject: tpl.subject, category: tpl.category, priority: tpl.priority, message: tpl.message }))}
+                  onClick={() => setForm(f => ({ ...f, subject: tpl.subject, category: tpl.category, priority: tpl.priority, message: tpl.message, tags: tpl.tags || f.tags }))}
                   className="rounded-lg border bd px-3 py-1.5 text-xs muted hover:txt transition-colors"
                 >
                   {tpl.label}
@@ -886,7 +960,7 @@ export default function Support() {
           <div className="grid grid-cols-2 gap-3">
             <Field label="Category">
               <Select value={form.category} onChange={v => setForm({ ...form, category: v })}
-                options={['General', 'Bug', 'Billing', 'Detection'].map(x => ({ value: x, label: x }))} />
+                options={TICKET_CATEGORIES.map(x => ({ value: x, label: x }))} />
             </Field>
             <Field label="Priority">
               <Select value={form.priority} onChange={v => setForm({ ...form, priority: v })}
@@ -915,8 +989,9 @@ export default function Support() {
       >
         <div className="space-y-5">
           {/* Info banner */}
-          <div className="rounded-lg bg-sky-600/5 border border-sky-600/20 px-4 py-3 text-sm text-sky-300">
-            Spotted a cheat, spoofer, or injector? Fill in what you know — our admin team reviews every submission and adds approved entries to the scanner database.
+          <div className="rounded-lg bg-sky-600/5 border border-sky-600/20 px-4 py-3 text-sm text-sky-300 space-y-1">
+            <p className="font-medium">Spotted a cheat, spoofer, or injector?</p>
+            <p className="text-sky-300/70">Fill in the fields below. Your report opens a support ticket so you can track the review, and the signature is queued for admin approval to activate in the scanner.</p>
           </div>
 
           {/* Section 1 — Identification */}
