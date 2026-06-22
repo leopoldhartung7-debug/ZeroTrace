@@ -922,7 +922,7 @@ export default function Support() {
     setCheatOpen(false)
   }
 
-  const openedTicket = activeTicket ? (state.tickets || []).find(t => t.id === activeTicket) : null
+  const openedTicket = activeTicket ? myTickets.find(t => t.id === activeTicket) : null
 
   return (
     <div className="space-y-6">
