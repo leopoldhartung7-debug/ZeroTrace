@@ -1,8 +1,41 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Wand2, Save, Download, Upload, RotateCcw, Eye, Copy } from 'lucide-react'
+import { Wand2, Save, Download, Upload, RotateCcw, Eye, Copy, FileJson } from 'lucide-react'
 import { PageHeader, Card, Field } from '../components/kit.jsx'
 import { useToast } from '../components/ui.jsx'
 import { useStore, defaultToolStyle } from '../store.jsx'
+
+function buildScannerDelta(s) {
+  const def = defaultToolStyle()
+  const delta = {}
+
+  const colorDelta = {}
+  for (const [k, v] of Object.entries(s.colors)) {
+    if (v.toLowerCase() !== (def.colors[k] ?? '').toLowerCase()) colorDelta[k] = v
+  }
+  if (Object.keys(colorDelta).length) delta.colors = colorDelta
+
+  const textDelta = {}
+  for (const [k, v] of Object.entries(s.text)) {
+    if (v !== def.text[k]) textDelta[k] = v
+  }
+  if (Object.keys(textDelta).length) delta.text = textDelta
+
+  if (s.version !== def.version) delta.version = s.version
+
+  return delta
+}
+
+function downloadScannerJson(delta) {
+  const blob = new Blob([JSON.stringify(delta, null, 2)], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = 'zerotrace-ui.json'
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+}
 
 function ColorField({ label, value, onChange }) {
   return (
@@ -172,7 +205,16 @@ export default function ToolDesigner({ embedded = false }) {
 
   const saveAll = () => {
     dispatch({ type: 'save-tool-style', style: s })
-    toast({ type: 'success', title: 'Saved', body: 'Tool design stored' })
+    const delta = buildScannerDelta(s)
+    const hasDelta = Object.keys(delta).length > 0
+    if (hasDelta) downloadScannerJson(delta)
+    toast({
+      type: 'success',
+      title: 'Saved',
+      body: hasDelta
+        ? 'Style saved — zerotrace-ui.json downloaded. Place it next to ZeroTrace.exe.'
+        : 'Tool design stored (no changes from defaults)',
+    })
   }
 
   const doImport = () => {
@@ -339,6 +381,31 @@ export default function ToolDesigner({ embedded = false }) {
               className="muted hover:txt mt-2 flex w-full items-center justify-center gap-2 py-1.5 text-xs"
             >
               <RotateCcw size={13} /> Reset to defaults
+            </button>
+          </Card>
+
+          <Card className="p-5">
+            <h4 className="txt mb-1 flex items-center gap-2 text-sm font-semibold">
+              <FileJson size={15} /> Export for Scanner
+            </h4>
+            <p className="muted mb-3 text-xs">
+              Downloads <code className="txt">zerotrace-ui.json</code> containing only the fields
+              that differ from the defaults. Place it next to <code className="txt">ZeroTrace.exe</code> and
+              restart the scanner to apply.
+            </p>
+            <button
+              onClick={() => {
+                const delta = buildScannerDelta(s)
+                if (!Object.keys(delta).length) {
+                  toast({ type: 'info', title: 'No changes', body: 'All values match the defaults — nothing to export' })
+                  return
+                }
+                downloadScannerJson(delta)
+                toast({ type: 'success', title: 'Downloaded', body: 'Place zerotrace-ui.json next to ZeroTrace.exe' })
+              }}
+              className="bd txt flex w-full items-center justify-center gap-2 rounded-lg border py-2 text-sm font-medium hover:border-sky-500"
+            >
+              <Download size={14} /> Download zerotrace-ui.json
             </button>
           </Card>
         </div>

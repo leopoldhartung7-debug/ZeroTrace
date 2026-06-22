@@ -3,6 +3,7 @@ using System.IO;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Threading;
+using ZeroTrace.App.Services;
 using ZeroTrace.App.ViewModels;
 using ZeroTrace.App.Views;
 using ZeroTrace.Core.Data;
@@ -73,6 +74,9 @@ public partial class App : Application
             var scans = new ScanStore(db);
             var settings = new SettingsStore(db);
             var whitelist = new HashWhitelistStore(db);
+
+            // Apply colour/text overrides from zerotrace-ui.json (exported by the dashboard).
+            UiStyleLoader.Apply();
 
             var window = new MainWindow(indicators, scans, settings, whitelist);
             MainWindow = window;
