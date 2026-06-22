@@ -137,6 +137,9 @@ internal static class UiStyleLoader
         if (animations.TryGetProperty("barStyle", out var bs) && bs.GetString() is { Length: > 0 } bsv)
             Application.Current.Resources["ScannerBarStyle"] = bsv;
 
+        if (animations.TryGetProperty("barShape", out var shape) && shape.GetString() is { Length: > 0 } shapev)
+            Application.Current.Resources["ScannerBarShape"] = shapev;
+
         if (animations.TryGetProperty("intro", out var intro) && intro.GetString() is { Length: > 0 } iv)
             Application.Current.Resources["ScannerIntroEffect"] = iv;
 

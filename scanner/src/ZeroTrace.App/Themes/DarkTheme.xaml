@@ -50,6 +50,7 @@
     <!-- Scanner animation settings (overridable via zerotrace-ui.json) -->
     <sys:Double x:Key="ScannerAnimDurationMs">550</sys:Double>
     <sys:String x:Key="ScannerBarStyle">smooth</sys:String>
+    <sys:String x:Key="ScannerBarShape">bar</sys:String>
     <sys:String x:Key="ScannerIntroEffect">fade</sys:String>
     <sys:String x:Key="ScannerBgEffect">none</sys:String>
     <sys:Boolean x:Key="ScannerGlowAccent">False</sys:Boolean>

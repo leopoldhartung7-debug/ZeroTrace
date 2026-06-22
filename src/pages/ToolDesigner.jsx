@@ -215,7 +215,7 @@ function Toggle({ label, checked, onChange, accent }) {
 }
 
 const SPEED_MS = { instant: 0, fast: 200, normal: 550, slow: 1400 }
-const TIMING   = { smooth: 'ease-out', pulse: 'ease-in-out', stepped: 'steps(6, end)' }
+const TIMING   = { smooth: 'ease-out', pulse: 'ease-in-out', stepped: 'steps(6, end)', stripe: 'linear', shine: 'linear' }
 const SIM_PIN  = ['F','1','T','5','F','8']
 
 const ANIM_CSS = `
@@ -234,6 +234,23 @@ const ANIM_CSS = `
   0%, 100% { filter: brightness(1) saturate(1); }
   50%       { filter: brightness(1.45) saturate(1.5); }
 }
+@keyframes ztStripe {
+  from { background-position: 0 0; }
+  to   { background-position: 40px 0; }
+}
+@keyframes ztShine {
+  from { background-position: -200% 0; }
+  to   { background-position: 200% 0; }
+}
+@keyframes ztDotPop {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.4); }
+  100% { transform: scale(1); }
+}
+@keyframes ztSegSpin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
 @keyframes ztVideoIcon {
   0%, 100% { opacity: 0.5; }
   50%       { opacity: 1; }
@@ -242,12 +259,12 @@ const ANIM_CSS = `
 
 function GuiPreview({ s }) {
   const c    = s.colors
-  const anim = { speed: 'normal', barStyle: 'smooth', intro: 'fade', bgEffect: 'none', glowAccent: false, glitchText: false, ...(s.animations || {}) }
-  const { speed, barStyle, intro, bgEffect, glowAccent, glitchText } = anim
+  const anim = { speed: 'normal', barStyle: 'smooth', barShape: 'bar', intro: 'fade', bgEffect: 'none', glowAccent: false, glitchText: false, ...(s.animations || {}) }
+  const { speed, barStyle, barShape, intro, bgEffect, glowAccent, glitchText } = anim
   const iv     = s.introVideo || { enabled: false, path: '' }
   const durMs  = SPEED_MS[speed] ?? 550
   const timing = TIMING[barStyle] ?? 'ease-out'
-  const animKey = `${speed}|${barStyle}|${intro}|${bgEffect}|${glowAccent}|${glitchText}|${iv.enabled}`
+  const animKey = `${speed}|${barStyle}|${barShape}|${intro}|${bgEffect}|${glowAccent}|${glitchText}|${iv.enabled}`
 
   const [imgErr,     setImgErr]     = useState(false)
   const [tick,       setTick]       = useState(0)
@@ -305,15 +322,24 @@ function GuiPreview({ s }) {
     ? { textShadow: `0 0 10px ${c.accent}cc, 0 0 28px ${c.accent}44` }
     : {}
 
-  const barFill = (w) => ({
-    width: `${w}%`,
-    background: barStyle === 'pulse'
-      ? `linear-gradient(90deg, ${c.accent}aa, ${c.accent}, ${c.accent}aa)`
-      : c.accent,
-    transition: durMs === 0 ? 'none' : `width ${durMs}ms ${timing}`,
-    boxShadow: glowAccent && w > 0 ? `0 0 8px 3px ${c.accent}66, 0 0 20px 6px ${c.accent}22` : 'none',
-    animation: glowAccent && w > 0 && barStyle === 'pulse' ? 'ztBarGlow 1.5s ease-in-out infinite' : 'none',
-  })
+  const barFill = (w) => {
+    const base = { width: `${w}%`, transition: durMs === 0 ? 'none' : `width ${durMs}ms ${timing}` }
+    const glow = glowAccent && w > 0 ? { boxShadow: `0 0 8px 3px ${c.accent}66, 0 0 22px 6px ${c.accent}22` } : {}
+    switch (barStyle) {
+      case 'pulse': return { ...base, ...glow, background: `linear-gradient(90deg, ${c.accent}99, ${c.accent}, ${c.accent}99)`, animation: w > 0 ? 'ztBarGlow 1.5s ease-in-out infinite' : 'none' }
+      case 'stripe': return { ...base, backgroundImage: `repeating-linear-gradient(-45deg, ${c.accent} 0, ${c.accent} 8px, ${c.accent}bb 8px, ${c.accent}bb 16px)`, backgroundSize: '40px 100%', animation: w > 0 ? 'ztStripe 0.7s linear infinite' : 'none' }
+      case 'shine':  return { ...base, ...glow, background: `linear-gradient(90deg, ${c.accent}bb, ${c.accent} 40%, #ffffff99 50%, ${c.accent} 60%, ${c.accent}bb)`, backgroundSize: '200% 100%', animation: w > 0 ? 'ztShine 1.8s linear infinite' : 'none' }
+      default:       return { ...base, ...glow, background: c.accent, animation: glowAccent && w > 0 ? 'ztBarGlow 2s ease-in-out infinite' : 'none' }
+    }
+  }
+
+  const ringProgress = (w, size = 54, sw = 5) => {
+    const r = (size - sw) / 2
+    const circ = 2 * Math.PI * r
+    const offset = circ * (1 - w / 100)
+    const shadow = glowAccent && w > 0 ? `drop-shadow(0 0 4px ${c.accent}bb)` : 'none'
+    return { r, circ, offset, size, sw, shadow }
+  }
 
   return (
     <div>
@@ -420,17 +446,82 @@ function GuiPreview({ s }) {
               {/* Scanning stage */}
               {stage === 'scanning' && (
                 <div className="space-y-4">
-                  {[{ label: s.text.scanning, w: bar1 }, { label: s.text.heuristic, w: bar2 }].map((step, i) => (
-                    <div key={i} className="rounded-lg p-4" style={{ background: c.mutedBackground }}>
-                      <div className="flex items-center justify-between mb-2">
-                        <p className="text-sm" style={{ color: c.text }}>{step.label}</p>
-                        <p className="text-xs font-mono" style={{ color: c.mutedText }}>{Math.round(step.w)}%</p>
+                  {[{ label: s.text.scanning, w: bar1 }, { label: s.text.heuristic, w: bar2 }].map((step, i) => {
+                    const rp = ringProgress(step.w)
+                    return (
+                      <div key={i} className="rounded-lg p-4" style={{ background: c.mutedBackground }}>
+                        <div className="flex items-center justify-between mb-3">
+                          <p className="text-sm" style={{ color: c.text }}>{step.label}</p>
+                          <p className="text-xs font-mono" style={{ color: c.mutedText }}>{Math.round(step.w)}%</p>
+                        </div>
+
+                        {/* ── Bar ── */}
+                        {barShape === 'bar' && (
+                          <div className="h-2 w-full overflow-hidden rounded-full" style={{ background: c.background }}>
+                            <div className="h-full rounded-full" style={barFill(step.w)} />
+                          </div>
+                        )}
+
+                        {/* ── Ring ── */}
+                        {barShape === 'ring' && (
+                          <div className="flex items-center gap-4">
+                            <svg width={rp.size} height={rp.size} style={{ transform: 'rotate(-90deg)', flexShrink: 0, filter: rp.shadow }}>
+                              <circle cx={rp.size/2} cy={rp.size/2} r={rp.r} fill="none" stroke={c.accent + '22'} strokeWidth={rp.sw} />
+                              <circle cx={rp.size/2} cy={rp.size/2} r={rp.r} fill="none" stroke={c.accent} strokeWidth={rp.sw}
+                                strokeDasharray={rp.circ} strokeDashoffset={rp.offset} strokeLinecap="round"
+                                style={{ transition: durMs === 0 ? 'none' : `stroke-dashoffset ${durMs}ms ${timing}` }} />
+                            </svg>
+                            <div className="flex-1 h-1.5 overflow-hidden rounded-full" style={{ background: c.background }}>
+                              <div className="h-full rounded-full" style={barFill(step.w)} />
+                            </div>
+                          </div>
+                        )}
+
+                        {/* ── Dots ── */}
+                        {barShape === 'dots' && (
+                          <div className="flex flex-wrap gap-1.5 pt-0.5">
+                            {Array.from({ length: 14 }, (_, j) => {
+                              const filled = step.w >= ((j + 1) / 14 * 100)
+                              return (
+                                <div key={j} className="rounded-full" style={{
+                                  width: 9, height: 9,
+                                  background: filled ? c.accent : c.accent + '22',
+                                  boxShadow: glowAccent && filled ? `0 0 6px 2px ${c.accent}88` : 'none',
+                                  transition: durMs === 0 ? 'none' : `background ${Math.max(durMs * 0.4, 120)}ms ease`,
+                                  animation: glowAccent && filled ? 'ztDotPop 0.3s ease' : 'none',
+                                }} />
+                              )
+                            })}
+                          </div>
+                        )}
+
+                        {/* ── Segments ── */}
+                        {barShape === 'segments' && (
+                          <div className="flex items-center gap-3">
+                            <div style={{ position: 'relative', width: 50, height: 50, flexShrink: 0 }}>
+                              {/* Spinner ring */}
+                              <svg width={50} height={50} style={{ position: 'absolute', inset: 0, animation: step.w > 0 ? 'ztSegSpin 1.4s linear infinite' : 'none' }}>
+                                {[0,1,2,3,4,5,6,7].map(seg => {
+                                  const angle = (seg / 8) * 2 * Math.PI - Math.PI / 2
+                                  const x = 25 + 18 * Math.cos(angle)
+                                  const y = 25 + 18 * Math.sin(angle)
+                                  const filled = (seg / 8 * 100) < step.w
+                                  return (
+                                    <circle key={seg} cx={x} cy={y} r={3.5}
+                                      fill={filled ? c.accent : c.accent + '30'}
+                                      style={{ filter: glowAccent && filled ? `drop-shadow(0 0 3px ${c.accent})` : 'none' }} />
+                                  )
+                                })}
+                              </svg>
+                            </div>
+                            <div className="flex-1 h-1.5 overflow-hidden rounded-full" style={{ background: c.background }}>
+                              <div className="h-full rounded-full" style={barFill(step.w)} />
+                            </div>
+                          </div>
+                        )}
                       </div>
-                      <div className="h-2 w-full overflow-hidden rounded-full" style={{ background: c.background }}>
-                        <div className="h-full rounded-full" style={barFill(step.w)} />
-                      </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               )}
 
@@ -840,12 +931,14 @@ export default function ToolDesigner({ embedded = false }) {
           </Field>
 
           {/* Bar style */}
-          <Field label="Fortschrittsbalken-Stil" className="mt-4">
-            <div className="grid grid-cols-3 gap-1.5">
+          <Field label="Balken-Animation" className="mt-4">
+            <div className="grid grid-cols-5 gap-1.5">
               {[
-                { value: 'smooth',  label: 'Flüssig',      desc: 'Kontinuierlich' },
-                { value: 'pulse',   label: 'Pulsierend',   desc: 'Glühend'        },
-                { value: 'stepped', label: 'Schrittweise', desc: 'Stufen'         },
+                { value: 'smooth',  label: 'Flüssig',  desc: 'Klassisch'  },
+                { value: 'pulse',   label: 'Puls',     desc: 'Glühend'    },
+                { value: 'stripe',  label: 'Streifen', desc: 'Diagonal'   },
+                { value: 'shine',   label: 'Glanz',    desc: 'Lichtblitz' },
+                { value: 'stepped', label: 'Stufen',   desc: 'Diskret'    },
               ].map(({ value, label, desc }) => {
                 const sel = anim.barStyle === value
                 return (
@@ -855,6 +948,29 @@ export default function ToolDesigner({ embedded = false }) {
                     }`}>
                     {label}
                     <span className={`text-[10px] font-normal ${sel ? 'text-violet-400/70' : 'muted'}`}>{desc}</span>
+                  </button>
+                )
+              })}
+            </div>
+          </Field>
+
+          {/* Bar shape */}
+          <Field label="Fortschritts-Form" className="mt-4">
+            <div className="grid grid-cols-4 gap-1.5">
+              {[
+                { value: 'bar',      label: 'Balken',   desc: 'Klassisch'   },
+                { value: 'ring',     label: 'Ring',     desc: 'Kreis + Bar' },
+                { value: 'dots',     label: 'Punkte',   desc: 'Dot-Reihe'  },
+                { value: 'segments', label: 'Segmente', desc: 'Spinner'    },
+              ].map(({ value, label, desc }) => {
+                const sel = (anim.barShape ?? 'bar') === value
+                return (
+                  <button key={value} onClick={() => setAnim({ barShape: value })}
+                    className={`flex flex-col items-center gap-0.5 rounded-xl border py-2.5 text-xs font-semibold transition-all ${
+                      sel ? 'border-pink-500 bg-pink-600/20 text-pink-400' : 'bd tile muted hover:txt'
+                    }`}>
+                    {label}
+                    <span className={`text-[10px] font-normal ${sel ? 'text-pink-400/70' : 'muted'}`}>{desc}</span>
                   </button>
                 )
               })}
@@ -939,8 +1055,8 @@ export default function ToolDesigner({ embedded = false }) {
           </div>
         </Card>
 
-        {/* Right column */}
-        <div className="space-y-6 lg:sticky lg:top-6 lg:self-start">
+        {/* Right column — sticky, scrollable so preview is always visible */}
+        <div className="space-y-6 lg:sticky lg:top-6 lg:self-start lg:max-h-[calc(100vh-3rem)] lg:overflow-y-auto lg:pr-1 lg:pb-6">
           <div>
             <button
               onClick={saveAll}

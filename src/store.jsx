@@ -440,7 +440,8 @@ export function defaultToolStyle() {
     },
     animations: {
       speed: 'normal',     // instant | fast | normal | slow
-      barStyle: 'smooth',  // smooth | pulse | stepped
+      barStyle: 'smooth',  // smooth | pulse | stepped | stripe | shine
+      barShape: 'bar',     // bar | ring | dots | segments
       intro: 'fade',       // none | fade | slide
       bgEffect: 'none',    // none | scanlines | grid | glow-pulse
       glowAccent: false,   // neon glow on accent elements
