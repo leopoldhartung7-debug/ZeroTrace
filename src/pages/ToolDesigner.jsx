@@ -209,103 +209,196 @@ function Toggle({ label, checked, onChange, accent }) {
 
 const SPEED_MS = { instant: 0, fast: 200, normal: 550, slow: 1400 }
 const TIMING   = { smooth: 'ease-out', pulse: 'ease-in-out', stepped: 'steps(6, end)' }
+const SIM_PIN  = ['F','1','T','5','F','8']
 
 function GuiPreview({ s }) {
   const c    = s.colors
   const anim = s.animations || { speed: 'normal', barStyle: 'smooth', intro: 'fade' }
-  const durMs = SPEED_MS[anim.speed] ?? 550
+  const durMs  = SPEED_MS[anim.speed] ?? 550
   const timing = TIMING[anim.barStyle] ?? 'ease-out'
+  // When animation settings change, restart the simulation
+  const animKey = `${anim.speed}|${anim.barStyle}|${anim.intro}`
 
-  const [imgErr, setImgErr] = useState(false)
-  const [tick, setTick]     = useState(0)
-  const [widths, setWidths] = useState([0, 0])
-  const [visible, setVisible] = useState(false)
+  const [imgErr,     setImgErr]     = useState(false)
+  const [tick,       setTick]       = useState(0)
+  const [visible,    setVisible]    = useState(false)   // controls intro effect
+  const [stage,      setStage]      = useState('pin')   // 'pin' | 'scanning' | 'done'
+  const [pinDisplay, setPinDisplay] = useState('')      // simulated PIN chars
+  const [bar1,       setBar1]       = useState(0)
+  const [bar2,       setBar2]       = useState(0)
 
   useEffect(() => setImgErr(false), [s.logoUrl])
 
   useEffect(() => {
-    setWidths([0, 0])
+    // Reset to initial state
     setVisible(false)
-    const t1 = setTimeout(() => setVisible(true), 30)
-    const t2 = setTimeout(() => setWidths([28, 74]), durMs === 0 ? 0 : 80)
-    return () => { clearTimeout(t1); clearTimeout(t2) }
-  }, [tick, durMs])
+    setStage('pin')
+    setPinDisplay('')
+    setBar1(0)
+    setBar2(0)
+
+    const ts = []
+    const at = (fn, d) => ts.push(setTimeout(fn, d))
+
+    const intro  = durMs === 0 ? 0 : Math.max(durMs, 150)
+    const typeGap = 130 // ms between PIN characters
+
+    // ① Intro — fade / slide the window in
+    at(() => setVisible(true), 50)
+
+    // ② PIN typing simulation
+    const pinStart = intro + 350
+    SIM_PIN.forEach((_, i) =>
+      at(() => setPinDisplay(SIM_PIN.slice(0, i + 1).join('')), pinStart + i * typeGap)
+    )
+
+    // ③ Scanning begins
+    const scanStart = pinStart + SIM_PIN.length * typeGap + 550
+    at(() => setStage('scanning'), scanStart)
+    at(() => setBar1(30), scanStart + 80)
+
+    // ④ Second bar starts after first has time to progress
+    const bar2Start = scanStart + Math.max(durMs, 250) + 350
+    at(() => setBar2(76), bar2Start)
+
+    // ⑤ Done
+    const doneAt = bar2Start + Math.max(durMs, 250) + 450
+    at(() => setStage('done'), doneAt)
+
+    // ⑥ Auto-replay
+    at(() => setTick(t => t + 1), doneAt + 2200)
+
+    return () => ts.forEach(clearTimeout)
+  }, [tick, animKey]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const showCustom = !s.useDefaultLogo && !!s.logoUrl && !imgErr
 
   const introStyle = anim.intro === 'fade'
     ? { opacity: visible ? 1 : 0, transition: `opacity ${Math.max(durMs, 200)}ms ease` }
     : anim.intro === 'slide'
-    ? { opacity: visible ? 1 : 0, transform: visible ? 'translateY(0)' : 'translateY(14px)', transition: `opacity ${Math.max(durMs, 200)}ms ease, transform ${Math.max(durMs, 200)}ms ease` }
+    ? {
+        opacity:   visible ? 1 : 0,
+        transform: visible ? 'translateY(0)' : 'translateY(16px)',
+        transition: `opacity ${Math.max(durMs, 200)}ms ease, transform ${Math.max(durMs, 200)}ms ease`,
+      }
     : {}
+
+  const barFill = (w) => ({
+    width: `${w}%`,
+    background: anim.barStyle === 'pulse'
+      ? `linear-gradient(90deg, ${c.accent}aa, ${c.accent}, ${c.accent}aa)`
+      : c.accent,
+    transition: durMs === 0 ? 'none' : `width ${durMs}ms ${timing}`,
+    boxShadow: anim.barStyle === 'pulse' && w > 0 ? `0 0 10px 2px ${c.accent}55` : 'none',
+  })
+
+  // Tiny stage indicator dots
+  const stageIdx = stage === 'pin' ? 0 : stage === 'scanning' ? 1 : 2
 
   return (
     <div>
       <div className="overflow-hidden rounded-xl border" style={{ borderColor: c.titlebar }}>
+        {/* Titlebar */}
         <div className="flex items-center gap-2 px-3 py-2" style={{ background: c.titlebar }}>
           <span className="h-2.5 w-2.5 rounded-full bg-red-500" />
           <span className="h-2.5 w-2.5 rounded-full bg-yellow-500" />
           <span className="h-2.5 w-2.5 rounded-full bg-green-500" />
-          <span className="ml-2 text-xs" style={{ color: c.mutedText }}>ZeroTrace FiveM Scanner</span>
+          <span className="ml-2 text-xs flex-1" style={{ color: c.mutedText }}>ZeroTrace FiveM Scanner</span>
+          {/* Stage dots */}
+          <div className="flex gap-1 mr-1">
+            {['PIN','Scan','Fertig'].map((_, i) => (
+              <span key={i} className="h-1.5 w-1.5 rounded-full transition-colors"
+                style={{ background: i === stageIdx ? c.accent : c.mutedText + '55' }} />
+            ))}
+          </div>
         </div>
 
+        {/* Scanner body with intro effect */}
         <div
+          className="px-8 py-10"
           style={{
             background: s.gameBackground
               ? `radial-gradient(120% 90% at 50% 0%, ${c.mutedBackground}, ${c.background})`
               : c.background,
-            color: c.text,
             ...introStyle,
           }}
-          className="relative px-8 py-10"
         >
-          <div className="flex flex-col items-center">
+          {/* Logo / branding */}
+          <div className="flex flex-col items-center mb-7">
             {showCustom ? (
-              <img src={s.logoUrl} alt="logo" onError={() => setImgErr(true)} className="h-[90px] w-[180px] rounded object-fill" />
+              <img src={s.logoUrl} alt="logo" onError={() => setImgErr(true)}
+                className="h-[72px] w-[160px] rounded object-fill" />
             ) : (
-              <p className="font-mono text-3xl font-bold" style={{ color: c.accent }}>ZEROTRACE</p>
+              <p className="font-mono text-2xl font-bold" style={{ color: c.accent }}>ZEROTRACE</p>
             )}
             {!s.useDefaultLogo && s.logoUrl && imgErr && (
-              <p className="mt-1 text-[10px] text-red-400">Logo failed to load — check the URL</p>
+              <p className="mt-1 text-[10px] text-red-400">Logo konnte nicht geladen werden</p>
             )}
-            <p className="mt-1.5 text-xs" style={{ color: c.mutedText }}>{s.version}</p>
+            <p className="mt-1 text-[11px]" style={{ color: c.mutedText }}>{s.version}</p>
           </div>
 
-          <p className="mt-8 text-sm" style={{ color: c.text }}>{s.text.pin}</p>
-          <div className="mt-2.5 rounded-md px-4 py-2.5 text-sm tracking-widest" style={{ background: c.mutedBackground, color: c.mutedText }}>
-            F1T5F8C0
-          </div>
-
-          {[{ label: s.text.scanning, pct: widths[0] }, { label: s.text.heuristic, pct: widths[1] }].map((step, i) => (
-            <div key={i} className="mt-5 rounded-lg p-5" style={{ background: c.mutedBackground }}>
-              <p className="mb-2.5 text-sm" style={{ color: c.text }}>{step.label}</p>
-              <div className="h-2.5 w-full overflow-hidden rounded-full" style={{ background: c.background }}>
-                <div
-                  className="h-full rounded-full"
-                  style={{
-                    width: `${step.pct}%`,
-                    background: anim.barStyle === 'pulse'
-                      ? `linear-gradient(90deg, ${c.accent}, ${c.accent}cc, ${c.accent})`
-                      : c.accent,
-                    transition: durMs === 0 ? 'none' : `width ${durMs}ms ${timing}`,
-                    boxShadow: anim.barStyle === 'pulse' && step.pct > 0 ? `0 0 8px 2px ${c.accent}66` : 'none',
-                  }}
-                />
+          {/* ── Stage: PIN entry ── */}
+          {stage === 'pin' && (
+            <div>
+              <p className="text-sm mb-2.5" style={{ color: c.text }}>{s.text.pin}</p>
+              <div className="rounded-lg px-4 py-3 text-lg tracking-[0.3em] font-mono flex items-center gap-1"
+                style={{ background: c.mutedBackground, color: c.accent }}>
+                {SIM_PIN.map((_, i) => (
+                  <span key={i} style={{ opacity: i < pinDisplay.length ? 1 : 0.2 }}>
+                    {i < pinDisplay.length ? '●' : '○'}
+                  </span>
+                ))}
+                {pinDisplay.length < SIM_PIN.length && (
+                  <span className="ml-0.5 animate-pulse" style={{ color: c.accent }}>|</span>
+                )}
               </div>
-              <p className="mt-1.5 text-right text-xs" style={{ color: c.mutedText }}>{Math.round(step.pct)}%</p>
             </div>
-          ))}
+          )}
 
-          <p className="mt-5 text-center text-xs" style={{ color: c.mutedText }}>{s.text.finished}</p>
+          {/* ── Stage: Scanning ── */}
+          {stage === 'scanning' && (
+            <div className="space-y-4">
+              {[
+                { label: s.text.scanning,  w: bar1 },
+                { label: s.text.heuristic, w: bar2 },
+              ].map((step, i) => (
+                <div key={i} className="rounded-lg p-4" style={{ background: c.mutedBackground }}>
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-sm" style={{ color: c.text }}>{step.label}</p>
+                    <p className="text-xs font-mono" style={{ color: c.mutedText }}>{Math.round(step.w)}%</p>
+                  </div>
+                  <div className="h-2 w-full overflow-hidden rounded-full" style={{ background: c.background }}>
+                    <div className="h-full rounded-full" style={barFill(step.w)} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* ── Stage: Done ── */}
+          {stage === 'done' && (
+            <div className="flex flex-col items-center gap-3 py-2">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full text-lg"
+                style={{ background: c.accent + '22', color: c.accent }}>✓</div>
+              <p className="text-sm text-center" style={{ color: c.text }}>{s.text.finished}</p>
+              <p className="text-xs" style={{ color: c.mutedText }}>Bericht wird generiert…</p>
+            </div>
+          )}
         </div>
       </div>
 
-      <button
-        onClick={() => setTick(t => t + 1)}
-        className="bd txt mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border py-1.5 text-xs hover:border-sky-500"
-      >
-        <Play size={11} /> Vorschau neu abspielen
-      </button>
+      {/* Stage label + replay */}
+      <div className="mt-2 flex items-center justify-between px-0.5">
+        <span className="muted text-[11px]">
+          {stage === 'pin' ? 'PIN-Eingabe' : stage === 'scanning' ? 'Wird gescannt…' : 'Scan abgeschlossen'}
+        </span>
+        <button
+          onClick={() => { setVisible(false); setStage('pin'); setPinDisplay(''); setBar1(0); setBar2(0); setTick(t => t + 1) }}
+          className="muted flex items-center gap-1 text-[11px] hover:txt"
+        >
+          <Play size={10} /> Neu
+        </button>
+      </div>
     </div>
   )
 }
