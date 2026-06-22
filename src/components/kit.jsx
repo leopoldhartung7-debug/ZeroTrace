@@ -118,11 +118,12 @@ export function Accordion({ items }) {
   )
 }
 
-export function Field({ label, children }) {
+export function Field({ label, hint, children }) {
   return (
     <div>
       <label className="txt mb-1.5 block text-sm font-medium">{label}</label>
       {children}
+      {hint && <p className="muted mt-1 text-xs">{hint}</p>}
     </div>
   )
 }
