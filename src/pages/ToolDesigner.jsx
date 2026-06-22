@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { Wand2, Save, Download, Upload, RotateCcw, Eye, Copy, FileJson, Link, AlertTriangle, Check, Play, Zap } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import { Wand2, Save, Download, Upload, RotateCcw, Eye, Copy, FileJson, Link, AlertTriangle, Check, Play, Zap, FolderOpen, Wifi, WifiOff } from 'lucide-react'
 import { PageHeader, Card, Field } from '../components/kit.jsx'
 import { useToast } from '../components/ui.jsx'
 import { useStore, defaultToolStyle } from '../store.jsx'
@@ -114,6 +114,48 @@ function downloadScannerJson(delta) {
   a.click()
   document.body.removeChild(a)
   URL.revokeObjectURL(url)
+}
+
+// ── File System Access API ───────────────────────────────────────────────────
+
+const SUPPORTS_FS = typeof window !== 'undefined' && 'showDirectoryPicker' in window
+
+function _idbOpen() {
+  return new Promise((res, rej) => {
+    const r = indexedDB.open('ztfs-v1', 1)
+    r.onupgradeneeded = e => e.target.result.createObjectStore('h')
+    r.onsuccess = () => res(r.result)
+    r.onerror = () => rej(r.error)
+  })
+}
+
+async function idbSaveHandle(handle) {
+  const db = await _idbOpen()
+  return new Promise((res, rej) => {
+    const t = db.transaction('h', 'readwrite')
+    t.objectStore('h').put(handle, 'dir')
+    t.oncomplete = res
+    t.onerror = () => rej(t.error)
+  })
+}
+
+async function idbLoadHandle() {
+  try {
+    const db = await _idbOpen()
+    return new Promise(res => {
+      const t = db.transaction('h', 'readonly')
+      const g = t.objectStore('h').get('dir')
+      g.onsuccess = () => res(g.result ?? null)
+      g.onerror = () => res(null)
+    })
+  } catch { return null }
+}
+
+async function writeScannerJson(handle, delta) {
+  const fh = await handle.getFileHandle('zerotrace-ui.json', { create: true })
+  const w = await fh.createWritable()
+  await w.write(JSON.stringify(delta, null, 2))
+  await w.close()
 }
 
 // ── sub-components ───────────────────────────────────────────────────────────
@@ -283,12 +325,46 @@ export default function ToolDesigner({ embedded = false }) {
   const [importUrl, setImportUrl] = useState('')
   const [urlLoading, setUrlLoading] = useState(false)
   const [harmonyMode, setHarmonyMode] = useState(false)
+  const [dirHandle, setDirHandle] = useState(null)
+  const [syncStatus, setSyncStatus] = useState('idle') // idle | syncing | synced | error | needs-permission
 
   const savedKey = useMemo(() => JSON.stringify(saved), [saved])
   useEffect(() => {
     setS((cur) => (JSON.stringify(cur) === savedKey ? cur : JSON.parse(savedKey)))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [savedKey])
+
+  // Restore persisted directory handle on mount
+  useEffect(() => {
+    if (!SUPPORTS_FS) return
+    idbLoadHandle().then(async h => {
+      if (!h) return
+      try {
+        const perm = await h.queryPermission({ mode: 'readwrite' })
+        if (perm === 'granted') { setDirHandle(h); setSyncStatus('idle') }
+        else setSyncStatus('needs-permission')
+      } catch { /* stale handle, ignore */ }
+    })
+  }, [])
+
+  // Auto-sync: write zerotrace-ui.json whenever settings change (debounced 700ms)
+  useEffect(() => {
+    if (!dirHandle) return
+    setSyncStatus('syncing')
+    const t = setTimeout(async () => {
+      try {
+        const perm = await dirHandle.queryPermission({ mode: 'readwrite' })
+        if (perm !== 'granted') { setSyncStatus('needs-permission'); return }
+        const delta = buildScannerDelta(s)
+        await writeScannerJson(dirHandle, delta)
+        setSyncStatus('synced')
+      } catch {
+        setSyncStatus('error')
+      }
+    }, 700)
+    return () => clearTimeout(t)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [s, dirHandle])
 
   const dirty = useMemo(() => JSON.stringify(s) !== savedKey, [s, savedKey])
 
@@ -320,18 +396,59 @@ export default function ToolDesigner({ embedded = false }) {
     [s],
   )
 
-  const saveAll = () => {
+  const linkDir = async () => {
+    try {
+      const h = await window.showDirectoryPicker({ mode: 'readwrite' })
+      await idbSaveHandle(h)
+      setDirHandle(h)
+      const delta = buildScannerDelta(s)
+      await writeScannerJson(h, delta)
+      setSyncStatus('synced')
+      toast({ type: 'success', title: 'Verzeichnis verknüpft', body: 'Änderungen werden ab jetzt automatisch übertragen.' })
+    } catch (e) {
+      if (e.name !== 'AbortError') toast({ type: 'error', title: 'Fehler beim Verknüpfen', body: e.message })
+    }
+  }
+
+  const relinkDir = async () => {
+    const h = await idbLoadHandle()
+    if (!h) { setSyncStatus('idle'); return }
+    try {
+      const perm = await h.requestPermission({ mode: 'readwrite' })
+      if (perm === 'granted') { setDirHandle(h); setSyncStatus('idle') }
+    } catch { setSyncStatus('error') }
+  }
+
+  const unlinkDir = async () => {
+    setDirHandle(null)
+    setSyncStatus('idle')
+    try { await idbSaveHandle(null) } catch {}
+    toast({ type: 'info', title: 'Verknüpfung getrennt' })
+  }
+
+  const saveAll = async () => {
     dispatch({ type: 'save-tool-style', style: s })
     const delta = buildScannerDelta(s)
     const hasDelta = Object.keys(delta).length > 0
-    if (hasDelta) downloadScannerJson(delta)
-    toast({
-      type: 'success',
-      title: 'Gespeichert',
-      body: hasDelta
-        ? 'Stil gespeichert — zerotrace-ui.json heruntergeladen. Neben ZeroTrace.exe ablegen.'
-        : 'Stil gespeichert (keine Abweichung von den Standardwerten)',
-    })
+    if (dirHandle) {
+      try {
+        const perm = await dirHandle.queryPermission({ mode: 'readwrite' })
+        if (perm === 'granted' && hasDelta) {
+          await writeScannerJson(dirHandle, delta)
+          setSyncStatus('synced')
+        }
+      } catch { /* sync will retry via effect */ }
+      toast({ type: 'success', title: 'Gespeichert', body: 'Stil gespeichert und direkt zum Scanner übertragen.' })
+    } else {
+      if (hasDelta) downloadScannerJson(delta)
+      toast({
+        type: 'success',
+        title: 'Gespeichert',
+        body: hasDelta
+          ? 'Stil gespeichert — zerotrace-ui.json heruntergeladen. Neben ZeroTrace.exe ablegen.'
+          : 'Stil gespeichert (keine Abweichung von den Standardwerten)',
+      })
+    }
   }
 
   const parseStyleCode = (raw) => {
@@ -632,6 +749,62 @@ export default function ToolDesigner({ embedded = false }) {
               <p className="muted mt-2 text-center text-xs">Alle Änderungen gespeichert</p>
             )}
           </div>
+
+          {/* ── Live-Sync ── */}
+          <Card className="p-5">
+            <h4 className="txt mb-3 flex items-center gap-2 text-sm font-semibold">
+              {dirHandle && syncStatus !== 'error' && syncStatus !== 'needs-permission'
+                ? <Wifi size={15} className="text-green-400" />
+                : <WifiOff size={15} className="text-red-400/70" />}
+              Live-Sync mit Scanner
+            </h4>
+
+            {!SUPPORTS_FS ? (
+              <p className="muted text-xs">Nur in Chrome oder Edge verfügbar. Im Firefox bitte <span className="txt">zerotrace-ui.json</span> manuell herunterladen.</p>
+            ) : dirHandle && syncStatus !== 'needs-permission' ? (
+              <div className="space-y-2.5">
+                <div className="flex items-center gap-2">
+                  <span className={`h-2 w-2 shrink-0 rounded-full ${
+                    syncStatus === 'synced'  ? 'bg-green-400' :
+                    syncStatus === 'syncing' ? 'bg-yellow-400 animate-pulse' :
+                    syncStatus === 'error'   ? 'bg-red-400' : 'bg-sky-400'
+                  }`} />
+                  <span className={`text-xs font-medium ${
+                    syncStatus === 'synced'  ? 'text-green-400' :
+                    syncStatus === 'syncing' ? 'text-yellow-400' :
+                    syncStatus === 'error'   ? 'text-red-400' : 'txt'
+                  }`}>
+                    {syncStatus === 'synced'  ? 'Live-Sync aktiv' :
+                     syncStatus === 'syncing' ? 'Wird übertragen…' :
+                     syncStatus === 'error'   ? 'Übertragungsfehler' : 'Verbunden'}
+                  </span>
+                </div>
+                <p className="muted truncate text-xs" title={dirHandle.name}>📁 {dirHandle.name}</p>
+                <p className="muted text-[11px]">Jede Änderung wird automatisch an den Scanner geschickt.</p>
+                <button onClick={unlinkDir} className="muted text-[11px] hover:txt">Verknüpfung trennen</button>
+              </div>
+            ) : syncStatus === 'needs-permission' ? (
+              <div className="space-y-2.5">
+                <p className="text-xs text-yellow-400">Berechtigung abgelaufen — Neu verbinden um fortzufahren.</p>
+                <button onClick={relinkDir}
+                  className="bd txt flex w-full items-center justify-center gap-2 rounded-lg border py-2 text-sm font-medium hover:border-sky-500">
+                  Neu verbinden
+                </button>
+                <button onClick={unlinkDir} className="muted text-[11px] hover:txt">Trennen</button>
+              </div>
+            ) : (
+              <div className="space-y-2.5">
+                <p className="muted text-xs">
+                  Wähle das Verzeichnis in dem <span className="txt font-mono">ZeroTrace.exe</span> liegt.
+                  Danach werden alle Design-Änderungen sofort an den Scanner übertragen — kein Neustart nötig.
+                </p>
+                <button onClick={linkDir}
+                  className="bd txt flex w-full items-center justify-center gap-2 rounded-lg border py-2 text-sm font-medium hover:border-sky-500">
+                  <FolderOpen size={14} /> Verzeichnis wählen
+                </button>
+              </div>
+            )}
+          </Card>
 
           <Card className="p-6">
             <h3 className="txt mb-5 flex items-center gap-2 text-lg font-semibold">

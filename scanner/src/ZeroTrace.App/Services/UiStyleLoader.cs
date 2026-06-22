@@ -34,8 +34,9 @@ internal static class UiStyleLoader
             var doc = JsonDocument.Parse(stream);
             var root = doc.RootElement;
 
-            if (root.TryGetProperty("colors", out var colors)) ApplyColors(colors);
-            if (root.TryGetProperty("text",   out var text))   ApplyText(text);
+            if (root.TryGetProperty("colors",     out var colors))     ApplyColors(colors);
+            if (root.TryGetProperty("text",       out var text))       ApplyText(text);
+            if (root.TryGetProperty("animations", out var animations)) ApplyAnimations(animations);
 
             if (root.TryGetProperty("version", out var ver) && ver.GetString() is { } v)
                 Application.Current.Resources["ScannerVersion"] = v;
@@ -116,5 +117,29 @@ internal static class UiStyleLoader
                 el.GetString() is { Length: > 0 } val)
                 Application.Current.Resources[resKey] = val;
         }
+    }
+
+    private static void ApplyAnimations(JsonElement animations)
+    {
+        // speed → ScannerAnimDurationMs (double, milliseconds)
+        if (animations.TryGetProperty("speed", out var sp))
+        {
+            double ms = sp.GetString() switch
+            {
+                "instant" => 0.0,
+                "fast"    => 200.0,
+                "slow"    => 1400.0,
+                _         => 550.0,   // "normal"
+            };
+            Application.Current.Resources["ScannerAnimDurationMs"] = ms;
+        }
+
+        // barStyle → ScannerBarStyle ("smooth" | "pulse" | "stepped")
+        if (animations.TryGetProperty("barStyle", out var bs) && bs.GetString() is { Length: > 0 } bsv)
+            Application.Current.Resources["ScannerBarStyle"] = bsv;
+
+        // intro → ScannerIntroEffect ("none" | "fade" | "slide")
+        if (animations.TryGetProperty("intro", out var intro) && intro.GetString() is { Length: > 0 } iv)
+            Application.Current.Resources["ScannerIntroEffect"] = iv;
     }
 }

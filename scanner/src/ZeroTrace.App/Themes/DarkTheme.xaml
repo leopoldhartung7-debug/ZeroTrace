@@ -47,6 +47,11 @@
     <sys:String x:Key="ScannerTextFinished">Scan abgeschlossen</sys:String>
     <sys:String x:Key="ScannerVersion">v1.3</sys:String>
 
+    <!-- Scanner animation settings (overridable via zerotrace-ui.json) -->
+    <sys:Double x:Key="ScannerAnimDurationMs">550</sys:Double>
+    <sys:String x:Key="ScannerBarStyle">smooth</sys:String>
+    <sys:String x:Key="ScannerIntroEffect">fade</sys:String>
+
     <!-- ===== Base text ===== -->
     <Style TargetType="TextBlock">
         <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
