@@ -59,7 +59,7 @@ const CHEAT_CATEGORIES = ['Cheat', 'Spoofer', 'Injector', 'Cleaner', 'FiveM-Chea
 const RISK_LEVELS    = ['Medium', 'High', 'Critical']
 const GAMES          = ['MINECRAFT', 'CS2', 'RUST', 'VALORANT', 'FORTNITE', 'APEX', 'FiveM', 'OTHER']
 const STATUSES       = ['Open', 'In Progress', 'Resolved', 'Closed']
-const emptyCheatForm = { pattern: '', type: 'FileNameKeyword', category: 'Cheat', risk: 'High', game: 'OTHER', description: '' }
+const emptyCheatForm = { cheatName: '', pattern: '', type: 'FileNameKeyword', category: 'Cheat', risk: 'High', game: 'OTHER', evidenceUrl: '', description: '' }
 
 function tagColor(tag) {
   let h = 0
@@ -624,18 +624,26 @@ export default function Support() {
   }
 
   const submitCheat = () => {
-    if (!cheatForm.pattern.trim()) return toast({ type: 'error', title: 'Pattern required' })
+    if (!cheatForm.cheatName.trim()) return toast({ type: 'error', title: 'Cheat name required', body: 'Enter a recognisable name for this cheat.' })
+    if (!cheatForm.pattern.trim()) return toast({ type: 'error', title: 'Detection pattern required' })
     if (cheatForm.pattern.trim().length < 3) return toast({ type: 'error', title: 'Pattern too short', body: 'At least 3 characters.' })
+    const urlVal = cheatForm.evidenceUrl.trim()
+    if (urlVal && !/^https?:\/\/.+/.test(urlVal))
+      return toast({ type: 'error', title: 'Invalid URL', body: 'Evidence URL must start with http:// or https://' })
     dispatch({
       type: 'add-user-proposal',
       proposal: {
+        cheatName: cheatForm.cheatName.trim(),
         pattern: cheatForm.pattern.trim().toLowerCase(),
-        type: cheatForm.type, category: cheatForm.category,
-        risk: cheatForm.risk, game: cheatForm.game,
-        description: cheatForm.description.trim() || `User-reported ${cheatForm.category.toLowerCase()}: ${cheatForm.pattern.trim()}`,
+        type: cheatForm.type,
+        category: cheatForm.category,
+        risk: cheatForm.risk,
+        game: cheatForm.game,
+        evidenceUrl: urlVal,
+        description: cheatForm.description.trim() || `User-reported ${cheatForm.category.toLowerCase()}: ${cheatForm.cheatName.trim()}`,
       },
     })
-    toast({ type: 'success', title: 'Cheat submitted', body: 'Pending admin review — thank you!' })
+    toast({ type: 'success', title: 'Suggestion submitted', body: 'Pending admin review — thank you!' })
     setCheatForm(emptyCheatForm)
     setCheatOpen(false)
   }
@@ -804,20 +812,32 @@ export default function Support() {
             ) : (
               <div className="space-y-2">
                 {userProposals.slice(0, 5).map(p => (
-                  <div key={p.id} className="tile flex items-center justify-between rounded-lg border px-3 py-2.5">
-                    <div className="min-w-0">
-                      <p className="txt font-mono text-sm font-medium truncate">{p.pattern}</p>
-                      <p className="muted text-xs">{p.category} · {p.game || 'OTHER'}</p>
+                  <div key={p.id} className="tile rounded-lg border px-3 py-2.5 space-y-1">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="txt text-sm font-semibold truncate">{p.cheatName || p.pattern}</p>
+                        {p.cheatName && <p className="font-mono text-xs muted truncate">{p.pattern}</p>}
+                        <p className="muted text-xs">{p.category} · {p.game || 'OTHER'}</p>
+                      </div>
+                      <div className="flex flex-col items-end gap-1 shrink-0">
+                        <span className={`rounded-full border px-2 py-0.5 text-xs font-semibold ${
+                          p.risk === 'Critical' ? 'text-red-400 bg-red-400/10 border-red-400/20' :
+                          p.risk === 'High' ? 'text-orange-400 bg-orange-400/10 border-orange-400/20' :
+                          'text-yellow-400 bg-yellow-400/10 border-yellow-400/20'}`}>{p.risk}</span>
+                        {p.status === 'pending'  && <span className="rounded-full bg-yellow-400/10 border border-yellow-400/20 px-2 py-0.5 text-xs text-yellow-400">Pending</span>}
+                        {p.status === 'approved' && <span className="rounded-full bg-green-400/10 border border-green-400/20 px-2 py-0.5 text-xs text-green-400">Approved</span>}
+                        {p.status === 'rejected' && <span className="rounded-full bg-red-400/10 border border-red-400/20 px-2 py-0.5 text-xs text-red-400">Rejected</span>}
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2 ml-2 shrink-0">
-                      <span className={`rounded-full border px-2 py-0.5 text-xs font-semibold ${
-                        p.risk === 'Critical' ? 'text-red-400 bg-red-400/10 border-red-400/20' :
-                        p.risk === 'High' ? 'text-orange-400 bg-orange-400/10 border-orange-400/20' :
-                        'text-yellow-400 bg-yellow-400/10 border-yellow-400/20'}`}>{p.risk}</span>
-                      {p.status === 'pending'  && <span className="rounded-full bg-yellow-400/10 border border-yellow-400/20 px-2 py-0.5 text-xs text-yellow-400">Pending</span>}
-                      {p.status === 'approved' && <span className="rounded-full bg-green-400/10 border border-green-400/20 px-2 py-0.5 text-xs text-green-400">Approved</span>}
-                      {p.status === 'rejected' && <span className="rounded-full bg-red-400/10 border border-red-400/20 px-2 py-0.5 text-xs text-red-400">Rejected</span>}
-                    </div>
+                    {p.evidenceUrl && (
+                      <a href={p.evidenceUrl} target="_blank" rel="noopener noreferrer"
+                        className="text-xs text-sky-400 hover:underline truncate block" onClick={e => e.stopPropagation()}>
+                        Evidence →
+                      </a>
+                    )}
+                    {p.adminComment && (
+                      <p className="text-xs muted italic">Admin: {p.adminComment}</p>
+                    )}
                   </div>
                 ))}
                 {userProposals.length > 5 && <p className="muted text-center text-xs pt-1">+{userProposals.length - 5} more</p>}
@@ -883,48 +903,104 @@ export default function Support() {
       </Modal>
 
       {/* Suggest cheat modal */}
-      <Modal open={cheatOpen} onClose={() => setCheatOpen(false)} title="Suggest a Cheat / Spoofer / Cleaner"
+      <Modal open={cheatOpen} onClose={() => { setCheatOpen(false); setCheatForm(emptyCheatForm) }} title="Suggest a Detection Entry"
         footer={
           <>
-            <button onClick={() => setCheatOpen(false)} className="bd txt rounded-lg border px-4 py-2 text-sm">Cancel</button>
-            <button onClick={submitCheat} className="rounded-lg bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-500">Submit for Review</button>
+            <button onClick={() => { setCheatOpen(false); setCheatForm(emptyCheatForm) }} className="bd txt rounded-lg border px-4 py-2 text-sm">Cancel</button>
+            <button onClick={submitCheat} className="rounded-lg bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-500">
+              Submit for Review
+            </button>
           </>
         }
       >
-        <div className="space-y-4">
+        <div className="space-y-5">
+          {/* Info banner */}
           <div className="rounded-lg bg-sky-600/5 border border-sky-600/20 px-4 py-3 text-sm text-sky-300">
-            Your suggestion goes to the admin for review. If approved, it gets added to the scanner's detection database.
+            Spotted a cheat, spoofer, or injector? Fill in what you know — our admin team reviews every submission and adds approved entries to the scanner database.
           </div>
-          <Field label="Pattern (filename, process name, or keyword)">
-            <Input autoFocus value={cheatForm.pattern}
-              onChange={e => setCheatForm({ ...cheatForm, pattern: e.target.value })}
-              placeholder="e.g. cheatengine.exe or injector_x64" />
-          </Field>
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Match Type">
-              <Select value={cheatForm.type} onChange={v => setCheatForm({ ...cheatForm, type: v })}
-                options={CHEAT_TYPES.map(t => ({ value: t.value, label: t.label }))} />
-            </Field>
-            <Field label="Category">
-              <Select value={cheatForm.category} onChange={v => setCheatForm({ ...cheatForm, category: v })}
-                options={CHEAT_CATEGORIES.map(x => ({ value: x, label: x }))} />
-            </Field>
+
+          {/* Section 1 — Identification */}
+          <div>
+            <p className="caps-label mb-3">1 · What is this tool?</p>
+            <div className="space-y-3">
+              <Field label="Cheat / Tool Name *" hint="The name players commonly use for it.">
+                <Input
+                  autoFocus
+                  value={cheatForm.cheatName}
+                  onChange={e => setCheatForm({ ...cheatForm, cheatName: e.target.value })}
+                  placeholder="e.g. KillAura Pro, ESP-Master, SpooferX"
+                />
+              </Field>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Category">
+                  <Select value={cheatForm.category} onChange={v => setCheatForm({ ...cheatForm, category: v })}
+                    options={CHEAT_CATEGORIES.map(x => ({ value: x, label: x }))} />
+                </Field>
+                <Field label="Game">
+                  <Select value={cheatForm.game} onChange={v => setCheatForm({ ...cheatForm, game: v })}
+                    options={GAMES.map(x => ({ value: x, label: x }))} />
+                </Field>
+              </div>
+            </div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Risk Level">
-              <Select value={cheatForm.risk} onChange={v => setCheatForm({ ...cheatForm, risk: v })}
-                options={RISK_LEVELS.map(x => ({ value: x, label: x }))} />
-            </Field>
-            <Field label="Game">
-              <Select value={cheatForm.game} onChange={v => setCheatForm({ ...cheatForm, game: v })}
-                options={GAMES.map(x => ({ value: x, label: x }))} />
-            </Field>
+
+          {/* Divider */}
+          <div className="bd border-t" />
+
+          {/* Section 2 — Detection Signature */}
+          <div>
+            <p className="caps-label mb-3">2 · Detection Signature</p>
+            <div className="space-y-3">
+              <Field label="File / Process Pattern *" hint="Filename, process name, or keyword the scanner should look for.">
+                <Input
+                  value={cheatForm.pattern}
+                  onChange={e => setCheatForm({ ...cheatForm, pattern: e.target.value })}
+                  placeholder="e.g. killaurapro.exe  or  cheat_loader"
+                />
+              </Field>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Match Type" hint="How to compare the pattern against files.">
+                  <Select value={cheatForm.type} onChange={v => setCheatForm({ ...cheatForm, type: v })}
+                    options={CHEAT_TYPES.map(t => ({ value: t.value, label: t.label }))} />
+                </Field>
+                <Field label="Risk Level">
+                  <Select value={cheatForm.risk} onChange={v => setCheatForm({ ...cheatForm, risk: v })}
+                    options={RISK_LEVELS.map(x => ({ value: x, label: x }))} />
+                </Field>
+              </div>
+              {/* Match type help */}
+              <div className="rounded-md bd border px-3 py-2 text-xs muted space-y-0.5">
+                <p><span className="txt font-medium">Filename Keyword</span> — matches any file whose name contains the keyword (most flexible)</p>
+                <p><span className="txt font-medium">Exact Filename</span> — must match the full filename precisely (e.g. <code className="font-mono">cheat.exe</code>)</p>
+                <p><span className="txt font-medium">Process Name</span> — matches a running process by name</p>
+              </div>
+            </div>
           </div>
-          <Field label="Description / Evidence (optional)">
-            <Textarea rows={3} value={cheatForm.description}
-              onChange={e => setCheatForm({ ...cheatForm, description: e.target.value })}
-              placeholder="Why do you think this is a cheat? Where did you see it?" />
-          </Field>
+
+          {/* Divider */}
+          <div className="bd border-t" />
+
+          {/* Section 3 — Evidence */}
+          <div>
+            <p className="caps-label mb-3">3 · Evidence (optional but helpful)</p>
+            <div className="space-y-3">
+              <Field label="Evidence URL" hint="Link to a forum post, Discord message, YouTube video, or VirusTotal scan.">
+                <Input
+                  value={cheatForm.evidenceUrl}
+                  onChange={e => setCheatForm({ ...cheatForm, evidenceUrl: e.target.value })}
+                  placeholder="https://…"
+                />
+              </Field>
+              <Field label="Notes" hint="Anything else the admin should know — how you found it, where it was used, etc.">
+                <Textarea
+                  rows={3}
+                  value={cheatForm.description}
+                  onChange={e => setCheatForm({ ...cheatForm, description: e.target.value })}
+                  placeholder="e.g. Seen in a Minecraft faction server, players were flying and killing through walls…"
+                />
+              </Field>
+            </div>
+          </div>
         </div>
       </Modal>
     </div>
