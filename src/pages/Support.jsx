@@ -189,20 +189,24 @@ function TagInput({ tags, onChange }) {
 
 function CheatReportPanel({ ticket, isAdmin, dispatch, toast }) {
   const cd = ticket.cheatData
-  if (!cd) return null
-
-  const [editData, setEditData] = useState({ ...cd })
-  const [showEdit, setShowEdit] = useState(false)
-
-  const dbStatus = cd.dbStatus || 'pending'
+  const dbStatus = cd?.dbStatus || 'pending'
   const isDone = dbStatus === 'added' || dbStatus === 'rejected'
 
+  const blankForm = { cheatName: '', pattern: '', type: 'FileNameKeyword', category: 'Cheat', risk: 'High', game: 'OTHER', evidenceUrl: '', description: '' }
+  const [editData, setEditData] = useState(cd ? { ...cd } : blankForm)
+  // No cheatData means it came in via template — open in edit mode right away
+  const [showEdit, setShowEdit] = useState(!cd && isAdmin)
+
+  const CHEAT_TYPE_LABELS = { FileNameKeyword: 'Filename Keyword', FileName: 'Exact Filename', ProcessName: 'Process Name' }
+
   const addToDb = () => {
+    if (!editData.cheatName.trim() || !editData.pattern.trim())
+      return toast({ type: 'error', title: 'Tool name and pattern are required' })
     dispatch({
       type: 'add-user-proposal',
       proposal: {
-        cheatName: editData.cheatName,
-        pattern: editData.pattern,
+        cheatName: editData.cheatName.trim(),
+        pattern: editData.pattern.trim().toLowerCase(),
         type: editData.type,
         category: editData.category,
         risk: editData.risk,
@@ -212,20 +216,18 @@ function CheatReportPanel({ ticket, isAdmin, dispatch, toast }) {
       },
     })
     dispatch({ type: 'update-ticket', id: ticket.id, fields: { cheatData: { ...editData, dbStatus: 'added' } } })
-    dispatch({ type: 'reply-ticket', id: ticket.id, message: `✅ Cheat "${editData.cheatName}" has been verified and added to the detection database. Pattern: \`${editData.pattern}\` (${editData.type}).`, internal: false })
+    dispatch({ type: 'reply-ticket', id: ticket.id, message: `✅ Cheat "${editData.cheatName.trim()}" has been verified and added to the detection database. Pattern: \`${editData.pattern.trim()}\` (${CHEAT_TYPE_LABELS[editData.type] || editData.type}).`, internal: false })
     dispatch({ type: 'update-ticket', id: ticket.id, fields: { status: 'Resolved' } })
-    toast({ type: 'success', title: 'Added to database', body: editData.cheatName })
+    toast({ type: 'success', title: 'Added to database', body: editData.cheatName.trim() })
     setShowEdit(false)
   }
 
   const reject = () => {
-    dispatch({ type: 'update-ticket', id: ticket.id, fields: { cheatData: { ...cd, dbStatus: 'rejected' } } })
+    dispatch({ type: 'update-ticket', id: ticket.id, fields: { cheatData: { ...(cd || editData), dbStatus: 'rejected' } } })
     dispatch({ type: 'reply-ticket', id: ticket.id, message: `❌ After review, the reported signature could not be verified as a cheat indicator. If you have additional evidence, please open a new report.`, internal: false })
     dispatch({ type: 'update-ticket', id: ticket.id, fields: { status: 'Resolved' } })
     toast({ type: 'info', title: 'Report rejected' })
   }
-
-  const CHEAT_TYPE_LABELS = { FileNameKeyword: 'Filename Keyword', FileName: 'Exact Filename', ProcessName: 'Process Name' }
 
   return (
     <div className={`rounded-xl border p-4 space-y-3 ${
@@ -233,10 +235,12 @@ function CheatReportPanel({ ticket, isAdmin, dispatch, toast }) {
       dbStatus === 'rejected' ? 'border-red-400/20 bg-red-400/5' :
       'border-purple-400/30 bg-purple-400/5'
     }`}>
+      {/* Header */}
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <ShieldAlert size={15} className={dbStatus === 'added' ? 'text-green-400' : dbStatus === 'rejected' ? 'text-red-400' : 'text-purple-400'} />
           <p className="txt text-sm font-semibold">Cheat Report Data</p>
+          {!cd && isAdmin && <span className="muted text-xs">(fill in to add to database)</span>}
         </div>
         <span className={`rounded-full border px-2 py-0.5 text-xs font-semibold ${
           dbStatus === 'added'    ? 'border-green-400/40 bg-green-400/10 text-green-400' :
@@ -247,17 +251,20 @@ function CheatReportPanel({ ticket, isAdmin, dispatch, toast }) {
         </span>
       </div>
 
+      {/* Edit form */}
       {showEdit && isAdmin ? (
         <div className="space-y-2">
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <p className="caps-label mb-1">Tool Name</p>
+              <p className="caps-label mb-1">Tool Name *</p>
               <input value={editData.cheatName} onChange={e => setEditData(d => ({ ...d, cheatName: e.target.value }))}
+                placeholder="e.g. KillAura Pro"
                 className="bd tile txt w-full rounded-lg border px-3 py-1.5 text-sm outline-none focus:border-purple-500" />
             </div>
             <div>
-              <p className="caps-label mb-1">Pattern</p>
+              <p className="caps-label mb-1">Pattern *</p>
               <input value={editData.pattern} onChange={e => setEditData(d => ({ ...d, pattern: e.target.value }))}
+                placeholder="e.g. killaura.exe"
                 className="bd tile txt w-full rounded-lg border px-3 py-1.5 text-sm font-mono outline-none focus:border-purple-500" />
             </div>
             <div>
@@ -289,25 +296,27 @@ function CheatReportPanel({ ticket, isAdmin, dispatch, toast }) {
               </select>
             </div>
           </div>
-          {editData.evidenceUrl && (
-            <div>
-              <p className="caps-label mb-1">Evidence URL</p>
-              <input value={editData.evidenceUrl} onChange={e => setEditData(d => ({ ...d, evidenceUrl: e.target.value }))}
-                className="bd tile txt w-full rounded-lg border px-3 py-1.5 text-sm outline-none focus:border-purple-500" />
-            </div>
-          )}
+          <div>
+            <p className="caps-label mb-1">Evidence URL</p>
+            <input value={editData.evidenceUrl} onChange={e => setEditData(d => ({ ...d, evidenceUrl: e.target.value }))}
+              placeholder="https://…"
+              className="bd tile txt w-full rounded-lg border px-3 py-1.5 text-sm outline-none focus:border-purple-500" />
+          </div>
           <div className="flex gap-2 pt-1">
             <button onClick={addToDb}
               className="flex-1 rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-500">
               ✓ Confirm &amp; Add to Database
             </button>
-            <button onClick={() => setShowEdit(false)}
-              className="rounded-lg border bd px-4 py-2 text-sm muted hover:txt">
-              Cancel
-            </button>
+            {cd && (
+              <button onClick={() => setShowEdit(false)}
+                className="rounded-lg border bd px-4 py-2 text-sm muted hover:txt">
+                Cancel
+              </button>
+            )}
           </div>
         </div>
-      ) : (
+      ) : cd ? (
+        /* Read-only data view */
         <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
           {[
             ['Tool Name',   cd.cheatName],
@@ -336,9 +345,10 @@ function CheatReportPanel({ ticket, isAdmin, dispatch, toast }) {
             </div>
           )}
         </div>
-      )}
+      ) : null}
 
-      {isAdmin && !isDone && !showEdit && (
+      {/* Admin action buttons (read-only view) */}
+      {isAdmin && !isDone && !showEdit && cd && (
         <div className="flex gap-2 pt-1 border-t bd">
           <button onClick={() => setShowEdit(true)}
             className="flex-1 rounded-lg bg-purple-600/80 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-600">
