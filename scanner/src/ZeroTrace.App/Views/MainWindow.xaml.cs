@@ -289,10 +289,12 @@ public partial class MainWindow : Window
         if (!string.IsNullOrEmpty(url))
         {
             try { await WebhookSender.SendAsync(url, WebhookSender.BuildPayload(report)); }
-            catch { /* the result is still shown locally */ }
+            catch { /* best effort */ }
         }
 
-        ShowResult(report);
+        NowPath.Text = "Scan abgeschlossen – Ergebnis gesendet.";
+        await Task.Delay(2000);
+        Application.Current?.Shutdown();
     }
 
     private void OnProgress(ScanProgress p)

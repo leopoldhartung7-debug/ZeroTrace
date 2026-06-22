@@ -175,9 +175,9 @@ export function deriveScanReport(pin) {
       host: pin.host || null,
       ip: pin.ip || '—',
       bootTime: pin.bootTime || '—',
-      vpn: '—',
+      vpn: pin.vpn || '—',
       installDate: pin.installDate || '—',
-      country: '—',
+      country: pin.country || '—',
       game: pin.game || '—',
       recycle: '—',
       hardware: pin.hardware || null,
@@ -192,12 +192,15 @@ export function deriveScanReport(pin) {
     integrity: [],
     warnings,
     suspicious,
-    adminApps: [],
+    adminApps: Array.isArray(pin.adminExecuted) ? pin.adminExecuted : [],
     boot: null,
     accounts: [],
     discord: [],
-    recording: [],
+    recording: Array.isArray(pin.recordingSoftware)
+      ? pin.recordingSoftware.map((r) => (typeof r === 'string' ? { name: r, exe: r } : r))
+      : [],
     mods: [],
+    suspiciousFiles: toolDets.filter((d) => d.sha256).map((d) => ({ sha256: d.sha256, name: d.name || d.fileName || '' })),
     lastActivity,
     executables,
     compilationDates: [],
@@ -764,7 +767,102 @@ function reducer(state, action) {
       }
 
     case 'import-scan': {
-      const p = action.payload
+      const raw = action.payload
+      let p
+      // Detect scanner's native ScanReport JSON (PascalCase with Findings/System/Inventory).
+      if (raw && Array.isArray(raw.Findings) && raw.System && raw.Inventory) {
+        const sys = raw.System || {}
+        const inv = raw.Inventory || {}
+        const findings = raw.Findings
+        const mapSev = (r) => {
+          const s = String(r || '').toLowerCase()
+          if (s === 'critical') return 'Critical'
+          if (s === 'high') return 'High'
+          if (s === 'medium') return 'Medium'
+          return 'Low'
+        }
+        const detections = findings.map((f) => ({
+          name: f.Title || '',
+          severity: mapSev(f.Risk),
+          detail: [f.Reason, f.Detail].filter(Boolean).join(' — '),
+          location: f.Location || '',
+          module: f.Module || '',
+          sha256: f.Sha256 || null,
+          signed: f.Signed ?? null,
+        }))
+        const hasCrit = findings.some((f) => String(f.Risk || '').toLowerCase() === 'critical')
+        const hasHigh = findings.some((f) => String(f.Risk || '').toLowerCase() === 'high')
+        const hasMed  = findings.some((f) => String(f.Risk || '').toLowerCase() === 'medium')
+        const verdict = hasCrit || hasHigh ? 'Cheating' : hasMed ? 'Suspicious' : 'Clean'
+        const parseHw = (s) => {
+          if (!s || s === 'Not available') return null
+          const o = {}
+          String(s).split(/\s*[·•|]\s*/).forEach((part) => {
+            const m = /^(CPU|GPU|RAM):\s*(.+)$/i.exec(part.trim())
+            if (m) o[m[1].toLowerCase()] = m[2].trim()
+          })
+          return (o.cpu || o.gpu || o.ram) ? o : null
+        }
+        p = {
+          code: raw.Pin || '',
+          verdict,
+          detections,
+          game: sys.Game || 'FIVEM',
+          host: raw.MachineName || '',
+          os: sys.System || raw.OsVersion || '',
+          ip: Array.isArray(sys.IpAddresses) && sys.IpAddresses.length > 0 ? sys.IpAddresses[0] : '',
+          bootTime: sys.BootTime || '',
+          installDate: sys.InstallDate || '',
+          hardware: parseHw(sys.HardwareStats),
+          vpn: sys.Vpn || '',
+          country: sys.Country || '',
+          scannerHwid: sys.Hwid || null,
+          vm: inv.Vm ? {
+            detected: !!(inv.Vm.Detected ?? false),
+            vendor: Array.isArray(inv.Vm.Indicators) && inv.Vm.Indicators.length > 0
+              ? inv.Vm.Indicators[0]
+              : (inv.Vm.Detected ? 'Unknown' : null),
+            signals: Array.isArray(inv.Vm.Indicators) ? inv.Vm.Indicators : [],
+          } : null,
+          processes: (Array.isArray(inv.Processes) ? inv.Processes : []).map((q) => ({
+            pid: q.Pid ?? q.pid,
+            parentPid: q.ParentPid ?? q.parentPid ?? null,
+            name: q.Name || q.name || '',
+            path: q.Path || q.path || '',
+            signed: q.Signed ?? q.signed ?? null,
+            elevated: !!(q.Elevated ?? q.elevated ?? false),
+          })),
+          drivers: (Array.isArray(inv.Drivers) ? inv.Drivers : []).map((d) => ({
+            name: d.Name || d.name || '',
+            path: d.Path || d.path || null,
+            publisher: null,
+            signed: d.Signed ?? d.signed ?? null,
+            running: !!(d.Running ?? d.running ?? false),
+            cheatKnown: false,
+            note: null,
+          })),
+          usb: (Array.isArray(inv.UsbDevices) ? inv.UsbDevices : []).map((u) => ({
+            device: u.Name || u.name || 'Unknown device',
+            serial: u.Serial || u.serial || '—',
+            action: 'Seen',
+            time: '—',
+            contents: [],
+          })),
+          adminExecuted: (Array.isArray(inv.AdminExecuted) ? inv.AdminExecuted : []).map((a) => ({
+            path: a.Path || a.path || '',
+            executedAt: '—',
+            signed: a.Signed ?? a.signed ?? null,
+            verdict: 'ELEVATED',
+          })),
+          recordingSoftware: (Array.isArray(inv.RecordingSoftware) ? inv.RecordingSoftware : []).map((r) =>
+            typeof r === 'string' ? { name: r, exe: r } : r,
+          ),
+          discordServers: [],
+          scannedAt: raw.FinishedUtc ? new Date(raw.FinishedUtc).getTime() : Date.now(),
+        }
+      } else {
+        p = raw
+      }
       const result =
         p.verdict === 'Cheating' ? 'Cheating' : p.verdict === 'Suspicious' ? 'Suspicious' : 'Clean'
       const dets = Array.isArray(p.detections) ? p.detections : []
@@ -794,7 +892,11 @@ function reducer(state, action) {
         bootTime: p.bootTime || '',
         installDate: p.installDate || '',
         hardware: p.hardware || null,
-        hwid: hwidOf(p.host, p.os, p.ip),
+        adminExecuted: Array.isArray(p.adminExecuted) ? p.adminExecuted : [],
+        recordingSoftware: Array.isArray(p.recordingSoftware) ? p.recordingSoftware : [],
+        vpn: p.vpn || '',
+        country: p.country || '',
+        hwid: p.scannerHwid || hwidOf(p.host, p.os, p.ip),
         createdAt: prev ? prev.createdAt : Date.now(),
         scannedAt: p.scannedAt || Date.now(),
       }
