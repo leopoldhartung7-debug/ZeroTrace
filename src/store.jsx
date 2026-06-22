@@ -121,12 +121,25 @@ export function deriveScanReport(pin) {
     ...suspicious.map((d) => ({ ...d, sev: 'Low' })),
   ].filter((d) => isPath(d.location))
 
-  const executables = allFindings.map((d) => ({
-    path: d.location,
-    timestamp: d.time || '—',
-    status: false,
-    verified: false,
-  }))
+  const executables = (Array.isArray(pin.processes) && pin.processes.length > 0)
+    ? pin.processes.map((q) => ({
+        path: q.path || '—',
+        name: q.name || (q.path ? q.path.split(/[\\/]/).pop() : '<unknown>'),
+        pid: q.pid ?? null,
+        timestamp: '—',
+        status: q.signed !== false,
+        verified: !!q.signed,
+        elevated: !!q.elevated,
+      }))
+    : allFindings.map((d) => ({
+        path: d.location,
+        name: d.location.split(/[\\/]/).pop() || d.location,
+        pid: null,
+        timestamp: d.time || '—',
+        status: false,
+        verified: false,
+        elevated: false,
+      }))
   const lastActivity = allFindings.map((d) => ({
     filename: d.location,
     runTime: d.time || '—',
@@ -216,7 +229,14 @@ export function deriveScanReport(pin) {
     recording: Array.isArray(pin.recordingSoftware)
       ? pin.recordingSoftware.map((r) => (typeof r === 'string' ? { name: r, exe: r } : r))
       : [],
-    mods: [],
+    mods: toolDets
+      .filter((d) => d.module === 'GTA-MP')
+      .map((d) => ({
+        name: d.name || '',
+        detail: d.detail || '',
+        location: d.location || '',
+        severity: d.severity || 'Low',
+      })),
     suspiciousFiles: toolDets.filter((d) => d.sha256).map((d) => ({ sha256: d.sha256, name: d.name || d.fileName || '' })),
     lastActivity,
     executables,

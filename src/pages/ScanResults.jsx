@@ -591,32 +591,36 @@ export default function ScanResults() {
         <p className="muted mb-4 mt-1 text-xs">
           {report.adminApps.filter((a) => a.verdict === 'SUSPICIOUS').length} suspicious · {report.adminApps.length} total
         </p>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="caps-label bd border-b">
-                <th className="px-3 py-3">Path</th>
-                <th className="px-3 py-3">Executed At</th>
-                <th className="px-3 py-3">Signed</th>
-                <th className="px-3 py-3">Verdict</th>
-              </tr>
-            </thead>
-            <tbody>
-              {report.adminApps.map((a, i) => (
-                <tr key={i} className="bd border-b last:border-0">
-                  <td className="txt break-all px-3 py-3 font-mono text-xs">{a.path}</td>
-                  <td className="muted px-3 py-3 text-xs">{a.executedAt}</td>
-                  <td className="px-3 py-3"><SignedBadge ok={a.signed} /></td>
-                  <td className="px-3 py-3">
-                    <span className={`bd inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-[11px] font-semibold ${a.verdict === 'SUSPICIOUS' ? 'text-red-500' : 'muted'}`}>
-                      {a.verdict}
-                    </span>
-                  </td>
+        {report.adminApps.length === 0 ? (
+          <p className="muted py-10 text-center text-sm">No admin-executed applications recorded.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="caps-label bd border-b">
+                  <th className="px-3 py-3">Path</th>
+                  <th className="px-3 py-3">Executed At</th>
+                  <th className="px-3 py-3">Signed</th>
+                  <th className="px-3 py-3">Verdict</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {report.adminApps.map((a, i) => (
+                  <tr key={i} className="bd border-b last:border-0">
+                    <td className="txt break-all px-3 py-3 font-mono text-xs">{a.path}</td>
+                    <td className="muted px-3 py-3 text-xs">{a.executedAt}</td>
+                    <td className="px-3 py-3"><SignedBadge ok={a.signed} /></td>
+                    <td className="px-3 py-3">
+                      <span className={`bd inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-[11px] font-semibold ${a.verdict === 'SUSPICIOUS' ? 'text-red-500' : 'muted'}`}>
+                        {a.verdict}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </Card>
 
       <Card className="p-6">
@@ -786,7 +790,28 @@ export default function ScanResults() {
             <Gamepad2 size={18} /> Mods Logs ({report.mods.length})
           </h2>
           <p className="muted mb-4 mt-1 text-sm">Mods detected in the system</p>
-          {report.mods.length === 0 && <p className="muted py-10 text-center text-sm">No mods found</p>}
+          {report.mods.length === 0 ? (
+            <p className="muted py-10 text-center text-sm">No mods found</p>
+          ) : (
+            <div className="space-y-2">
+              {report.mods.map((m, i) => (
+                <div key={i} className="tile rounded-lg border px-4 py-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="txt text-sm font-medium">{m.name}</p>
+                    <span className={`shrink-0 rounded-md border px-2 py-0.5 text-[11px] font-semibold ${
+                      m.severity === 'High' || m.severity === 'Critical'
+                        ? 'border-red-600/40 bg-red-600/15 text-red-500'
+                        : m.severity === 'Medium'
+                          ? 'border-yellow-500/40 bg-yellow-500/15 text-yellow-400'
+                          : 'bd muted'
+                    }`}>{m.severity}</span>
+                  </div>
+                  {m.location && <p className="muted mt-1 break-all font-mono text-xs">{m.location}</p>}
+                  {m.detail && <p className="muted mt-1 text-xs leading-relaxed">{m.detail}</p>}
+                </div>
+              ))}
+            </div>
+          )}
         </Card>
       </div>
 
@@ -1347,6 +1372,7 @@ function ProcessTabs({ report, pin }) {
     parentPid: p.parentPid != null ? p.parentPid : null,
     name: p.name || (p.path ? p.path.split(/[\\/]/).pop() : '<unknown>'),
     path: p.path || '',
+    elevated: !!p.elevated,
   }))
   return (
     <div>
@@ -1366,17 +1392,24 @@ function ProcessTabs({ report, pin }) {
       </div>
       {view === 'flat' ? (
         <PaginatedTable
-          columns={['Executable Path', 'Timestamp', 'Status', 'Verified']}
+          columns={['Name', 'Path', 'PID', 'Signed', 'Elevated']}
           rows={report.executables}
-          searchKeys={['path', 'timestamp']}
-          placeholder="Search executable path, timestamp..."
+          searchKeys={['path', 'name']}
+          placeholder="Search name or path..."
           empty="No executables recorded."
           render={(r) => (
             <>
+              <td className="txt px-3 py-3 font-mono text-xs">{r.name || r.path.split(/[\\/]/).pop() || '—'}</td>
               <td className="txt break-all px-3 py-3 font-mono text-xs">{r.path}</td>
-              <td className="muted px-3 py-3 text-xs">{r.timestamp}</td>
-              <td className="px-3 py-3">{r.status ? <span className="text-green-500">✓</span> : <span className="text-red-500">✕</span>}</td>
+              <td className="muted px-3 py-3 text-xs">{r.pid ?? '—'}</td>
               <td className="px-3 py-3">{r.verified ? <span className="text-green-500">✓</span> : <span className="text-red-500">✕</span>}</td>
+              <td className="px-3 py-3">
+                {r.elevated ? (
+                  <span className="rounded-md border border-orange-500/40 bg-orange-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-orange-400">ELEVATED</span>
+                ) : (
+                  <span className="muted text-xs">—</span>
+                )}
+              </td>
             </>
           )}
         />
@@ -1408,7 +1441,12 @@ function ProcessTree({ processes }) {
           {depth > 0 && <span className="muted">└─ </span>}
           {node.name || '<unknown>'}
         </span>
-        <span className="muted shrink-0 font-mono">PID {node.pid}</span>
+        <span className="flex shrink-0 items-center gap-2">
+          {node.elevated && (
+            <span className="rounded-md border border-orange-500/40 bg-orange-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-orange-400">ELEVATED</span>
+          )}
+          <span className="muted font-mono">PID {node.pid}</span>
+        </span>
       </div>
       {node.children.map((c) => (
         <Node key={c.pid} node={c} depth={depth + 1} />
