@@ -471,7 +471,10 @@ function TicketCard({ ticket, selected, onSelect, onClick, isAdmin }) {
   const replyCount = (ticket.replies || []).filter(r => !r.internal).length
   const hasAdminReply = (ticket.replies || []).some(r => r.role === 'admin' && !r.internal)
   return (
-    <div className={`tile rounded-xl border transition-colors ${selected ? 'border-sky-500/50 bg-sky-600/5' : 'hover:border-sky-500/30'}`}>
+    <div
+      className={`tile rounded-xl border transition-colors cursor-pointer ${selected ? 'border-sky-500/50 bg-sky-600/5' : 'hover:border-sky-500/30'}`}
+      onClick={onClick}
+    >
       <div className="flex items-start gap-3 p-4">
         {isAdmin && (
           <input
@@ -482,7 +485,7 @@ function TicketCard({ ticket, selected, onSelect, onClick, isAdmin }) {
             onClick={e => e.stopPropagation()}
           />
         )}
-        <button onClick={onClick} className="flex-1 min-w-0 text-left">
+        <div className="flex-1 min-w-0 text-left">
           <div className="flex items-center gap-2 flex-wrap">
             <p className="txt text-sm font-semibold truncate">{ticket.subject}</p>
             {hasAdminReply && !isAdmin && <span className="h-2 w-2 rounded-full bg-sky-500 shrink-0" title="Admin replied" />}
@@ -502,7 +505,7 @@ function TicketCard({ ticket, selected, onSelect, onClick, isAdmin }) {
             {replyCount > 0 && <p className="text-xs text-sky-400">{replyCount} {replyCount === 1 ? 'reply' : 'replies'}</p>}
             {ticket.rating && <StarRating value={ticket.rating} readonly />}
           </div>
-        </button>
+        </div>
         <div className="flex flex-col items-end gap-2 shrink-0">
           <StatusBadge status={ticket.status} />
           <PriorityBadge priority={ticket.priority} />
