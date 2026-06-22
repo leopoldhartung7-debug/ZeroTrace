@@ -555,6 +555,16 @@ function TicketThread({ ticket, onClose }) {
           <p className="txt text-sm whitespace-pre-wrap">{ticket.message}</p>
         </div>
 
+        {/* Cheat Report Panel (nur bei Cheat-Tickets) */}
+        {ticket.category === 'Cheat Report' && (
+          <CheatReportPanel
+            ticket={ticket}
+            isAdmin={isAdmin}
+            dispatch={dispatch}
+            toast={toast}
+          />
+        )}
+
         {/* Replies */}
         {visibleReplies.map(r => (
           <div
@@ -893,6 +903,17 @@ export default function Support() {
         priority: cheatForm.risk === 'Critical' ? 'Urgent' : cheatForm.risk === 'High' ? 'High' : 'Normal',
         message: ticketMsg,
         tags: ['cheat-related', cheatForm.game.toLowerCase()],
+        cheatData: {
+          cheatName: name,
+          pattern,
+          type: cheatForm.type,
+          category: cheatForm.category,
+          risk: cheatForm.risk,
+          game: cheatForm.game,
+          evidenceUrl: urlVal,
+          description: notes,
+          dbStatus: 'pending',
+        },
       },
     })
 
