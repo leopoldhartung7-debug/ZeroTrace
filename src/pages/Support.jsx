@@ -3,6 +3,7 @@ import {
   LifeBuoy, Plus, MessageSquare, ShieldAlert, Clock, CheckCircle2,
   XCircle, AlertTriangle, Send, User, Shield, Search, Tag, Lock,
   Star, Trash2, UserCheck, ChevronDown, History, SortAsc, Download,
+  CreditCard, Bug, Zap,
 } from 'lucide-react'
 import { PageHeader, Card, EmptyState, Accordion, Field, Input, Textarea } from '../components/kit.jsx'
 import { Modal, Select, useToast } from '../components/ui.jsx'
@@ -957,16 +958,53 @@ export default function Support() {
           <Field label="Subject">
             <Input autoFocus value={form.subject} onChange={e => setForm({ ...form, subject: e.target.value })} placeholder="Short summary" />
           </Field>
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Category">
-              <Select value={form.category} onChange={v => setForm({ ...form, category: v })}
-                options={TICKET_CATEGORIES.map(x => ({ value: x, label: x }))} />
-            </Field>
-            <Field label="Priority">
-              <Select value={form.priority} onChange={v => setForm({ ...form, priority: v })}
-                options={['Low', 'Normal', 'High', 'Urgent'].map(x => ({ value: x, label: x }))} />
-            </Field>
-          </div>
+          <Field label="Category">
+            <div className="grid grid-cols-5 gap-1.5">
+              {[
+                { value: 'General',      icon: MessageSquare, label: 'General',   idleCls: '',              selCls: 'border-white/40 bg-white/10 text-white'          },
+                { value: 'Bug',          icon: Bug,           label: 'Bug',        idleCls: '',              selCls: 'border-orange-400/50 bg-orange-400/10 text-orange-400' },
+                { value: 'Billing',      icon: CreditCard,    label: 'Billing',    idleCls: '',              selCls: 'border-green-400/50 bg-green-400/10 text-green-400'   },
+                { value: 'Detection',    icon: Shield,        label: 'Detection',  idleCls: '',              selCls: 'border-sky-400/50 bg-sky-400/10 text-sky-400'         },
+                { value: 'Cheat Report', icon: ShieldAlert,   label: 'Cheat',      idleCls: '',              selCls: 'border-purple-400/50 bg-purple-400/10 text-purple-400'},
+              ].map(cat => {
+                const Icon = cat.icon
+                const sel = form.category === cat.value
+                return (
+                  <button key={cat.value} type="button"
+                    onClick={() => setForm({ ...form, category: cat.value })}
+                    className={`flex flex-col items-center gap-1.5 rounded-xl border py-3 px-1 text-center transition-all ${
+                      sel ? cat.selCls : 'bd tile muted hover:txt'
+                    }`}
+                  >
+                    <Icon size={15} />
+                    <span className="text-[10px] font-semibold leading-tight">{cat.label}</span>
+                  </button>
+                )
+              })}
+            </div>
+          </Field>
+          <Field label="Priority">
+            <div className="grid grid-cols-4 gap-1.5">
+              {[
+                { value: 'Low',    label: 'Low',    selCls: 'border-white/30 bg-white/5 text-white/70'           },
+                { value: 'Normal', label: 'Normal', selCls: 'border-sky-400/40 bg-sky-400/10 text-sky-400'       },
+                { value: 'High',   label: 'High',   selCls: 'border-orange-400/50 bg-orange-400/10 text-orange-400' },
+                { value: 'Urgent', label: 'Urgent', selCls: 'border-red-400/50 bg-red-400/10 text-red-400'       },
+              ].map(p => {
+                const sel = form.priority === p.value
+                return (
+                  <button key={p.value} type="button"
+                    onClick={() => setForm({ ...form, priority: p.value })}
+                    className={`rounded-xl border py-2.5 text-xs font-semibold transition-all ${
+                      sel ? p.selCls : 'bd tile muted hover:txt'
+                    }`}
+                  >
+                    {p.label}
+                  </button>
+                )
+              })}
+            </div>
+          </Field>
           <Field label="Tags (optional)">
             <TagInput tags={form.tags} onChange={tags => setForm({ ...form, tags })} />
           </Field>
