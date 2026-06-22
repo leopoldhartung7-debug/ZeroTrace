@@ -81,7 +81,17 @@ const ANIMATION_PRESETS = [
 
 function buildScannerDelta(s) {
   const def = defaultToolStyle()
+
+  function objDelta(src, defObj) {
+    const d = {}
+    for (const [k, v] of Object.entries({ ...defObj, ...src })) {
+      if (v !== defObj[k]) d[k] = v
+    }
+    return Object.keys(d).length ? d : null
+  }
+
   const delta = {}
+
   const colorDelta = {}
   for (const [k, v] of Object.entries(s.colors)) {
     if (v.toLowerCase() !== (def.colors[k] ?? '').toLowerCase()) colorDelta[k] = v
@@ -95,18 +105,26 @@ function buildScannerDelta(s) {
   if (Object.keys(textDelta).length) delta.text = textDelta
   if (s.version !== def.version) delta.version = s.version
 
-  const animSrc = { ...def.animations, ...(s.animations || {}) }
-  const animDelta = {}
-  for (const [k, v] of Object.entries(animSrc)) {
-    if (v !== def.animations[k]) animDelta[k] = v
-  }
-  if (Object.keys(animDelta).length) delta.animations = animDelta
+  const d_anim = objDelta(s.animations || {}, def.animations)
+  if (d_anim) delta.animations = d_anim
 
-  const ivSrc = s.introVideo || def.introVideo
-  const ivDelta = {}
-  if (ivSrc.enabled !== def.introVideo.enabled) ivDelta.enabled = ivSrc.enabled
-  if (ivSrc.path   !== def.introVideo.path)    ivDelta.path    = ivSrc.path
-  if (Object.keys(ivDelta).length) delta.introVideo = ivDelta
+  const d_iv = objDelta(s.introVideo || {}, def.introVideo)
+  if (d_iv) delta.introVideo = d_iv
+
+  const d_fr = objDelta(s.frame || {}, def.frame)
+  if (d_fr) delta.frame = d_fr
+
+  const d_ty = objDelta(s.typography || {}, def.typography)
+  if (d_ty) delta.typography = d_ty
+
+  const d_pin = objDelta(s.pinField || {}, def.pinField)
+  if (d_pin) delta.pinField = d_pin
+
+  const d_bar = objDelta(s.bar || {}, def.bar)
+  if (d_bar) delta.bar = d_bar
+
+  const d_done = objDelta(s.done || {}, def.done)
+  if (d_done) delta.done = d_done
 
   return delta
 }
@@ -214,9 +232,17 @@ function Toggle({ label, checked, onChange, accent }) {
   )
 }
 
-const SPEED_MS = { instant: 0, fast: 200, normal: 550, slow: 1400 }
-const TIMING   = { smooth: 'ease-out', pulse: 'ease-in-out', stepped: 'steps(6, end)', stripe: 'linear', shine: 'linear' }
-const SIM_PIN  = ['F','1','T','5','F','8']
+const SPEED_MS   = { instant: 0, fast: 200, normal: 550, slow: 1400 }
+const TIMING     = { smooth: 'ease-out', pulse: 'ease-in-out', stepped: 'steps(6, end)', stripe: 'linear', shine: 'linear' }
+const SIM_PIN    = ['F','1','T','5','F','8']
+const FONT_MAP   = { segoe: '"Segoe UI", system-ui, sans-serif', mono: '"Consolas","JetBrains Mono",monospace', inter: '"Inter",system-ui,sans-serif', roboto: '"Roboto","Segoe UI",sans-serif' }
+const CORNER_MAP = { sharp: 4, rounded: 10, soft: 18, pill: 32 }
+const BORDER_W   = { none: 0, thin: 1, normal: 2, thick: 3 }
+const BAR_H      = { slim: 2, normal: 6, thick: 10, chunky: 16 }
+const FONT_SZ    = { small: 11, normal: 13, large: 15 }
+const LET_SP     = { normal: 'normal', wide: '0.06em', ultra: '0.16em' }
+const PIN_CHARS  = { dot: { f: '●', e: '○' }, square: { f: '■', e: '□' }, asterisk: { f: '★', e: '☆' }, block: { f: '█', e: '░' } }
+const DONE_ICONS = { check: '✓', shield: '⊛', star: '★', ring: '◉' }
 
 const ANIM_CSS = `
 @keyframes ztGlowPulse {
@@ -255,16 +281,53 @@ const ANIM_CSS = `
   0%, 100% { opacity: 0.5; }
   50%       { opacity: 1; }
 }
+@keyframes ztDonePop {
+  0%   { transform: scale(0.4); opacity: 0; }
+  60%  { transform: scale(1.18); opacity: 1; }
+  100% { transform: scale(1); }
+}
+@keyframes ztDoneBounce {
+  0%, 100% { transform: translateY(0); }
+  25%       { transform: translateY(-10px); }
+  55%       { transform: translateY(-5px); }
+  80%       { transform: translateY(-2px); }
+}
+@keyframes ztDoneSpin {
+  from { transform: rotate(-30deg) scale(0.8); opacity: 0; }
+  to   { transform: rotate(0deg)   scale(1);   opacity: 1; }
+}
 `
 
 function GuiPreview({ s }) {
+  const def  = defaultToolStyle()
   const c    = s.colors
-  const anim = { speed: 'normal', barStyle: 'smooth', barShape: 'bar', intro: 'fade', bgEffect: 'none', glowAccent: false, glitchText: false, ...(s.animations || {}) }
+  const anim = { ...def.animations, ...(s.animations || {}) }
+  const fr   = { ...def.frame,      ...(s.frame      || {}) }
+  const typo = { ...def.typography, ...(s.typography || {}) }
+  const pin  = { ...def.pinField,   ...(s.pinField   || {}) }
+  const bar  = { ...def.bar,        ...(s.bar        || {}) }
+  const dn   = { ...def.done,       ...(s.done       || {}) }
   const { speed, barStyle, barShape, intro, bgEffect, glowAccent, glitchText } = anim
   const iv     = s.introVideo || { enabled: false, path: '' }
   const durMs  = SPEED_MS[speed] ?? 550
   const timing = TIMING[barStyle] ?? 'ease-out'
-  const animKey = `${speed}|${barStyle}|${barShape}|${intro}|${bgEffect}|${glowAccent}|${glitchText}|${iv.enabled}`
+  const animKey = `${speed}|${barStyle}|${barShape}|${intro}|${bgEffect}|${glowAccent}|${glitchText}|${iv.enabled}|${JSON.stringify(fr)}|${JSON.stringify(typo)}|${JSON.stringify(pin)}|${JSON.stringify(bar)}|${JSON.stringify(dn)}`
+
+  // Derived values
+  const cornerR   = CORNER_MAP[fr.cornerRadius] ?? 10
+  const borderW   = BORDER_W[fr.borderWidth]    ?? 0
+  const borderClr = fr.borderColor || c.titlebar
+  const shadowVal = { none: 'none', soft: '0 8px 32px rgba(0,0,0,0.45)', strong: '0 16px 56px rgba(0,0,0,0.75)', neon: `0 0 28px ${c.accent}55, 0 8px 40px rgba(0,0,0,0.6)` }[fr.shadow] ?? 'none'
+  const fontFam   = FONT_MAP[typo.font]    ?? FONT_MAP.segoe
+  const fontSzPx  = FONT_SZ[typo.size]    ?? 13
+  const letSp     = LET_SP[typo.spacing]  ?? 'normal'
+  const barHPx    = BAR_H[bar.height]     ?? 6
+  const barCapR   = bar.caps === 'round' ? 999 : 0
+  const trackClr  = bar.trackColor || c.background
+  const pinCh     = PIN_CHARS[pin.char] ?? PIN_CHARS.dot
+  const doneClr   = dn.color || c.accent
+  const doneIcon  = DONE_ICONS[dn.icon] ?? '✓'
+  const doneAnimCSS = { none: 'none', pop: 'ztDonePop 0.5s ease forwards', bounce: 'ztDoneBounce 0.6s ease 0.1s both', spin: 'ztDoneSpin 0.5s ease forwards' }[dn.anim] ?? 'none'
 
   const [imgErr,     setImgErr]     = useState(false)
   const [tick,       setTick]       = useState(0)
@@ -341,12 +404,23 @@ function GuiPreview({ s }) {
     return { r, circ, offset, size, sw, shadow }
   }
 
+  const bodyStyle = {
+    fontFamily: fontFam,
+    fontSize: fontSzPx,
+    letterSpacing: letSp,
+  }
+
   return (
     <div>
       <style>{ANIM_CSS}</style>
-      <div className="overflow-hidden rounded-xl border" style={{ borderColor: c.titlebar }}>
+      <div className="overflow-hidden" style={{
+        borderRadius: cornerR,
+        border: `${borderW}px solid ${borderClr}`,
+        boxShadow: shadowVal,
+        opacity: fr.opacity / 100,
+      }}>
         {/* Titlebar */}
-        <div className="flex items-center gap-2 px-3 py-2" style={{ background: c.titlebar }}>
+        <div className="flex items-center gap-2 px-3 py-2" style={{ background: c.titlebar, borderRadius: `${cornerR}px ${cornerR}px 0 0` }}>
           <span className="h-2.5 w-2.5 rounded-full bg-red-500" />
           <span className="h-2.5 w-2.5 rounded-full bg-yellow-500" />
           <span className="h-2.5 w-2.5 rounded-full bg-green-500" />
@@ -406,7 +480,7 @@ function GuiPreview({ s }) {
             )}
 
             {/* Content */}
-            <div className="px-8 py-10" style={{ position: 'relative' }}>
+            <div className="px-8 py-10" style={{ position: 'relative', ...bodyStyle }}>
               {/* Logo */}
               <div className="flex flex-col items-center mb-7">
                 {showCustom ? (
@@ -428,12 +502,19 @@ function GuiPreview({ s }) {
               {/* PIN stage */}
               {stage === 'pin' && (
                 <div>
-                  <p className="text-sm mb-2.5" style={{ color: c.text }}>{s.text.pin}</p>
-                  <div className="rounded-lg px-4 py-3 text-lg tracking-[0.3em] font-mono flex items-center gap-1"
-                    style={{ background: c.mutedBackground, color: c.accent, ...accentTextStyle }}>
+                  <p className="mb-2.5" style={{ color: c.text }}>{s.text.pin}</p>
+                  <div className="px-4 py-3 text-lg tracking-[0.3em] font-mono flex items-center gap-1"
+                    style={{
+                      background: pin.border === 'none' ? 'transparent' : c.mutedBackground,
+                      color: c.accent,
+                      borderRadius: pin.border === 'rounded' ? 8 : pin.border === 'square' ? 2 : 0,
+                      borderBottom: pin.border === 'bottom' ? `2px solid ${c.accent}` : 'none',
+                      border: pin.border === 'full' ? `1px solid ${c.accent}44` : pin.border === 'rounded' ? 'none' : pin.border === 'square' ? `1px solid ${c.accent}44` : 'none',
+                      ...accentTextStyle,
+                    }}>
                     {SIM_PIN.map((_, i) => (
-                      <span key={i} style={{ opacity: i < pinDisplay.length ? 1 : 0.2 }}>
-                        {i < pinDisplay.length ? '●' : '○'}
+                      <span key={i} style={{ opacity: i < pinDisplay.length ? 1 : 0.22, transition: 'opacity 80ms' }}>
+                        {i < pinDisplay.length ? pinCh.f : pinCh.e}
                       </span>
                     ))}
                     {pinDisplay.length < SIM_PIN.length && (
@@ -457,8 +538,8 @@ function GuiPreview({ s }) {
 
                         {/* ── Bar ── */}
                         {barShape === 'bar' && (
-                          <div className="h-2 w-full overflow-hidden rounded-full" style={{ background: c.background }}>
-                            <div className="h-full rounded-full" style={barFill(step.w)} />
+                          <div className="w-full overflow-hidden" style={{ height: barHPx, borderRadius: barCapR, background: trackClr }}>
+                            <div style={{ ...barFill(step.w), height: '100%', borderRadius: barCapR }} />
                           </div>
                         )}
 
@@ -466,13 +547,13 @@ function GuiPreview({ s }) {
                         {barShape === 'ring' && (
                           <div className="flex items-center gap-4">
                             <svg width={rp.size} height={rp.size} style={{ transform: 'rotate(-90deg)', flexShrink: 0, filter: rp.shadow }}>
-                              <circle cx={rp.size/2} cy={rp.size/2} r={rp.r} fill="none" stroke={c.accent + '22'} strokeWidth={rp.sw} />
+                              <circle cx={rp.size/2} cy={rp.size/2} r={rp.r} fill="none" stroke={trackClr || c.accent + '22'} strokeWidth={rp.sw} />
                               <circle cx={rp.size/2} cy={rp.size/2} r={rp.r} fill="none" stroke={c.accent} strokeWidth={rp.sw}
-                                strokeDasharray={rp.circ} strokeDashoffset={rp.offset} strokeLinecap="round"
+                                strokeDasharray={rp.circ} strokeDashoffset={rp.offset} strokeLinecap={bar.caps === 'round' ? 'round' : 'butt'}
                                 style={{ transition: durMs === 0 ? 'none' : `stroke-dashoffset ${durMs}ms ${timing}` }} />
                             </svg>
-                            <div className="flex-1 h-1.5 overflow-hidden rounded-full" style={{ background: c.background }}>
-                              <div className="h-full rounded-full" style={barFill(step.w)} />
+                            <div className="flex-1 overflow-hidden" style={{ height: barHPx, borderRadius: barCapR, background: trackClr }}>
+                              <div style={{ ...barFill(step.w), height: '100%', borderRadius: barCapR }} />
                             </div>
                           </div>
                         )}
@@ -528,12 +609,14 @@ function GuiPreview({ s }) {
               {/* Done stage */}
               {stage === 'done' && (
                 <div className="flex flex-col items-center gap-3 py-2">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full text-lg"
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full text-xl font-bold"
                     style={{
-                      background: c.accent + '22', color: c.accent,
-                      boxShadow: glowAccent ? `0 0 16px 4px ${c.accent}55` : 'none',
-                    }}>✓</div>
-                  <p className="text-sm text-center" style={{ color: c.text }}>{s.text.finished}</p>
+                      background: doneClr + '22',
+                      color: doneClr,
+                      boxShadow: glowAccent ? `0 0 20px 5px ${doneClr}55` : 'none',
+                      animation: doneAnimCSS,
+                    }}>{doneIcon}</div>
+                  <p className="text-center font-medium" style={{ color: c.text }}>{s.text.finished}</p>
                   <p className="text-xs" style={{ color: c.mutedText }}>Bericht wird generiert…</p>
                 </div>
               )}
@@ -617,10 +700,22 @@ export default function ToolDesigner({ embedded = false }) {
 
   const set = (patch) => setS((cur) => ({ ...cur, ...patch }))
 
-  const anim = { ...defaultToolStyle().animations, ...(s.animations || {}) }
-  const setAnim = (patch) => setS(cur => ({ ...cur, animations: { ...defaultToolStyle().animations, ...(cur.animations || {}), ...patch } }))
-  const iv = s.introVideo || defaultToolStyle().introVideo
-  const setIv = (patch) => setS(cur => ({ ...cur, introVideo: { ...(cur.introVideo || defaultToolStyle().introVideo), ...patch } }))
+  const def   = defaultToolStyle()
+  const anim  = { ...def.animations, ...(s.animations || {}) }
+  const fr    = { ...def.frame,      ...(s.frame      || {}) }
+  const typo  = { ...def.typography, ...(s.typography || {}) }
+  const pinF  = { ...def.pinField,   ...(s.pinField   || {}) }
+  const barD  = { ...def.bar,        ...(s.bar        || {}) }
+  const doneD = { ...def.done,       ...(s.done       || {}) }
+  const iv    = s.introVideo || def.introVideo
+
+  const setAnim  = (p) => setS(c => ({ ...c, animations: { ...def.animations, ...(c.animations || {}), ...p } }))
+  const setFr    = (p) => setS(c => ({ ...c, frame:      { ...def.frame,      ...(c.frame      || {}), ...p } }))
+  const setTypo  = (p) => setS(c => ({ ...c, typography: { ...def.typography, ...(c.typography || {}), ...p } }))
+  const setPinF  = (p) => setS(c => ({ ...c, pinField:   { ...def.pinField,   ...(c.pinField   || {}), ...p } }))
+  const setBarD  = (p) => setS(c => ({ ...c, bar:        { ...def.bar,        ...(c.bar        || {}), ...p } }))
+  const setDoneD = (p) => setS(c => ({ ...c, done:       { ...def.done,       ...(c.done       || {}), ...p } }))
+  const setIv    = (p) => setS(c => ({ ...c, introVideo: { ...def.introVideo, ...(c.introVideo || {}), ...p } }))
 
   const setColor = (k, v) => {
     if (harmonyMode && k === 'background') {
@@ -1028,6 +1123,260 @@ export default function ToolDesigner({ embedded = false }) {
             <Toggle label="Akzent-Glow — Neon-Leuchten auf Titel & Balken" checked={anim.glowAccent ?? false} onChange={v => setAnim({ glowAccent: v })} />
             <Toggle label="Glitch-Titel — gelegentlicher Störeffekt auf dem Titel" checked={anim.glitchText ?? false} onChange={v => setAnim({ glitchText: v })} />
           </div>
+
+          <div className="bd my-7 border-t" />
+
+          {/* ── Fenster-Rahmen ── */}
+          <p className="caps-label mb-4 flex items-center gap-2">◻ Fenster-Rahmen</p>
+
+          <Field label="Eckenradius">
+            <div className="grid grid-cols-4 gap-1.5">
+              {[{ v:'sharp',   l:'Eckig',      r:4  }, { v:'rounded', l:'Abgerundet', r:10 },
+                { v:'soft',    l:'Weich',       r:18 }, { v:'pill',    l:'Pill',       r:32 }].map(({ v, l, r }) => {
+                const sel = fr.cornerRadius === v
+                return (
+                  <button key={v} onClick={() => setFr({ cornerRadius: v })}
+                    className={`flex flex-col items-center gap-1 border py-2.5 text-xs font-semibold transition-all ${sel ? 'border-sky-500 bg-sky-600/20 text-sky-400' : 'bd tile muted hover:txt'}`}
+                    style={{ borderRadius: r }}>
+                    {l}
+                    <span className={`text-[10px] font-normal ${sel ? 'text-sky-400/70' : 'muted'}`}>{r}px</span>
+                  </button>
+                )
+              })}
+            </div>
+          </Field>
+
+          <Field label="Fenster-Schatten" className="mt-4">
+            <div className="grid grid-cols-4 gap-1.5">
+              {[{ v:'none',   l:'Keiner', d:'Flach'  }, { v:'soft',   l:'Weich',  d:'Subtil' },
+                { v:'strong', l:'Stark',  d:'Tief'   }, { v:'neon',   l:'Neon',   d:'Leuchten' }].map(({ v, l, d }) => {
+                const sel = fr.shadow === v
+                return (
+                  <button key={v} onClick={() => setFr({ shadow: v })}
+                    className={`flex flex-col items-center gap-0.5 rounded-xl border py-2.5 text-xs font-semibold transition-all ${sel ? 'border-cyan-500 bg-cyan-600/20 text-cyan-400' : 'bd tile muted hover:txt'}`}>
+                    {l}<span className={`text-[10px] font-normal ${sel ? 'text-cyan-400/70' : 'muted'}`}>{d}</span>
+                  </button>
+                )
+              })}
+            </div>
+          </Field>
+
+          <Field label="Rahmenbreite" className="mt-4">
+            <div className="grid grid-cols-4 gap-1.5">
+              {[{ v:'none', l:'Kein', d:'0px' }, { v:'thin', l:'Dünn', d:'1px' },
+                { v:'normal', l:'Normal', d:'2px' }, { v:'thick', l:'Dick', d:'3px' }].map(({ v, l, d }) => {
+                const sel = fr.borderWidth === v
+                return (
+                  <button key={v} onClick={() => setFr({ borderWidth: v })}
+                    className={`flex flex-col items-center gap-0.5 rounded-xl border py-2.5 text-xs font-semibold transition-all ${sel ? 'border-slate-400 bg-slate-400/10 text-slate-300' : 'bd tile muted hover:txt'}`}>
+                    {l}<span className={`text-[10px] font-normal ${sel ? 'text-slate-400/70' : 'muted'}`}>{d}</span>
+                  </button>
+                )
+              })}
+            </div>
+          </Field>
+
+          {fr.borderWidth !== 'none' && (
+            <div className="mt-3">
+              <ColorField label="Rahmenfarbe (Standard = Titelleiste)" value={fr.borderColor || s.colors.titlebar} onChange={v => setFr({ borderColor: v })} />
+            </div>
+          )}
+
+          <Field label="Transparenz" className="mt-4">
+            <div className="flex items-center gap-3">
+              <input type="range" min={60} max={100} value={fr.opacity}
+                onChange={e => setFr({ opacity: Number(e.target.value) })}
+                className="flex-1 accent-sky-500" />
+              <span className="txt w-10 text-right text-sm font-mono">{fr.opacity}%</span>
+            </div>
+          </Field>
+
+          <div className="bd my-7 border-t" />
+
+          {/* ── Typografie ── */}
+          <p className="caps-label mb-4 flex items-center gap-2">Aa Typografie</p>
+
+          <Field label="Schriftart">
+            <div className="grid grid-cols-4 gap-1.5">
+              {[{ v:'segoe', l:'Segoe UI', f:'"Segoe UI", sans-serif' },
+                { v:'mono',  l:'Mono',     f:'"Consolas", monospace' },
+                { v:'inter', l:'Inter',    f:'"Inter", sans-serif' },
+                { v:'roboto',l:'Roboto',   f:'"Roboto", sans-serif' }].map(({ v, l, f }) => {
+                const sel = typo.font === v
+                return (
+                  <button key={v} onClick={() => setTypo({ font: v })}
+                    className={`flex items-center justify-center rounded-xl border py-2.5 text-xs font-semibold transition-all ${sel ? 'border-indigo-500 bg-indigo-600/20 text-indigo-400' : 'bd tile muted hover:txt'}`}
+                    style={{ fontFamily: f }}>
+                    {l}
+                  </button>
+                )
+              })}
+            </div>
+          </Field>
+
+          <Field label="Schriftgröße" className="mt-4">
+            <div className="grid grid-cols-3 gap-1.5">
+              {[{ v:'small', l:'Klein', d:'11px' }, { v:'normal', l:'Normal', d:'13px' }, { v:'large', l:'Groß', d:'15px' }].map(({ v, l, d }) => {
+                const sel = typo.size === v
+                return (
+                  <button key={v} onClick={() => setTypo({ size: v })}
+                    className={`flex flex-col items-center gap-0.5 rounded-xl border py-2.5 text-xs font-semibold transition-all ${sel ? 'border-indigo-500 bg-indigo-600/20 text-indigo-400' : 'bd tile muted hover:txt'}`}>
+                    {l}<span className={`text-[10px] font-normal ${sel ? 'text-indigo-400/70' : 'muted'}`}>{d}</span>
+                  </button>
+                )
+              })}
+            </div>
+          </Field>
+
+          <Field label="Zeichenabstand" className="mt-4">
+            <div className="grid grid-cols-3 gap-1.5">
+              {[{ v:'normal', l:'Normal', d:'Standard' }, { v:'wide', l:'Weit', d:'0.06em' }, { v:'ultra', l:'Ultra', d:'0.16em' }].map(({ v, l, d }) => {
+                const sel = typo.spacing === v
+                return (
+                  <button key={v} onClick={() => setTypo({ spacing: v })}
+                    className={`flex flex-col items-center gap-0.5 rounded-xl border py-2.5 text-xs font-semibold transition-all ${sel ? 'border-indigo-500 bg-indigo-600/20 text-indigo-400' : 'bd tile muted hover:txt'}`}>
+                    {l}<span className={`text-[10px] font-normal ${sel ? 'text-indigo-400/70' : 'muted'}`}>{d}</span>
+                  </button>
+                )
+              })}
+            </div>
+          </Field>
+
+          <div className="bd my-7 border-t" />
+
+          {/* ── PIN-Feld ── */}
+          <p className="caps-label mb-4 flex items-center gap-2">⬤ PIN-Feld</p>
+
+          <Field label="Zeichen-Stil">
+            <div className="grid grid-cols-4 gap-1.5">
+              {[{ v:'dot',      l:'Punkte',    c:'●○' },
+                { v:'square',   l:'Quadrate',  c:'■□' },
+                { v:'asterisk', l:'Sterne',    c:'★☆' },
+                { v:'block',    l:'Blöcke',    c:'█░' }].map(({ v, l, c: ch }) => {
+                const sel = pinF.char === v
+                return (
+                  <button key={v} onClick={() => setPinF({ char: v })}
+                    className={`flex flex-col items-center gap-0.5 rounded-xl border py-2.5 text-xs font-semibold transition-all ${sel ? 'border-fuchsia-500 bg-fuchsia-600/20 text-fuchsia-400' : 'bd tile muted hover:txt'}`}>
+                    <span className="font-mono text-sm">{ch}</span>
+                    <span className={`text-[10px] font-normal ${sel ? 'text-fuchsia-400/70' : 'muted'}`}>{l}</span>
+                  </button>
+                )
+              })}
+            </div>
+          </Field>
+
+          <Field label="Rahmen-Stil" className="mt-4">
+            <div className="grid grid-cols-4 gap-1.5">
+              {[{ v:'none',    l:'Keiner',       d:'Transparent' },
+                { v:'bottom',  l:'Unterstrichen', d:'Linie'      },
+                { v:'rounded', l:'Abgerundet',   d:'Box'         },
+                { v:'square',  l:'Eckig',        d:'Box'         }].map(({ v, l, d }) => {
+                const sel = pinF.border === v
+                return (
+                  <button key={v} onClick={() => setPinF({ border: v })}
+                    className={`flex flex-col items-center gap-0.5 rounded-xl border py-2.5 text-xs font-semibold transition-all ${sel ? 'border-fuchsia-500 bg-fuchsia-600/20 text-fuchsia-400' : 'bd tile muted hover:txt'}`}>
+                    {l}<span className={`text-[10px] font-normal ${sel ? 'text-fuchsia-400/70' : 'muted'}`}>{d}</span>
+                  </button>
+                )
+              })}
+            </div>
+          </Field>
+
+          <div className="bd my-7 border-t" />
+
+          {/* ── Balken-Details ── */}
+          <p className="caps-label mb-4 flex items-center gap-2">▬ Balken-Details</p>
+
+          <Field label="Balkenhöhe">
+            <div className="grid grid-cols-4 gap-1.5">
+              {[{ v:'slim', l:'Slim', d:'2px' }, { v:'normal', l:'Normal', d:'6px' },
+                { v:'thick', l:'Dick', d:'10px' }, { v:'chunky', l:'Massiv', d:'16px' }].map(({ v, l, d }) => {
+                const sel = barD.height === v
+                return (
+                  <button key={v} onClick={() => setBarD({ height: v })}
+                    className={`flex flex-col items-center gap-0.5 rounded-xl border py-2.5 text-xs font-semibold transition-all ${sel ? 'border-teal-500 bg-teal-600/20 text-teal-400' : 'bd tile muted hover:txt'}`}>
+                    {l}<span className={`text-[10px] font-normal ${sel ? 'text-teal-400/70' : 'muted'}`}>{d}</span>
+                  </button>
+                )
+              })}
+            </div>
+          </Field>
+
+          <Field label="Balken-Enden" className="mt-4">
+            <div className="grid grid-cols-2 gap-1.5">
+              {[{ v:'round', l:'Rund', d:'Abgerundet' }, { v:'sharp', l:'Eckig', d:'90°' }].map(({ v, l, d }) => {
+                const sel = barD.caps === v
+                return (
+                  <button key={v} onClick={() => setBarD({ caps: v })}
+                    className={`flex flex-col items-center gap-0.5 rounded-xl border py-2.5 text-xs font-semibold transition-all ${sel ? 'border-teal-500 bg-teal-600/20 text-teal-400' : 'bd tile muted hover:txt'}`}>
+                    {l}<span className={`text-[10px] font-normal ${sel ? 'text-teal-400/70' : 'muted'}`}>{d}</span>
+                  </button>
+                )
+              })}
+            </div>
+          </Field>
+
+          <div className="mt-4">
+            <ColorField
+              label="Track-Farbe (Standard = Hintergrundfarbe)"
+              value={barD.trackColor || s.colors.background}
+              onChange={v => setBarD({ trackColor: v })}
+            />
+            {barD.trackColor && (
+              <button onClick={() => setBarD({ trackColor: '' })} className="muted mt-1.5 text-[11px] hover:txt">
+                × Zurücksetzen auf Standard
+              </button>
+            )}
+          </div>
+
+          <div className="bd my-7 border-t" />
+
+          {/* ── Abschluss-Bildschirm ── */}
+          <p className="caps-label mb-4 flex items-center gap-2">✓ Abschluss-Bildschirm</p>
+
+          <Field label="Icon-Stil">
+            <div className="grid grid-cols-4 gap-1.5">
+              {[{ v:'check',  l:'Check',  i:'✓' }, { v:'shield', l:'Schild', i:'⊛' },
+                { v:'star',   l:'Stern',  i:'★' }, { v:'ring',   l:'Ring',   i:'◉' }].map(({ v, l, i }) => {
+                const sel = doneD.icon === v
+                return (
+                  <button key={v} onClick={() => setDoneD({ icon: v })}
+                    className={`flex flex-col items-center gap-1 rounded-xl border py-2.5 text-xs font-semibold transition-all ${sel ? 'border-green-500 bg-green-600/20 text-green-400' : 'bd tile muted hover:txt'}`}>
+                    <span className="text-lg">{i}</span>
+                    <span className={`text-[10px] font-normal ${sel ? 'text-green-400/70' : 'muted'}`}>{l}</span>
+                  </button>
+                )
+              })}
+            </div>
+          </Field>
+
+          <div className="mt-4">
+            <ColorField
+              label="Erfolgsfarbe (Standard = Akzentfarbe)"
+              value={doneD.color || s.colors.accent}
+              onChange={v => setDoneD({ color: v })}
+            />
+            {doneD.color && (
+              <button onClick={() => setDoneD({ color: '' })} className="muted mt-1.5 text-[11px] hover:txt">
+                × Zurücksetzen auf Akzentfarbe
+              </button>
+            )}
+          </div>
+
+          <Field label="Icon-Animation" className="mt-4">
+            <div className="grid grid-cols-4 gap-1.5">
+              {[{ v:'none',   l:'Keine',  d:'Sofort'  }, { v:'pop',    l:'Pop',    d:'Aufpoppen' },
+                { v:'bounce', l:'Bounce', d:'Hüpfen'  }, { v:'spin',   l:'Spin',   d:'Eindrehen' }].map(({ v, l, d }) => {
+                const sel = doneD.anim === v
+                return (
+                  <button key={v} onClick={() => setDoneD({ anim: v })}
+                    className={`flex flex-col items-center gap-0.5 rounded-xl border py-2.5 text-xs font-semibold transition-all ${sel ? 'border-green-500 bg-green-600/20 text-green-400' : 'bd tile muted hover:txt'}`}>
+                    {l}<span className={`text-[10px] font-normal ${sel ? 'text-green-400/70' : 'muted'}`}>{d}</span>
+                  </button>
+                )
+              })}
+            </div>
+          </Field>
 
           <div className="bd my-7 border-t" />
 

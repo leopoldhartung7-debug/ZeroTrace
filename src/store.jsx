@@ -449,7 +449,33 @@ export function defaultToolStyle() {
     },
     introVideo: {
       enabled: false,
-      path: '',            // relative path next to ZeroTrace.exe, e.g. "intro.mp4"
+      path: '',
+    },
+    frame: {
+      cornerRadius: 'rounded', // sharp | rounded | soft | pill
+      shadow:       'soft',    // none | soft | strong | neon
+      borderWidth:  'none',    // none | thin | normal | thick
+      borderColor:  '',        // '' = titlebar color
+      opacity:      100,       // 70-100
+    },
+    typography: {
+      font:    'segoe',  // segoe | mono | inter | roboto
+      size:    'normal', // small | normal | large
+      spacing: 'normal', // normal | wide | ultra
+    },
+    pinField: {
+      char:   'dot',     // dot | square | asterisk | block
+      border: 'rounded', // none | bottom | rounded | square
+    },
+    bar: {
+      height:     'normal', // slim | normal | thick | chunky
+      caps:       'round',  // sharp | round
+      trackColor: '',       // '' = background color
+    },
+    done: {
+      icon:  'check', // check | shield | star | ring
+      color: '',      // '' = accent
+      anim:  'pop',   // none | pop | bounce | spin
     },
   }
 }
