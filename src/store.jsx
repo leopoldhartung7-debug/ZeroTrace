@@ -2178,6 +2178,29 @@ function reducer(state, action) {
       }
     }
 
+    case 'add-cheat-to-db': {
+      const p = action.proposal
+      if (!p?.pattern) return state
+      const alreadyInDb = (state.customCheats || []).some(
+        c => (c.signatures || []).some(s => s.toLowerCase() === p.pattern.toLowerCase())
+      )
+      const newCheat = alreadyInDb ? null : proposalToCheat({ ...p, status: 'approved' })
+      const proposalEntry = {
+        id: 'p' + Date.now(),
+        ...p,
+        status: 'approved',
+        source: 'admin-ticket',
+        submittedAt: Date.now(),
+        seenCount: 1,
+        adminComment: 'Hinzugefügt via Ticket',
+      }
+      return {
+        ...state,
+        proposals: [proposalEntry, ...(state.proposals || [])],
+        customCheats: newCheat ? [newCheat, ...(state.customCheats || [])] : (state.customCheats || []),
+      }
+    }
+
     case 'clear-data':
       return { ...seed(), settings: state.settings }
 
