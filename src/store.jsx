@@ -438,6 +438,11 @@ export function defaultToolStyle() {
       heuristic: 'Running heuristic analysis...',
       finished: 'Scan complete — generating report',
     },
+    animations: {
+      speed: 'normal',   // instant | fast | normal | slow
+      barStyle: 'smooth', // smooth | pulse | stepped
+      intro: 'fade',     // none | fade | slide
+    },
   }
 }
 

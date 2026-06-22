@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react'
-import { Wand2, Save, Download, Upload, RotateCcw, Eye, Copy, FileJson, Link, AlertTriangle, Check } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { Wand2, Save, Download, Upload, RotateCcw, Eye, Copy, FileJson, Link, AlertTriangle, Check, Play, Zap } from 'lucide-react'
 import { PageHeader, Card, Field } from '../components/kit.jsx'
 import { useToast } from '../components/ui.jsx'
 import { useStore, defaultToolStyle } from '../store.jsx'
@@ -44,23 +44,36 @@ const PRESET_THEMES = [
   {
     label: 'Dark Navy',
     colors: { background: '#0d1326', mutedBackground: '#161d33', titlebar: '#070b16', text: '#e8eaf0', mutedText: '#8b93a7', accent: '#38bdf8' },
+    animations: { speed: 'normal', barStyle: 'smooth', intro: 'fade' },
   },
   {
     label: 'Midnight Purple',
     colors: { background: '#0f0b1e', mutedBackground: '#1a1430', titlebar: '#07050d', text: '#ede8f5', mutedText: '#9b90b8', accent: '#a78bfa' },
+    animations: { speed: 'slow', barStyle: 'pulse', intro: 'fade' },
   },
   {
     label: 'Forest',
     colors: { background: '#0a150f', mutedBackground: '#111f18', titlebar: '#050a07', text: '#dff0e5', mutedText: '#88aa95', accent: '#22c55e' },
+    animations: { speed: 'normal', barStyle: 'smooth', intro: 'none' },
   },
   {
     label: 'Sunset',
     colors: { background: '#1a0e08', mutedBackground: '#261508', titlebar: '#0d0703', text: '#f5ede5', mutedText: '#b09080', accent: '#f97316' },
+    animations: { speed: 'fast', barStyle: 'smooth', intro: 'slide' },
   },
   {
     label: 'Rose',
     colors: { background: '#1a0a12', mutedBackground: '#26101c', titlebar: '#0d0509', text: '#f5e0ea', mutedText: '#b09098', accent: '#f43f5e' },
+    animations: { speed: 'slow', barStyle: 'pulse', intro: 'fade' },
   },
+]
+
+const ANIMATION_PRESETS = [
+  { label: 'Minimal',     speed: 'instant', barStyle: 'smooth',  intro: 'none'  },
+  { label: 'Standard',    speed: 'normal',  barStyle: 'smooth',  intro: 'fade'  },
+  { label: 'Cinematisch', speed: 'slow',    barStyle: 'pulse',   intro: 'fade'  },
+  { label: 'Reaktiv',     speed: 'fast',    barStyle: 'smooth',  intro: 'slide' },
+  { label: 'Stepped',     speed: 'normal',  barStyle: 'stepped', intro: 'none'  },
 ]
 
 // ── scanner export helpers ───────────────────────────────────────────────────
@@ -80,6 +93,14 @@ function buildScannerDelta(s) {
   }
   if (Object.keys(textDelta).length) delta.text = textDelta
   if (s.version !== def.version) delta.version = s.version
+
+  const animSrc = s.animations || def.animations
+  const animDelta = {}
+  for (const [k, v] of Object.entries(animSrc)) {
+    if (v !== def.animations[k]) animDelta[k] = v
+  }
+  if (Object.keys(animDelta).length) delta.animations = animDelta
+
   return delta
 }
 
@@ -144,58 +165,105 @@ function Toggle({ label, checked, onChange, accent }) {
   )
 }
 
+const SPEED_MS = { instant: 0, fast: 200, normal: 550, slow: 1400 }
+const TIMING   = { smooth: 'ease-out', pulse: 'ease-in-out', stepped: 'steps(6, end)' }
+
 function GuiPreview({ s }) {
-  const c = s.colors
+  const c    = s.colors
+  const anim = s.animations || { speed: 'normal', barStyle: 'smooth', intro: 'fade' }
+  const durMs = SPEED_MS[anim.speed] ?? 550
+  const timing = TIMING[anim.barStyle] ?? 'ease-out'
+
   const [imgErr, setImgErr] = useState(false)
+  const [tick, setTick]     = useState(0)
+  const [widths, setWidths] = useState([0, 0])
+  const [visible, setVisible] = useState(false)
+
   useEffect(() => setImgErr(false), [s.logoUrl])
+
+  useEffect(() => {
+    setWidths([0, 0])
+    setVisible(false)
+    const t1 = setTimeout(() => setVisible(true), 30)
+    const t2 = setTimeout(() => setWidths([28, 74]), durMs === 0 ? 0 : 80)
+    return () => { clearTimeout(t1); clearTimeout(t2) }
+  }, [tick, durMs])
+
   const showCustom = !s.useDefaultLogo && !!s.logoUrl && !imgErr
+
+  const introStyle = anim.intro === 'fade'
+    ? { opacity: visible ? 1 : 0, transition: `opacity ${Math.max(durMs, 200)}ms ease` }
+    : anim.intro === 'slide'
+    ? { opacity: visible ? 1 : 0, transform: visible ? 'translateY(0)' : 'translateY(14px)', transition: `opacity ${Math.max(durMs, 200)}ms ease, transform ${Math.max(durMs, 200)}ms ease` }
+    : {}
+
   return (
-    <div className="overflow-hidden rounded-xl border" style={{ borderColor: c.titlebar }}>
-      <div className="flex items-center gap-2 px-3 py-2" style={{ background: c.titlebar }}>
-        <span className="h-2.5 w-2.5 rounded-full bg-red-500" />
-        <span className="h-2.5 w-2.5 rounded-full bg-yellow-500" />
-        <span className="h-2.5 w-2.5 rounded-full bg-green-500" />
-        <span className="ml-2 text-xs" style={{ color: c.mutedText }}>ZeroTrace FiveM Scanner</span>
-      </div>
-
-      <div
-        className="relative px-8 py-10"
-        style={{
-          background: s.gameBackground
-            ? `radial-gradient(120% 90% at 50% 0%, ${c.mutedBackground}, ${c.background})`
-            : c.background,
-          color: c.text,
-        }}
-      >
-        <div className="flex flex-col items-center">
-          {showCustom ? (
-            <img src={s.logoUrl} alt="logo" onError={() => setImgErr(true)} className="h-[90px] w-[180px] rounded object-fill" />
-          ) : (
-            <p className="font-mono text-3xl font-bold" style={{ color: c.accent }}>ZEROTRACE</p>
-          )}
-          {!s.useDefaultLogo && s.logoUrl && imgErr && (
-            <p className="mt-1 text-[10px] text-red-400">Logo failed to load — check the URL</p>
-          )}
-          <p className="mt-1.5 text-xs" style={{ color: c.mutedText }}>{s.version}</p>
+    <div>
+      <div className="overflow-hidden rounded-xl border" style={{ borderColor: c.titlebar }}>
+        <div className="flex items-center gap-2 px-3 py-2" style={{ background: c.titlebar }}>
+          <span className="h-2.5 w-2.5 rounded-full bg-red-500" />
+          <span className="h-2.5 w-2.5 rounded-full bg-yellow-500" />
+          <span className="h-2.5 w-2.5 rounded-full bg-green-500" />
+          <span className="ml-2 text-xs" style={{ color: c.mutedText }}>ZeroTrace FiveM Scanner</span>
         </div>
 
-        <p className="mt-8 text-sm" style={{ color: c.text }}>{s.text.pin}</p>
-        <div className="mt-2.5 rounded-md px-4 py-2.5 text-sm tracking-widest" style={{ background: c.mutedBackground, color: c.mutedText }}>
-          F1T5F8C0
-        </div>
-
-        {[{ label: s.text.scanning, pct: 25 }, { label: s.text.heuristic, pct: 75 }].map((step) => (
-          <div key={step.label} className="mt-5 rounded-lg p-5" style={{ background: c.mutedBackground }}>
-            <p className="mb-2.5 text-sm" style={{ color: c.text }}>{step.label}</p>
-            <div className="h-2.5 w-full overflow-hidden rounded-full" style={{ background: c.background }}>
-              <div className="h-full rounded-full transition-all duration-300" style={{ width: `${step.pct}%`, background: c.accent }} />
-            </div>
-            <p className="mt-1.5 text-right text-xs" style={{ color: c.mutedText }}>{step.pct}%</p>
+        <div
+          style={{
+            background: s.gameBackground
+              ? `radial-gradient(120% 90% at 50% 0%, ${c.mutedBackground}, ${c.background})`
+              : c.background,
+            color: c.text,
+            ...introStyle,
+          }}
+          className="relative px-8 py-10"
+        >
+          <div className="flex flex-col items-center">
+            {showCustom ? (
+              <img src={s.logoUrl} alt="logo" onError={() => setImgErr(true)} className="h-[90px] w-[180px] rounded object-fill" />
+            ) : (
+              <p className="font-mono text-3xl font-bold" style={{ color: c.accent }}>ZEROTRACE</p>
+            )}
+            {!s.useDefaultLogo && s.logoUrl && imgErr && (
+              <p className="mt-1 text-[10px] text-red-400">Logo failed to load — check the URL</p>
+            )}
+            <p className="mt-1.5 text-xs" style={{ color: c.mutedText }}>{s.version}</p>
           </div>
-        ))}
 
-        <p className="mt-5 text-center text-xs" style={{ color: c.mutedText }}>{s.text.finished}</p>
+          <p className="mt-8 text-sm" style={{ color: c.text }}>{s.text.pin}</p>
+          <div className="mt-2.5 rounded-md px-4 py-2.5 text-sm tracking-widest" style={{ background: c.mutedBackground, color: c.mutedText }}>
+            F1T5F8C0
+          </div>
+
+          {[{ label: s.text.scanning, pct: widths[0] }, { label: s.text.heuristic, pct: widths[1] }].map((step, i) => (
+            <div key={i} className="mt-5 rounded-lg p-5" style={{ background: c.mutedBackground }}>
+              <p className="mb-2.5 text-sm" style={{ color: c.text }}>{step.label}</p>
+              <div className="h-2.5 w-full overflow-hidden rounded-full" style={{ background: c.background }}>
+                <div
+                  className="h-full rounded-full"
+                  style={{
+                    width: `${step.pct}%`,
+                    background: anim.barStyle === 'pulse'
+                      ? `linear-gradient(90deg, ${c.accent}, ${c.accent}cc, ${c.accent})`
+                      : c.accent,
+                    transition: durMs === 0 ? 'none' : `width ${durMs}ms ${timing}`,
+                    boxShadow: anim.barStyle === 'pulse' && step.pct > 0 ? `0 0 8px 2px ${c.accent}66` : 'none',
+                  }}
+                />
+              </div>
+              <p className="mt-1.5 text-right text-xs" style={{ color: c.mutedText }}>{Math.round(step.pct)}%</p>
+            </div>
+          ))}
+
+          <p className="mt-5 text-center text-xs" style={{ color: c.mutedText }}>{s.text.finished}</p>
+        </div>
       </div>
+
+      <button
+        onClick={() => setTick(t => t + 1)}
+        className="bd txt mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border py-1.5 text-xs hover:border-sky-500"
+      >
+        <Play size={11} /> Vorschau neu abspielen
+      </button>
     </div>
   )
 }
@@ -225,6 +293,9 @@ export default function ToolDesigner({ embedded = false }) {
   const dirty = useMemo(() => JSON.stringify(s) !== savedKey, [s, savedKey])
 
   const set = (patch) => setS((cur) => ({ ...cur, ...patch }))
+
+  const anim = s.animations || defaultToolStyle().animations
+  const setAnim = (patch) => setS(cur => ({ ...cur, animations: { ...(cur.animations || defaultToolStyle().animations), ...patch } }))
 
   const setColor = (k, v) => {
     if (harmonyMode && k === 'background') {
@@ -336,7 +407,7 @@ export default function ToolDesigner({ embedded = false }) {
             {PRESET_THEMES.map((theme) => (
               <button
                 key={theme.label}
-                onClick={() => set({ colors: theme.colors })}
+                onClick={() => set({ colors: theme.colors, ...(theme.animations ? { animations: theme.animations } : {}) })}
                 title={theme.label}
                 className="bd hoverable group flex flex-col items-center gap-2 rounded-xl border px-2 py-3 text-center transition-colors hover:border-sky-500"
               >
@@ -447,6 +518,97 @@ export default function ToolDesigner({ embedded = false }) {
               <input value={s.version} onChange={(e) => set({ version: e.target.value })} className="bd tile txt w-full rounded-lg border px-4 py-3 text-sm focus:outline-none" />
             </Field>
           </div>
+
+          <div className="bd my-7 border-t" />
+
+          {/* ── Animationen & Effekte ── */}
+          <p className="caps-label mb-4 flex items-center gap-2"><Zap size={12} /> Animationen & Effekte</p>
+
+          {/* Animation quick-presets */}
+          <p className="muted mb-2 text-xs">Schnell-Vorlagen</p>
+          <div className="mb-5 flex flex-wrap gap-2">
+            {ANIMATION_PRESETS.map(p => {
+              const active = anim.speed === p.speed && anim.barStyle === p.barStyle && anim.intro === p.intro
+              return (
+                <button
+                  key={p.label}
+                  onClick={() => setAnim(p)}
+                  className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors ${
+                    active ? 'border-sky-500 bg-sky-600/20 text-sky-400' : 'bd tile muted hover:txt'
+                  }`}
+                >
+                  {p.label}
+                </button>
+              )
+            })}
+          </div>
+
+          {/* Speed */}
+          <Field label="Animationsgeschwindigkeit">
+            <div className="grid grid-cols-4 gap-1.5">
+              {[
+                { value: 'instant', label: 'Keine',   sub: '0 ms'    },
+                { value: 'fast',    label: 'Schnell',  sub: '200 ms'  },
+                { value: 'normal',  label: 'Normal',   sub: '550 ms'  },
+                { value: 'slow',    label: 'Langsam',  sub: '1,4 s'   },
+              ].map(({ value, label, sub }) => {
+                const sel = anim.speed === value
+                return (
+                  <button key={value} onClick={() => setAnim({ speed: value })}
+                    className={`flex flex-col items-center gap-0.5 rounded-xl border py-2.5 text-xs font-semibold transition-all ${
+                      sel ? 'border-sky-500 bg-sky-600/20 text-sky-400' : 'bd tile muted hover:txt'
+                    }`}>
+                    {label}
+                    <span className={`text-[10px] font-normal ${sel ? 'text-sky-400/70' : 'muted'}`}>{sub}</span>
+                  </button>
+                )
+              })}
+            </div>
+          </Field>
+
+          {/* Bar style */}
+          <Field label="Fortschrittsbalken-Stil" className="mt-4">
+            <div className="grid grid-cols-3 gap-1.5">
+              {[
+                { value: 'smooth',  label: 'Flüssig',     desc: 'Kontinuierlich' },
+                { value: 'pulse',   label: 'Pulsierend',  desc: 'Glühend'        },
+                { value: 'stepped', label: 'Schrittweise',desc: 'Stufen'         },
+              ].map(({ value, label, desc }) => {
+                const sel = anim.barStyle === value
+                return (
+                  <button key={value} onClick={() => setAnim({ barStyle: value })}
+                    className={`flex flex-col items-center gap-0.5 rounded-xl border py-2.5 text-xs font-semibold transition-all ${
+                      sel ? 'border-violet-500 bg-violet-600/20 text-violet-400' : 'bd tile muted hover:txt'
+                    }`}>
+                    {label}
+                    <span className={`text-[10px] font-normal ${sel ? 'text-violet-400/70' : 'muted'}`}>{desc}</span>
+                  </button>
+                )
+              })}
+            </div>
+          </Field>
+
+          {/* Intro effect */}
+          <Field label="Intro-Effekt (beim Start)" className="mt-4">
+            <div className="grid grid-cols-3 gap-1.5">
+              {[
+                { value: 'none',  label: 'Keiner',    desc: 'Sofort' },
+                { value: 'fade',  label: 'Einblenden', desc: 'Fade'  },
+                { value: 'slide', label: 'Einfahren',  desc: 'Slide' },
+              ].map(({ value, label, desc }) => {
+                const sel = anim.intro === value
+                return (
+                  <button key={value} onClick={() => setAnim({ intro: value })}
+                    className={`flex flex-col items-center gap-0.5 rounded-xl border py-2.5 text-xs font-semibold transition-all ${
+                      sel ? 'border-emerald-500 bg-emerald-600/20 text-emerald-400' : 'bd tile muted hover:txt'
+                    }`}>
+                    {label}
+                    <span className={`text-[10px] font-normal ${sel ? 'text-emerald-400/70' : 'muted'}`}>{desc}</span>
+                  </button>
+                )
+              })}
+            </div>
+          </Field>
         </Card>
 
         {/* Right column */}
