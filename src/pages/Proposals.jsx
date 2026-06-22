@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useStore } from '../store.jsx'
 import { Card } from '../components/kit.jsx'
-import { CheckCircle2, XCircle, RotateCcw, Download, ListChecks } from 'lucide-react'
+import { CheckCircle2, XCircle, RotateCcw, Download, ListChecks, User } from 'lucide-react'
 
 const TYPE_LABELS = {
   FileName: 'Exact Filename',
@@ -50,7 +50,7 @@ export default function ProposalsPage() {
   const rejected = proposals.filter(p => p.status === 'rejected')
 
   const visible = proposals
-    .filter(p => filter === 'all' ? true : p.status === filter)
+    .filter(p => filter === 'all' ? true : filter === 'user' ? p.source === 'user' : p.status === filter)
     .sort((a, b) => {
       if (sort === 'seenCount') return b.seenCount - a.seenCount
       if (sort === 'risk') return RISK_NUMBERS[b.risk] - RISK_NUMBERS[a.risk]
@@ -77,7 +77,7 @@ export default function ProposalsPage() {
       </div>
 
       {/* Stats row */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-4 gap-4">
         <Card className="p-4 text-center">
           <p className="text-3xl font-bold text-yellow-400">{pending.length}</p>
           <p className="muted text-sm mt-1">Pending</p>
@@ -90,17 +90,21 @@ export default function ProposalsPage() {
           <p className="text-3xl font-bold text-red-400">{rejected.length}</p>
           <p className="muted text-sm mt-1">Rejected</p>
         </Card>
+        <Card className="p-4 text-center">
+          <p className="text-3xl font-bold text-sky-400">{proposals.filter(p => p.source === 'user').length}</p>
+          <p className="muted text-sm mt-1">User Reports</p>
+        </Card>
       </div>
 
       {/* Controls */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="flex rounded-lg border bd overflow-hidden">
-          {['pending', 'approved', 'rejected', 'all'].map(f => (
+          {['pending', 'approved', 'rejected', 'user', 'all'].map(f => (
             <button
               key={f}
               onClick={() => { setFilter(f); setSelected([]) }}
               className={`px-3 py-1.5 text-sm font-medium capitalize transition-colors ${filter === f ? 'bg-sky-600 text-white' : 'muted hover:txt'}`}
-            >{f}</button>
+            >{f === 'user' ? 'User Reports' : f}</button>
           ))}
         </div>
 
@@ -174,6 +178,7 @@ export default function ProposalsPage() {
                   <th className="px-4 py-3 text-left">Category</th>
                   <th className="px-4 py-3 text-left">Risk</th>
                   <th className="px-4 py-3 text-center">Seen In</th>
+                  <th className="px-4 py-3 text-left">Source</th>
                   <th className="px-4 py-3 text-left">Description</th>
                   <th className="px-4 py-3 text-left">Status</th>
                   <th className="px-4 py-3 text-right">Actions</th>
@@ -204,6 +209,12 @@ export default function ProposalsPage() {
                       <span className={`font-bold text-base ${p.seenCount >= 5 ? 'text-red-400' : p.seenCount >= 2 ? 'text-orange-400' : 'txt'}`}>
                         {p.seenCount}
                       </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      {p.source === 'user'
+                        ? <span className="flex items-center gap-1 rounded-full bg-sky-400/10 border border-sky-400/20 px-2 py-0.5 text-xs text-sky-400 w-fit"><User size={10} /> User</span>
+                        : <span className="rounded-full bg-white/5 border bd px-2 py-0.5 text-xs muted">Auto-Scan</span>
+                      }
                     </td>
                     <td className="px-4 py-3 max-w-xs">
                       <span className="muted text-xs line-clamp-2">{p.description}</span>

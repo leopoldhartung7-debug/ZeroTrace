@@ -1339,16 +1339,52 @@ function reducer(state, action) {
     case 'delete-cheat':
       return { ...state, customCheats: state.customCheats.filter((c) => c.id !== action.id) }
 
-    case 'add-ticket':
+    case 'add-ticket': {
+      const ownerId = state.session?.userId || (state.role === 'admin' ? 'admin' : null)
       return {
         ...state,
-        tickets: [{ id: 'T-' + Date.now().toString().slice(-6), ...action.ticket, status: 'Open', createdAt: Date.now() }, ...state.tickets],
-        events: ev(state, 'support', 'Ticket opened', action.ticket.subject, state.session?.userId || (state.role === 'admin' ? 'admin' : null)),
-        notifications: note(state, 'Ticket opened', action.ticket.subject, state.session?.userId || (state.role === 'admin' ? 'admin' : null)),
+        tickets: [{
+          id: 'T-' + Date.now().toString().slice(-6),
+          ...action.ticket,
+          status: 'Open',
+          priority: action.ticket.priority || 'Normal',
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+          ownerId,
+          replies: [],
+        }, ...state.tickets],
+        events: ev(state, 'support', 'Ticket opened', action.ticket.subject, ownerId),
+        notifications: note(state, 'Ticket opened', action.ticket.subject, ownerId),
       }
+    }
 
     case 'update-ticket':
-      return { ...state, tickets: state.tickets.map((t) => (t.id === action.id ? { ...t, status: action.status } : t)) }
+      return {
+        ...state,
+        tickets: state.tickets.map((t) =>
+          t.id === action.id ? { ...t, ...action.fields, updatedAt: Date.now() } : t
+        ),
+      }
+
+    case 'reply-ticket': {
+      const replyOwnerId = state.session?.userId || (state.role === 'admin' ? 'admin' : null)
+      const reply = {
+        id: 'r' + Date.now(),
+        author: state.role === 'admin' ? 'Admin' : (state.session?.userId || 'User'),
+        role: state.role,
+        message: action.message,
+        createdAt: Date.now(),
+      }
+      return {
+        ...state,
+        tickets: state.tickets.map((t) =>
+          t.id === action.id
+            ? { ...t, replies: [...(t.replies || []), reply], updatedAt: Date.now(), status: state.role === 'admin' ? 'In Progress' : t.status }
+            : t
+        ),
+        notifications: note(state, `Ticket reply: ${action.id}`, action.message.slice(0, 80), replyOwnerId),
+      }
+    }
 
     case 'clear-events': {
       // Removes the activity-log entries the current viewer is allowed to
@@ -2016,6 +2052,38 @@ function reducer(state, action) {
 
     case 'import-state':
       return { ...seed(), ...action.state }
+
+    case 'add-user-proposal': {
+      const p = action.proposal
+      if (!p?.pattern) return state
+      const existing = (state.proposals || []).find(x => x.pattern === p.pattern)
+      if (existing) {
+        return {
+          ...state,
+          proposals: (state.proposals || []).map(x =>
+            x.pattern === p.pattern
+              ? { ...x, seenCount: x.seenCount + 1, source: 'user' }
+              : x
+          ),
+        }
+      }
+      return {
+        ...state,
+        proposals: [
+          {
+            id: 'usr_' + Date.now(),
+            source: 'user',
+            submittedBy: state.session?.userId || 'unknown',
+            status: 'pending',
+            seenCount: 1,
+            firstSeen: Date.now(),
+            module: p.game || 'User Report',
+            ...p,
+          },
+          ...(state.proposals || []),
+        ],
+      }
+    }
 
     case 'clear-data':
       return { ...seed(), settings: state.settings }
