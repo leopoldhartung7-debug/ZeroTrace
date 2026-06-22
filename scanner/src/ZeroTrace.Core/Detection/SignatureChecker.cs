@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Security.Cryptography.X509Certificates;
 
 namespace ZeroTrace.Core.Detection;
@@ -38,6 +39,15 @@ public static class SignatureChecker
         ".exe", ".dll", ".sys", ".ocx", ".cab", ".msi", ".cat", ".scr", ".cpl", ".asi"
     };
 
+    // Cache Authenticode results keyed by (normalised path → (detail, lastWriteUtcTicks)).
+    // WinVerifyTrust + catalog lookup is the single most expensive per-file operation;
+    // caching eliminates redundant calls across modules and between scans on the same
+    // session. Cleared at the start of every scan run via ClearCache().
+    private static readonly ConcurrentDictionary<string, (SignatureDetail result, long ticks)> _sigCache =
+        new(StringComparer.OrdinalIgnoreCase);
+
+    public static void ClearCache() => _sigCache.Clear();
+
     public static bool IsCheckable(string path) =>
         Checkable.Contains(Path.GetExtension(path));
 
@@ -48,10 +58,21 @@ public static class SignatureChecker
         return new SignatureInfo(d.IsTrusted, d.Signer);
     }
 
-    /// <summary>Full trust + signer information.</summary>
+    /// <summary>Full trust + signer information. Results are cached by path+lastWriteTime.</summary>
     public static SignatureDetail CheckDetailed(string path)
     {
         if (!IsCheckable(path)) return new SignatureDetail(Trust.Unsigned, null, false);
+
+        long ticks = 0;
+        try
+        {
+            var fi = new FileInfo(path);
+            if (!fi.Exists) return new SignatureDetail(Trust.Unsigned, null, false);
+            ticks = fi.LastWriteTimeUtc.Ticks;
+            if (_sigCache.TryGetValue(path, out var cached) && cached.ticks == ticks)
+                return cached.result;
+        }
+        catch { }
 
         var result = AuthenticodeVerifier.Verify(path);
         var trust = result.Status switch
@@ -64,7 +85,9 @@ public static class SignatureChecker
         string? signer = TryReadEmbeddedSigner(path);
         if (signer is null && result.CatalogSigned) signer = "Windows-Katalog";
 
-        return new SignatureDetail(trust, signer, result.CatalogSigned);
+        var detail = new SignatureDetail(trust, signer, result.CatalogSigned);
+        if (ticks != 0) _sigCache[path] = (detail, ticks);
+        return detail;
     }
 
     /// <summary>Best-effort friendly signer name from the embedded certificate.</summary>

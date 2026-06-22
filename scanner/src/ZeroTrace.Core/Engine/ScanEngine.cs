@@ -54,6 +54,7 @@ public sealed class ScanEngine
         });
 
         HashUtil.ClearCache();
+        SignatureChecker.ClearCache();
 
         double totalWeight = modules.Sum(m => m.Weight);
         double consumed = 0;

@@ -68,8 +68,28 @@ public sealed class ScanOptions
     /// <summary>Directories that are never descended into during enumeration.</summary>
     public List<string> ExcludedDirectoryNames { get; set; } = new()
     {
+        // Windows internals — signed, huge, and never contain cheats
         "Windows", "$Recycle.Bin", "System Volume Information",
-        "WinSxS", "Program Files", "Program Files (x86)"
+        "WinSxS",                  // Side-by-side assembly store (GBs of signed DLLs)
+        "SoftwareDistribution",    // Windows Update download cache (all MS-signed)
+        "DriverStore",             // Driver package staging (all signed)
+        "servicing",               // Windows Update servicing stack
+        "Packages",                // UWP app packages
+        "WindowsApps",             // UWP installed apps
+        // Vendor software trees — skip to avoid mass false positives on unsigned installers
+        "Program Files", "Program Files (x86)",
+        // High-volume developer/tool directories with no cheat relevance
+        "node_modules",            // npm package trees
+        ".git",                    // Git repository object store
+        "__pycache__",             // Python bytecode cache
+        "NuGetPackages",           // NuGet package cache
+        // Browser/app caches — random web content, very noisy
+        "INetCache",               // IE / Edge web cache
+        "Temporary Internet Files",
+        "GPUCache",                // GPU shader / pipeline caches
+        "Code Cache",              // Chromium V8 compiled cache
+        "CrashReports",            // Crash dump directories
+        "CrashPad",                // Chromium crash handler
     };
 
     /// <summary>Maximum recursion depth for the deep drive scan.</summary>

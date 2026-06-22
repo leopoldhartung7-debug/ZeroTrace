@@ -53,6 +53,15 @@ internal static class FileInspector
             signer = sig.Signer;
         }
 
+        // Catalog-signed files are in-box Windows components (kernel DLLs, system
+        // drivers, WinSxS binaries). If no indicator hit occurred, there is nothing
+        // more to check: they cannot be "untrusted in user-writable" or be renamed
+        // cheats. Returning early here eliminates the MotW read, the content scan,
+        // the self-rename check, and the heuristic for the vast majority of safe
+        // system files encountered during a deep drive scan.
+        if (sig.CatalogSigned && hashHit is null && nameHit is null && kwHit is null && pathHit is null)
+            return null;
+
         // Content-string signature pass: searches the raw bytes for cheat
         // watermarks / menu strings / brand tokens. Catches renamed files.
         // Skipped when a hash indicator already matched (hash is strongest) and
@@ -61,8 +70,12 @@ internal static class FileInspector
         if (hashHit is null && (checkable || relevant) && ctx.Matcher.HasContentSignatures)
             contentHit = ContentSignatureScanner.Scan(path, ctx.Matcher);
 
-        // Mark-of-the-Web: was this file downloaded from the internet?
-        var motw = MarkOfWeb.Read(path);
+        // Mark-of-the-Web: only read the Zone.Identifier ADS for files in
+        // user-controllable locations. Windows system files never carry MotW and
+        // attempting to read their ADS wastes I/O time on every scanned binary.
+        var motw = Heuristics.IsInUserWritableRoot(path)
+            ? MarkOfWeb.Read(path)
+            : default;
 
         // Pick the strongest matching indicator.
         var indicator = hashHit ?? contentHit ?? nameHit ?? kwHit ?? pathHit;

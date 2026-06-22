@@ -1,3 +1,5 @@
+using Microsoft.Win32;
+
 namespace ZeroTrace.Core.Util;
 
 /// <summary>Central place for well-known filesystem locations used by the scanner.</summary>
@@ -177,6 +179,20 @@ public static class KnownPaths
         var pub = Environment.GetEnvironmentVariable("PUBLIC");
         if (!string.IsNullOrEmpty(pub)) roots.Add(pub);
 
+        // ProgramData — many cheats/spoofers install services or configs here
+        var programData = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
+        if (!string.IsNullOrEmpty(programData)) roots.Add(programData);
+
+        // VirtualStore — UAC-virtualized writes from apps without proper write permissions
+        roots.Add(Path.Combine(LocalAppData, "VirtualStore"));
+
+        // User-installed programs (winget, MSIX sideload, some cheat loaders use this path)
+        roots.Add(Path.Combine(LocalAppData, "Programs"));
+
+        // Steam install directory (covers steamapps\workshop and game-level cheat drops)
+        var steam = FindSteamDirectory();
+        if (steam is not null) roots.Add(steam);
+
         var fivem = FindFiveMDirectory();
         if (fivem is not null) roots.Add(fivem);
 
@@ -184,5 +200,28 @@ public static class KnownPaths
             roots.Add(root);
 
         return roots.Where(Directory.Exists).Distinct(StringComparer.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// Returns the Steam installation directory by reading its registry key,
+    /// or null if Steam is not installed or the registry is inaccessible.
+    /// Covers both per-user (HKCU) and machine-wide (HKLM) installs.
+    /// </summary>
+    public static string? FindSteamDirectory()
+    {
+        try
+        {
+            foreach (var hive in new[] { Registry.CurrentUser, Registry.LocalMachine })
+            {
+                using var key = hive.OpenSubKey(@"SOFTWARE\Valve\Steam", writable: false)
+                             ?? hive.OpenSubKey(@"SOFTWARE\WOW6432Node\Valve\Steam", writable: false);
+                var path = key?.GetValue("SteamPath")?.ToString()
+                        ?? key?.GetValue("InstallPath")?.ToString();
+                if (!string.IsNullOrEmpty(path) && Directory.Exists(path))
+                    return path;
+            }
+        }
+        catch { }
+        return null;
     }
 }
