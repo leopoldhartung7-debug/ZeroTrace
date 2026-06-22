@@ -197,14 +197,21 @@ public partial class MainWindow : Window
 
         var options = _settings.LoadOptions();
         var matcher = new IndicatorMatcher(_indicators.GetEnabled());
-        var engine = new ScanEngine(matcher);
-        var progress = new Progress<ScanProgress>(OnProgress);
+        using var cts = new CancellationTokenSource();
+
+        // ---- Phase 1: full standard scan (all modules, targeted directories) ----
+        // Progress bar: 0 % → 60 %
+        var phase1Progress = new Progress<ScanProgress>(p =>
+        {
+            p.Percent = Math.Clamp(p.Percent * 0.6, 0, 60);
+            OnProgress(p);
+        });
 
         ScanReport report;
         try
         {
-            using var cts = new CancellationTokenSource();
-            report = await Task.Run(() => engine.RunAsync(options, progress, null, cts.Token));
+            var engine1 = new ScanEngine(matcher);
+            report = await Task.Run(() => engine1.RunAsync(options, phase1Progress, null, cts.Token));
         }
         catch (Exception ex)
         {
@@ -212,10 +219,72 @@ public partial class MainWindow : Window
             return;
         }
 
+        // ---- Phase 2: deep drive scan (DriveScanModule only, every fixed drive) ----
+        // Progress bar: 60 % → 100 %
+        // Only DriveScanModule runs; all other modules were already covered in Phase 1.
+        // ModuleTimeoutSeconds = 0 disables the per-module time cap so a large drive
+        // can be fully scanned without being cut short.
+        var deepOptions = _settings.LoadOptions();
+        deepOptions.DeepDriveScan = true;
+        deepOptions.ModuleTimeoutSeconds = 0;
+        deepOptions.ScanDrives = true;
+        deepOptions.ScanProcesses = false;
+        deepOptions.ScanAutostart = false;
+        deepOptions.ScanRegistry = false;
+        deepOptions.ScanFiveM = false;
+        deepOptions.ScanDownloads = false;
+        deepOptions.ScanBrowserHistory = false;
+        deepOptions.ScanSecurityTimeline = false;
+        deepOptions.ScanPowerShell = false;
+        deepOptions.ScanKernelDrivers = false;
+        deepOptions.ScanExecutionHistory = false;
+        deepOptions.ScanDmaRisk = false;
+        deepOptions.ScanInventory = false;
+        deepOptions.ScanRemnants = false;
+        deepOptions.ScanTamper = false;
+        deepOptions.ScanForensicTraces = false;
+        deepOptions.ScanUsnJournal = false;
+        deepOptions.ScanNetwork = false;
+        deepOptions.ScanOverlay = false;
+        deepOptions.ScanWmiPersistence = false;
+        deepOptions.ScanScheduledTasks = false;
+        deepOptions.ScanUsbDevices = false;
+        deepOptions.ScanDllHijack = false;
+        deepOptions.ScanBrowserExtensions = false;
+        deepOptions.ScanRootCertificates = false;
+        deepOptions.ScanVirtualMachine = false;
+        deepOptions.ScanHiddenDrivers = false;
+        deepOptions.ScanMemory = false;
+        deepOptions.ScanCustomStrings = false;
+
+        var phase2Progress = new Progress<ScanProgress>(p =>
+        {
+            p.Percent = 60 + Math.Clamp(p.Percent * 0.4, 0, 40);
+            OnProgress(p);
+        });
+
+        ScanReport deepReport;
+        try
+        {
+            var engine2 = new ScanEngine(matcher);
+            deepReport = await Task.Run(() => engine2.RunAsync(deepOptions, phase2Progress, null, cts.Token));
+        }
+        catch
+        {
+            deepReport = new ScanReport { Findings = new System.Collections.Generic.List<Finding>() };
+        }
+
+        // Merge deep-scan findings into the main report and re-sort by risk.
+        report.Findings.AddRange(deepReport.Findings);
+        report.Findings = report.Findings
+            .OrderByDescending(f => f.Risk)
+            .ToList();
+        report.FilesScanned += deepReport.FilesScanned;
+        report.FinishedUtc = DateTime.UtcNow;
+
         report.Pin = _enteredPin;
         try { _scans.Save(report); } catch { /* best effort */ }
 
-        // Auto-send to the configured destination (disclosed in the consent step).
         var url = (_settings.Get("webhook_url") ?? "").Trim();
         if (!string.IsNullOrEmpty(url))
         {

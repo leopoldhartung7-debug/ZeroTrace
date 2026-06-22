@@ -210,8 +210,8 @@ public sealed class FiveMScanModule : IScanModule
         "NoClip", "GodMode", "SuperSpeed",
         "exports[\"cheat", "exports['cheat",
         "TriggerEvent(\"cheat", "TriggerEvent('cheat",
-        "SetEntityCoords(", -- teleport abuse pattern
-        "NetworkSetVoiceActive" -- common in silent aimbots
+        "SetEntityCoords(",  // teleport abuse pattern
+        "NetworkSetVoiceActive", // common in silent aimbots
     };
 
     private static void CheckLuaFile(ScanContext ctx, string file, string fwName)
