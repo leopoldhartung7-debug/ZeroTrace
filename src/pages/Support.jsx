@@ -1196,17 +1196,17 @@ export default function Support() {
           <Field label="Kategorie">
             <div className="grid grid-cols-5 gap-1.5">
               {[
-                { value: 'General',      icon: MessageSquare, label: 'General',   selCls: 'border-white/40 bg-white/10 text-white'               },
-                { value: 'Bug',          icon: Bug,           label: 'Bug',        selCls: 'border-orange-400/50 bg-orange-400/10 text-orange-400' },
-                { value: 'Billing',      icon: CreditCard,    label: 'Billing',    selCls: 'border-green-400/50 bg-green-400/10 text-green-400'    },
-                { value: 'Detection',    icon: Shield,        label: 'Detection',  selCls: 'border-sky-400/50 bg-sky-400/10 text-sky-400'          },
-                { value: 'Cheat Report', icon: ShieldAlert,   label: 'Cheat',      selCls: 'border-purple-400/50 bg-purple-400/10 text-purple-400' },
+                { value: 'General',      icon: MessageSquare, label: 'General',   selCls: 'border-white/40 bg-white/10 text-white',                subject: 'Feature: ',   priority: 'Low',    message: 'I would like to suggest:' },
+                { value: 'Bug',          icon: Bug,           label: 'Bug',        selCls: 'border-orange-400/50 bg-orange-400/10 text-orange-400', subject: 'Bug: ',       priority: 'High',   message: 'Steps to reproduce:\n1. \n\nExpected:\nActual:' },
+                { value: 'Billing',      icon: CreditCard,    label: 'Billing',    selCls: 'border-green-400/50 bg-green-400/10 text-green-400',    subject: 'Billing: ',   priority: 'Normal', message: '' },
+                { value: 'Detection',    icon: Shield,        label: 'Detection',  selCls: 'border-sky-400/50 bg-sky-400/10 text-sky-400',          subject: 'Detection: ', priority: 'Normal', message: 'Player:\nScan ID:\nIssue:' },
+                { value: 'Cheat Report', icon: ShieldAlert,   label: 'Cheat',      selCls: 'border-purple-400/50 bg-purple-400/10 text-purple-400', subject: '',            priority: 'Normal', message: '' },
               ].map(cat => {
                 const Icon = cat.icon
                 const sel = form.category === cat.value
                 return (
                   <button key={cat.value} type="button"
-                    onClick={() => setForm({ ...form, category: cat.value })}
+                    onClick={() => setForm(f => ({ ...f, category: cat.value, subject: cat.subject, priority: cat.priority, message: cat.message }))}
                     className={`flex flex-col items-center gap-1.5 rounded-xl border py-3 px-1 text-center transition-all ${
                       sel ? cat.selCls : 'bd tile muted hover:txt'
                     }`}
