@@ -439,9 +439,16 @@ export function defaultToolStyle() {
       finished: 'Scan complete — generating report',
     },
     animations: {
-      speed: 'normal',   // instant | fast | normal | slow
-      barStyle: 'smooth', // smooth | pulse | stepped
-      intro: 'fade',     // none | fade | slide
+      speed: 'normal',     // instant | fast | normal | slow
+      barStyle: 'smooth',  // smooth | pulse | stepped
+      intro: 'fade',       // none | fade | slide
+      bgEffect: 'none',    // none | scanlines | grid | glow-pulse
+      glowAccent: false,   // neon glow on accent elements
+      glitchText: false,   // occasional glitch on title
+    },
+    introVideo: {
+      enabled: false,
+      path: '',            // relative path next to ZeroTrace.exe, e.g. "intro.mp4"
     },
   }
 }

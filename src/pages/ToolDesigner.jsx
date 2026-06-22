@@ -44,36 +44,37 @@ const PRESET_THEMES = [
   {
     label: 'Dark Navy',
     colors: { background: '#0d1326', mutedBackground: '#161d33', titlebar: '#070b16', text: '#e8eaf0', mutedText: '#8b93a7', accent: '#38bdf8' },
-    animations: { speed: 'normal', barStyle: 'smooth', intro: 'fade' },
+    animations: { speed: 'normal', barStyle: 'smooth', intro: 'fade', bgEffect: 'none', glowAccent: false, glitchText: false },
   },
   {
     label: 'Midnight Purple',
     colors: { background: '#0f0b1e', mutedBackground: '#1a1430', titlebar: '#07050d', text: '#ede8f5', mutedText: '#9b90b8', accent: '#a78bfa' },
-    animations: { speed: 'slow', barStyle: 'pulse', intro: 'fade' },
+    animations: { speed: 'slow', barStyle: 'pulse', intro: 'fade', bgEffect: 'scanlines', glowAccent: true, glitchText: false },
   },
   {
     label: 'Forest',
     colors: { background: '#0a150f', mutedBackground: '#111f18', titlebar: '#050a07', text: '#dff0e5', mutedText: '#88aa95', accent: '#22c55e' },
-    animations: { speed: 'normal', barStyle: 'smooth', intro: 'none' },
+    animations: { speed: 'normal', barStyle: 'smooth', intro: 'none', bgEffect: 'grid', glowAccent: false, glitchText: false },
   },
   {
     label: 'Sunset',
     colors: { background: '#1a0e08', mutedBackground: '#261508', titlebar: '#0d0703', text: '#f5ede5', mutedText: '#b09080', accent: '#f97316' },
-    animations: { speed: 'fast', barStyle: 'smooth', intro: 'slide' },
+    animations: { speed: 'fast', barStyle: 'smooth', intro: 'slide', bgEffect: 'glow-pulse', glowAccent: true, glitchText: false },
   },
   {
     label: 'Rose',
     colors: { background: '#1a0a12', mutedBackground: '#26101c', titlebar: '#0d0509', text: '#f5e0ea', mutedText: '#b09098', accent: '#f43f5e' },
-    animations: { speed: 'slow', barStyle: 'pulse', intro: 'fade' },
+    animations: { speed: 'slow', barStyle: 'pulse', intro: 'fade', bgEffect: 'scanlines', glowAccent: true, glitchText: true },
   },
 ]
 
 const ANIMATION_PRESETS = [
-  { label: 'Minimal',     speed: 'instant', barStyle: 'smooth',  intro: 'none'  },
-  { label: 'Standard',    speed: 'normal',  barStyle: 'smooth',  intro: 'fade'  },
-  { label: 'Cinematisch', speed: 'slow',    barStyle: 'pulse',   intro: 'fade'  },
-  { label: 'Reaktiv',     speed: 'fast',    barStyle: 'smooth',  intro: 'slide' },
-  { label: 'Stepped',     speed: 'normal',  barStyle: 'stepped', intro: 'none'  },
+  { label: 'Minimal',     speed: 'instant', barStyle: 'smooth',  intro: 'none',  bgEffect: 'none',       glowAccent: false, glitchText: false },
+  { label: 'Standard',    speed: 'normal',  barStyle: 'smooth',  intro: 'fade',  bgEffect: 'none',       glowAccent: false, glitchText: false },
+  { label: 'Neon',        speed: 'normal',  barStyle: 'pulse',   intro: 'fade',  bgEffect: 'scanlines',  glowAccent: true,  glitchText: false },
+  { label: 'Matrix',      speed: 'normal',  barStyle: 'stepped', intro: 'fade',  bgEffect: 'grid',       glowAccent: true,  glitchText: false },
+  { label: 'Cinematisch', speed: 'slow',    barStyle: 'pulse',   intro: 'fade',  bgEffect: 'glow-pulse', glowAccent: true,  glitchText: false },
+  { label: 'Cyber',       speed: 'fast',    barStyle: 'smooth',  intro: 'slide', bgEffect: 'scanlines',  glowAccent: true,  glitchText: true  },
 ]
 
 // ── scanner export helpers ───────────────────────────────────────────────────
@@ -94,12 +95,18 @@ function buildScannerDelta(s) {
   if (Object.keys(textDelta).length) delta.text = textDelta
   if (s.version !== def.version) delta.version = s.version
 
-  const animSrc = s.animations || def.animations
+  const animSrc = { ...def.animations, ...(s.animations || {}) }
   const animDelta = {}
   for (const [k, v] of Object.entries(animSrc)) {
     if (v !== def.animations[k]) animDelta[k] = v
   }
   if (Object.keys(animDelta).length) delta.animations = animDelta
+
+  const ivSrc = s.introVideo || def.introVideo
+  const ivDelta = {}
+  if (ivSrc.enabled !== def.introVideo.enabled) ivDelta.enabled = ivSrc.enabled
+  if (ivSrc.path   !== def.introVideo.path)    ivDelta.path    = ivSrc.path
+  if (Object.keys(ivDelta).length) delta.introVideo = ivDelta
 
   return delta
 }
@@ -211,92 +218,106 @@ const SPEED_MS = { instant: 0, fast: 200, normal: 550, slow: 1400 }
 const TIMING   = { smooth: 'ease-out', pulse: 'ease-in-out', stepped: 'steps(6, end)' }
 const SIM_PIN  = ['F','1','T','5','F','8']
 
+const ANIM_CSS = `
+@keyframes ztGlowPulse {
+  0%, 100% { opacity: 0.3; }
+  50%       { opacity: 0.9; }
+}
+@keyframes ztGlitch {
+  0%, 5%, 100% { clip-path: none; transform: none; filter: none; }
+  1%   { clip-path: inset(10% 0 80% 0);  transform: translate(-4px, 0); filter: hue-rotate(40deg); }
+  2%   { clip-path: inset(65% 0 10% 0);  transform: translate(4px, 0);  filter: hue-rotate(-40deg); }
+  3%   { clip-path: inset(35% 0 52% 0);  transform: translate(-2px, 0); filter: none; }
+  4%   { clip-path: inset(50% 0 28% 0);  transform: translate(2px, 0); }
+}
+@keyframes ztBarGlow {
+  0%, 100% { filter: brightness(1) saturate(1); }
+  50%       { filter: brightness(1.45) saturate(1.5); }
+}
+@keyframes ztVideoIcon {
+  0%, 100% { opacity: 0.5; }
+  50%       { opacity: 1; }
+}
+`
+
 function GuiPreview({ s }) {
   const c    = s.colors
-  const anim = s.animations || { speed: 'normal', barStyle: 'smooth', intro: 'fade' }
-  const durMs  = SPEED_MS[anim.speed] ?? 550
-  const timing = TIMING[anim.barStyle] ?? 'ease-out'
-  // When animation settings change, restart the simulation
-  const animKey = `${anim.speed}|${anim.barStyle}|${anim.intro}`
+  const anim = { speed: 'normal', barStyle: 'smooth', intro: 'fade', bgEffect: 'none', glowAccent: false, glitchText: false, ...(s.animations || {}) }
+  const { speed, barStyle, intro, bgEffect, glowAccent, glitchText } = anim
+  const iv     = s.introVideo || { enabled: false, path: '' }
+  const durMs  = SPEED_MS[speed] ?? 550
+  const timing = TIMING[barStyle] ?? 'ease-out'
+  const animKey = `${speed}|${barStyle}|${intro}|${bgEffect}|${glowAccent}|${glitchText}|${iv.enabled}`
 
   const [imgErr,     setImgErr]     = useState(false)
   const [tick,       setTick]       = useState(0)
-  const [visible,    setVisible]    = useState(false)   // controls intro effect
-  const [stage,      setStage]      = useState('pin')   // 'pin' | 'scanning' | 'done'
-  const [pinDisplay, setPinDisplay] = useState('')      // simulated PIN chars
+  const [visible,    setVisible]    = useState(false)
+  const [stage,      setStage]      = useState('intro-video') // 'intro-video' | 'pin' | 'scanning' | 'done'
+  const [pinDisplay, setPinDisplay] = useState('')
   const [bar1,       setBar1]       = useState(0)
   const [bar2,       setBar2]       = useState(0)
 
   useEffect(() => setImgErr(false), [s.logoUrl])
 
   useEffect(() => {
-    // Reset to initial state
-    setVisible(false)
-    setStage('pin')
-    setPinDisplay('')
-    setBar1(0)
-    setBar2(0)
-
+    setVisible(false); setStage(iv.enabled ? 'intro-video' : 'pin'); setPinDisplay(''); setBar1(0); setBar2(0)
     const ts = []
     const at = (fn, d) => ts.push(setTimeout(fn, d))
 
-    const intro  = durMs === 0 ? 0 : Math.max(durMs, 150)
-    const typeGap = 130 // ms between PIN characters
+    const introDur = durMs === 0 ? 0 : Math.max(durMs, 150)
 
-    // ① Intro — fade / slide the window in
-    at(() => setVisible(true), 50)
+    let offset = 0
+    if (iv.enabled) {
+      // Simulate a ~2s intro video then fade to scanner
+      at(() => setVisible(true), 50)
+      at(() => { setStage('pin'); setVisible(false) }, 2000)
+      offset = 2200
+    }
 
-    // ② PIN typing simulation
-    const pinStart = intro + 350
-    SIM_PIN.forEach((_, i) =>
-      at(() => setPinDisplay(SIM_PIN.slice(0, i + 1).join('')), pinStart + i * typeGap)
-    )
+    at(() => setVisible(true), offset + 50)
+    const pinStart = offset + introDur + 350
+    SIM_PIN.forEach((_, i) => at(() => setPinDisplay(SIM_PIN.slice(0, i + 1).join('')), pinStart + i * 130))
 
-    // ③ Scanning begins
-    const scanStart = pinStart + SIM_PIN.length * typeGap + 550
+    const scanStart = pinStart + SIM_PIN.length * 130 + 550
     at(() => setStage('scanning'), scanStart)
     at(() => setBar1(30), scanStart + 80)
 
-    // ④ Second bar starts after first has time to progress
     const bar2Start = scanStart + Math.max(durMs, 250) + 350
     at(() => setBar2(76), bar2Start)
 
-    // ⑤ Done
     const doneAt = bar2Start + Math.max(durMs, 250) + 450
     at(() => setStage('done'), doneAt)
-
-    // ⑥ Auto-replay
     at(() => setTick(t => t + 1), doneAt + 2200)
 
     return () => ts.forEach(clearTimeout)
   }, [tick, animKey]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const showCustom = !s.useDefaultLogo && !!s.logoUrl && !imgErr
+  const stageIdx   = stage === 'intro-video' ? -1 : stage === 'pin' ? 0 : stage === 'scanning' ? 1 : 2
 
-  const introStyle = anim.intro === 'fade'
+  const introStyle = intro === 'fade'
     ? { opacity: visible ? 1 : 0, transition: `opacity ${Math.max(durMs, 200)}ms ease` }
-    : anim.intro === 'slide'
-    ? {
-        opacity:   visible ? 1 : 0,
-        transform: visible ? 'translateY(0)' : 'translateY(16px)',
-        transition: `opacity ${Math.max(durMs, 200)}ms ease, transform ${Math.max(durMs, 200)}ms ease`,
-      }
+    : intro === 'slide'
+    ? { opacity: visible ? 1 : 0, transform: visible ? 'translateY(0)' : 'translateY(16px)', transition: `opacity ${Math.max(durMs, 200)}ms ease, transform ${Math.max(durMs, 200)}ms ease` }
+    : {}
+
+  const accentTextStyle = glowAccent
+    ? { textShadow: `0 0 10px ${c.accent}cc, 0 0 28px ${c.accent}44` }
     : {}
 
   const barFill = (w) => ({
     width: `${w}%`,
-    background: anim.barStyle === 'pulse'
+    background: barStyle === 'pulse'
       ? `linear-gradient(90deg, ${c.accent}aa, ${c.accent}, ${c.accent}aa)`
       : c.accent,
     transition: durMs === 0 ? 'none' : `width ${durMs}ms ${timing}`,
-    boxShadow: anim.barStyle === 'pulse' && w > 0 ? `0 0 10px 2px ${c.accent}55` : 'none',
+    boxShadow: glowAccent && w > 0 ? `0 0 8px 3px ${c.accent}66, 0 0 20px 6px ${c.accent}22` : 'none',
+    animation: glowAccent && w > 0 && barStyle === 'pulse' ? 'ztBarGlow 1.5s ease-in-out infinite' : 'none',
   })
-
-  // Tiny stage indicator dots
-  const stageIdx = stage === 'pin' ? 0 : stage === 'scanning' ? 1 : 2
 
   return (
     <div>
+      <style>{ANIM_CSS}</style>
       <div className="overflow-hidden rounded-xl border" style={{ borderColor: c.titlebar }}>
         {/* Titlebar */}
         <div className="flex items-center gap-2 px-3 py-2" style={{ background: c.titlebar }}>
@@ -304,96 +325,138 @@ function GuiPreview({ s }) {
           <span className="h-2.5 w-2.5 rounded-full bg-yellow-500" />
           <span className="h-2.5 w-2.5 rounded-full bg-green-500" />
           <span className="ml-2 text-xs flex-1" style={{ color: c.mutedText }}>ZeroTrace FiveM Scanner</span>
-          {/* Stage dots */}
           <div className="flex gap-1 mr-1">
-            {['PIN','Scan','Fertig'].map((_, i) => (
-              <span key={i} className="h-1.5 w-1.5 rounded-full transition-colors"
+            {[0,1,2].map(i => (
+              <span key={i} className="h-1.5 w-1.5 rounded-full transition-colors duration-300"
                 style={{ background: i === stageIdx ? c.accent : c.mutedText + '55' }} />
             ))}
           </div>
         </div>
 
-        {/* Scanner body with intro effect */}
-        <div
-          className="px-8 py-10"
-          style={{
-            background: s.gameBackground
-              ? `radial-gradient(120% 90% at 50% 0%, ${c.mutedBackground}, ${c.background})`
-              : c.background,
-            ...introStyle,
-          }}
-        >
-          {/* Logo / branding */}
-          <div className="flex flex-col items-center mb-7">
-            {showCustom ? (
-              <img src={s.logoUrl} alt="logo" onError={() => setImgErr(true)}
-                className="h-[72px] w-[160px] rounded object-fill" />
-            ) : (
-              <p className="font-mono text-2xl font-bold" style={{ color: c.accent }}>ZEROTRACE</p>
-            )}
-            {!s.useDefaultLogo && s.logoUrl && imgErr && (
-              <p className="mt-1 text-[10px] text-red-400">Logo konnte nicht geladen werden</p>
-            )}
-            <p className="mt-1 text-[11px]" style={{ color: c.mutedText }}>{s.version}</p>
+        {/* ── Intro Video Stage ── */}
+        {stage === 'intro-video' && (
+          <div className="flex flex-col items-center justify-center gap-3 py-12"
+            style={{ background: '#000', ...introStyle }}>
+            <div style={{ animation: 'ztVideoIcon 1s ease-in-out infinite', color: c.accent, fontSize: 32 }}>▶</div>
+            <p className="text-xs font-mono" style={{ color: c.mutedText }}>
+              {iv.path ? iv.path : 'intro.mp4'}
+            </p>
+            <p className="text-[10px]" style={{ color: c.mutedText + '88' }}>Intro-Video wird abgespielt…</p>
           </div>
+        )}
 
-          {/* ── Stage: PIN entry ── */}
-          {stage === 'pin' && (
-            <div>
-              <p className="text-sm mb-2.5" style={{ color: c.text }}>{s.text.pin}</p>
-              <div className="rounded-lg px-4 py-3 text-lg tracking-[0.3em] font-mono flex items-center gap-1"
-                style={{ background: c.mutedBackground, color: c.accent }}>
-                {SIM_PIN.map((_, i) => (
-                  <span key={i} style={{ opacity: i < pinDisplay.length ? 1 : 0.2 }}>
-                    {i < pinDisplay.length ? '●' : '○'}
-                  </span>
-                ))}
-                {pinDisplay.length < SIM_PIN.length && (
-                  <span className="ml-0.5 animate-pulse" style={{ color: c.accent }}>|</span>
+        {/* ── Scanner Body ── */}
+        {stage !== 'intro-video' && (
+          <div style={{ position: 'relative', ...introStyle }}>
+            {/* Base background */}
+            <div style={{
+              position: 'absolute', inset: 0,
+              background: s.gameBackground
+                ? `radial-gradient(120% 90% at 50% 0%, ${c.mutedBackground}, ${c.background})`
+                : c.background,
+            }} />
+            {/* Scanlines overlay */}
+            {bgEffect === 'scanlines' && (
+              <div style={{
+                position: 'absolute', inset: 0, pointerEvents: 'none',
+                backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.13) 2px, rgba(0,0,0,0.13) 4px)',
+              }} />
+            )}
+            {/* Grid overlay */}
+            {bgEffect === 'grid' && (
+              <div style={{
+                position: 'absolute', inset: 0, pointerEvents: 'none',
+                backgroundImage: `linear-gradient(${c.accent}16 1px, transparent 1px), linear-gradient(90deg, ${c.accent}16 1px, transparent 1px)`,
+                backgroundSize: '22px 22px',
+              }} />
+            )}
+            {/* Glow-pulse overlay */}
+            {bgEffect === 'glow-pulse' && (
+              <div style={{
+                position: 'absolute', inset: 0, pointerEvents: 'none',
+                background: `radial-gradient(65% 55% at 50% 30%, ${c.accent}2c, transparent)`,
+                animation: 'ztGlowPulse 3s ease-in-out infinite',
+              }} />
+            )}
+
+            {/* Content */}
+            <div className="px-8 py-10" style={{ position: 'relative' }}>
+              {/* Logo */}
+              <div className="flex flex-col items-center mb-7">
+                {showCustom ? (
+                  <img src={s.logoUrl} alt="logo" onError={() => setImgErr(true)}
+                    className="h-[72px] w-[160px] rounded object-fill" />
+                ) : (
+                  <p className="font-mono text-2xl font-bold" style={{
+                    color: c.accent,
+                    animation: glitchText ? 'ztGlitch 7s step-start infinite' : 'none',
+                    ...accentTextStyle,
+                  }}>ZEROTRACE</p>
                 )}
+                {!s.useDefaultLogo && s.logoUrl && imgErr && (
+                  <p className="mt-1 text-[10px] text-red-400">Logo konnte nicht geladen werden</p>
+                )}
+                <p className="mt-1 text-[11px]" style={{ color: c.mutedText }}>{s.version}</p>
               </div>
-            </div>
-          )}
 
-          {/* ── Stage: Scanning ── */}
-          {stage === 'scanning' && (
-            <div className="space-y-4">
-              {[
-                { label: s.text.scanning,  w: bar1 },
-                { label: s.text.heuristic, w: bar2 },
-              ].map((step, i) => (
-                <div key={i} className="rounded-lg p-4" style={{ background: c.mutedBackground }}>
-                  <div className="flex items-center justify-between mb-2">
-                    <p className="text-sm" style={{ color: c.text }}>{step.label}</p>
-                    <p className="text-xs font-mono" style={{ color: c.mutedText }}>{Math.round(step.w)}%</p>
-                  </div>
-                  <div className="h-2 w-full overflow-hidden rounded-full" style={{ background: c.background }}>
-                    <div className="h-full rounded-full" style={barFill(step.w)} />
+              {/* PIN stage */}
+              {stage === 'pin' && (
+                <div>
+                  <p className="text-sm mb-2.5" style={{ color: c.text }}>{s.text.pin}</p>
+                  <div className="rounded-lg px-4 py-3 text-lg tracking-[0.3em] font-mono flex items-center gap-1"
+                    style={{ background: c.mutedBackground, color: c.accent, ...accentTextStyle }}>
+                    {SIM_PIN.map((_, i) => (
+                      <span key={i} style={{ opacity: i < pinDisplay.length ? 1 : 0.2 }}>
+                        {i < pinDisplay.length ? '●' : '○'}
+                      </span>
+                    ))}
+                    {pinDisplay.length < SIM_PIN.length && (
+                      <span className="ml-0.5 animate-pulse" style={{ color: c.accent }}>|</span>
+                    )}
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
+              )}
 
-          {/* ── Stage: Done ── */}
-          {stage === 'done' && (
-            <div className="flex flex-col items-center gap-3 py-2">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full text-lg"
-                style={{ background: c.accent + '22', color: c.accent }}>✓</div>
-              <p className="text-sm text-center" style={{ color: c.text }}>{s.text.finished}</p>
-              <p className="text-xs" style={{ color: c.mutedText }}>Bericht wird generiert…</p>
+              {/* Scanning stage */}
+              {stage === 'scanning' && (
+                <div className="space-y-4">
+                  {[{ label: s.text.scanning, w: bar1 }, { label: s.text.heuristic, w: bar2 }].map((step, i) => (
+                    <div key={i} className="rounded-lg p-4" style={{ background: c.mutedBackground }}>
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-sm" style={{ color: c.text }}>{step.label}</p>
+                        <p className="text-xs font-mono" style={{ color: c.mutedText }}>{Math.round(step.w)}%</p>
+                      </div>
+                      <div className="h-2 w-full overflow-hidden rounded-full" style={{ background: c.background }}>
+                        <div className="h-full rounded-full" style={barFill(step.w)} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Done stage */}
+              {stage === 'done' && (
+                <div className="flex flex-col items-center gap-3 py-2">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full text-lg"
+                    style={{
+                      background: c.accent + '22', color: c.accent,
+                      boxShadow: glowAccent ? `0 0 16px 4px ${c.accent}55` : 'none',
+                    }}>✓</div>
+                  <p className="text-sm text-center" style={{ color: c.text }}>{s.text.finished}</p>
+                  <p className="text-xs" style={{ color: c.mutedText }}>Bericht wird generiert…</p>
+                </div>
+              )}
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
-      {/* Stage label + replay */}
       <div className="mt-2 flex items-center justify-between px-0.5">
         <span className="muted text-[11px]">
-          {stage === 'pin' ? 'PIN-Eingabe' : stage === 'scanning' ? 'Wird gescannt…' : 'Scan abgeschlossen'}
+          {stage === 'intro-video' ? 'Intro-Video' : stage === 'pin' ? 'PIN-Eingabe' : stage === 'scanning' ? 'Wird gescannt…' : 'Scan abgeschlossen'}
         </span>
         <button
-          onClick={() => { setVisible(false); setStage('pin'); setPinDisplay(''); setBar1(0); setBar2(0); setTick(t => t + 1) }}
+          onClick={() => { setVisible(false); setStage(iv.enabled ? 'intro-video' : 'pin'); setPinDisplay(''); setBar1(0); setBar2(0); setTick(t => t + 1) }}
           className="muted flex items-center gap-1 text-[11px] hover:txt"
         >
           <Play size={10} /> Neu
@@ -463,8 +526,10 @@ export default function ToolDesigner({ embedded = false }) {
 
   const set = (patch) => setS((cur) => ({ ...cur, ...patch }))
 
-  const anim = s.animations || defaultToolStyle().animations
-  const setAnim = (patch) => setS(cur => ({ ...cur, animations: { ...(cur.animations || defaultToolStyle().animations), ...patch } }))
+  const anim = { ...defaultToolStyle().animations, ...(s.animations || {}) }
+  const setAnim = (patch) => setS(cur => ({ ...cur, animations: { ...defaultToolStyle().animations, ...(cur.animations || {}), ...patch } }))
+  const iv = s.introVideo || defaultToolStyle().introVideo
+  const setIv = (patch) => setS(cur => ({ ...cur, introVideo: { ...(cur.introVideo || defaultToolStyle().introVideo), ...patch } }))
 
   const setColor = (k, v) => {
     if (harmonyMode && k === 'background') {
@@ -738,15 +803,13 @@ export default function ToolDesigner({ embedded = false }) {
           <p className="muted mb-2 text-xs">Schnell-Vorlagen</p>
           <div className="mb-5 flex flex-wrap gap-2">
             {ANIMATION_PRESETS.map(p => {
-              const active = anim.speed === p.speed && anim.barStyle === p.barStyle && anim.intro === p.intro
+              const { label: _l, ...fields } = p
+              const active = Object.entries(fields).every(([k, v]) => anim[k] === v)
               return (
-                <button
-                  key={p.label}
-                  onClick={() => setAnim(p)}
+                <button key={p.label} onClick={() => setAnim(p)}
                   className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors ${
                     active ? 'border-sky-500 bg-sky-600/20 text-sky-400' : 'bd tile muted hover:txt'
-                  }`}
-                >
+                  }`}>
                   {p.label}
                 </button>
               )
@@ -757,10 +820,10 @@ export default function ToolDesigner({ embedded = false }) {
           <Field label="Animationsgeschwindigkeit">
             <div className="grid grid-cols-4 gap-1.5">
               {[
-                { value: 'instant', label: 'Keine',   sub: '0 ms'    },
-                { value: 'fast',    label: 'Schnell',  sub: '200 ms'  },
-                { value: 'normal',  label: 'Normal',   sub: '550 ms'  },
-                { value: 'slow',    label: 'Langsam',  sub: '1,4 s'   },
+                { value: 'instant', label: 'Keine',    sub: '0 ms'   },
+                { value: 'fast',    label: 'Schnell',  sub: '200 ms' },
+                { value: 'normal',  label: 'Normal',   sub: '550 ms' },
+                { value: 'slow',    label: 'Langsam',  sub: '1,4 s'  },
               ].map(({ value, label, sub }) => {
                 const sel = anim.speed === value
                 return (
@@ -780,9 +843,9 @@ export default function ToolDesigner({ embedded = false }) {
           <Field label="Fortschrittsbalken-Stil" className="mt-4">
             <div className="grid grid-cols-3 gap-1.5">
               {[
-                { value: 'smooth',  label: 'Flüssig',     desc: 'Kontinuierlich' },
-                { value: 'pulse',   label: 'Pulsierend',  desc: 'Glühend'        },
-                { value: 'stepped', label: 'Schrittweise',desc: 'Stufen'         },
+                { value: 'smooth',  label: 'Flüssig',      desc: 'Kontinuierlich' },
+                { value: 'pulse',   label: 'Pulsierend',   desc: 'Glühend'        },
+                { value: 'stepped', label: 'Schrittweise', desc: 'Stufen'         },
               ].map(({ value, label, desc }) => {
                 const sel = anim.barStyle === value
                 return (
@@ -799,12 +862,12 @@ export default function ToolDesigner({ embedded = false }) {
           </Field>
 
           {/* Intro effect */}
-          <Field label="Intro-Effekt (beim Start)" className="mt-4">
+          <Field label="Intro-Effekt (Fenster-Einblendung)" className="mt-4">
             <div className="grid grid-cols-3 gap-1.5">
               {[
-                { value: 'none',  label: 'Keiner',    desc: 'Sofort' },
-                { value: 'fade',  label: 'Einblenden', desc: 'Fade'  },
-                { value: 'slide', label: 'Einfahren',  desc: 'Slide' },
+                { value: 'none',  label: 'Keiner',     desc: 'Sofort' },
+                { value: 'fade',  label: 'Einblenden', desc: 'Fade'   },
+                { value: 'slide', label: 'Einfahren',  desc: 'Slide'  },
               ].map(({ value, label, desc }) => {
                 const sel = anim.intro === value
                 return (
@@ -819,6 +882,61 @@ export default function ToolDesigner({ embedded = false }) {
               })}
             </div>
           </Field>
+
+          {/* Background effect */}
+          <Field label="Hintergrund-Effekt" className="mt-4">
+            <div className="grid grid-cols-4 gap-1.5">
+              {[
+                { value: 'none',       label: 'Keiner',    desc: 'Standard'   },
+                { value: 'scanlines',  label: 'Scanlines', desc: 'Retro'      },
+                { value: 'grid',       label: 'Gitter',    desc: 'Cyber'      },
+                { value: 'glow-pulse', label: 'Glühen',    desc: 'Pulsierend' },
+              ].map(({ value, label, desc }) => {
+                const sel = anim.bgEffect === value
+                return (
+                  <button key={value} onClick={() => setAnim({ bgEffect: value })}
+                    className={`flex flex-col items-center gap-0.5 rounded-xl border py-2.5 text-xs font-semibold transition-all ${
+                      sel ? 'border-amber-500 bg-amber-600/20 text-amber-400' : 'bd tile muted hover:txt'
+                    }`}>
+                    {label}
+                    <span className={`text-[10px] font-normal ${sel ? 'text-amber-400/70' : 'muted'}`}>{desc}</span>
+                  </button>
+                )
+              })}
+            </div>
+          </Field>
+
+          {/* Visual effect toggles */}
+          <div className="bd mt-4 space-y-1 rounded-xl border p-4">
+            <p className="muted mb-3 text-[11px] font-semibold uppercase tracking-widest">Visuelle Effekte</p>
+            <Toggle label="Akzent-Glow — Neon-Leuchten auf Titel & Balken" checked={anim.glowAccent ?? false} onChange={v => setAnim({ glowAccent: v })} />
+            <Toggle label="Glitch-Titel — gelegentlicher Störeffekt auf dem Titel" checked={anim.glitchText ?? false} onChange={v => setAnim({ glitchText: v })} />
+          </div>
+
+          <div className="bd my-7 border-t" />
+
+          {/* ── Intro-Video ── */}
+          <p className="caps-label mb-4 flex items-center gap-2">▶ Intro-Video</p>
+          <div className="space-y-4">
+            <Toggle
+              label="Intro-Video beim Start abspielen"
+              checked={iv.enabled}
+              onChange={v => setIv({ enabled: v })}
+            />
+            {iv.enabled && (
+              <Field label="Videodatei (relativ zu ZeroTrace.exe, z.B. intro.mp4)">
+                <input
+                  value={iv.path}
+                  onChange={e => setIv({ path: e.target.value })}
+                  placeholder="intro.mp4"
+                  className="bd tile txt w-full rounded-lg border px-4 py-3 text-sm focus:outline-none font-mono"
+                />
+                <p className="muted mt-1.5 text-xs">
+                  Lege die Videodatei neben <span className="txt font-mono">ZeroTrace.exe</span>. Unterstützte Formate: mp4, wmv, avi.
+                </p>
+              </Field>
+            )}
+          </div>
         </Card>
 
         {/* Right column */}
