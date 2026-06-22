@@ -211,6 +211,22 @@ export function deriveScanReport(pin) {
   const networkFindings = byModule('Netzwerk')
   const browserFindings = byModule(['Browser-Verlauf', 'Browser-Erweiterungen'])
   const downloadFindings = byModule('Downloads')
+  const tamperFindings = byModule('Scan-Manipulation')
+  const overlayFindings = byModule('Overlay / ESP')
+  const forensicFindings = byModule('Forensische Spuren')
+  const remnantFindings = byModule('Tarnung & Reste')
+  const registryFindings = byModule('Registry')
+  const scheduledTaskFindings = byModule('Geplante Aufgaben')
+  const powerShellFindings = byModule('PowerShell / Befehle')
+  const wmiFindings = byModule('WMI-Persistenz')
+  const hiddenDriverFindings = byModule('Versteckte Treiber')
+  const rootCertFindings = byModule('Zertifikatsspeicher')
+  const dmaFindings = byModule('DMA / Hardware (Hinweis)')
+  const systemIntegrityFindings = byModule('System & Schutz')
+  const executionHistoryFindings = byModule('Ausfuehrungsverlauf')
+  const ntfsFindings = byModule('NTFS-Aenderungsjournal')
+  const installedSoftwareFindings = byModule('Installierte Software')
+  const prefetchFindings = byModule('Prefetch')
 
   return {
     scannedAt: pin.scannedAt || null,
@@ -245,6 +261,22 @@ export function deriveScanReport(pin) {
     networkFindings,
     browserFindings,
     downloadFindings,
+    tamperFindings,
+    overlayFindings,
+    forensicFindings,
+    remnantFindings,
+    registryFindings,
+    scheduledTaskFindings,
+    powerShellFindings,
+    wmiFindings,
+    hiddenDriverFindings,
+    rootCertFindings,
+    dmaFindings,
+    systemIntegrityFindings,
+    executionHistoryFindings,
+    ntfsFindings,
+    installedSoftwareFindings,
+    prefetchFindings,
     accounts: [],
     discord: [],
     recording: Array.isArray(pin.recordingSoftware)

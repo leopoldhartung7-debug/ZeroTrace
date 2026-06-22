@@ -52,6 +52,12 @@ public sealed class ScanOptions
     /// loginusers.vdf and checked for alt-account patterns and cheat indicators.</summary>
     public bool ScanSteam { get; set; } = true;
 
+    /// <summary>Scan Add/Remove Programs registry hives for known cheat tool names.</summary>
+    public bool ScanInstalledSoftware { get; set; } = true;
+
+    /// <summary>Scan Windows Prefetch files for previously executed cheat binaries.</summary>
+    public bool ScanPrefetch { get; set; } = true;
+
     /// <summary>
     /// When false (default) the drive module only walks targeted, high-signal
     /// directories (profile, temp, downloads, appdata). When true it walks the

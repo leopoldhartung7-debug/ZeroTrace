@@ -3,10 +3,11 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { lookupIp } from '../lib/geo.js'
 import {
   ArrowLeft, Copy, ShieldAlert, Download, Flag, Gauge, Monitor, Cpu,
-  AlertTriangle, CheckCircle2, Eye, Sparkles, Search, ChevronLeft,
+  AlertTriangle, CheckCircle2, Eye, EyeOff, Sparkles, Search, ChevronLeft,
   ChevronRight, Shield, MessageSquare, Video, Gamepad2, Database, Activity,
   Clock, ImageOff, Usb, FileText, Server, RefreshCw, Image as ImageIcon,
-  Trash2, Bell, Layers, ScanLine, Users, Globe,
+  Trash2, Bell, Layers, ScanLine, Users, Globe, History, Terminal, Package,
+  Zap, Key,
 } from 'lucide-react'
 import { Card } from '../components/kit.jsx'
 import { Modal, Select, useToast } from '../components/ui.jsx'
@@ -950,6 +951,253 @@ export default function ScanResults() {
           )}
         </Card>
       </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Card className="p-6">
+          <p className="caps-label">Anti-Cheat Evasion</p>
+          <h2 className="txt mt-1 flex items-center gap-2 text-lg font-semibold">
+            <Shield size={18} /> Tamper Detection ({report.tamperFindings.length})
+          </h2>
+          <p className="muted mb-4 mt-1 text-sm">
+            Debugger attached, junction redirects, API hooking, future-dated files, bypass tools
+          </p>
+          {report.tamperFindings.length === 0 ? (
+            <p className="muted py-10 text-center text-sm">No anti-cheat tampering detected</p>
+          ) : (
+            <ModuleFindingsList findings={report.tamperFindings} />
+          )}
+        </Card>
+        <Card className="p-6">
+          <p className="caps-label">Overlay / ESP</p>
+          <h2 className="txt mt-1 flex items-center gap-2 text-lg font-semibold">
+            <Eye size={18} /> Overlay / ESP ({report.overlayFindings.length})
+          </h2>
+          <p className="muted mb-4 mt-1 text-sm">
+            Layered, click-through, always-on-top windows running from user-writable paths
+          </p>
+          {report.overlayFindings.length === 0 ? (
+            <p className="muted py-10 text-center text-sm">No ESP / overlay windows detected</p>
+          ) : (
+            <ModuleFindingsList findings={report.overlayFindings} />
+          )}
+        </Card>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Card className="p-6">
+          <p className="caps-label">Forensic Traces</p>
+          <h2 className="txt mt-1 flex items-center gap-2 text-lg font-semibold">
+            <Search size={18} /> Forensic Traces ({report.forensicFindings.length})
+          </h2>
+          <p className="muted mb-4 mt-1 text-sm">
+            RecentDocs, MUICache, WER crash reports, alternate data streams — evidence of deleted cheats
+          </p>
+          {report.forensicFindings.length === 0 ? (
+            <p className="muted py-10 text-center text-sm">No forensic traces found</p>
+          ) : (
+            <ModuleFindingsList findings={report.forensicFindings} />
+          )}
+        </Card>
+        <Card className="p-6">
+          <p className="caps-label">Remnants &amp; Camouflage</p>
+          <h2 className="txt mt-1 flex items-center gap-2 text-lg font-semibold">
+            <EyeOff size={18} /> Remnants &amp; Camouflage ({report.remnantFindings.length})
+          </h2>
+          <p className="muted mb-4 mt-1 text-sm">
+            Hosts file manipulation (blocking anti-cheat domains), cheat files in the Recycle Bin
+          </p>
+          {report.remnantFindings.length === 0 ? (
+            <p className="muted py-10 text-center text-sm">No remnants or camouflage detected</p>
+          ) : (
+            <ModuleFindingsList findings={report.remnantFindings} />
+          )}
+        </Card>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Card className="p-6">
+          <p className="caps-label">Registry</p>
+          <h2 className="txt mt-1 flex items-center gap-2 text-lg font-semibold">
+            <Database size={18} /> Registry Findings ({report.registryFindings.length})
+          </h2>
+          <p className="muted mb-4 mt-1 text-sm">
+            Suspicious registry keys left by cheat tools, loaders, or spoofers
+          </p>
+          {report.registryFindings.length === 0 ? (
+            <p className="muted py-10 text-center text-sm">No suspicious registry entries found</p>
+          ) : (
+            <ModuleFindingsList findings={report.registryFindings} />
+          )}
+        </Card>
+        <Card className="p-6">
+          <p className="caps-label">Scheduled Tasks</p>
+          <h2 className="txt mt-1 flex items-center gap-2 text-lg font-semibold">
+            <Clock size={18} /> Scheduled Tasks ({report.scheduledTaskFindings.length})
+          </h2>
+          <p className="muted mb-4 mt-1 text-sm">
+            Malicious or cheat-related scheduled tasks that survive reboots
+          </p>
+          {report.scheduledTaskFindings.length === 0 ? (
+            <p className="muted py-10 text-center text-sm">No suspicious scheduled tasks found</p>
+          ) : (
+            <ModuleFindingsList findings={report.scheduledTaskFindings} />
+          )}
+        </Card>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Card className="p-6">
+          <p className="caps-label">PowerShell / Commands</p>
+          <h2 className="txt mt-1 flex items-center gap-2 text-lg font-semibold">
+            <Terminal size={18} /> PowerShell Activity ({report.powerShellFindings.length})
+          </h2>
+          <p className="muted mb-4 mt-1 text-sm">
+            PowerShell command history and console host logs with cheat-related patterns
+          </p>
+          {report.powerShellFindings.length === 0 ? (
+            <p className="muted py-10 text-center text-sm">No suspicious PowerShell activity found</p>
+          ) : (
+            <ModuleFindingsList findings={report.powerShellFindings} />
+          )}
+        </Card>
+        <Card className="p-6">
+          <p className="caps-label">WMI Persistence</p>
+          <h2 className="txt mt-1 flex items-center gap-2 text-lg font-semibold">
+            <Layers size={18} /> WMI Persistence ({report.wmiFindings.length})
+          </h2>
+          <p className="muted mb-4 mt-1 text-sm">
+            WMI event subscriptions used to re-launch cheats or malware after reboot
+          </p>
+          {report.wmiFindings.length === 0 ? (
+            <p className="muted py-10 text-center text-sm">No WMI persistence mechanisms found</p>
+          ) : (
+            <ModuleFindingsList findings={report.wmiFindings} />
+          )}
+        </Card>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Card className="p-6">
+          <p className="caps-label">Hidden Drivers</p>
+          <h2 className="txt mt-1 flex items-center gap-2 text-lg font-semibold">
+            <EyeOff size={18} /> Hidden Drivers ({report.hiddenDriverFindings.length})
+          </h2>
+          <p className="muted mb-4 mt-1 text-sm">
+            Kernel drivers that appear in the SCM but not the kernel driver list — a rootkit indicator
+          </p>
+          {report.hiddenDriverFindings.length === 0 ? (
+            <p className="muted py-10 text-center text-sm">No hidden drivers detected</p>
+          ) : (
+            <ModuleFindingsList findings={report.hiddenDriverFindings} />
+          )}
+        </Card>
+        <Card className="p-6">
+          <p className="caps-label">Root Certificates</p>
+          <h2 className="txt mt-1 flex items-center gap-2 text-lg font-semibold">
+            <Key size={18} /> Root Certificates ({report.rootCertFindings.length})
+          </h2>
+          <p className="muted mb-4 mt-1 text-sm">
+            Untrusted or unknown root CA certificates — used to sign cheat drivers or bypass HTTPS inspection
+          </p>
+          {report.rootCertFindings.length === 0 ? (
+            <p className="muted py-10 text-center text-sm">No suspicious root certificates found</p>
+          ) : (
+            <ModuleFindingsList findings={report.rootCertFindings} />
+          )}
+        </Card>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Card className="p-6">
+          <p className="caps-label">DMA / Hardware Risk</p>
+          <h2 className="txt mt-1 flex items-center gap-2 text-lg font-semibold">
+            <Cpu size={18} /> DMA Risk ({report.dmaFindings.length})
+          </h2>
+          <p className="muted mb-4 mt-1 text-sm">
+            DMA-capable PCIe devices and IOMMU configuration — potential hardware cheat indicators
+          </p>
+          {report.dmaFindings.length === 0 ? (
+            <p className="muted py-10 text-center text-sm">No DMA risk indicators found</p>
+          ) : (
+            <ModuleFindingsList findings={report.dmaFindings} />
+          )}
+        </Card>
+        <Card className="p-6">
+          <p className="caps-label">System &amp; Protection</p>
+          <h2 className="txt mt-1 flex items-center gap-2 text-lg font-semibold">
+            <ShieldAlert size={18} /> System Integrity ({report.systemIntegrityFindings.length})
+          </h2>
+          <p className="muted mb-4 mt-1 text-sm">
+            Security center state, Windows Defender status, and protection tampering
+          </p>
+          {report.systemIntegrityFindings.length === 0 ? (
+            <p className="muted py-10 text-center text-sm">No system integrity issues detected</p>
+          ) : (
+            <ModuleFindingsList findings={report.systemIntegrityFindings} />
+          )}
+        </Card>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Card className="p-6">
+          <p className="caps-label">Execution History</p>
+          <h2 className="txt mt-1 flex items-center gap-2 text-lg font-semibold">
+            <History size={18} /> Execution History ({report.executionHistoryFindings.length})
+          </h2>
+          <p className="muted mb-4 mt-1 text-sm">
+            Prefetch, UserAssist, ShimCache, and AppCompatCache — cheat tools previously executed
+          </p>
+          {report.executionHistoryFindings.length === 0 ? (
+            <p className="muted py-10 text-center text-sm">No execution history matches found</p>
+          ) : (
+            <ModuleFindingsList findings={report.executionHistoryFindings} />
+          )}
+        </Card>
+        <Card className="p-6">
+          <p className="caps-label">NTFS Journal</p>
+          <h2 className="txt mt-1 flex items-center gap-2 text-lg font-semibold">
+            <FileText size={18} /> NTFS Change Journal ({report.ntfsFindings.length})
+          </h2>
+          <p className="muted mb-4 mt-1 text-sm">
+            Recent file creation and deletion events in the NTFS USN journal — covers erased cheats
+          </p>
+          {report.ntfsFindings.length === 0 ? (
+            <p className="muted py-10 text-center text-sm">No suspicious NTFS journal entries found</p>
+          ) : (
+            <ModuleFindingsList findings={report.ntfsFindings} />
+          )}
+        </Card>
+      </div>
+
+      <Card className="p-6">
+        <p className="caps-label">Installed Software</p>
+        <h2 className="txt mt-1 flex items-center gap-2 text-lg font-semibold">
+          <Package size={18} /> Installed Software ({report.installedSoftwareFindings.length})
+        </h2>
+        <p className="muted mb-4 mt-1 text-sm">
+          Programs in Add/Remove Programs matching known cheat tool, spoofer, or loader names
+        </p>
+        {report.installedSoftwareFindings.length === 0 ? (
+          <p className="muted py-10 text-center text-sm">No suspicious installed programs found</p>
+        ) : (
+          <ModuleFindingsList findings={report.installedSoftwareFindings} />
+        )}
+      </Card>
+
+      <Card className="p-6">
+        <p className="caps-label">Prefetch Analysis</p>
+        <h2 className="txt mt-1 flex items-center gap-2 text-lg font-semibold">
+          <Zap size={18} /> Prefetch Analysis ({report.prefetchFindings.length})
+        </h2>
+        <p className="muted mb-4 mt-1 text-sm">
+          Windows Prefetch files (.pf) revealing cheat executables that were run and then deleted
+        </p>
+        {report.prefetchFindings.length === 0 ? (
+          <p className="muted py-10 text-center text-sm">No cheat-related Prefetch entries found</p>
+        ) : (
+          <ModuleFindingsList findings={report.prefetchFindings} />
+        )}
+      </Card>
 
       <Card className="p-6">
         <h2 className="txt flex items-center gap-2 text-lg font-semibold">

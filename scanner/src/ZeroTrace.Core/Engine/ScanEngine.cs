@@ -184,6 +184,8 @@ public sealed class ScanEngine
         if (o.ScanDrives) modules.Add(new DriveScanModule());
         if (o.ScanCustomStrings) modules.Add(new CustomStringsScanModule());
         if (o.ScanSteam) modules.Add(new SteamAccountScanModule());
+        if (o.ScanInstalledSoftware) modules.Add(new InstalledSoftwareScanModule());
+        if (o.ScanPrefetch) modules.Add(new PrefetchScanModule());
         return modules;
     }
 }
