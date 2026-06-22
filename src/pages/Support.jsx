@@ -187,6 +187,183 @@ function TagInput({ tags, onChange }) {
   )
 }
 
+function CheatReportPanel({ ticket, isAdmin, dispatch, toast }) {
+  const cd = ticket.cheatData
+  const dbStatus = cd?.dbStatus || 'pending'
+  const isDone = dbStatus === 'added' || dbStatus === 'rejected'
+
+  const blankForm = { cheatName: '', pattern: '', type: 'FileNameKeyword', category: 'Cheat', risk: 'High', game: 'OTHER', evidenceUrl: '', description: '' }
+  const [editData, setEditData] = useState(cd ? { ...cd } : blankForm)
+  // No cheatData means it came in via template — open in edit mode right away
+  const [showEdit, setShowEdit] = useState(!cd && isAdmin)
+
+  const CHEAT_TYPE_LABELS = { FileNameKeyword: 'Filename Keyword', FileName: 'Exact Filename', ProcessName: 'Process Name' }
+
+  const addToDb = () => {
+    if (!editData.cheatName.trim() || !editData.pattern.trim())
+      return toast({ type: 'error', title: 'Tool name and pattern are required' })
+    dispatch({
+      type: 'add-cheat-to-db',
+      proposal: {
+        cheatName: editData.cheatName.trim(),
+        pattern: editData.pattern.trim().toLowerCase(),
+        type: editData.type,
+        category: editData.category,
+        risk: editData.risk,
+        game: editData.game,
+        evidenceUrl: editData.evidenceUrl,
+        description: editData.description,
+      },
+    })
+    dispatch({ type: 'update-ticket', id: ticket.id, fields: { cheatData: { ...editData, dbStatus: 'added' } } })
+    dispatch({ type: 'reply-ticket', id: ticket.id, message: `✅ Cheat "${editData.cheatName.trim()}" has been verified and added to the detection database. Pattern: \`${editData.pattern.trim()}\` (${CHEAT_TYPE_LABELS[editData.type] || editData.type}).`, internal: false })
+    dispatch({ type: 'update-ticket', id: ticket.id, fields: { status: 'Resolved' } })
+    toast({ type: 'success', title: 'Added to database', body: editData.cheatName.trim() })
+    setShowEdit(false)
+  }
+
+  const reject = () => {
+    dispatch({ type: 'update-ticket', id: ticket.id, fields: { cheatData: { ...(cd || editData), dbStatus: 'rejected' } } })
+    dispatch({ type: 'reply-ticket', id: ticket.id, message: `❌ After review, the reported signature could not be verified as a cheat indicator. If you have additional evidence, please open a new report.`, internal: false })
+    dispatch({ type: 'update-ticket', id: ticket.id, fields: { status: 'Resolved' } })
+    toast({ type: 'info', title: 'Report rejected' })
+  }
+
+  return (
+    <div className={`rounded-xl border p-4 space-y-3 ${
+      dbStatus === 'added'    ? 'border-green-400/30 bg-green-400/5' :
+      dbStatus === 'rejected' ? 'border-red-400/20 bg-red-400/5' :
+      'border-purple-400/30 bg-purple-400/5'
+    }`}>
+      {/* Header */}
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <ShieldAlert size={15} className={dbStatus === 'added' ? 'text-green-400' : dbStatus === 'rejected' ? 'text-red-400' : 'text-purple-400'} />
+          <p className="txt text-sm font-semibold">Cheat Report Data</p>
+          {!cd && isAdmin && <span className="muted text-xs">(fill in to add to database)</span>}
+        </div>
+        <span className={`rounded-full border px-2 py-0.5 text-xs font-semibold ${
+          dbStatus === 'added'    ? 'border-green-400/40 bg-green-400/10 text-green-400' :
+          dbStatus === 'rejected' ? 'border-red-400/40 bg-red-400/10 text-red-400' :
+          'border-yellow-400/40 bg-yellow-400/10 text-yellow-400'
+        }`}>
+          {dbStatus === 'added' ? 'Added to DB' : dbStatus === 'rejected' ? 'Rejected' : 'Pending Review'}
+        </span>
+      </div>
+
+      {/* Edit form */}
+      {showEdit && isAdmin ? (
+        <div className="space-y-2">
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <p className="caps-label mb-1">Tool Name *</p>
+              <input value={editData.cheatName} onChange={e => setEditData(d => ({ ...d, cheatName: e.target.value }))}
+                placeholder="e.g. KillAura Pro"
+                className="bd tile txt w-full rounded-lg border px-3 py-1.5 text-sm outline-none focus:border-purple-500" />
+            </div>
+            <div>
+              <p className="caps-label mb-1">Pattern *</p>
+              <input value={editData.pattern} onChange={e => setEditData(d => ({ ...d, pattern: e.target.value }))}
+                placeholder="e.g. killaura.exe"
+                className="bd tile txt w-full rounded-lg border px-3 py-1.5 text-sm font-mono outline-none focus:border-purple-500" />
+            </div>
+            <div>
+              <p className="caps-label mb-1">Match Type</p>
+              <select value={editData.type} onChange={e => setEditData(d => ({ ...d, type: e.target.value }))}
+                className="bd tile txt w-full rounded-lg border px-3 py-1.5 text-sm">
+                {CHEAT_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+              </select>
+            </div>
+            <div>
+              <p className="caps-label mb-1">Category</p>
+              <select value={editData.category} onChange={e => setEditData(d => ({ ...d, category: e.target.value }))}
+                className="bd tile txt w-full rounded-lg border px-3 py-1.5 text-sm">
+                {CHEAT_CATEGORIES.map(x => <option key={x} value={x}>{x}</option>)}
+              </select>
+            </div>
+            <div>
+              <p className="caps-label mb-1">Risk</p>
+              <select value={editData.risk} onChange={e => setEditData(d => ({ ...d, risk: e.target.value }))}
+                className="bd tile txt w-full rounded-lg border px-3 py-1.5 text-sm">
+                {RISK_LEVELS.map(x => <option key={x} value={x}>{x}</option>)}
+              </select>
+            </div>
+            <div>
+              <p className="caps-label mb-1">Game</p>
+              <select value={editData.game} onChange={e => setEditData(d => ({ ...d, game: e.target.value }))}
+                className="bd tile txt w-full rounded-lg border px-3 py-1.5 text-sm">
+                {GAMES.map(x => <option key={x} value={x}>{x}</option>)}
+              </select>
+            </div>
+          </div>
+          <div>
+            <p className="caps-label mb-1">Evidence URL</p>
+            <input value={editData.evidenceUrl} onChange={e => setEditData(d => ({ ...d, evidenceUrl: e.target.value }))}
+              placeholder="https://…"
+              className="bd tile txt w-full rounded-lg border px-3 py-1.5 text-sm outline-none focus:border-purple-500" />
+          </div>
+          <div className="flex gap-2 pt-1">
+            <button onClick={addToDb}
+              className="flex-1 rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-500">
+              ✓ Confirm &amp; Add to Database
+            </button>
+            {cd && (
+              <button onClick={() => setShowEdit(false)}
+                className="rounded-lg border bd px-4 py-2 text-sm muted hover:txt">
+                Cancel
+              </button>
+            )}
+          </div>
+        </div>
+      ) : cd ? (
+        /* Read-only data view */
+        <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
+          {[
+            ['Tool Name',   cd.cheatName],
+            ['Pattern',     cd.pattern],
+            ['Match Type',  CHEAT_TYPE_LABELS[cd.type] || cd.type],
+            ['Category',    cd.category],
+            ['Risk',        cd.risk],
+            ['Game',        cd.game],
+          ].map(([k, v]) => v ? (
+            <div key={k}>
+              <span className="muted">{k}: </span>
+              <span className={`txt font-medium ${k === 'Pattern' ? 'font-mono' : ''}`}>{v}</span>
+            </div>
+          ) : null)}
+          {cd.evidenceUrl && (
+            <div className="col-span-2">
+              <span className="muted">Evidence: </span>
+              <a href={cd.evidenceUrl} target="_blank" rel="noopener noreferrer"
+                className="text-sky-400 hover:underline break-all">{cd.evidenceUrl}</a>
+            </div>
+          )}
+          {cd.description && (
+            <div className="col-span-2">
+              <span className="muted">Notes: </span>
+              <span className="txt">{cd.description}</span>
+            </div>
+          )}
+        </div>
+      ) : null}
+
+      {/* Admin action buttons (read-only view) */}
+      {isAdmin && !isDone && !showEdit && cd && (
+        <div className="flex gap-2 pt-1 border-t bd">
+          <button onClick={() => setShowEdit(true)}
+            className="flex-1 rounded-lg bg-purple-600/80 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-600">
+            Review &amp; Add to Database
+          </button>
+          <button onClick={reject}
+            className="rounded-lg bg-red-600/10 border border-red-600/30 px-4 py-2 text-sm text-red-400 hover:bg-red-600/20">
+            Reject
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
 function TicketThread({ ticket, onClose }) {
   const { state, dispatch } = useStore()
   const toast = useToast()
@@ -666,6 +843,8 @@ export default function Support() {
     setTicketOpen(false)
   }
 
+  const cheatValid = cheatForm.cheatName.trim().length > 0 && cheatForm.pattern.trim().length >= 3
+
   const submitCheat = () => {
     if (!cheatForm.cheatName.trim()) return toast({ type: 'error', title: 'Cheat name required', body: 'Enter a recognisable name for this cheat.' })
     if (!cheatForm.pattern.trim()) return toast({ type: 'error', title: 'Detection pattern required' })
@@ -938,11 +1117,10 @@ export default function Support() {
             <p className="caps-label">Templates</p>
             <div className="flex flex-wrap gap-2">
               {[
-                { label: 'Bug Report',       subject: 'Bug: ',      category: 'Bug',          priority: 'High',   message: 'Steps to reproduce:\n1. \n\nExpected:\nActual:' },
-                { label: 'Detection Issue',  subject: 'Detection: ', category: 'Detection',   priority: 'Normal', message: 'Player:\nScan ID:\nIssue:' },
-                { label: 'Billing Question', subject: 'Billing: ',  category: 'Billing',      priority: 'Normal', message: '' },
-                { label: 'Feature Request',  subject: 'Feature: ',  category: 'General',      priority: 'Low',    message: 'I would like to suggest:' },
-                { label: 'Cheat Report',     subject: 'Cheat Report: ', category: 'Cheat Report', priority: 'High', tags: ['cheat-related'], message: 'Cheat / Tool Name:\nGame:\nCategory: (Cheat / Spoofer / Injector)\nRisk: (Medium / High / Critical)\n\nDetection Pattern (filename or process):\n\nEvidence (link or description):' },
+                { label: 'Bug Report',       subject: 'Bug: ',      category: 'Bug',       priority: 'High',   message: 'Steps to reproduce:\n1. \n\nExpected:\nActual:' },
+                { label: 'Detection Issue',  subject: 'Detection: ', category: 'Detection', priority: 'Normal', message: 'Player:\nScan ID:\nIssue:' },
+                { label: 'Billing Question', subject: 'Billing: ',  category: 'Billing',   priority: 'Normal', message: '' },
+                { label: 'Feature Request',  subject: 'Feature: ',  category: 'General',   priority: 'Low',    message: 'I would like to suggest:' },
               ].map(tpl => (
                 <button
                   key={tpl.label}
@@ -953,6 +1131,14 @@ export default function Support() {
                   {tpl.label}
                 </button>
               ))}
+              <button
+                type="button"
+                onClick={() => { setTicketOpen(false); setCheatOpen(true) }}
+                className="rounded-lg border border-purple-500/30 px-3 py-1.5 text-xs text-purple-400 hover:bg-purple-500/10 transition-colors"
+              >
+                <ShieldAlert size={11} className="inline mr-1 -mt-0.5" />
+                Cheat melden
+              </button>
             </div>
           </div>
           <Field label="Subject">
@@ -971,7 +1157,10 @@ export default function Support() {
                 const sel = form.category === cat.value
                 return (
                   <button key={cat.value} type="button"
-                    onClick={() => setForm({ ...form, category: cat.value })}
+                    onClick={() => {
+                      if (cat.value === 'Cheat Report') { setTicketOpen(false); setCheatOpen(true); return }
+                      setForm({ ...form, category: cat.value })
+                    }}
                     className={`flex flex-col items-center gap-1.5 rounded-xl border py-3 px-1 text-center transition-all ${
                       sel ? cat.selCls : 'bd tile muted hover:txt'
                     }`}
@@ -1015,105 +1204,104 @@ export default function Support() {
       </Modal>
 
       {/* Suggest cheat modal */}
-      <Modal open={cheatOpen} onClose={() => { setCheatOpen(false); setCheatForm(emptyCheatForm) }} title="Suggest a Detection Entry"
+      <Modal open={cheatOpen} onClose={() => { setCheatOpen(false); setCheatForm(emptyCheatForm) }} title="Cheat zur Datenbank melden"
         footer={
           <>
-            <button onClick={() => { setCheatOpen(false); setCheatForm(emptyCheatForm) }} className="bd txt rounded-lg border px-4 py-2 text-sm">Cancel</button>
-            <button onClick={submitCheat} className="rounded-lg bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-500">
-              Submit for Review
+            <button onClick={() => { setCheatOpen(false); setCheatForm(emptyCheatForm) }} className="bd txt rounded-lg border px-4 py-2 text-sm">Abbrechen</button>
+            <button
+              onClick={submitCheat}
+              disabled={!cheatValid}
+              className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
+                cheatValid
+                  ? 'bg-purple-600 text-white hover:bg-purple-500'
+                  : 'bd tile muted cursor-not-allowed opacity-50'
+              }`}
+            >
+              Zur Überprüfung einreichen
             </button>
           </>
         }
       >
-        <div className="space-y-5">
-          {/* Info banner */}
-          <div className="rounded-lg bg-sky-600/5 border border-sky-600/20 px-4 py-3 text-sm text-sky-300 space-y-1">
-            <p className="font-medium">Spotted a cheat, spoofer, or injector?</p>
-            <p className="text-sky-300/70">Fill in the fields below. Your report opens a support ticket so you can track the review, and the signature is queued for admin approval to activate in the scanner.</p>
+        <div className="space-y-4">
+          <div className="rounded-lg bg-purple-500/5 border border-purple-500/20 px-4 py-3 text-sm text-purple-300/80">
+            Fülle alle Pflichtfelder <span className="text-red-400 font-bold">*</span> aus. Nach dem Absenden wird ein Support-Ticket erstellt, über das du den Status verfolgen kannst.
           </div>
 
-          {/* Section 1 — Identification */}
-          <div>
-            <p className="caps-label mb-3">1 · What is this tool?</p>
-            <div className="space-y-3">
-              <Field label="Cheat / Tool Name *" hint="The name players commonly use for it.">
-                <Input
-                  autoFocus
-                  value={cheatForm.cheatName}
-                  onChange={e => setCheatForm({ ...cheatForm, cheatName: e.target.value })}
-                  placeholder="e.g. KillAura Pro, ESP-Master, SpooferX"
-                />
-              </Field>
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="Category">
-                  <Select value={cheatForm.category} onChange={v => setCheatForm({ ...cheatForm, category: v })}
-                    options={CHEAT_CATEGORIES.map(x => ({ value: x, label: x }))} />
-                </Field>
-                <Field label="Game">
-                  <Select value={cheatForm.game} onChange={v => setCheatForm({ ...cheatForm, game: v })}
-                    options={GAMES.map(x => ({ value: x, label: x }))} />
-                </Field>
-              </div>
-            </div>
+          <Field label={<>Name des Cheats / Tools <span className="text-red-400">*</span></>} hint="Der Name, unter dem das Tool bekannt ist.">
+            <Input
+              autoFocus
+              value={cheatForm.cheatName}
+              onChange={e => setCheatForm({ ...cheatForm, cheatName: e.target.value })}
+              placeholder="z.B. KillAura Pro, SpooferX, ESP-Master"
+            />
+          </Field>
+
+          <div className="grid grid-cols-2 gap-4">
+            <Field label="Kategorie">
+              <Select value={cheatForm.category} onChange={v => setCheatForm({ ...cheatForm, category: v })}
+                options={CHEAT_CATEGORIES.map(x => ({ value: x, label: x }))} />
+            </Field>
+            <Field label="Spiel">
+              <Select value={cheatForm.game} onChange={v => setCheatForm({ ...cheatForm, game: v })}
+                options={GAMES.map(x => ({ value: x, label: x }))} />
+            </Field>
           </div>
 
-          {/* Divider */}
-          <div className="bd border-t" />
+          <Field
+            label={<>Erkennungs-Pattern <span className="text-red-400">*</span></>}
+            hint="Dateiname, Prozessname oder Schlüsselwort, nach dem der Scanner sucht. Mind. 3 Zeichen."
+          >
+            <Input
+              value={cheatForm.pattern}
+              onChange={e => setCheatForm({ ...cheatForm, pattern: e.target.value })}
+              placeholder="z.B. killaura.exe  oder  cheat_loader"
+              className="font-mono"
+            />
+          </Field>
 
-          {/* Section 2 — Detection Signature */}
-          <div>
-            <p className="caps-label mb-3">2 · Detection Signature</p>
-            <div className="space-y-3">
-              <Field label="File / Process Pattern *" hint="Filename, process name, or keyword the scanner should look for.">
-                <Input
-                  value={cheatForm.pattern}
-                  onChange={e => setCheatForm({ ...cheatForm, pattern: e.target.value })}
-                  placeholder="e.g. killaurapro.exe  or  cheat_loader"
-                />
-              </Field>
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="Match Type" hint="How to compare the pattern against files.">
-                  <Select value={cheatForm.type} onChange={v => setCheatForm({ ...cheatForm, type: v })}
-                    options={CHEAT_TYPES.map(t => ({ value: t.value, label: t.label }))} />
-                </Field>
-                <Field label="Risk Level">
-                  <Select value={cheatForm.risk} onChange={v => setCheatForm({ ...cheatForm, risk: v })}
-                    options={RISK_LEVELS.map(x => ({ value: x, label: x }))} />
-                </Field>
-              </div>
-              {/* Match type help */}
-              <div className="rounded-md bd border px-3 py-2 text-xs muted space-y-0.5">
-                <p><span className="txt font-medium">Filename Keyword</span> — matches any file whose name contains the keyword (most flexible)</p>
-                <p><span className="txt font-medium">Exact Filename</span> — must match the full filename precisely (e.g. <code className="font-mono">cheat.exe</code>)</p>
-                <p><span className="txt font-medium">Process Name</span> — matches a running process by name</p>
-              </div>
-            </div>
+          <div className="grid grid-cols-2 gap-4">
+            <Field label="Match-Typ">
+              <Select value={cheatForm.type} onChange={v => setCheatForm({ ...cheatForm, type: v })}
+                options={CHEAT_TYPES.map(t => ({ value: t.value, label: t.label }))} />
+            </Field>
+            <Field label="Risikostufe">
+              <Select value={cheatForm.risk} onChange={v => setCheatForm({ ...cheatForm, risk: v })}
+                options={RISK_LEVELS.map(x => ({ value: x, label: x }))} />
+            </Field>
           </div>
 
-          {/* Divider */}
-          <div className="bd border-t" />
-
-          {/* Section 3 — Evidence */}
-          <div>
-            <p className="caps-label mb-3">3 · Evidence (optional but helpful)</p>
-            <div className="space-y-3">
-              <Field label="Evidence URL" hint="Link to a forum post, Discord message, YouTube video, or VirusTotal scan.">
-                <Input
-                  value={cheatForm.evidenceUrl}
-                  onChange={e => setCheatForm({ ...cheatForm, evidenceUrl: e.target.value })}
-                  placeholder="https://…"
-                />
-              </Field>
-              <Field label="Notes" hint="Anything else the admin should know — how you found it, where it was used, etc.">
-                <Textarea
-                  rows={3}
-                  value={cheatForm.description}
-                  onChange={e => setCheatForm({ ...cheatForm, description: e.target.value })}
-                  placeholder="e.g. Seen in a Minecraft faction server, players were flying and killing through walls…"
-                />
-              </Field>
-            </div>
+          <div className="rounded-md bd border px-3 py-2 text-xs muted space-y-0.5">
+            <p><span className="txt font-medium">Filename Keyword</span> — Teilübereinstimmung im Dateinamen (flexibelste Option)</p>
+            <p><span className="txt font-medium">Exact Filename</span> — exakter Dateiname, z.B. <code className="font-mono txt">cheat.exe</code></p>
+            <p><span className="txt font-medium">Process Name</span> — laufender Prozess wird nach Namen geprüft</p>
           </div>
+
+          <Field label="Beweis-URL" hint="Forum-Link, Discord, YouTube oder VirusTotal-Scan — optional, aber sehr hilfreich.">
+            <Input
+              value={cheatForm.evidenceUrl}
+              onChange={e => setCheatForm({ ...cheatForm, evidenceUrl: e.target.value })}
+              placeholder="https://…"
+            />
+          </Field>
+
+          <Field label="Notizen" hint="Wie und wo wurde das Tool eingesetzt? Was hast du beobachtet?">
+            <Textarea
+              rows={2}
+              value={cheatForm.description}
+              onChange={e => setCheatForm({ ...cheatForm, description: e.target.value })}
+              placeholder="z.B. Auf einem FiveM-Server gesehen, Spieler flogen durch Wände…"
+            />
+          </Field>
+
+          {!cheatValid && (cheatForm.cheatName || cheatForm.pattern) && (
+            <p className="text-xs text-yellow-400">
+              {!cheatForm.cheatName.trim()
+                ? '⚠ Tool-Name fehlt.'
+                : cheatForm.pattern.trim().length < 3
+                  ? '⚠ Pattern muss mindestens 3 Zeichen lang sein.'
+                  : ''}
+            </p>
+          )}
         </div>
       </Modal>
     </div>
