@@ -43,6 +43,7 @@ import AdminAnalytics from './pages/AdminAnalytics.jsx'
 import AdminAnnouncement from './pages/AdminAnnouncement.jsx'
 import AdminMaintenance from './pages/AdminMaintenance.jsx'
 import AdminDiscounts from './pages/AdminDiscounts.jsx'
+import ProposalsPage from './pages/Proposals.jsx'
 import MaintenanceScreen from './pages/MaintenanceScreen.jsx'
 import { AnnouncementBanner, ImpersonationBanner } from './components/Banners.jsx'
 import OnboardingTour from './components/OnboardingTour.jsx'
@@ -181,6 +182,7 @@ export default function App() {
             <Route path="/admin/announcement" element={<AdminRoute><AdminAnnouncement /></AdminRoute>} />
             <Route path="/admin/maintenance" element={<AdminRoute><AdminMaintenance /></AdminRoute>} />
             <Route path="/admin/discounts" element={<AdminRoute><AdminDiscounts /></AdminRoute>} />
+            <Route path="/admin/proposals" element={<AdminRoute><ProposalsPage /></AdminRoute>} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

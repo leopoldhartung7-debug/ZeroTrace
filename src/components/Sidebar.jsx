@@ -6,7 +6,7 @@ import {
   LifeBuoy, BookOpen, Settings, Wifi, Bell, Globe, Moon, Sun,
   ChevronsUpDown, Trash2, Check, Command, Trophy, ShoppingCart,
   Download, Scale, ChevronDown, ChevronRight, LogOut, KeyRound, GitCompareArrows,
-  ShieldCheck, Mail, Ban, Activity, BarChart3, Megaphone, Wrench as WrenchIcon, Coins, Ticket,
+  ShieldCheck, Mail, Ban, Activity, BarChart3, Megaphone, Wrench as WrenchIcon, Coins, Ticket, ListChecks,
 } from 'lucide-react'
 import { useStore, useT } from '../store.jsx'
 
@@ -80,6 +80,7 @@ export default function Sidebar() {
               { to: '/admin/discounts', label: t('nav.discounts'), icon: Ticket },
               { to: '/admin/maintenance', label: t('nav.maintenance'), icon: WrenchIcon },
               { to: '/admin/audit', label: t('nav.audit'), icon: History },
+              { to: '/admin/proposals', label: t('nav.proposals'), icon: ListChecks },
             ],
           },
         ]

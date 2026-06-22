@@ -52,6 +52,24 @@ public partial class App : Application
             db.SeedDefaultsIfEmpty();
 
             var indicators = new IndicatorStore(db);
+
+            // Auto-load community-approved indicators exported from the admin dashboard.
+            // The file is placed next to the exe by the admin after reviewing proposals.
+            var externalPath = Path.Combine(
+                AppDomain.CurrentDomain.BaseDirectory, "zerotrace.indicators.json");
+            if (File.Exists(externalPath))
+            {
+                try
+                {
+                    using var conn = db.OpenConnection();
+                    using var del = conn.CreateCommand();
+                    del.CommandText = "DELETE FROM indicators WHERE source='community-approved';";
+                    del.ExecuteNonQuery();
+                    indicators.ImportFromJson(externalPath, "community-approved");
+                }
+                catch { /* community indicators are best-effort; don't block startup */ }
+            }
+
             var scans = new ScanStore(db);
             var settings = new SettingsStore(db);
 

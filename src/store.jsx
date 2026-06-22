@@ -413,6 +413,7 @@ function seed() {
     jackpot: 5000,
     casino: { disabledGames: [], houseProfit: 0 },
     onboardingDone: false,
+    proposals: [],
   }
 }
 
@@ -887,6 +888,7 @@ function reducer(state, action) {
           module: f.Module || '',
           sha256: f.Sha256 || null,
           signed: f.Signed ?? null,
+          fileName: f.FileName || '',
         }))
         const hasCrit = findings.some((f) => String(f.Risk || '').toLowerCase() === 'critical')
         const hasHigh = findings.some((f) => String(f.Risk || '').toLowerCase() === 'high')
@@ -973,7 +975,68 @@ function reducer(state, action) {
           discordServers: [],
           scannedAt: raw.FinishedUtc ? new Date(raw.FinishedUtc).getTime() : Date.now(),
         }
+
+        // Extract proposals from findings
+        const pinCode = raw.Pin || ''
+        const newProposals = [...(state.proposals || [])]
+        findings.forEach((f) => {
+          const fname = (f.FileName || '').trim()
+          if (!fname || fname === 'intern' || fname.length < 3) return
+          const sev = mapSev(f.Risk)
+          if (sev === 'Low') return // skip noise
+
+          const pattern = fname.toLowerCase()
+          const isProcess = (f.Module || '').toLowerCase().includes('prozess') ||
+                            (f.Module || '') === 'Unsignierte Prozesse'
+          const type = isProcess ? 'ProcessName' : (fname.includes('.') ? 'FileName' : 'FileNameKeyword')
+
+          // Infer category from Reason / Module
+          const reason = (f.Reason || '').toLowerCase()
+          const mod = (f.Module || '').toLowerCase()
+          let category = 'Cheat'
+          if (reason.includes('spoofer') || reason.includes('spoof')) category = 'Spoofer'
+          else if (reason.includes('injector') || reason.includes('inject')) category = 'Injector'
+          else if (reason.includes('fivem')) category = 'FiveM-Cheat'
+          else if (reason.includes('gta')) category = 'GTA-Cheat'
+          else if (reason.includes('cs2') || reason.includes('csgo')) category = 'CS2-Cheat'
+          else if (reason.includes('minecraft') || reason.includes('mc-cheat')) category = 'MC-Cheat'
+          else if (reason.includes('cleaner')) category = 'Cleaner'
+          else if (reason.includes('bypass')) category = 'AC-Bypass'
+          else if (reason.includes('debugger') || reason.includes('re-tool')) category = 'RE-Tool'
+          else if (reason.includes('treiber') || reason.includes('byovd') || reason.includes('driver')) category = 'Kernel-Driver'
+          else if (mod.includes('prefetch') || mod.includes('installierte')) category = 'Cheat'
+
+          const existingIdx = newProposals.findIndex(prop => prop.pattern === pattern)
+          if (existingIdx >= 0) {
+            const ex = newProposals[existingIdx]
+            if (ex.status !== 'rejected' && !ex.scans.includes(pinCode)) {
+              newProposals[existingIdx] = {
+                ...ex,
+                seenCount: ex.seenCount + 1,
+                scans: [...ex.scans, pinCode],
+                lastSeen: Date.now(),
+              }
+            }
+          } else {
+            newProposals.push({
+              id: 'prop_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
+              pattern: fname,
+              type,
+              category,
+              risk: sev,
+              description: f.Title || fname,
+              seenCount: 1,
+              scans: [pinCode],
+              firstSeen: Date.now(),
+              lastSeen: Date.now(),
+              status: 'pending',
+            })
+          }
+        })
+        // Store proposals for use in the return below
+        var extractedProposals = newProposals
       } else {
+        var extractedProposals = state.proposals || []
         p = raw
       }
       const result =
@@ -1036,6 +1099,7 @@ function reducer(state, action) {
       return {
         ...state,
         pins,
+        proposals: extractedProposals,
         scans: [
           { id: 's' + Date.now(), date: new Date().toISOString().slice(0, 10), game, result, detections: dets.length },
           ...state.scans,
@@ -1939,6 +2003,19 @@ function reducer(state, action) {
     case 'reset':
       return seed()
 
+    case 'approve-proposal':
+      return { ...state, proposals: (state.proposals || []).map(p => p.id === action.id ? { ...p, status: 'approved' } : p) }
+    case 'reject-proposal':
+      return { ...state, proposals: (state.proposals || []).map(p => p.id === action.id ? { ...p, status: 'rejected' } : p) }
+    case 'bulk-approve-proposals':
+      return { ...state, proposals: (state.proposals || []).map(p => action.ids.includes(p.id) ? { ...p, status: 'approved' } : p) }
+    case 'bulk-reject-proposals':
+      return { ...state, proposals: (state.proposals || []).map(p => action.ids.includes(p.id) ? { ...p, status: 'rejected' } : p) }
+    case 'clear-rejected-proposals':
+      return { ...state, proposals: (state.proposals || []).filter(p => p.status !== 'rejected') }
+    case 'reset-proposal':
+      return { ...state, proposals: (state.proposals || []).map(p => p.id === action.id ? { ...p, status: 'pending' } : p) }
+
     default:
       return state
   }
@@ -2114,6 +2191,7 @@ const DICT = {
     'nav.analytics': 'System Analytics', 'nav.blacklists': 'Blacklists',
     'nav.webhookHealth': 'Webhook Health', 'nav.announcement': 'Announcement',
     'nav.audit': 'Audit Log', 'nav.maintenance': 'Maintenance', 'nav.discounts': 'Discount Codes',
+    'nav.proposals': 'Indicator Proposals',
     'cat.services': 'Services', 'cat.activity': 'Activity', 'cat.support': 'Support', 'cat.others': 'Others',
     'cat.admin': 'Admin Access', 'cat.preferences': 'My Preferences',
     'dash.kicker': 'View statistics, events, and announcements on the ZeroTrace.',
@@ -2134,6 +2212,7 @@ const DICT = {
     'nav.analytics': 'System-Analytics', 'nav.blacklists': 'Sperrlisten',
     'nav.webhookHealth': 'Webhook-Status', 'nav.announcement': 'Ankündigung',
     'nav.audit': 'Audit-Log', 'nav.maintenance': 'Wartung', 'nav.discounts': 'Rabattcodes',
+    'nav.proposals': 'Indikator-Vorschläge',
     'cat.services': 'Dienste', 'cat.activity': 'Aktivität', 'cat.support': 'Hilfe', 'cat.others': 'Sonstiges',
     'cat.admin': 'Admin-Bereich', 'cat.preferences': 'Meine Einstellungen',
     'dash.kicker': 'Statistiken, Ereignisse und Ankündigungen im Überblick.',
