@@ -15,10 +15,10 @@ public static class ContentSignatureScanner
 {
     /// <summary>
     /// Maximum number of bytes read per file. Cheat watermarks/menu strings sit
-    /// in the image; capping keeps the scan fast and memory-bounded on large
-    /// files. 32 MiB comfortably covers typical loaders, DLLs and Lua scripts.
+    /// near the start of the image; 8 MiB covers all realistic cheat binaries
+    /// and Lua scripts while cutting I/O time vs. the old 32 MiB cap.
     /// </summary>
-    public const int MaxReadBytes = 32 * 1024 * 1024;
+    public const int MaxReadBytes = 8 * 1024 * 1024;
 
     /// <summary>
     /// Returns the first content-string indicator found in <paramref name="path"/>,

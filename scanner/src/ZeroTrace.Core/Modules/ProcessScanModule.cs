@@ -58,8 +58,8 @@ public sealed class ProcessScanModule : IScanModule
 
             EvaluateImage(ctx, p, detailBase);
 
-            // Loader pattern: a FiveM/RageMP/alt:V process launched by a binary that
-            // lives in a user-writable folder and is not itself a framework/launcher.
+            // Loader pattern: check the full ancestor chain (parent + grandparent).
+            // A cheat loader often sits 2 levels above the framework process.
             if (hostIsMp && byPid.TryGetValue(p.ParentPid, out var parent) && !string.IsNullOrEmpty(parent.Path))
             {
                 bool parentIsFramework = KnownPaths.MpFrameworkForProcess(parent.Name, parent.Path) is not null;
@@ -80,6 +80,32 @@ public sealed class ProcessScanModule : IScanModule
                                  "Das ist ein typisches Muster fuer Loader/Injektoren.",
                         Detail = $"Start-Image: {parent.Path}"
                     });
+                }
+
+                // Grandparent check: even if the direct parent looks benign,
+                // a malicious grandparent in a user-writable folder is suspicious.
+                if (byPid.TryGetValue(parent.ParentPid, out var grandparent) &&
+                    !string.IsNullOrEmpty(grandparent.Path) &&
+                    KnownPaths.MpFrameworkForProcess(grandparent.Name, grandparent.Path) is null &&
+                    Heuristics.IsInUserWritableRoot(grandparent.Path!))
+                {
+                    var gsig = SignatureChecker.CheckDetailed(grandparent.Path!);
+                    if (!gsig.IsTrusted)
+                    {
+                        ctx.AddFinding(new Finding
+                        {
+                            Module = Name,
+                            Title = $"Verdaechtige Prozesskette: {grandparent.Name} → {parent.Name} → {hostFramework}",
+                            Risk = RiskLevel.High,
+                            Location = grandparent.Path!,
+                            FileName = grandparent.Name,
+                            Reason = $"Zwei Ebenen ueber dem {hostFramework}-Prozess (PID {p.Pid}) liegt " +
+                                     $"'{grandparent.Name}' (PID {grandparent.Pid}) in einem beschreibbaren " +
+                                     "Benutzerordner und ist nicht vertrauenswuerdig signiert. " +
+                                     "Mehrstufige Loader-Ketten sind ein starkes Cheat-Signal.",
+                            Detail = $"Kette: {grandparent.Name} → {parent.Name} → {p.Name}"
+                        });
+                    }
                 }
             }
 

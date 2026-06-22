@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using ZeroTrace.Core.Detection;
 using ZeroTrace.Core.Engine;
@@ -16,6 +17,19 @@ public sealed class CustomStringsScanModule : IScanModule
 {
     public string Name => "Benutzerdefinierte Strings";
     public double Weight => 1.0;
+
+    // Scan directories for at most this many seconds before stopping.
+    private const int DirScanBudgetSeconds = 30;
+
+    private static readonly HashSet<string> Extensions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ".exe", ".dll", ".sys", ".bin", ".dat", ".cfg", ".ini",
+        ".lua", ".luac", ".asi", ".js", ".node",
+        ".bat", ".cmd", ".ps1", ".vbs", ".wsf",
+        ".json", ".xml", ".txt", ".log",
+        // additional formats common in FiveM mods and cheat configs
+        ".config", ".html", ".htm", ".cs",
+    };
 
     public Task RunAsync(ScanContext ctx, CancellationToken ct)
     {
@@ -44,19 +58,21 @@ public sealed class CustomStringsScanModule : IScanModule
         try { procs = Process.GetProcesses(); }
         catch { return; }
 
-        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var seen = new ConcurrentDictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
         try
         {
-            foreach (var p in procs)
+            var paths = procs
+                .Select(p => { try { return p.MainModule?.FileName; } catch { return null; } })
+                .Where(p => !string.IsNullOrEmpty(p))
+                .Select(p => p!)
+                .Where(p => seen.TryAdd(p, true))
+                .ToList();
+
+            Parallel.ForEach(paths, new ParallelOptions { CancellationToken = ct,
+                MaxDegreeOfParallelism = Math.Max(2, Environment.ProcessorCount) }, path =>
             {
-                if (ct.IsCancellationRequested) break;
-                string? path = null;
-                try { path = p.MainModule?.FileName; } catch { }
-                if (string.IsNullOrEmpty(path) || !seen.Add(path)) continue;
-
                 var ind = ContentSignatureScanner.Scan(path, matcher);
-                if (ind is null) continue;
-
+                if (ind is null) return;
                 ctx.AddFinding(new Finding
                 {
                     Module = "Benutzerdefinierte Strings",
@@ -67,7 +83,7 @@ public sealed class CustomStringsScanModule : IScanModule
                     Reason = $"Der benutzerdefinierte String '{ind.Pattern}' wurde im Prozessabbild " +
                              $"'{Path.GetFileName(path)}' gefunden. {ind.Description}",
                 });
-            }
+            });
         }
         finally
         {
@@ -77,53 +93,24 @@ public sealed class CustomStringsScanModule : IScanModule
 
     private static void ScanDirectories(ScanContext ctx, IndicatorMatcher matcher, CancellationToken ct)
     {
-        var extensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-        {
-            ".exe", ".dll", ".sys", ".bin", ".dat", ".cfg", ".ini",
-            ".lua", ".luac", ".asi", ".js", ".node",
-            // Script files that often carry custom strings in plain text
-            ".bat", ".cmd", ".ps1", ".vbs", ".wsf",
-            // Config and log formats that may contain cheat tokens / download URLs
-            ".json", ".xml", ".txt", ".log"
-        };
+        var seen = new ConcurrentDictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
+        var sw   = Stopwatch.StartNew();
 
-        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        int scanned = 0;
-
+        // Collect candidate files across all roots up to depth 12.
+        var candidates = new List<string>();
         foreach (var root in KnownPaths.TargetedScanRoots())
         {
-            if (ct.IsCancellationRequested) break;
-            ScanDirectory(root, ctx, matcher, extensions, seen, ref scanned, ct, depth: 0);
+            if (ct.IsCancellationRequested || sw.Elapsed.TotalSeconds > DirScanBudgetSeconds) break;
+            CollectFiles(root, candidates, seen, ct, sw, depth: 0);
         }
-    }
 
-    private static void ScanDirectory(
-        string dir,
-        ScanContext ctx,
-        IndicatorMatcher matcher,
-        HashSet<string> extensions,
-        HashSet<string> seen,
-        ref int scanned,
-        CancellationToken ct,
-        int depth)
-    {
-        if (depth > 6 || ct.IsCancellationRequested || scanned > 5000) return;
-
-        string[] files;
-        try { files = Directory.GetFiles(dir); }
-        catch { files = Array.Empty<string>(); }
-
-        foreach (var f in files)
+        Parallel.ForEach(candidates, new ParallelOptions { CancellationToken = ct,
+            MaxDegreeOfParallelism = Math.Max(2, Environment.ProcessorCount) }, f =>
         {
-            if (ct.IsCancellationRequested || scanned > 5000) return;
-            if (!extensions.Contains(Path.GetExtension(f))) continue;
-            if (!seen.Add(f)) continue;
-            scanned++;
+            if (sw.Elapsed.TotalSeconds > DirScanBudgetSeconds) return;
             ctx.IncrementFiles();
-
             var ind = ContentSignatureScanner.Scan(f, matcher);
-            if (ind is null) continue;
-
+            if (ind is null) return;
             ctx.AddFinding(new Finding
             {
                 Module = "Benutzerdefinierte Strings",
@@ -134,6 +121,24 @@ public sealed class CustomStringsScanModule : IScanModule
                 Reason = $"Der benutzerdefinierte String '{ind.Pattern}' wurde in der Datei " +
                          $"'{Path.GetFileName(f)}' gefunden. {ind.Description}",
             });
+        });
+    }
+
+    private static void CollectFiles(
+        string dir, List<string> results, ConcurrentDictionary<string, bool> seen,
+        CancellationToken ct, Stopwatch sw, int depth)
+    {
+        if (depth > 12 || ct.IsCancellationRequested || sw.Elapsed.TotalSeconds > DirScanBudgetSeconds)
+            return;
+
+        string[] files;
+        try { files = Directory.GetFiles(dir); }
+        catch { files = Array.Empty<string>(); }
+
+        foreach (var f in files)
+        {
+            if (!Extensions.Contains(Path.GetExtension(f))) continue;
+            if (seen.TryAdd(f, true)) results.Add(f);
         }
 
         string[] subdirs;
@@ -142,8 +147,8 @@ public sealed class CustomStringsScanModule : IScanModule
 
         foreach (var sub in subdirs)
         {
-            if (ct.IsCancellationRequested || scanned > 5000) break;
-            ScanDirectory(sub, ctx, matcher, extensions, seen, ref scanned, ct, depth + 1);
+            if (ct.IsCancellationRequested || sw.Elapsed.TotalSeconds > DirScanBudgetSeconds) break;
+            CollectFiles(sub, results, seen, ct, sw, depth + 1);
         }
     }
 }

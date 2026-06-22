@@ -53,6 +53,8 @@ public sealed class ScanEngine
             Percent = 0
         });
 
+        HashUtil.ClearCache();
+
         double totalWeight = modules.Sum(m => m.Weight);
         double consumed = 0;
 

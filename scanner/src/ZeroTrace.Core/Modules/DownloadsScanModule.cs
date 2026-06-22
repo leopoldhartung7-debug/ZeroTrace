@@ -49,6 +49,14 @@ public sealed class DownloadsScanModule : IScanModule
                 continue;
             }
 
+            // Check if file was downloaded from a known cheat-hosting domain.
+            var urlFinding = CheckZoneIdentifierUrl(file);
+            if (urlFinding is not null)
+            {
+                ctx.AddFinding(urlFinding);
+                continue;
+            }
+
             var finding = FileInspector.Inspect(file, ctx, Name);
             if (finding is not null)
             {
@@ -183,5 +191,63 @@ public sealed class DownloadsScanModule : IScanModule
     {
         try { return File.GetLastWriteTime(path); }
         catch { return DateTime.MinValue; }
+    }
+
+    // Known cheat-hosting and reseller domain fragments.
+    private static readonly string[] CheatDomainFragments =
+    {
+        "cheat", "hack", "aimbot", "esp-", "-esp.", "wallhack",
+        "bypass", "spoofer", "undetected", "fivemcheat",
+        "mod-menu", "modmenu", "cheathappens", "unknowncheats",
+        "mpgh.net", "elitepvpers", "nulled.to", "cracked.io",
+        "leakcheats", "freecheats", "bestcheats", "topcheat",
+    };
+
+    /// <summary>
+    /// Reads the NTFS Zone.Identifier alternate data stream to extract the
+    /// ReferrerUrl / HostUrl and checks it against known cheat-hosting domains.
+    /// Returns a finding if a match is found, null otherwise.
+    /// </summary>
+    private static Finding? CheckZoneIdentifierUrl(string file)
+    {
+        // The ADS is named "file.ext:Zone.Identifier"
+        var adsPath = file + ":Zone.Identifier";
+        string content;
+        try { content = File.ReadAllText(adsPath, System.Text.Encoding.UTF8); }
+        catch { return null; }
+
+        // Parse ReferrerUrl and HostUrl lines from the INI-style stream.
+        string? url = null;
+        foreach (var line in content.Split('\n'))
+        {
+            var trimmed = line.Trim();
+            if (trimmed.StartsWith("ReferrerUrl=", StringComparison.OrdinalIgnoreCase) ||
+                trimmed.StartsWith("HostUrl=",     StringComparison.OrdinalIgnoreCase))
+            {
+                url = trimmed.Substring(trimmed.IndexOf('=') + 1).Trim();
+                break;
+            }
+        }
+
+        if (string.IsNullOrEmpty(url)) return null;
+
+        foreach (var frag in CheatDomainFragments)
+        {
+            if (url.Contains(frag, StringComparison.OrdinalIgnoreCase))
+            {
+                return new Finding
+                {
+                    Module = "Downloads",
+                    Title = $"Download von bekannter Cheat-Domain: {Path.GetFileName(file)}",
+                    Risk = RiskLevel.High,
+                    Location = file,
+                    FileName = Path.GetFileName(file),
+                    Reason = $"Die Datei wurde von einer als Cheat-Quelle bekannten Domain heruntergeladen. " +
+                             $"Download-URL enthaelt verdaechtiges Muster '{frag}'.",
+                    Detail = $"Quelle: {url}"
+                };
+            }
+        }
+        return null;
     }
 }

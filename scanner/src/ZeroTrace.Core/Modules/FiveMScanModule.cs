@@ -70,41 +70,93 @@ public sealed class FiveMScanModule : IScanModule
         int total = Math.Max(work.Count, 1);
         int i = 0;
 
-        foreach (var (fwName, file) in work)
+        // Collect the set of DLL names that legitimately belong to each framework root
+        // so we can detect side-loading (a DLL with the same name placed in a mod folder).
+        var frameworkDllNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var (_, root) in frameworks)
         {
-            ct.ThrowIfCancellationRequested();
-            i++;
+            try
+            {
+                foreach (var f in Directory.GetFiles(root, "*.dll", SearchOption.TopDirectoryOnly))
+                    frameworkDllNames.Add(Path.GetFileName(f));
+            }
+            catch { }
+        }
+
+        var parallelOpts = new ParallelOptions
+        {
+            CancellationToken = ct,
+            MaxDegreeOfParallelism = Math.Max(2, Environment.ProcessorCount)
+        };
+
+        Parallel.ForEach(work, parallelOpts, item =>
+        {
+            var (fwName, file) = item;
+            System.Threading.Interlocked.Increment(ref i);
             ctx.IncrementFiles();
-            if (i % 25 == 0) ctx.Report((double)i / total, file, $"{i}/{work.Count} {fwName}-Dateien");
+            if (i % 25 == 0) ctx.Report((double)i / total, fwName, $"{i}/{work.Count} {fwName}-Dateien");
 
             var ext = Path.GetExtension(file);
             bool isDll = ext.Equals(".dll", StringComparison.OrdinalIgnoreCase)
                          || ext.Equals(".asi", StringComparison.OrdinalIgnoreCase);
+            bool isLua = ext.Equals(".lua", StringComparison.OrdinalIgnoreCase)
+                         || ext.Equals(".luac", StringComparison.OrdinalIgnoreCase);
 
-            // Indicator/content/heuristic pass (hash, content-signature, name,
-            // path, untrusted-in-userdir).
+            // Lua heuristic: scan for suspicious API patterns used by cheat scripts.
+            if (isLua)
+            {
+                CheckLuaFile(ctx, file, fwName);
+                return;
+            }
+
+            // Indicator/content/heuristic pass.
             var finding = FileInspector.Inspect(file, ctx, Name);
             if (finding is not null)
             {
                 finding.Reason = $"[{fwName}] " + finding.Reason;
                 ctx.AddFinding(finding);
-                continue;
+                return;
             }
 
-            if (!isDll || !SignatureChecker.IsCheckable(file)) continue;
+            if (!isDll || !SignatureChecker.IsCheckable(file)) return;
 
             var sig = SignatureChecker.CheckDetailed(file);
             bool inModFolder = InterestingSubfolders.Any(s =>
                 file.Contains(s, StringComparison.OrdinalIgnoreCase));
             var trusted = TrustedSignerFragmentsFor(fwName);
 
+            // DLL side-loading: a DLL in a mod/plugin folder that has the same name as
+            // a legitimate framework DLL but is not signed by the framework vendor.
+            if (inModFolder && frameworkDllNames.Contains(Path.GetFileName(file)))
+            {
+                bool isFrameworkSigned = sig.IsTrusted && sig.Signer is not null &&
+                    trusted.Any(t => sig.Signer.Contains(t, StringComparison.OrdinalIgnoreCase));
+                if (!isFrameworkSigned)
+                {
+                    ctx.AddFinding(new Finding
+                    {
+                        Module = Name,
+                        Title = "Moegliches DLL-Side-Loading im Framework-Mod-Ordner",
+                        Risk = RiskLevel.High,
+                        Location = file,
+                        FileName = Path.GetFileName(file),
+                        Sha256 = HashUtil.TryComputeSha256(file, ctx.Options.MaxHashFileSizeBytes),
+                        Signed = sig.IsTrusted,
+                        Detail = sig.Signer is null ? null : $"Signierer: {sig.Signer}",
+                        Reason = $"[{fwName}] DLL '{Path.GetFileName(file)}' im Mod-Ordner traegt denselben " +
+                                 "Namen wie eine legitime Framework-DLL, ist aber nicht vom Framework-Hersteller " +
+                                 "signiert. Typisches Side-Loading-/Hijacking-Muster."
+                    });
+                    return;
+                }
+            }
+
             if (sig.Trust == SignatureChecker.Trust.Trusted)
             {
                 bool allowlisted = sig.CatalogSigned ||
                     (sig.Signer is not null && trusted.Any(t =>
                         sig.Signer.Contains(t, StringComparison.OrdinalIgnoreCase)));
-
-                if (allowlisted) continue; // known-good, stay quiet
+                if (allowlisted) return;
 
                 ctx.AddFinding(new Finding
                 {
@@ -119,10 +171,9 @@ public sealed class FiveMScanModule : IScanModule
                     Reason = $"[{fwName}] Gueltig signierte DLL/ASI eines Drittanbieters im " +
                              "Framework-Baum. Meist ein legitimer Mod; informativ aufgefuehrt."
                 });
-                continue;
+                return;
             }
 
-            // Unsigned or invalidly signed DLL/ASI inside a framework tree.
             bool invalid = sig.Trust == SignatureChecker.Trust.SignedUntrusted;
             var risk = invalid ? RiskLevel.High : (inModFolder ? RiskLevel.High : RiskLevel.Medium);
 
@@ -143,10 +194,50 @@ public sealed class FiveMScanModule : IScanModule
                          "Kann ein Mod, aber auch eine injizierte Komponente sein. " +
                          "Lokale Pruefung empfohlen."
             });
-        }
+        });
 
         ctx.Report(1.0, "GTA-MP", "Framework-Pruefung abgeschlossen");
         return Task.CompletedTask;
+    }
+
+    // Lua patterns that strongly indicate a cheat script (memory access, hooking, bypass).
+    private static readonly string[] LuaCheatPatterns =
+    {
+        "mem.read", "mem.write", "mem.alloc",
+        "hook.create", "hook.install", "hook.detour",
+        "inject", "bypass", "aimbot", "esp.", "wallhack",
+        "triggerbot", "spinbot", "bunnyhop",
+        "NoClip", "GodMode", "SuperSpeed",
+        "exports[\"cheat", "exports['cheat",
+        "TriggerEvent(\"cheat", "TriggerEvent('cheat",
+        "SetEntityCoords(", -- teleport abuse pattern
+        "NetworkSetVoiceActive" -- common in silent aimbots
+    };
+
+    private static void CheckLuaFile(ScanContext ctx, string file, string fwName)
+    {
+        string content;
+        try { content = File.ReadAllText(file, System.Text.Encoding.UTF8); }
+        catch { return; }
+
+        foreach (var pattern in LuaCheatPatterns)
+        {
+            if (content.Contains(pattern, StringComparison.OrdinalIgnoreCase))
+            {
+                ctx.AddFinding(new Finding
+                {
+                    Module = "GTA-MP",
+                    Title = $"Verdaechtiges Lua-Skript: {Path.GetFileName(file)}",
+                    Risk = RiskLevel.High,
+                    Location = file,
+                    FileName = Path.GetFileName(file),
+                    Reason = $"[{fwName}] Lua-Datei enthaelt verdaechtiges Muster '{pattern}'. " +
+                             "Cheat-Skripte verwenden oft diese API-Aufrufe fuer Speicherzugriff, " +
+                             "Hooks oder bekannte Cheat-Funktionen."
+                });
+                return;
+            }
+        }
     }
 
     private static IEnumerable<string> EnumerateBinaries(string root, int depth, CancellationToken ct)
