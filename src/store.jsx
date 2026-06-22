@@ -1341,30 +1341,41 @@ function reducer(state, action) {
 
     case 'add-ticket': {
       const ownerId = state.session?.userId || (state.role === 'admin' ? 'admin' : null)
+      const newTicket = {
+        id: 'T-' + Date.now().toString().slice(-6),
+        ...action.ticket,
+        status: 'Open',
+        priority: action.ticket.priority || 'Normal',
+        tags: action.ticket.tags || [],
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        ownerId,
+        assignedTo: null,
+        rating: null,
+        replies: [],
+        history: [{ status: 'Open', at: Date.now(), by: ownerId }],
+      }
       return {
         ...state,
-        tickets: [{
-          id: 'T-' + Date.now().toString().slice(-6),
-          ...action.ticket,
-          status: 'Open',
-          priority: action.ticket.priority || 'Normal',
-          createdAt: Date.now(),
-          updatedAt: Date.now(),
-          ownerId,
-          replies: [],
-        }, ...state.tickets],
+        tickets: [newTicket, ...state.tickets],
         events: ev(state, 'support', 'Ticket opened', action.ticket.subject, ownerId),
         notifications: note(state, 'Ticket opened', action.ticket.subject, ownerId),
       }
     }
 
-    case 'update-ticket':
+    case 'update-ticket': {
       return {
         ...state,
-        tickets: state.tickets.map((t) =>
-          t.id === action.id ? { ...t, ...action.fields, updatedAt: Date.now() } : t
-        ),
+        tickets: state.tickets.map((t) => {
+          if (t.id !== action.id) return t
+          const updated = { ...t, ...action.fields, updatedAt: Date.now() }
+          if (action.fields.status && action.fields.status !== t.status) {
+            updated.history = [...(t.history || []), { status: action.fields.status, at: Date.now(), by: state.role === 'admin' ? 'admin' : (state.session?.userId || 'user') }]
+          }
+          return updated
+        }),
       }
+    }
 
     case 'reply-ticket': {
       const replyOwnerId = state.session?.userId || (state.role === 'admin' ? 'admin' : null)
@@ -1373,18 +1384,52 @@ function reducer(state, action) {
         author: state.role === 'admin' ? 'Admin' : (state.session?.userId || 'User'),
         role: state.role,
         message: action.message,
+        internal: action.internal || false,
         createdAt: Date.now(),
       }
       return {
         ...state,
-        tickets: state.tickets.map((t) =>
-          t.id === action.id
-            ? { ...t, replies: [...(t.replies || []), reply], updatedAt: Date.now(), status: state.role === 'admin' ? 'In Progress' : t.status }
-            : t
-        ),
+        tickets: state.tickets.map((t) => {
+          if (t.id !== action.id) return t
+          const newStatus = (!action.internal && state.role === 'admin' && t.status === 'Open') ? 'In Progress' : t.status
+          const history = newStatus !== t.status ? [...(t.history || []), { status: newStatus, at: Date.now(), by: 'admin' }] : (t.history || [])
+          return { ...t, replies: [...(t.replies || []), reply], updatedAt: Date.now(), status: newStatus, history }
+        }),
         notifications: note(state, `Ticket reply: ${action.id}`, action.message.slice(0, 80), replyOwnerId),
       }
     }
+
+    case 'rate-ticket':
+      return {
+        ...state,
+        tickets: state.tickets.map((t) =>
+          t.id === action.id ? { ...t, rating: action.rating, updatedAt: Date.now() } : t
+        ),
+      }
+
+    case 'assign-ticket':
+      return {
+        ...state,
+        tickets: state.tickets.map((t) =>
+          t.id === action.id ? { ...t, assignedTo: action.assignee, updatedAt: Date.now() } : t
+        ),
+      }
+
+    case 'delete-ticket':
+      return { ...state, tickets: state.tickets.filter((t) => t.id !== action.id) }
+
+    case 'bulk-update-tickets':
+      return {
+        ...state,
+        tickets: state.tickets.map((t) =>
+          action.ids.includes(t.id)
+            ? { ...t, ...action.fields, updatedAt: Date.now(), history: [...(t.history || []), { status: action.fields.status, at: Date.now(), by: 'admin' }] }
+            : t
+        ),
+      }
+
+    case 'bulk-delete-tickets':
+      return { ...state, tickets: state.tickets.filter((t) => !action.ids.includes(t.id)) }
 
     case 'clear-events': {
       // Removes the activity-log entries the current viewer is allowed to
