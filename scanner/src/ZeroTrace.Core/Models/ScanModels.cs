@@ -58,6 +58,15 @@ public sealed class ScanOptions
     /// <summary>Scan Windows Prefetch files for previously executed cheat binaries.</summary>
     public bool ScanPrefetch { get; set; } = true;
 
+    /// <summary>Enumerate named pipes and check known cheat mutex names.</summary>
+    public bool ScanNamedResources { get; set; } = true;
+
+    /// <summary>Scan Windows Clipboard history entries for cheat strings and domains.</summary>
+    public bool ScanClipboard { get; set; } = true;
+
+    /// <summary>Scan %APPDATA% and %LOCALAPPDATA% directory names for cheat tool folders.</summary>
+    public bool ScanAppData { get; set; } = true;
+
     /// <summary>
     /// When false (default) the drive module only walks targeted, high-signal
     /// directories (profile, temp, downloads, appdata). When true it walks the

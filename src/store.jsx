@@ -227,6 +227,9 @@ export function deriveScanReport(pin) {
   const ntfsFindings = byModule('NTFS-Aenderungsjournal')
   const installedSoftwareFindings = byModule('Installierte Software')
   const prefetchFindings = byModule('Prefetch')
+  const namedResourceFindings = byModule('Kernel-Objekte')
+  const clipboardFindings = byModule('Zwischenablage')
+  const appDataFindings = byModule('AppData')
 
   return {
     scannedAt: pin.scannedAt || null,
@@ -277,6 +280,9 @@ export function deriveScanReport(pin) {
     ntfsFindings,
     installedSoftwareFindings,
     prefetchFindings,
+    namedResourceFindings,
+    clipboardFindings,
+    appDataFindings,
     accounts: [],
     discord: [],
     recording: Array.isArray(pin.recordingSoftware)

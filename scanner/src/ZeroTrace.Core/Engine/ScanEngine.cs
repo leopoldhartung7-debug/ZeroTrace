@@ -186,6 +186,9 @@ public sealed class ScanEngine
         if (o.ScanSteam) modules.Add(new SteamAccountScanModule());
         if (o.ScanInstalledSoftware) modules.Add(new InstalledSoftwareScanModule());
         if (o.ScanPrefetch) modules.Add(new PrefetchScanModule());
+        if (o.ScanNamedResources) modules.Add(new NamedResourceScanModule());
+        if (o.ScanClipboard) modules.Add(new ClipboardScanModule());
+        if (o.ScanAppData) modules.Add(new AppDataScanModule());
         return modules;
     }
 }

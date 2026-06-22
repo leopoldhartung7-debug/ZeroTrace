@@ -7,7 +7,7 @@ import {
   ChevronRight, Shield, MessageSquare, Video, Gamepad2, Database, Activity,
   Clock, ImageOff, Usb, FileText, Server, RefreshCw, Image as ImageIcon,
   Trash2, Bell, Layers, ScanLine, Users, Globe, History, Terminal, Package,
-  Zap, Key,
+  Zap, Key, Clipboard, FolderOpen,
 } from 'lucide-react'
 import { Card } from '../components/kit.jsx'
 import { Modal, Select, useToast } from '../components/ui.jsx'
@@ -1196,6 +1196,53 @@ export default function ScanResults() {
           <p className="muted py-10 text-center text-sm">No cheat-related Prefetch entries found</p>
         ) : (
           <ModuleFindingsList findings={report.prefetchFindings} />
+        )}
+      </Card>
+
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+        <Card className="p-6">
+          <p className="caps-label">Kernel Objects</p>
+          <h2 className="txt mt-1 flex items-center gap-2 text-lg font-semibold">
+            <Cpu size={18} /> Named Pipes &amp; Mutexes ({report.namedResourceFindings.length})
+          </h2>
+          <p className="muted mb-4 mt-1 text-sm">
+            Active named pipes and known cheat mutex objects in the Windows kernel
+          </p>
+          {report.namedResourceFindings.length === 0 ? (
+            <p className="muted py-10 text-center text-sm">No suspicious kernel objects found</p>
+          ) : (
+            <ModuleFindingsList findings={report.namedResourceFindings} />
+          )}
+        </Card>
+
+        <Card className="p-6">
+          <p className="caps-label">Clipboard History</p>
+          <h2 className="txt mt-1 flex items-center gap-2 text-lg font-semibold">
+            <Clipboard size={18} /> Clipboard ({report.clipboardFindings.length})
+          </h2>
+          <p className="muted mb-4 mt-1 text-sm">
+            Windows Clipboard history entries containing cheat strings or licence keys
+          </p>
+          {report.clipboardFindings.length === 0 ? (
+            <p className="muted py-10 text-center text-sm">No suspicious clipboard entries found</p>
+          ) : (
+            <ModuleFindingsList findings={report.clipboardFindings} />
+          )}
+        </Card>
+      </div>
+
+      <Card className="p-6">
+        <p className="caps-label">AppData Scan</p>
+        <h2 className="txt mt-1 flex items-center gap-2 text-lg font-semibold">
+          <FolderOpen size={18} /> AppData Directories ({report.appDataFindings.length})
+        </h2>
+        <p className="muted mb-4 mt-1 text-sm">
+          %APPDATA% and %LOCALAPPDATA% folders matching known cheat tool names
+        </p>
+        {report.appDataFindings.length === 0 ? (
+          <p className="muted py-10 text-center text-sm">No suspicious AppData directories found</p>
+        ) : (
+          <ModuleFindingsList findings={report.appDataFindings} />
         )}
       </Card>
 

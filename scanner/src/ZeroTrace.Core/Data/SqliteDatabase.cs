@@ -64,133 +64,262 @@ public sealed class SqliteDatabase
     }
 
     /// <summary>
-    /// Seeds the built-in, fully editable heuristic indicators if the
-    /// indicators table is empty: file-name/path keywords plus a small set of
-    /// content-string signatures (cheat watermarks / menu strings). These are
-    /// starting points, not a complete cheat catalogue, and every entry can be
-    /// edited, disabled or removed by the administrator.
+    /// Seeds / upgrades the built-in heuristic indicators. A version number stored
+    /// in the settings table is used so new indicators are pushed to existing
+    /// installations on the next launch. Manual (user-added) indicators are never
+    /// touched — only rows with source='builtin-heuristic' are replaced.
     /// </summary>
     public void SeedDefaultsIfEmpty()
     {
+        const int CurrentVersion = 2;
         using var conn = OpenConnection();
-        using (var check = conn.CreateCommand())
+
+        // Check stored seed version.
+        int storedVersion = 0;
+        using (var qv = conn.CreateCommand())
         {
-            check.CommandText = "SELECT COUNT(*) FROM indicators;";
-            var count = Convert.ToInt64(check.ExecuteScalar());
-            if (count > 0) return;
+            qv.CommandText = "SELECT value FROM settings WHERE key='builtin_indicator_version';";
+            var res = qv.ExecuteScalar();
+            if (res != null) int.TryParse(res.ToString(), out storedVersion);
         }
+        if (storedVersion >= CurrentVersion) return;
 
         var seeds = new (IndicatorType type, string pattern, RiskLevel risk, string category, string desc)[]
         {
-            (IndicatorType.FileNameKeyword, "injector",  RiskLevel.Medium, "Injector", "Dateiname enthaelt 'injector' (DLL-Injection-Werkzeuge)."),
-            (IndicatorType.FileNameKeyword, "loader",    RiskLevel.Low,    "Loader",   "Dateiname enthaelt 'loader' (oft legitim, daher Low)."),
-            (IndicatorType.FileNameKeyword, "aimbot",    RiskLevel.High,   "Aimbot",   "Dateiname enthaelt 'aimbot'."),
-            (IndicatorType.FileNameKeyword, "cheat",     RiskLevel.Medium, "Generic",  "Dateiname enthaelt 'cheat'."),
-            (IndicatorType.FileNameKeyword, "trainer",   RiskLevel.Low,    "Trainer",  "Dateiname enthaelt 'trainer' (Single-Player-Trainer oft legitim)."),
-            (IndicatorType.FilePathKeyword, "menyoo",    RiskLevel.Low,    "Mod Menu", "Pfad enthaelt 'menyoo' (Mod-Menu-Komponente)."),
-            (IndicatorType.FileNameKeyword, "executor",  RiskLevel.Medium, "Executor", "Dateiname enthaelt 'executor' (Script-Executor)."),
-            (IndicatorType.FileNameKeyword, "spoofer",   RiskLevel.High,   "Spoofer",  "Dateiname enthaelt 'spoofer' (HWID-Spoofing)."),
+            // ── File-name keywords ────────────────────────────────────────────────
+            (IndicatorType.FileNameKeyword, "injector",       RiskLevel.Medium,   "Injector",        "Dateiname enthaelt 'injector'."),
+            (IndicatorType.FileNameKeyword, "loader",         RiskLevel.Low,      "Loader",          "Dateiname enthaelt 'loader'."),
+            (IndicatorType.FileNameKeyword, "aimbot",         RiskLevel.High,     "Aimbot",          "Dateiname enthaelt 'aimbot'."),
+            (IndicatorType.FileNameKeyword, "cheat",          RiskLevel.Medium,   "Generic",         "Dateiname enthaelt 'cheat'."),
+            (IndicatorType.FileNameKeyword, "trainer",        RiskLevel.Low,      "Trainer",         "Dateiname enthaelt 'trainer'."),
+            (IndicatorType.FileNameKeyword, "menyoo",         RiskLevel.Low,      "Mod Menu",        "Pfad enthaelt 'menyoo'."),
+            (IndicatorType.FileNameKeyword, "executor",       RiskLevel.Medium,   "Executor",        "Dateiname enthaelt 'executor'."),
+            (IndicatorType.FileNameKeyword, "spoofer",        RiskLevel.High,     "Spoofer",         "Dateiname enthaelt 'spoofer'."),
+            (IndicatorType.FileNameKeyword, "dumper",         RiskLevel.Medium,   "Dumper",          "Dateiname enthaelt 'dumper'."),
+            (IndicatorType.FileNameKeyword, "bypass",         RiskLevel.Low,      "Bypass",          "Dateiname enthaelt 'bypass'."),
+            (IndicatorType.FileNameKeyword, "kdmapper",       RiskLevel.High,     "Manual-Mapper",   "Bekannter Treiber-Mapper."),
+            (IndicatorType.FileNameKeyword, "manualmap",      RiskLevel.High,     "Manual-Mapper",   "Manuelles DLL/Treiber-Mapping."),
+            (IndicatorType.FileNameKeyword, "dsefix",         RiskLevel.High,     "DSE-Bypass",      "Treiber-Signaturpruefung deaktivieren."),
+            (IndicatorType.FileNameKeyword, "physmem",        RiskLevel.High,     "Kernel-Exploit",  "Physischer-Speicher-Treiber."),
+            (IndicatorType.FileNameKeyword, "mhyprot",        RiskLevel.High,     "Vulnerable-Driver","Anfaelliger miHoYo-Treiber."),
+            (IndicatorType.FileNameKeyword, "dbk64",          RiskLevel.High,     "Kernel-Treiber",  "Cheat-Engine-Kernel-Treiber."),
+            // FiveM / GTA
+            (IndicatorType.FileNameKeyword, "eulen",          RiskLevel.High,     "FiveM-Cheat",     "FiveM-Cheat 'Eulen'."),
+            (IndicatorType.FileNameKeyword, "hammafia",       RiskLevel.High,     "FiveM-Cheat",     "FiveM-Cheat 'Hammafia'."),
+            (IndicatorType.FileNameKeyword, "desudo",         RiskLevel.High,     "FiveM-Cheat",     "FiveM-Cheat 'Desudo'."),
+            (IndicatorType.FileNameKeyword, "impaught",       RiskLevel.High,     "FiveM-Cheat",     "FiveM-Cheat 'Impaught'."),
+            (IndicatorType.FileNameKeyword, "scarlet",        RiskLevel.Medium,   "FiveM-Cheat",     "FiveM-Cheat 'Scarlet'."),
+            (IndicatorType.FileNameKeyword, "kiddion",        RiskLevel.High,     "GTA-Cheat",       "GTA-Cheat 'Kiddion'."),
+            (IndicatorType.FileNameKeyword, "phantom-x",      RiskLevel.High,     "FiveM-Cheat",     "FiveM-Cheat 'Phantom-X'."),
+            (IndicatorType.FileNameKeyword, "tsunami",        RiskLevel.High,     "FiveM-Cheat",     "FiveM-Cheat 'Tsunami'."),
+            (IndicatorType.FileNameKeyword, "lynxcheat",      RiskLevel.High,     "FiveM-Cheat",     "FiveM-Cheat 'Lynx'."),
+            (IndicatorType.FileNameKeyword, "ozark",          RiskLevel.High,     "FiveM-Cheat",     "FiveM-Cheat 'Ozark'."),
+            (IndicatorType.FileNameKeyword, "rxce",           RiskLevel.High,     "FiveM-Cheat",     "FiveM-Cheat 'RxCE'."),
+            (IndicatorType.FileNameKeyword, "nexusmenu",      RiskLevel.High,     "FiveM-Cheat",     "FiveM-Cheat 'Nexus Menu'."),
+            (IndicatorType.FileNameKeyword, "2take1",         RiskLevel.High,     "GTA-Cheat",       "GTA-Cheat '2Take1'."),
+            (IndicatorType.FileNameKeyword, "cherax",         RiskLevel.High,     "GTA-Cheat",       "GTA-Mod-Menu 'Cherax'."),
+            (IndicatorType.FileNameKeyword, "midnight",       RiskLevel.Medium,   "GTA-Cheat",       "'Midnight' GTA-Mod-Menu."),
+            (IndicatorType.FileNameKeyword, "spacedust",      RiskLevel.High,     "GTA-Cheat",       "GTA-Cheat 'SpaceDust'."),
+            (IndicatorType.FileNameKeyword, "modest",         RiskLevel.High,     "GTA-Cheat",       "GTA-'Modest Menu'."),
+            (IndicatorType.FileNameKeyword, "skulking",       RiskLevel.High,     "GTA-Cheat",       "GTA-Cheat 'Skulking'."),
+            // CS2 / CSGO
+            (IndicatorType.FileNameKeyword, "aimware",        RiskLevel.Critical, "CS2-Cheat",       "CS2-Cheat 'Aimware'."),
+            (IndicatorType.FileNameKeyword, "fecurity",       RiskLevel.Critical, "CS2-Cheat",       "CS2-Cheat 'Fecurity'."),
+            (IndicatorType.FileNameKeyword, "onetap",         RiskLevel.Critical, "CS2-Cheat",       "CS2-Cheat 'Onetap'."),
+            (IndicatorType.FileNameKeyword, "neverlose",      RiskLevel.Critical, "CS2-Cheat",       "CS2-Cheat 'Neverlose'."),
+            (IndicatorType.FileNameKeyword, "gamesense",      RiskLevel.Critical, "CS2-Cheat",       "CS2-Cheat 'Gamesense'."),
+            (IndicatorType.FileNameKeyword, "fatality",       RiskLevel.High,     "CS2-Cheat",       "CS2-Cheat 'Fatality'."),
+            (IndicatorType.FileNameKeyword, "nixware",        RiskLevel.High,     "CS2-Cheat",       "CS2-Cheat 'NixWare'."),
+            (IndicatorType.FileNameKeyword, "lumina",         RiskLevel.High,     "CS2-Cheat",       "CS2-Cheat 'Lumina'."),
+            (IndicatorType.FileNameKeyword, "skycheats",      RiskLevel.High,     "Cheat-Tool",      "'SkyCheats'-Token."),
+            // Minecraft
+            (IndicatorType.FileNameKeyword, "liquidbounce",   RiskLevel.High,     "MC-Cheat",        "MC-Cheat 'LiquidBounce'."),
+            (IndicatorType.FileNameKeyword, "wurst",          RiskLevel.High,     "MC-Cheat",        "MC-Cheat 'Wurst'."),
+            (IndicatorType.FileNameKeyword, "aristois",       RiskLevel.High,     "MC-Cheat",        "MC-Cheat 'Aristois'."),
+            (IndicatorType.FileNameKeyword, "vape",           RiskLevel.High,     "MC-Cheat",        "MC-Ghost-Client 'Vape'."),
+            (IndicatorType.FileNameKeyword, "sigmaclient",    RiskLevel.High,     "MC-Cheat",        "MC-Cheat 'Sigma'."),
+            (IndicatorType.FileNameKeyword, "novoline",       RiskLevel.High,     "MC-Cheat",        "MC-Cheat 'Novoline'."),
+            (IndicatorType.FileNameKeyword, "meteorclient",   RiskLevel.High,     "MC-Cheat",        "MC-Cheat 'Meteor'."),
+            (IndicatorType.FileNameKeyword, "killaura",       RiskLevel.High,     "MC-Cheat",        "KillAura-Hack."),
+            (IndicatorType.FileNameKeyword, "autoclicker",    RiskLevel.Medium,   "Autoclicker",     "Autoclicker."),
+            // Injectors
+            (IndicatorType.FileNameKeyword, "xenos",          RiskLevel.High,     "Injector",        "Xenos-Injector."),
+            (IndicatorType.FileNameKeyword, "extremeinjector",RiskLevel.High,     "Injector",        "Extreme Injector."),
+            (IndicatorType.FileNameKeyword, "winject",        RiskLevel.High,     "Injector",        "WinInject-Injector."),
+            (IndicatorType.FileNameKeyword, "netinject",      RiskLevel.High,     "Injector",        "NetInject-Injector."),
+            (IndicatorType.FileNameKeyword, "reclass",        RiskLevel.High,     "Debugger",        "ReClass.NET-Reverse-Tool."),
+            (IndicatorType.FileNameKeyword, "scylla",         RiskLevel.High,     "Dumper",          "Scylla-Dumper."),
+            (IndicatorType.FileNameKeyword, "x64dbg",         RiskLevel.High,     "Debugger",        "x64dbg-Debugger."),
+            (IndicatorType.FileNameKeyword, "x32dbg",         RiskLevel.High,     "Debugger",        "x32dbg-Debugger."),
+            (IndicatorType.FileNameKeyword, "cheatengine",    RiskLevel.High,     "Debugger",        "Cheat Engine."),
+            // Spoofers
+            (IndicatorType.FileNameKeyword, "hwid_reset",     RiskLevel.High,     "Spoofer",         "HWID-Reset-Werkzeug."),
+            (IndicatorType.FileNameKeyword, "serial_spoof",   RiskLevel.High,     "Spoofer",         "Seriennummer-Spoofer."),
+            (IndicatorType.FileNameKeyword, "disk_serial",    RiskLevel.High,     "Spoofer",         "Festplatten-SN-Spoofer."),
+            (IndicatorType.FileNameKeyword, "bios_spoof",     RiskLevel.High,     "Spoofer",         "BIOS-Spoofer."),
+            (IndicatorType.FileNameKeyword, "macchanger",     RiskLevel.Medium,   "Spoofer",         "MAC-Adress-Changer."),
+            (IndicatorType.FileNameKeyword, "uuid_changer",   RiskLevel.High,     "Spoofer",         "UUID/SMBIOS-Changer."),
+            (IndicatorType.FileNameKeyword, "volumeid",       RiskLevel.High,     "Spoofer",         "VolumeID-Werkzeug (aendert Laufwerk-SN)."),
+            (IndicatorType.FileNameKeyword, "polargen",       RiskLevel.High,     "Spoofer",         "Polargen-HWID-Spoofer."),
+            // BYOVD keywords
+            (IndicatorType.FileNameKeyword, "gdrv",           RiskLevel.High,     "BYOVD-Treiber",   "Gigabyte-GDRV-Treiber (BYOVD)."),
+            (IndicatorType.FileNameKeyword, "rtcore",         RiskLevel.High,     "BYOVD-Treiber",   "RTCore-MSI-Treiber (BYOVD)."),
+            (IndicatorType.FileNameKeyword, "winring",        RiskLevel.High,     "BYOVD-Treiber",   "WinRing0-Treiber (BYOVD)."),
+            (IndicatorType.FileNameKeyword, "kprocesshacker", RiskLevel.Critical, "Kernel-Treiber",  "Process-Hacker-Kernel-Treiber."),
 
-            // Content-string signatures: searched inside the raw file bytes
-            // (ASCII + UTF-16LE). These catch a cheat even after it is renamed,
-            // because the characteristic watermark/menu string stays in the
-            // binary. Distinctive brand tokens are High; generic cheat-UI words
-            // are Medium. All of these are fully editable/removable by the admin.
-            (IndicatorType.ContentString, "redengine",     RiskLevel.High,   "Cheat-Signatur", "Bekanntes FiveM-Cheat-Wasserzeichen 'RedENGINE' im Datei-Inhalt."),
-            (IndicatorType.ContentString, "skript.gg",     RiskLevel.High,   "Cheat-Signatur", "FiveM-Cheat-Token 'skript.gg' im Datei-Inhalt."),
-            (IndicatorType.ContentString, "hxcheats",      RiskLevel.High,   "Cheat-Signatur", "Cheat-Token 'hxcheats' im Datei-Inhalt."),
-            (IndicatorType.ContentString, "cherax",        RiskLevel.High,   "Cheat-Signatur", "GTA-Mod-Menu-Token 'Cherax' im Datei-Inhalt."),
-            (IndicatorType.ContentString, "hwidspoofer",   RiskLevel.High,   "Spoofer",        "HWID-Spoofer-Token im Datei-Inhalt."),
-            (IndicatorType.ContentString, "aimbot",        RiskLevel.High,   "Aimbot",         "String 'aimbot' im Datei-Inhalt."),
-            (IndicatorType.ContentString, "triggerbot",    RiskLevel.High,   "Aimbot",         "String 'triggerbot' im Datei-Inhalt."),
-            (IndicatorType.ContentString, "silentaim",     RiskLevel.High,   "Aimbot",         "String 'silentaim' im Datei-Inhalt."),
-            (IndicatorType.ContentString, "wallhack",      RiskLevel.Medium, "ESP/Wallhack",   "String 'wallhack' im Datei-Inhalt."),
-            (IndicatorType.ContentString, "norecoil",      RiskLevel.Medium, "Recoil",         "String 'norecoil' im Datei-Inhalt."),
-            (IndicatorType.ContentString, "godmode",       RiskLevel.Medium, "Generic",        "String 'godmode' im Datei-Inhalt."),
-            (IndicatorType.ContentString, "unknowncheats", RiskLevel.Medium, "Generic",        "Forum-Wasserzeichen 'unknowncheats' im Datei-Inhalt."),
-            (IndicatorType.ContentString, "tsunami.gg",     RiskLevel.High,   "Cheat-Signatur", "FiveM-Cheat-Token 'tsunami.gg' im Datei-Inhalt."),
-            (IndicatorType.ContentString, "esp_render",     RiskLevel.Medium, "ESP/Wallhack",   "ESP-Render-Token im Datei-Inhalt."),
-            (IndicatorType.FileNameKeyword, "dumper",       RiskLevel.Medium, "Dumper",         "Dateiname enthaelt 'dumper' (Speicher-/Code-Dumper)."),
-            (IndicatorType.FileNameKeyword, "bypass",       RiskLevel.Low,    "Bypass",         "Dateiname enthaelt 'bypass' (oft legitim, daher Low)."),
-            (IndicatorType.FileNameKeyword, "spoofer",      RiskLevel.High,   "HWID-Spoofer",   "Dateiname enthaelt 'spoofer' (HWID-Ban-Umgehung)."),
-            (IndicatorType.FileNameKeyword, "kdmapper",     RiskLevel.High,   "Manual-Mapper",  "Bekannter Treiber-Mapper zum Umgehen der Signaturpruefung."),
-            (IndicatorType.FileNameKeyword, "manualmap",    RiskLevel.High,   "Manual-Mapper",  "Manuelles DLL/Treiber-Mapping (Signatur-/AC-Bypass)."),
-            (IndicatorType.FileNameKeyword, "dsefix",       RiskLevel.High,   "DSE-Bypass",     "Werkzeug zum Abschalten der Treiber-Signaturpruefung (DSE)."),
-            (IndicatorType.ContentString,   "hwid spoof",   RiskLevel.High,   "HWID-Spoofer",   "Inhalts-Token 'hwid spoof' (Ban-Umgehung)."),
-            (IndicatorType.ContentString,   "vac bypass",   RiskLevel.High,   "AC-Bypass",      "Inhalts-Token 'vac bypass' (Anti-Cheat-Umgehung)."),
-            (IndicatorType.ContentString,   "manual map",   RiskLevel.Medium, "Manual-Mapper",  "Inhalts-Token 'manual map' (Injektion ohne LoadLibrary)."),
+            // ── Exact file names ──────────────────────────────────────────────────
+            (IndicatorType.FileName, "capcom.sys",            RiskLevel.Critical, "Kernel-Exploit",  "Capcom-Treiber – BYOVD-Exploit."),
+            (IndicatorType.FileName, "mhyprot2.sys",          RiskLevel.Critical, "Vulnerable-Driver","Anfaelliger miHoYo-Treiber."),
+            (IndicatorType.FileName, "dbk64.sys",             RiskLevel.Critical, "Kernel-Treiber",  "Cheat-Engine-Kernel-Treiber."),
+            (IndicatorType.FileName, "gdrv.sys",              RiskLevel.Critical, "BYOVD-Treiber",   "Gigabyte-Treiber (BYOVD)."),
+            (IndicatorType.FileName, "rtcore64.sys",          RiskLevel.Critical, "BYOVD-Treiber",   "MSI-Afterburner-Treiber (BYOVD)."),
+            (IndicatorType.FileName, "rtcore32.sys",          RiskLevel.Critical, "BYOVD-Treiber",   "MSI-Afterburner-Treiber x32 (BYOVD)."),
+            (IndicatorType.FileName, "winring0x64.sys",       RiskLevel.Critical, "BYOVD-Treiber",   "WinRing0-Treiber x64 (BYOVD)."),
+            (IndicatorType.FileName, "winring0.sys",          RiskLevel.Critical, "BYOVD-Treiber",   "WinRing0-Treiber (BYOVD)."),
+            (IndicatorType.FileName, "nicm.sys",              RiskLevel.Critical, "BYOVD-Treiber",   "NICM-BYOVD-Exploit-Treiber."),
+            (IndicatorType.FileName, "kprocesshacker.sys",    RiskLevel.Critical, "Kernel-Treiber",  "Process-Hacker-Kernel-Treiber."),
+            (IndicatorType.FileName, "speedfan.sys",          RiskLevel.High,     "BYOVD-Treiber",   "Speedfan-Treiber (fuer BYOVD missbraucht)."),
+            (IndicatorType.FileName, "aswsp.sys",             RiskLevel.High,     "BYOVD-Treiber",   "Alter Avast-Treiber (fuer BYOVD missbraucht)."),
 
-            // URL-domain signatures: matched against the HOST of visited URLs in
-            // the local browser history. Only matching hosts are recorded; the
-            // rest of the history is never stored. Distinctive cheat/reseller
-            // brand domains -> editable starting points, not a complete list.
-            (IndicatorType.UrlDomainKeyword, "redengine",     RiskLevel.High,   "Cheat-Shop", "Besuch einer RedENGINE-Domain (FiveM-Cheat)."),
-            (IndicatorType.UrlDomainKeyword, "skript.gg",     RiskLevel.High,   "Cheat-Shop", "Besuch von skript.gg (FiveM-Cheat)."),
-            (IndicatorType.UrlDomainKeyword, "eulen",         RiskLevel.High,   "Cheat-Shop", "Besuch einer Eulen-Domain (FiveM-Cheat)."),
-            (IndicatorType.UrlDomainKeyword, "hxcheats",      RiskLevel.High,   "Cheat-Shop", "Besuch einer Hx-Cheats-Domain."),
-            (IndicatorType.UrlDomainKeyword, "cherax",        RiskLevel.High,   "Cheat-Shop", "Besuch einer Cherax-Domain (GTA-Mod-Menu)."),
-            (IndicatorType.UrlDomainKeyword, "unknowncheats", RiskLevel.Medium, "Cheat-Forum", "Besuch von unknowncheats (Cheat-Forum)."),
-            (IndicatorType.UrlDomainKeyword, "elitepvpers",   RiskLevel.Low,    "Cheat-Forum", "Besuch von elitepvpers (Handels-/Cheat-Forum)."),
+            // ── Content strings ───────────────────────────────────────────────────
+            // Cheat watermarks
+            (IndicatorType.ContentString, "redengine",        RiskLevel.High,     "Cheat-Signatur",  "FiveM-Cheat 'RedENGINE' im Datei-Inhalt."),
+            (IndicatorType.ContentString, "skript.gg",        RiskLevel.High,     "Cheat-Signatur",  "skript.gg im Datei-Inhalt."),
+            (IndicatorType.ContentString, "hxcheats",         RiskLevel.High,     "Cheat-Signatur",  "hxcheats im Datei-Inhalt."),
+            (IndicatorType.ContentString, "cherax",           RiskLevel.High,     "Cheat-Signatur",  "Cherax im Datei-Inhalt."),
+            (IndicatorType.ContentString, "hwidspoofer",      RiskLevel.High,     "Spoofer",         "HWID-Spoofer-Token im Datei-Inhalt."),
+            (IndicatorType.ContentString, "tsunami.gg",       RiskLevel.High,     "Cheat-Signatur",  "tsunami.gg im Datei-Inhalt."),
+            (IndicatorType.ContentString, "eulen",            RiskLevel.High,     "FiveM-Cheat",     "Eulen im Datei-Inhalt."),
+            (IndicatorType.ContentString, "hammafia",         RiskLevel.High,     "FiveM-Cheat",     "Hammafia im Datei-Inhalt."),
+            (IndicatorType.ContentString, "desudo",           RiskLevel.High,     "FiveM-Cheat",     "Desudo im Datei-Inhalt."),
+            (IndicatorType.ContentString, "impaught",         RiskLevel.High,     "FiveM-Cheat",     "Impaught im Datei-Inhalt."),
+            (IndicatorType.ContentString, "kiddion",          RiskLevel.High,     "GTA-Cheat",       "Kiddion im Datei-Inhalt."),
+            (IndicatorType.ContentString, "phantom-x",        RiskLevel.High,     "FiveM-Cheat",     "Phantom-X im Datei-Inhalt."),
+            (IndicatorType.ContentString, "2take1",           RiskLevel.High,     "GTA-Cheat",       "2Take1 im Datei-Inhalt."),
+            (IndicatorType.ContentString, "onetap.su",        RiskLevel.High,     "CS2-Cheat",       "onetap.su im Datei-Inhalt."),
+            (IndicatorType.ContentString, "neverlose.cc",     RiskLevel.High,     "CS2-Cheat",       "neverlose.cc im Datei-Inhalt."),
+            (IndicatorType.ContentString, "gamesense.pub",    RiskLevel.High,     "CS2-Cheat",       "gamesense.pub im Datei-Inhalt."),
+            (IndicatorType.ContentString, "aimware.net",      RiskLevel.High,     "CS2-Cheat",       "aimware.net im Datei-Inhalt."),
+            (IndicatorType.ContentString, "fecurity",         RiskLevel.High,     "CS2-Cheat",       "fecurity im Datei-Inhalt."),
+            (IndicatorType.ContentString, "fatality.win",     RiskLevel.High,     "CS2-Cheat",       "fatality.win im Datei-Inhalt."),
+            (IndicatorType.ContentString, "ozark",            RiskLevel.High,     "FiveM-Cheat",     "Ozark im Datei-Inhalt."),
+            (IndicatorType.ContentString, "rxce",             RiskLevel.High,     "FiveM-Cheat",     "RxCE im Datei-Inhalt."),
+            // Aimbot / ESP
+            (IndicatorType.ContentString, "aimbot",           RiskLevel.High,     "Aimbot",          "'aimbot' im Datei-Inhalt."),
+            (IndicatorType.ContentString, "triggerbot",       RiskLevel.High,     "Aimbot",          "'triggerbot' im Datei-Inhalt."),
+            (IndicatorType.ContentString, "silentaim",        RiskLevel.High,     "Aimbot",          "'silentaim' im Datei-Inhalt."),
+            (IndicatorType.ContentString, "trigger bot",      RiskLevel.High,     "Aimbot",          "'trigger bot' im Datei-Inhalt."),
+            (IndicatorType.ContentString, "magic bullet",     RiskLevel.High,     "Aimbot",          "'magic bullet' im Datei-Inhalt."),
+            (IndicatorType.ContentString, "bone aim",         RiskLevel.High,     "Aimbot",          "'bone aim' im Datei-Inhalt."),
+            (IndicatorType.ContentString, "head aim",         RiskLevel.High,     "Aimbot",          "'head aim' im Datei-Inhalt."),
+            (IndicatorType.ContentString, "fov circle",       RiskLevel.Medium,   "Aimbot",          "'fov circle' im Datei-Inhalt."),
+            (IndicatorType.ContentString, "recoil control",   RiskLevel.Medium,   "Recoil",          "'recoil control' im Datei-Inhalt."),
+            (IndicatorType.ContentString, "esp_render",       RiskLevel.Medium,   "ESP/Wallhack",    "ESP-Render-Token im Datei-Inhalt."),
+            (IndicatorType.ContentString, "wallhack",         RiskLevel.Medium,   "ESP/Wallhack",    "'wallhack' im Datei-Inhalt."),
+            (IndicatorType.ContentString, "player esp",       RiskLevel.High,     "ESP/Cheat",       "'player esp' im Datei-Inhalt."),
+            (IndicatorType.ContentString, "entity esp",       RiskLevel.High,     "ESP/Cheat",       "'entity esp' im Datei-Inhalt."),
+            (IndicatorType.ContentString, "esp draw",         RiskLevel.High,     "ESP/Cheat",       "'esp draw' im Datei-Inhalt."),
+            // Cheat UI / generic
+            (IndicatorType.ContentString, "norecoil",         RiskLevel.Medium,   "Recoil",          "'norecoil' im Datei-Inhalt."),
+            (IndicatorType.ContentString, "godmode",          RiskLevel.Medium,   "Generic",         "'godmode' im Datei-Inhalt."),
+            (IndicatorType.ContentString, "speedhack",        RiskLevel.Medium,   "Speed-Hack",      "'speedhack' im Datei-Inhalt."),
+            (IndicatorType.ContentString, "bhop",             RiskLevel.Medium,   "Movement-Hack",   "'bhop' im Datei-Inhalt."),
+            (IndicatorType.ContentString, "noclip",           RiskLevel.Medium,   "Movement-Hack",   "'noclip' im Datei-Inhalt."),
+            (IndicatorType.ContentString, "esp menu",         RiskLevel.Medium,   "Cheat-Menue",     "'esp menu' im Datei-Inhalt."),
+            (IndicatorType.ContentString, "fly hack",         RiskLevel.Medium,   "Movement-Hack",   "'fly hack' im Datei-Inhalt."),
+            (IndicatorType.ContentString, "kill aura",        RiskLevel.High,     "MC-Cheat",        "'kill aura' im Datei-Inhalt."),
+            (IndicatorType.ContentString, "unknowncheats",    RiskLevel.Medium,   "Generic",         "unknowncheats-Forum-Token im Datei-Inhalt."),
+            (IndicatorType.ContentString, "bypass anticheat", RiskLevel.High,     "AC-Bypass",       "AC-Bypass-Token im Datei-Inhalt."),
+            (IndicatorType.ContentString, "cheat engine",     RiskLevel.High,     "Debugger",        "'cheat engine' im Datei-Inhalt."),
+            // Injection techniques
+            (IndicatorType.ContentString, "dll inject",       RiskLevel.High,     "Injector",        "'dll inject' im Datei-Inhalt."),
+            (IndicatorType.ContentString, "loadlibraryw",     RiskLevel.Medium,   "Injector",        "LoadLibraryW-Injektionstechnik im Datei-Inhalt."),
+            (IndicatorType.ContentString, "writeprocessmemory",RiskLevel.Medium,  "Injector",        "WriteProcessMemory im Datei-Inhalt."),
+            (IndicatorType.ContentString, "createremotethread",RiskLevel.High,    "Injector",        "CreateRemoteThread im Datei-Inhalt."),
+            (IndicatorType.ContentString, "ntmapviewofsection",RiskLevel.High,    "Injector",        "NtMapViewOfSection (manuel Map) im Datei-Inhalt."),
+            (IndicatorType.ContentString, "process_hollow",   RiskLevel.High,     "Injector",        "Process-Hollowing im Datei-Inhalt."),
+            (IndicatorType.ContentString, "manual map",       RiskLevel.Medium,   "Manual-Mapper",   "'manual map' im Datei-Inhalt."),
+            // HWID spoofer tokens
+            (IndicatorType.ContentString, "hwid spoof",       RiskLevel.High,     "HWID-Spoofer",    "'hwid spoof' im Datei-Inhalt."),
+            (IndicatorType.ContentString, "vac bypass",       RiskLevel.High,     "AC-Bypass",       "'vac bypass' im Datei-Inhalt."),
+            (IndicatorType.ContentString, "hwid bypassed",    RiskLevel.High,     "Spoofer",         "'hwid bypassed' im Datei-Inhalt."),
+            (IndicatorType.ContentString, "hwid changed",     RiskLevel.High,     "Spoofer",         "'hwid changed' im Datei-Inhalt."),
+            (IndicatorType.ContentString, "spoofer_main",     RiskLevel.High,     "Spoofer",         "'spoofer_main'-Marker im Datei-Inhalt."),
+            // BYOVD / kernel
+            (IndicatorType.ContentString, "byovd",            RiskLevel.Critical, "BYOVD",           "BYOVD-Token im Datei-Inhalt."),
+            (IndicatorType.ContentString, "dse bypass",       RiskLevel.Critical, "DSE-Bypass",      "DSE-Bypass im Datei-Inhalt."),
+            (IndicatorType.ContentString, "kdmapper",         RiskLevel.Critical, "Manual-Mapper",   "KDMapper-Token im Datei-Inhalt."),
+            (IndicatorType.ContentString, "capcom exploit",   RiskLevel.Critical, "Kernel-Exploit",  "Capcom-Exploit im Datei-Inhalt."),
+            (IndicatorType.ContentString, "radmem",           RiskLevel.High,     "Kernel-Tool",     "RadMem-Tool im Datei-Inhalt."),
 
-            // --- zusaetzliche FiveM-Cheats (Dateiname-Keywords) ------------------
-            (IndicatorType.FileNameKeyword, "eulen",      RiskLevel.High,   "FiveM-Cheat", "Bekannter FiveM-Cheat 'Eulen' im Dateinamen."),
-            (IndicatorType.FileNameKeyword, "hammafia",   RiskLevel.High,   "FiveM-Cheat", "Bekannter FiveM-Cheat 'Hammafia' im Dateinamen."),
-            (IndicatorType.FileNameKeyword, "desudo",     RiskLevel.High,   "FiveM-Cheat", "Bekannter FiveM-Cheat 'Desudo' im Dateinamen."),
-            (IndicatorType.FileNameKeyword, "impaught",   RiskLevel.High,   "FiveM-Cheat", "Bekannter FiveM-Cheat 'Impaught' im Dateinamen."),
-            (IndicatorType.FileNameKeyword, "scarlet",    RiskLevel.Medium, "FiveM-Cheat", "FiveM-Cheat 'Scarlet' (frueherer Hammafia-Name) im Dateinamen."),
-            (IndicatorType.FileNameKeyword, "kiddion",    RiskLevel.High,   "GTA-Cheat",   "GTA-Online-Cheat 'Kiddion Modest Menu' im Dateinamen."),
-            (IndicatorType.FileNameKeyword, "phantom-x",  RiskLevel.High,   "FiveM-Cheat", "FiveM/GTA-Cheat 'Phantom-X' im Dateinamen."),
+            // ── URL domain keywords ───────────────────────────────────────────────
+            (IndicatorType.UrlDomainKeyword, "redengine",     RiskLevel.High,   "Cheat-Shop",       "RedENGINE-Domain (FiveM)."),
+            (IndicatorType.UrlDomainKeyword, "skript.gg",     RiskLevel.High,   "Cheat-Shop",       "skript.gg (FiveM)."),
+            (IndicatorType.UrlDomainKeyword, "eulen",         RiskLevel.High,   "Cheat-Shop",       "Eulen-Domain (FiveM)."),
+            (IndicatorType.UrlDomainKeyword, "hxcheats",      RiskLevel.High,   "Cheat-Shop",       "Hx-Cheats-Domain."),
+            (IndicatorType.UrlDomainKeyword, "cherax",        RiskLevel.High,   "Cheat-Shop",       "Cherax-Domain (GTA)."),
+            (IndicatorType.UrlDomainKeyword, "hammafia",      RiskLevel.High,   "Cheat-Shop",       "Hammafia-Domain (FiveM)."),
+            (IndicatorType.UrlDomainKeyword, "desudo",        RiskLevel.High,   "Cheat-Shop",       "Desudo-Domain (FiveM)."),
+            (IndicatorType.UrlDomainKeyword, "eulen.ac",      RiskLevel.High,   "Cheat-Shop",       "eulen.ac (FiveM)."),
+            (IndicatorType.UrlDomainKeyword, "impaught",      RiskLevel.High,   "Cheat-Shop",       "Impaught-Domain (FiveM)."),
+            (IndicatorType.UrlDomainKeyword, "gamepay",       RiskLevel.Medium, "Cheat-Shop",       "GamePay-Cheat-Domain."),
+            (IndicatorType.UrlDomainKeyword, "phantom-x",     RiskLevel.High,   "Cheat-Shop",       "Phantom-X-Domain."),
+            (IndicatorType.UrlDomainKeyword, "lynxcheats",    RiskLevel.High,   "Cheat-Shop",       "LynxCheats-Domain."),
+            (IndicatorType.UrlDomainKeyword, "tsunami.gg",    RiskLevel.High,   "Cheat-Shop",       "tsunami.gg (FiveM)."),
+            (IndicatorType.UrlDomainKeyword, "ozarkmenu",     RiskLevel.High,   "Cheat-Shop",       "Ozark-Domain (FiveM)."),
+            (IndicatorType.UrlDomainKeyword, "rxce.gg",       RiskLevel.High,   "Cheat-Shop",       "rxce.gg (FiveM)."),
+            (IndicatorType.UrlDomainKeyword, "nexusmenu",     RiskLevel.High,   "Cheat-Shop",       "Nexus-Menu-Domain (FiveM)."),
+            (IndicatorType.UrlDomainKeyword, "aimware.net",   RiskLevel.Critical,"CS2-Cheat-Shop",  "aimware.net (CS2)."),
+            (IndicatorType.UrlDomainKeyword, "onetap.su",     RiskLevel.Critical,"CS2-Cheat-Shop",  "onetap.su (CS2)."),
+            (IndicatorType.UrlDomainKeyword, "neverlose.cc",  RiskLevel.Critical,"CS2-Cheat-Shop",  "neverlose.cc (CS2)."),
+            (IndicatorType.UrlDomainKeyword, "gamesense.pub", RiskLevel.Critical,"CS2-Cheat-Shop",  "gamesense.pub (CS2)."),
+            (IndicatorType.UrlDomainKeyword, "fatality.win",  RiskLevel.High,   "CS2-Cheat-Shop",   "fatality.win (CS2)."),
+            (IndicatorType.UrlDomainKeyword, "vape.gg",       RiskLevel.High,   "MC-Cheat-Shop",    "vape.gg (Minecraft)."),
+            (IndicatorType.UrlDomainKeyword, "liquidbounce.net",RiskLevel.High, "MC-Cheat-Shop",    "liquidbounce.net (Minecraft)."),
+            (IndicatorType.UrlDomainKeyword, "wurstclient.net",RiskLevel.High,  "MC-Cheat-Shop",    "wurstclient.net (Minecraft)."),
+            (IndicatorType.UrlDomainKeyword, "unknowncheats", RiskLevel.Medium, "Cheat-Forum",      "unknowncheats-Forum."),
+            (IndicatorType.UrlDomainKeyword, "elitepvpers",   RiskLevel.Low,    "Cheat-Forum",      "elitepvpers-Forum."),
+            (IndicatorType.UrlDomainKeyword, "mpgh.net",      RiskLevel.Medium, "Cheat-Forum",      "mpgh.net (Multi-Hack-Forum)."),
+            (IndicatorType.UrlDomainKeyword, "hackforums",    RiskLevel.Medium, "Cheat-Forum",      "hackforums.net."),
+            (IndicatorType.UrlDomainKeyword, "fearless-cheat",RiskLevel.High,   "Cheat-Shop",       "fearless-cheat.net."),
+            (IndicatorType.UrlDomainKeyword, "guidedhacking", RiskLevel.Medium, "Cheat-Forum",      "guidedhacking.com."),
+            (IndicatorType.UrlDomainKeyword, "cheating-network",RiskLevel.High, "Cheat-Forum",      "cheating-network.de."),
+            (IndicatorType.UrlDomainKeyword, "sellix.io",     RiskLevel.Medium, "Cheat-Marktplatz", "sellix.io (haeufig Cheat-Verkauf)."),
+            (IndicatorType.UrlDomainKeyword, "plati.ru",      RiskLevel.Medium, "Cheat-Marktplatz", "plati.ru (russische Plattform)."),
+            (IndicatorType.UrlDomainKeyword, "2take1.menu",   RiskLevel.High,   "GTA-Cheat-Shop",   "2take1.menu (GTA)."),
 
-            // --- Debugger / Analyse-Werkzeuge (Dateiname-Keywords) ---------------
-            (IndicatorType.FileNameKeyword, "x64dbg",      RiskLevel.High, "Debugger",  "Dateiname enthaelt 'x64dbg' (Debugger, haeufig beim Reverse-Engineering)."),
-            (IndicatorType.FileNameKeyword, "x32dbg",      RiskLevel.High, "Debugger",  "Dateiname enthaelt 'x32dbg' (Debugger)."),
-            (IndicatorType.FileNameKeyword, "cheatengine",  RiskLevel.High, "Debugger",  "Dateiname enthaelt 'cheatengine' (Speicher-Scanner/Trainer)."),
-            (IndicatorType.FileNameKeyword, "dbk64",        RiskLevel.High, "Kernel-Treiber", "Cheat-Engine-Kernel-Treiber 'dbk64.sys' im Dateinamen."),
-
-            // --- anfaellige / exploit-faehige Treiber (Dateiname-Keywords) -------
-            (IndicatorType.FileNameKeyword, "physmem",    RiskLevel.High,     "Kernel-Exploit", "Physischer-Speicher-Treiber (oft fuer Kernel-Exploits missbraucht)."),
-            (IndicatorType.FileNameKeyword, "mhyprot",    RiskLevel.High,     "Vulnerable-Driver", "Anfaelliger miHoYo-Treiber 'mhyprot2.sys' im Dateinamen."),
-
-            // --- genaue Dateinamen fuer bekannte Exploit-Treiber -----------------
-            (IndicatorType.FileName, "capcom.sys",    RiskLevel.Critical, "Kernel-Exploit", "Capcom-Treiber – bekannter Kernel-Exploit (BYOVD)."),
-            (IndicatorType.FileName, "mhyprot2.sys",  RiskLevel.Critical, "Vulnerable-Driver", "Anfaelliger miHoYo-Treiber (wird fuer Kernel-Exploits missbraucht)."),
-            (IndicatorType.FileName, "dbk64.sys",     RiskLevel.Critical, "Kernel-Treiber", "Cheat-Engine-Kernel-Treiber (laedt unsignierten Code in den Kernel)."),
-
-            // --- Inhalts-Signaturen: weitere bekannte Cheat-Wasserzeichen --------
-            (IndicatorType.ContentString, "eulen",          RiskLevel.High,   "FiveM-Cheat",   "FiveM-Cheat-Wasserzeichen 'Eulen' im Datei-Inhalt."),
-            (IndicatorType.ContentString, "hammafia",       RiskLevel.High,   "FiveM-Cheat",   "FiveM-Cheat-Token 'Hammafia' im Datei-Inhalt."),
-            (IndicatorType.ContentString, "desudo",         RiskLevel.High,   "FiveM-Cheat",   "FiveM-Cheat-Token 'Desudo' im Datei-Inhalt."),
-            (IndicatorType.ContentString, "impaught",       RiskLevel.High,   "FiveM-Cheat",   "FiveM-Cheat-Token 'Impaught' im Datei-Inhalt."),
-            (IndicatorType.ContentString, "kiddion",        RiskLevel.High,   "GTA-Cheat",     "GTA-Cheat-Token 'Kiddion' im Datei-Inhalt."),
-            (IndicatorType.ContentString, "phantom-x",      RiskLevel.High,   "FiveM-Cheat",   "FiveM-Cheat-Token 'Phantom-X' im Datei-Inhalt."),
-            (IndicatorType.ContentString, "cheat engine",   RiskLevel.High,   "Debugger",      "'Cheat Engine'-Token im Datei-Inhalt."),
-            (IndicatorType.ContentString, "bypass anticheat", RiskLevel.High, "AC-Bypass",     "Anti-Cheat-Bypass-Token im Datei-Inhalt."),
-
-            // --- Cheat-Menue-Heuristik: generische UI-Strings --------------------
-            (IndicatorType.ContentString, "speedhack",     RiskLevel.Medium, "Speed-Hack",    "Speedhack-String im Datei-/Spiel-Inhalt."),
-            (IndicatorType.ContentString, "bhop",          RiskLevel.Medium, "Movement-Hack", "Bunny-Hop-Hack-String im Datei-/Spiel-Inhalt."),
-            (IndicatorType.ContentString, "noclip",        RiskLevel.Medium, "Movement-Hack", "NoClip-Hack-String im Datei-/Spiel-Inhalt."),
-            (IndicatorType.ContentString, "esp menu",      RiskLevel.Medium, "Cheat-Menue",   "ESP-Menue-String im Datei-/Spiel-Inhalt."),
-            (IndicatorType.ContentString, "fly hack",      RiskLevel.Medium, "Movement-Hack", "'Fly Hack'-String im Datei-/Spiel-Inhalt."),
-            (IndicatorType.ContentString, "dll inject",    RiskLevel.High,   "Injector",      "DLL-Injektions-String im Datei-Inhalt."),
-
-            // --- URL-Domain-Signaturen: weitere bekannte Cheat-Domaenen ---------
-            (IndicatorType.UrlDomainKeyword, "hammafia",   RiskLevel.High,   "Cheat-Shop", "Besuch einer Hammafia-Domain (FiveM-Cheat)."),
-            (IndicatorType.UrlDomainKeyword, "desudo",     RiskLevel.High,   "Cheat-Shop", "Besuch einer Desudo-Domain (FiveM-Cheat)."),
-            (IndicatorType.UrlDomainKeyword, "eulen.ac",   RiskLevel.High,   "Cheat-Shop", "Besuch von eulen.ac (FiveM-Cheat)."),
-            (IndicatorType.UrlDomainKeyword, "impaught",   RiskLevel.High,   "Cheat-Shop", "Besuch einer Impaught-Domain (FiveM-Cheat)."),
-            (IndicatorType.UrlDomainKeyword, "gamepay",    RiskLevel.Medium, "Cheat-Shop", "Besuch einer GamePay-Cheat-Domain."),
-            (IndicatorType.UrlDomainKeyword, "phantom-x",  RiskLevel.High,   "Cheat-Shop", "Besuch einer Phantom-X-Domain (FiveM-Cheat)."),
-            (IndicatorType.UrlDomainKeyword, "lynxcheats", RiskLevel.High,   "Cheat-Shop", "Besuch einer LynxCheats-Domain."),
-
-            // --- Prozess-Indikatoren: Debugger / Analyse-Werkzeuge ---------------
-            (IndicatorType.ProcessName, "processhacker",   RiskLevel.Medium, "Tool",      "Process Hacker laeuft (erweiterte Prozess-/Speicheranalyse)."),
-            (IndicatorType.ProcessName, "x64dbg",          RiskLevel.High,   "Debugger",  "x64dbg-Debugger laeuft waehrend des Spiels."),
-            (IndicatorType.ProcessName, "x32dbg",          RiskLevel.High,   "Debugger",  "x32dbg-Debugger laeuft waehrend des Spiels."),
-            (IndicatorType.ProcessName, "windbg",          RiskLevel.High,   "Debugger",  "WinDbg-Debugger laeuft waehrend des Spiels.")
+            // ── Process names ─────────────────────────────────────────────────────
+            (IndicatorType.ProcessName, "processhacker",        RiskLevel.Medium,  "Tool",      "Process Hacker."),
+            (IndicatorType.ProcessName, "x64dbg",               RiskLevel.High,    "Debugger",  "x64dbg-Debugger."),
+            (IndicatorType.ProcessName, "x32dbg",               RiskLevel.High,    "Debugger",  "x32dbg-Debugger."),
+            (IndicatorType.ProcessName, "windbg",               RiskLevel.High,    "Debugger",  "WinDbg-Debugger."),
+            (IndicatorType.ProcessName, "cheatengine-x86_64",   RiskLevel.High,    "Debugger",  "Cheat Engine x64."),
+            (IndicatorType.ProcessName, "cheatengine-i386",     RiskLevel.High,    "Debugger",  "Cheat Engine x86."),
+            (IndicatorType.ProcessName, "reclass.net",          RiskLevel.High,    "Debugger",  "ReClass.NET."),
+            (IndicatorType.ProcessName, "scylla_x64",           RiskLevel.High,    "Dumper",    "Scylla x64."),
+            (IndicatorType.ProcessName, "extremeinjector",      RiskLevel.High,    "Injector",  "Extreme Injector."),
+            (IndicatorType.ProcessName, "xenos64",              RiskLevel.High,    "Injector",  "Xenos Injector x64."),
+            (IndicatorType.ProcessName, "xenos32",              RiskLevel.High,    "Injector",  "Xenos Injector x32."),
+            (IndicatorType.ProcessName, "procexp64",            RiskLevel.Medium,  "Tool",      "Process Explorer x64."),
+            (IndicatorType.ProcessName, "procexp",              RiskLevel.Medium,  "Tool",      "Process Explorer."),
+            (IndicatorType.ProcessName, "procmon",              RiskLevel.Medium,  "Tool",      "Process Monitor."),
+            (IndicatorType.ProcessName, "wireshark",            RiskLevel.Medium,  "Sniffer",   "Wireshark."),
+            (IndicatorType.ProcessName, "fiddler",              RiskLevel.Medium,  "Proxy",     "Fiddler-Proxy."),
+            (IndicatorType.ProcessName, "dumpcap",              RiskLevel.Medium,  "Sniffer",   "WireShark DumpCap."),
+            (IndicatorType.ProcessName, "2take1",               RiskLevel.Critical,"GTA-Cheat", "2Take1-Prozess."),
+            (IndicatorType.ProcessName, "kiddionsmm",           RiskLevel.Critical,"GTA-Cheat", "Kiddion Modest Menu."),
         };
 
         using var tx = conn.BeginTransaction();
+
+        // Replace all builtin indicators so updates propagate to existing users.
+        using (var del = conn.CreateCommand())
+        {
+            del.Transaction = tx;
+            del.CommandText = "DELETE FROM indicators WHERE source='builtin-heuristic';";
+            del.ExecuteNonQuery();
+        }
+
         foreach (var s in seeds)
         {
             using var cmd = conn.CreateCommand();
@@ -205,6 +334,15 @@ VALUES ($type, $pattern, $risk, $category, $description, 'builtin-heuristic', 1,
             cmd.Parameters.AddWithValue("$description", s.desc);
             cmd.Parameters.AddWithValue("$created", DateTime.UtcNow.ToString("O"));
             cmd.ExecuteNonQuery();
+        }
+
+        // Persist seed version so we don't re-run on next launch.
+        using (var upd = conn.CreateCommand())
+        {
+            upd.Transaction = tx;
+            upd.CommandText = "INSERT OR REPLACE INTO settings (key, value) VALUES ('builtin_indicator_version', $v);";
+            upd.Parameters.AddWithValue("$v", CurrentVersion.ToString());
+            upd.ExecuteNonQuery();
         }
         tx.Commit();
     }
