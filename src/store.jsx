@@ -196,6 +196,22 @@ export function deriveScanReport(pin) {
     downloaded: /internet|mark-of-the-web|herkunft|motw/i.test(d.detail || '') ? 'Yes' : '—',
   }))
 
+  // Module-specific finding lists for dedicated panels.
+  const byModule = (names) => {
+    const set = Array.isArray(names) ? names : [names]
+    return toolDets.filter((d) => set.includes(d.module)).map((d) => ({
+      name: d.name || '',
+      detail: d.detail || '',
+      location: d.location || '',
+      severity: d.severity || 'Low',
+      module: d.module || '',
+    }))
+  }
+  const autostartFindings = byModule('Autostart')
+  const networkFindings = byModule('Netzwerk')
+  const browserFindings = byModule(['Browser-Verlauf', 'Browser-Erweiterungen'])
+  const downloadFindings = byModule('Downloads')
+
   return {
     scannedAt: pin.scannedAt || null,
     ai: 'Not Supported',
@@ -224,6 +240,11 @@ export function deriveScanReport(pin) {
     suspicious,
     adminApps: Array.isArray(pin.adminExecuted) ? pin.adminExecuted : [],
     boot: pin.boot || null,
+    steamAccounts: Array.isArray(pin.steamAccounts) ? pin.steamAccounts : [],
+    autostartFindings,
+    networkFindings,
+    browserFindings,
+    downloadFindings,
     accounts: [],
     discord: [],
     recording: Array.isArray(pin.recordingSoftware)
@@ -903,6 +924,12 @@ function reducer(state, action) {
           recordingSoftware: (Array.isArray(inv.RecordingSoftware) ? inv.RecordingSoftware : []).map((r) =>
             typeof r === 'string' ? { name: r, exe: r } : r,
           ),
+          steamAccounts: (Array.isArray(inv.SteamAccounts) ? inv.SteamAccounts : []).map((a) => ({
+            steamId: a.SteamId || a.steamId || '',
+            accountName: a.AccountName || a.accountName || '',
+            personaName: a.PersonaName || a.personaName || '',
+            mostRecent: !!(a.MostRecent ?? a.mostRecent ?? false),
+          })),
           discordServers: [],
           scannedAt: raw.FinishedUtc ? new Date(raw.FinishedUtc).getTime() : Date.now(),
         }
@@ -943,6 +970,7 @@ function reducer(state, action) {
         vpn: p.vpn || '',
         country: p.country || '',
         boot: p.boot || null,
+        steamAccounts: Array.isArray(p.steamAccounts) ? p.steamAccounts : [],
         hwid: p.scannerHwid || hwidOf(p.host, p.os, p.ip),
         createdAt: prev ? prev.createdAt : Date.now(),
         scannedAt: p.scannedAt || Date.now(),

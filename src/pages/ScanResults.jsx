@@ -6,7 +6,7 @@ import {
   AlertTriangle, CheckCircle2, Eye, Sparkles, Search, ChevronLeft,
   ChevronRight, Shield, MessageSquare, Video, Gamepad2, Database, Activity,
   Clock, ImageOff, Usb, FileText, Server, RefreshCw, Image as ImageIcon,
-  Trash2, Bell, Layers, ScanLine,
+  Trash2, Bell, Layers, ScanLine, Users, Globe,
 } from 'lucide-react'
 import { Card } from '../components/kit.jsx'
 import { Modal, Select, useToast } from '../components/ui.jsx'
@@ -295,6 +295,35 @@ export default function ScanResults() {
       <Shield size={11} /> {ok ? 'SIGNED' : 'UNSIGNED'}
     </span>
   )
+
+  const SeverityBadge = ({ sev }) => {
+    const cls = sev === 'Critical' || sev === 'High'
+      ? 'border-red-600/40 bg-red-600/15 text-red-500'
+      : sev === 'Medium'
+        ? 'border-yellow-500/40 bg-yellow-500/15 text-yellow-400'
+        : 'bd muted'
+    return (
+      <span className={`shrink-0 rounded-md border px-2 py-0.5 text-[11px] font-semibold ${cls}`}>
+        {sev}
+      </span>
+    )
+  }
+
+  const ModuleFindingsList = ({ findings }) =>
+    findings.length === 0 ? null : (
+      <div className="space-y-2">
+        {findings.map((m, i) => (
+          <div key={i} className="tile rounded-lg border px-4 py-3">
+            <div className="flex items-center justify-between gap-2">
+              <p className="txt min-w-0 truncate text-sm font-medium">{m.name}</p>
+              <SeverityBadge sev={m.severity} />
+            </div>
+            {m.location && <p className="muted mt-1 break-all font-mono text-xs">{m.location}</p>}
+            {m.detail && <p className="muted mt-1 text-xs leading-relaxed">{m.detail}</p>}
+          </div>
+        ))}
+      </div>
+    )
 
   return (
     <div className="space-y-6">
@@ -811,6 +840,113 @@ export default function ScanResults() {
                 </div>
               ))}
             </div>
+          )}
+        </Card>
+      </div>
+
+      <Card className="p-6">
+        <p className="caps-label">Steam Accounts</p>
+        <h2 className="txt mt-1 flex items-center gap-2 text-lg font-semibold">
+          <Users size={18} /> Steam Accounts ({report.steamAccounts.length})
+        </h2>
+        <p className="muted mb-4 mt-1 text-sm">
+          Previously logged-in Steam accounts on this machine.
+          {report.steamAccounts.length > 1 && (
+            <span className="ml-1 text-yellow-400">Multiple accounts may indicate ban evasion.</span>
+          )}
+        </p>
+        {report.steamAccounts.length === 0 ? (
+          <p className="muted py-10 text-center text-sm">No Steam accounts found</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="caps-label bd border-b">
+                  <th className="px-3 py-3">Account Name</th>
+                  <th className="px-3 py-3">Display Name</th>
+                  <th className="px-3 py-3">Steam ID</th>
+                  <th className="px-3 py-3">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {report.steamAccounts.map((a, i) => (
+                  <tr key={i} className="bd border-b last:border-0">
+                    <td className="txt px-3 py-3 font-mono text-xs">{a.accountName || '—'}</td>
+                    <td className="muted px-3 py-3 text-xs">{a.personaName || '—'}</td>
+                    <td className="muted px-3 py-3 font-mono text-xs">{a.steamId}</td>
+                    <td className="px-3 py-3">
+                      {a.mostRecent && (
+                        <span className="rounded-md border border-green-600/40 bg-green-600/15 px-2 py-0.5 text-[11px] font-semibold text-green-500">
+                          Current
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Card className="p-6">
+          <p className="caps-label">Autostart / Persistence</p>
+          <h2 className="txt mt-1 flex items-center gap-2 text-lg font-semibold">
+            <Shield size={18} /> Autostart / Persistence ({report.autostartFindings.length})
+          </h2>
+          <p className="muted mb-4 mt-1 text-sm">
+            Suspicious entries in Run keys, startup folders, services and scheduled tasks
+          </p>
+          {report.autostartFindings.length === 0 ? (
+            <p className="muted py-10 text-center text-sm">No suspicious autostart entries found</p>
+          ) : (
+            <ModuleFindingsList findings={report.autostartFindings} />
+          )}
+        </Card>
+        <Card className="p-6">
+          <p className="caps-label">Network Activity</p>
+          <h2 className="txt mt-1 flex items-center gap-2 text-lg font-semibold">
+            <Globe size={18} /> Network Activity ({report.networkFindings.length})
+          </h2>
+          <p className="muted mb-4 mt-1 text-sm">
+            Suspicious active connections and cheat-domain DNS lookups detected
+          </p>
+          {report.networkFindings.length === 0 ? (
+            <p className="muted py-10 text-center text-sm">No suspicious network activity found</p>
+          ) : (
+            <ModuleFindingsList findings={report.networkFindings} />
+          )}
+        </Card>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Card className="p-6">
+          <p className="caps-label">Browser Activity</p>
+          <h2 className="txt mt-1 flex items-center gap-2 text-lg font-semibold">
+            <Globe size={18} /> Browser Activity ({report.browserFindings.length})
+          </h2>
+          <p className="muted mb-4 mt-1 text-sm">
+            Cheat or reseller sites in browser history · suspicious extensions
+          </p>
+          {report.browserFindings.length === 0 ? (
+            <p className="muted py-10 text-center text-sm">No suspicious browser activity found</p>
+          ) : (
+            <ModuleFindingsList findings={report.browserFindings} />
+          )}
+        </Card>
+        <Card className="p-6">
+          <p className="caps-label">Suspicious Downloads</p>
+          <h2 className="txt mt-1 flex items-center gap-2 text-lg font-semibold">
+            <Download size={18} /> Suspicious Downloads ({report.downloadFindings.length})
+          </h2>
+          <p className="muted mb-4 mt-1 text-sm">
+            Cheat installers and archives found in the Downloads folder
+          </p>
+          {report.downloadFindings.length === 0 ? (
+            <p className="muted py-10 text-center text-sm">No suspicious downloads found</p>
+          ) : (
+            <ModuleFindingsList findings={report.downloadFindings} />
           )}
         </Card>
       </div>

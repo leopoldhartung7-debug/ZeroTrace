@@ -27,6 +27,15 @@ public sealed class UsbInfo
     public string? Serial { get; set; }
 }
 
+/// <summary>A Steam account found in the local loginusers.vdf.</summary>
+public sealed class SteamAccountInfo
+{
+    public string SteamId { get; set; } = "";
+    public string AccountName { get; set; } = "";
+    public string PersonaName { get; set; } = "";
+    public bool MostRecent { get; set; }
+}
+
 /// <summary>Virtual-machine detection result.</summary>
 public sealed class VmInfo
 {
@@ -48,4 +57,5 @@ public sealed class HostInventory
     public List<string> RecordingSoftware { get; set; } = new();
     public VmInfo Vm { get; set; } = new();
     public List<UsbInfo> UsbDevices { get; set; } = new();
+    public List<SteamAccountInfo> SteamAccounts { get; set; } = new();
 }
