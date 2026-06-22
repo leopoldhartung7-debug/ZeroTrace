@@ -187,6 +187,173 @@ function TagInput({ tags, onChange }) {
   )
 }
 
+function CheatReportPanel({ ticket, isAdmin, dispatch, toast }) {
+  const cd = ticket.cheatData
+  if (!cd) return null
+
+  const [editData, setEditData] = useState({ ...cd })
+  const [showEdit, setShowEdit] = useState(false)
+
+  const dbStatus = cd.dbStatus || 'pending'
+  const isDone = dbStatus === 'added' || dbStatus === 'rejected'
+
+  const addToDb = () => {
+    dispatch({
+      type: 'add-user-proposal',
+      proposal: {
+        cheatName: editData.cheatName,
+        pattern: editData.pattern,
+        type: editData.type,
+        category: editData.category,
+        risk: editData.risk,
+        game: editData.game,
+        evidenceUrl: editData.evidenceUrl,
+        description: editData.description,
+      },
+    })
+    dispatch({ type: 'update-ticket', id: ticket.id, fields: { cheatData: { ...editData, dbStatus: 'added' } } })
+    dispatch({ type: 'reply-ticket', id: ticket.id, message: `✅ Cheat "${editData.cheatName}" has been verified and added to the detection database. Pattern: \`${editData.pattern}\` (${editData.type}).`, internal: false })
+    dispatch({ type: 'update-ticket', id: ticket.id, fields: { status: 'Resolved' } })
+    toast({ type: 'success', title: 'Added to database', body: editData.cheatName })
+    setShowEdit(false)
+  }
+
+  const reject = () => {
+    dispatch({ type: 'update-ticket', id: ticket.id, fields: { cheatData: { ...cd, dbStatus: 'rejected' } } })
+    dispatch({ type: 'reply-ticket', id: ticket.id, message: `❌ After review, the reported signature could not be verified as a cheat indicator. If you have additional evidence, please open a new report.`, internal: false })
+    dispatch({ type: 'update-ticket', id: ticket.id, fields: { status: 'Resolved' } })
+    toast({ type: 'info', title: 'Report rejected' })
+  }
+
+  const CHEAT_TYPE_LABELS = { FileNameKeyword: 'Filename Keyword', FileName: 'Exact Filename', ProcessName: 'Process Name' }
+
+  return (
+    <div className={`rounded-xl border p-4 space-y-3 ${
+      dbStatus === 'added'    ? 'border-green-400/30 bg-green-400/5' :
+      dbStatus === 'rejected' ? 'border-red-400/20 bg-red-400/5' :
+      'border-purple-400/30 bg-purple-400/5'
+    }`}>
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <ShieldAlert size={15} className={dbStatus === 'added' ? 'text-green-400' : dbStatus === 'rejected' ? 'text-red-400' : 'text-purple-400'} />
+          <p className="txt text-sm font-semibold">Cheat Report Data</p>
+        </div>
+        <span className={`rounded-full border px-2 py-0.5 text-xs font-semibold ${
+          dbStatus === 'added'    ? 'border-green-400/40 bg-green-400/10 text-green-400' :
+          dbStatus === 'rejected' ? 'border-red-400/40 bg-red-400/10 text-red-400' :
+          'border-yellow-400/40 bg-yellow-400/10 text-yellow-400'
+        }`}>
+          {dbStatus === 'added' ? 'Added to DB' : dbStatus === 'rejected' ? 'Rejected' : 'Pending Review'}
+        </span>
+      </div>
+
+      {showEdit && isAdmin ? (
+        <div className="space-y-2">
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <p className="caps-label mb-1">Tool Name</p>
+              <input value={editData.cheatName} onChange={e => setEditData(d => ({ ...d, cheatName: e.target.value }))}
+                className="bd tile txt w-full rounded-lg border px-3 py-1.5 text-sm outline-none focus:border-purple-500" />
+            </div>
+            <div>
+              <p className="caps-label mb-1">Pattern</p>
+              <input value={editData.pattern} onChange={e => setEditData(d => ({ ...d, pattern: e.target.value }))}
+                className="bd tile txt w-full rounded-lg border px-3 py-1.5 text-sm font-mono outline-none focus:border-purple-500" />
+            </div>
+            <div>
+              <p className="caps-label mb-1">Match Type</p>
+              <select value={editData.type} onChange={e => setEditData(d => ({ ...d, type: e.target.value }))}
+                className="bd tile txt w-full rounded-lg border px-3 py-1.5 text-sm">
+                {CHEAT_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+              </select>
+            </div>
+            <div>
+              <p className="caps-label mb-1">Category</p>
+              <select value={editData.category} onChange={e => setEditData(d => ({ ...d, category: e.target.value }))}
+                className="bd tile txt w-full rounded-lg border px-3 py-1.5 text-sm">
+                {CHEAT_CATEGORIES.map(x => <option key={x} value={x}>{x}</option>)}
+              </select>
+            </div>
+            <div>
+              <p className="caps-label mb-1">Risk</p>
+              <select value={editData.risk} onChange={e => setEditData(d => ({ ...d, risk: e.target.value }))}
+                className="bd tile txt w-full rounded-lg border px-3 py-1.5 text-sm">
+                {RISK_LEVELS.map(x => <option key={x} value={x}>{x}</option>)}
+              </select>
+            </div>
+            <div>
+              <p className="caps-label mb-1">Game</p>
+              <select value={editData.game} onChange={e => setEditData(d => ({ ...d, game: e.target.value }))}
+                className="bd tile txt w-full rounded-lg border px-3 py-1.5 text-sm">
+                {GAMES.map(x => <option key={x} value={x}>{x}</option>)}
+              </select>
+            </div>
+          </div>
+          {editData.evidenceUrl && (
+            <div>
+              <p className="caps-label mb-1">Evidence URL</p>
+              <input value={editData.evidenceUrl} onChange={e => setEditData(d => ({ ...d, evidenceUrl: e.target.value }))}
+                className="bd tile txt w-full rounded-lg border px-3 py-1.5 text-sm outline-none focus:border-purple-500" />
+            </div>
+          )}
+          <div className="flex gap-2 pt-1">
+            <button onClick={addToDb}
+              className="flex-1 rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-500">
+              ✓ Confirm &amp; Add to Database
+            </button>
+            <button onClick={() => setShowEdit(false)}
+              className="rounded-lg border bd px-4 py-2 text-sm muted hover:txt">
+              Cancel
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
+          {[
+            ['Tool Name',   cd.cheatName],
+            ['Pattern',     cd.pattern],
+            ['Match Type',  CHEAT_TYPE_LABELS[cd.type] || cd.type],
+            ['Category',    cd.category],
+            ['Risk',        cd.risk],
+            ['Game',        cd.game],
+          ].map(([k, v]) => v ? (
+            <div key={k}>
+              <span className="muted">{k}: </span>
+              <span className={`txt font-medium ${k === 'Pattern' ? 'font-mono' : ''}`}>{v}</span>
+            </div>
+          ) : null)}
+          {cd.evidenceUrl && (
+            <div className="col-span-2">
+              <span className="muted">Evidence: </span>
+              <a href={cd.evidenceUrl} target="_blank" rel="noopener noreferrer"
+                className="text-sky-400 hover:underline break-all">{cd.evidenceUrl}</a>
+            </div>
+          )}
+          {cd.description && (
+            <div className="col-span-2">
+              <span className="muted">Notes: </span>
+              <span className="txt">{cd.description}</span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {isAdmin && !isDone && !showEdit && (
+        <div className="flex gap-2 pt-1 border-t bd">
+          <button onClick={() => setShowEdit(true)}
+            className="flex-1 rounded-lg bg-purple-600/80 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-600">
+            Review &amp; Add to Database
+          </button>
+          <button onClick={reject}
+            className="rounded-lg bg-red-600/10 border border-red-600/30 px-4 py-2 text-sm text-red-400 hover:bg-red-600/20">
+            Reject
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
 function TicketThread({ ticket, onClose }) {
   const { state, dispatch } = useStore()
   const toast = useToast()
@@ -378,6 +545,11 @@ function TicketThread({ ticket, onClose }) {
           <p className="txt text-sm whitespace-pre-wrap">{ticket.message}</p>
         </div>
 
+        {/* Cheat Report structured data panel */}
+        {ticket.category === 'Cheat Report' && (
+          <CheatReportPanel ticket={ticket} isAdmin={isAdmin} dispatch={dispatch} toast={toast} />
+        )}
+
         {/* Replies */}
         {visibleReplies.map(r => (
           <div
@@ -568,15 +740,16 @@ export default function Support() {
   const toast = useToast()
   const isAdmin = state.role === 'admin'
 
-  const [ticketOpen, setTicketOpen]   = useState(false)
-  const [cheatOpen, setCheatOpen]     = useState(false)
+  const [ticketOpen, setTicketOpen]     = useState(false)
+  const [cheatOpen, setCheatOpen]       = useState(false)
   const [activeTicket, setActiveTicket] = useState(null)
   const [statusFilter, setStatusFilter] = useState('all')
-  const [search, setSearch]           = useState('')
-  const [sortBy, setSortBy]           = useState('updatedAt')
-  const [selected, setSelected]       = useState([])
-  const [form, setForm]               = useState({ subject: '', category: 'General', priority: 'Normal', message: '', tags: [] })
-  const [cheatForm, setCheatForm]     = useState(emptyCheatForm)
+  const [catFilter, setCatFilter]       = useState('all')
+  const [search, setSearch]             = useState('')
+  const [sortBy, setSortBy]             = useState('updatedAt')
+  const [selected, setSelected]         = useState([])
+  const [form, setForm]                 = useState({ subject: '', category: 'General', priority: 'Normal', message: '', tags: [] })
+  const [cheatForm, setCheatForm]       = useState(emptyCheatForm)
 
   const myTickets = isAdmin
     ? (state.tickets || [])
@@ -586,6 +759,7 @@ export default function Support() {
     const q = search.toLowerCase()
     return myTickets
       .filter(t => statusFilter === 'all' ? true : t.status === statusFilter)
+      .filter(t => catFilter === 'all' ? true : t.category === catFilter)
       .filter(t => !q || `${t.subject} ${t.message} ${t.id} ${(t.tags || []).join(' ')}`.toLowerCase().includes(q))
       .sort((a, b) => {
         if (sortBy === 'priority') {
@@ -595,7 +769,7 @@ export default function Support() {
         if (sortBy === 'createdAt') return b.createdAt - a.createdAt
         return (b.updatedAt || b.createdAt) - (a.updatedAt || a.createdAt)
       })
-  }, [myTickets, statusFilter, search, sortBy])
+  }, [myTickets, statusFilter, catFilter, search, sortBy])
 
   const openCount    = myTickets.filter(t => t.status === 'Open').length
   const inProgCount  = myTickets.filter(t => t.status === 'In Progress').length
@@ -714,6 +888,17 @@ export default function Support() {
         priority: cheatForm.risk === 'Critical' ? 'Urgent' : cheatForm.risk === 'High' ? 'High' : 'Normal',
         message: ticketMsg,
         tags: ['cheat-related', cheatForm.game.toLowerCase()],
+        cheatData: {
+          cheatName: name,
+          pattern,
+          type: cheatForm.type,
+          category: cheatForm.category,
+          risk: cheatForm.risk,
+          game: cheatForm.game,
+          evidenceUrl: urlVal,
+          description: notes,
+          dbStatus: 'pending',
+        },
       },
     })
 
@@ -795,6 +980,45 @@ export default function Support() {
                 <option value="createdAt">Sort: Newest</option>
                 <option value="priority">Sort: Priority</option>
               </select>
+            </div>
+
+            {/* Category sub-tabs */}
+            <div className="flex gap-1.5 flex-wrap">
+              {[
+                { value: 'all',          icon: Tag,           label: 'All' },
+                { value: 'General',      icon: MessageSquare, label: 'General',      idleCls: 'text-white/60',   selCls: 'border-white/30 bg-white/10 text-white'                },
+                { value: 'Bug',          icon: Bug,           label: 'Bug',          idleCls: 'text-orange-400/60', selCls: 'border-orange-400/50 bg-orange-400/10 text-orange-400' },
+                { value: 'Billing',      icon: CreditCard,    label: 'Billing',      idleCls: 'text-green-400/60',  selCls: 'border-green-400/50 bg-green-400/10 text-green-400'    },
+                { value: 'Detection',    icon: Shield,        label: 'Detection',    idleCls: 'text-sky-400/60',    selCls: 'border-sky-400/50 bg-sky-400/10 text-sky-400'          },
+                { value: 'Cheat Report', icon: ShieldAlert,   label: 'Cheat Report', idleCls: 'text-purple-400/60', selCls: 'border-purple-400/50 bg-purple-400/10 text-purple-400' },
+              ].map(cat => {
+                const Icon = cat.icon
+                const sel = catFilter === cat.value
+                const count = cat.value === 'all'
+                  ? myTickets.filter(t => statusFilter === 'all' || t.status === statusFilter).length
+                  : myTickets.filter(t => t.category === cat.value && (statusFilter === 'all' || t.status === statusFilter)).length
+                return (
+                  <button
+                    key={cat.value}
+                    onClick={() => { setCatFilter(cat.value); clearSelected() }}
+                    className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-all ${
+                      sel
+                        ? (cat.selCls || 'bg-sky-600 border-sky-600 text-white')
+                        : `bd tile ${cat.idleCls || 'muted'} hover:txt`
+                    }`}
+                  >
+                    <Icon size={12} />
+                    {cat.label}
+                    {count > 0 && (
+                      <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none ${
+                        sel ? 'bg-white/20' : 'bg-white/10'
+                      }`}>
+                        {count}
+                      </span>
+                    )}
+                  </button>
+                )
+              })}
             </div>
 
             <div className="flex items-center gap-2 flex-wrap">
