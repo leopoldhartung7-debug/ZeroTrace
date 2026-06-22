@@ -24,4 +24,8 @@
     <ProjectReference Include="..\ZeroTrace.Core\ZeroTrace.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Resource Include="Resources\intro.mp4" />
+  </ItemGroup>
+
 </Project>

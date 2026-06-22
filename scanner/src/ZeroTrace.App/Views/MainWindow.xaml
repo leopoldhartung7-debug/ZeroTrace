@@ -203,8 +203,18 @@
 
                     <!-- RIGHT: step flow -->
                     <Grid Grid.Column="1" Margin="34,16">
+                        <!-- INTRO: animation -->
+                        <Grid x:Name="IntroView" VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
+                            <MediaElement x:Name="IntroVideo"
+                                          Source="pack://application:,,,/Resources/intro.mp4"
+                                          LoadedBehavior="Play"
+                                          UnloadedBehavior="Stop"
+                                          Stretch="UniformToFill"
+                                          MediaEnded="IntroVideo_MediaEnded" />
+                        </Grid>
+
                         <!-- 0) GAME SELECT -->
-                        <StackPanel x:Name="GameView" VerticalAlignment="Center">
+                        <StackPanel x:Name="GameView" Visibility="Collapsed" VerticalAlignment="Center">
                             <TextBlock Text="Spiel auswählen" Foreground="#8A9AAA" FontSize="13"
                                        FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,0,0,14" />
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">

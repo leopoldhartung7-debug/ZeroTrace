@@ -47,14 +47,19 @@ public partial class MainWindow : Window
 
         _boxes = new[] { P0, P1, P2, P3, P4, P5 };
         TryLoadEmbeddedPin();
-        ShowStep(GameView);
+        // IntroView is visible by default; GameView starts collapsed
     }
 
     // ===== Step navigation =====
     private void ShowStep(FrameworkElement step)
     {
-        foreach (var s in new FrameworkElement[] { GameView, PinView, ConsentView, ScanView, ResultView })
+        foreach (var s in new FrameworkElement[] { IntroView, GameView, PinView, ConsentView, ScanView, ResultView })
             s.Visibility = s == step ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private void IntroVideo_MediaEnded(object sender, RoutedEventArgs e)
+    {
+        ShowStep(GameView);
     }
 
     // ===== Window chrome =====
