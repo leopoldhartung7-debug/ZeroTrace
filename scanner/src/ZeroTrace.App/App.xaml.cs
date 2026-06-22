@@ -75,8 +75,10 @@ public partial class App : Application
             var settings = new SettingsStore(db);
             var whitelist = new HashWhitelistStore(db);
 
-            // Apply colour/text overrides from zerotrace-ui.json (exported by the dashboard).
+            // Apply colour/text overrides from zerotrace-ui.json (exported by the dashboard),
+            // then watch for changes so updates take effect without a restart.
             UiStyleLoader.Apply();
+            UiStyleLoader.WatchForChanges();
 
             var window = new MainWindow(indicators, scans, settings, whitelist);
             MainWindow = window;

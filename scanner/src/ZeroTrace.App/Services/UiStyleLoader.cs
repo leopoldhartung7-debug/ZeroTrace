@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
 
@@ -9,14 +10,19 @@ namespace ZeroTrace.App.Services;
 
 /// <summary>
 /// Reads zerotrace-ui.json from the application directory and applies any
-/// colour or text overrides to WPF dynamic resources at startup.  Only keys
-/// present in the file are updated — fields not listed retain their XAML
-/// defaults, so a minimal diff file produced by the dashboard is enough.
+/// colour or text overrides to WPF dynamic resources.  Only keys present in
+/// the file are updated — fields not listed retain their XAML defaults, so a
+/// minimal diff file produced by the dashboard is enough.
+///
+/// Call Apply() once at startup, then WatchForChanges() to enable hot-reload:
+/// the scanner picks up a new/changed file without restarting.
 /// </summary>
 internal static class UiStyleLoader
 {
     private static readonly string ConfigPath =
         Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "zerotrace-ui.json");
+
+    private static FileSystemWatcher? _watcher;
 
     internal static void Apply()
     {
@@ -38,6 +44,33 @@ internal static class UiStyleLoader
         {
             // style loading is best-effort; don't block startup
         }
+    }
+
+    /// <summary>
+    /// Watches zerotrace-ui.json for changes and re-applies the style on the
+    /// UI thread whenever the file is written.  Safe to call even if the file
+    /// does not exist yet — the watcher will pick it up when it is created.
+    /// </summary>
+    internal static void WatchForChanges()
+    {
+        var dir = Path.GetDirectoryName(ConfigPath);
+        if (dir == null || !Directory.Exists(dir)) return;
+
+        _watcher = new FileSystemWatcher(dir, Path.GetFileName(ConfigPath))
+        {
+            NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.Size | NotifyFilters.FileName,
+            EnableRaisingEvents = true,
+        };
+
+        _watcher.Changed += OnFileEvent;
+        _watcher.Created += OnFileEvent;
+    }
+
+    private static void OnFileEvent(object _, FileSystemEventArgs __)
+    {
+        // Brief delay so the file write has a chance to complete before we read it.
+        Task.Delay(200).ContinueWith(_ =>
+            Application.Current?.Dispatcher.Invoke(Apply));
     }
 
     // Maps each dashboard color key to the WPF resource keys it controls.
