@@ -481,6 +481,26 @@ function note(state, title, body, ownerId = null) {
   ].slice(0, 100)
 }
 
+function proposalToCheat(p) {
+  const catToType = {
+    Spoofer: 'Spoofer',
+    Injector: 'External Tool',
+    Cleaner: 'External Tool',
+    'FiveM-Cheat': 'Paid Client',
+  }
+  return {
+    id: 'prop_' + p.id,
+    builtin: false,
+    fromProposal: true,
+    name: p.pattern,
+    type: catToType[p.category] || 'Free Client',
+    game: 'OTHER',
+    severity: p.risk || 'High',
+    signatures: [p.pattern],
+    notes: p.description || `Auto-discovered in ${p.seenCount} scan(s). Module: ${p.module || '?'}`,
+  }
+}
+
 function reducer(state, action) {
   switch (action.type) {
     case 'set-setting':
@@ -2003,12 +2023,34 @@ function reducer(state, action) {
     case 'reset':
       return seed()
 
-    case 'approve-proposal':
-      return { ...state, proposals: (state.proposals || []).map(p => p.id === action.id ? { ...p, status: 'approved' } : p) }
+    case 'approve-proposal': {
+      const target = (state.proposals || []).find(p => p.id === action.id)
+      const alreadyInDb = target
+        ? (state.customCheats || []).some(c => (c.signatures || []).includes(target.pattern))
+        : true
+      const newCheats = target && !alreadyInDb
+        ? [proposalToCheat(target), ...(state.customCheats || [])]
+        : (state.customCheats || [])
+      return {
+        ...state,
+        proposals: (state.proposals || []).map(p => p.id === action.id ? { ...p, status: 'approved' } : p),
+        customCheats: newCheats,
+      }
+    }
     case 'reject-proposal':
       return { ...state, proposals: (state.proposals || []).map(p => p.id === action.id ? { ...p, status: 'rejected' } : p) }
-    case 'bulk-approve-proposals':
-      return { ...state, proposals: (state.proposals || []).map(p => action.ids.includes(p.id) ? { ...p, status: 'approved' } : p) }
+    case 'bulk-approve-proposals': {
+      const toApprove = (state.proposals || []).filter(p => action.ids.includes(p.id) && p.status !== 'approved')
+      const existingSigs = new Set((state.customCheats || []).flatMap(c => c.signatures || []))
+      const newEntries = toApprove
+        .filter(p => !existingSigs.has(p.pattern))
+        .map(p => proposalToCheat(p))
+      return {
+        ...state,
+        proposals: (state.proposals || []).map(p => action.ids.includes(p.id) ? { ...p, status: 'approved' } : p),
+        customCheats: [...newEntries, ...(state.customCheats || [])],
+      }
+    }
     case 'bulk-reject-proposals':
       return { ...state, proposals: (state.proposals || []).map(p => action.ids.includes(p.id) ? { ...p, status: 'rejected' } : p) }
     case 'clear-rejected-proposals':
