@@ -1410,6 +1410,15 @@ function reducer(state, action) {
         ),
       }
 
+    case 'edit-cheat':
+      return {
+        ...state,
+        customCheats: state.customCheats.map(c =>
+          c.id === action.id ? { ...c, ...action.patch } : c
+        ),
+        events: ev(state, 'db', 'Cheat updated', action.patch.name || action.id, 'admin'),
+      }
+
     case 'add-ticket': {
       const ownerId = state.session?.userId || (state.role === 'admin' ? 'admin' : null)
       const newTicket = {

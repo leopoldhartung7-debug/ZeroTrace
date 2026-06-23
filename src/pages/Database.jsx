@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Database, Plus, Search, Trash2, ShieldAlert, Lock, ExternalLink, Flame } from 'lucide-react'
+import { Database, Plus, Search, Trash2, ShieldAlert, Lock, ExternalLink, Flame, Edit2, Download } from 'lucide-react'
 import { PageHeader, Card, Badge, EmptyState, StatTile, Field, Input } from '../components/kit.jsx'
 import { Modal, Select, useToast } from '../components/ui.jsx'
 import { useStore, ALL_GAMES } from '../store.jsx'
@@ -94,6 +94,14 @@ export default function CheatDatabase() {
     setSmartDone(true)
   }
 
+  // Feature 1: Edit state
+  const [editId, setEditId] = useState(null)
+  const [editForm, setEditForm] = useState({})
+  const [editOpen, setEditOpen] = useState(false)
+
+  // Feature 4: Bulk selection
+  const [selected, setSelected] = useState(new Set())
+
   const rows = useMemo(
     () =>
       state.customCheats.filter((c) => {
@@ -111,6 +119,19 @@ export default function CheatDatabase() {
 
   const add = () => {
     if (!form.name.trim()) return toast({ type: 'error', title: 'Name required' })
+
+    // Feature 3: Duplicate check
+    const isDuplicate = state.customCheats.some(c =>
+      c.name.toLowerCase() === form.name.trim().toLowerCase() ||
+      (form.signatures && form.signatures.split(',').map(s => s.trim()).filter(Boolean).some(sig =>
+        c.signatures.some(cs => cs.toLowerCase() === sig.toLowerCase())
+      ))
+    )
+    if (isDuplicate) {
+      toast({ type: 'error', title: 'Duplicate', body: 'A cheat with this name or signature already exists.' })
+      return
+    }
+
     dispatch({
       type: 'add-cheat',
       cheat: {
@@ -124,6 +145,40 @@ export default function CheatDatabase() {
     setSmartText('')
     setSmartDone(false)
     setOpen(false)
+  }
+
+  // Feature 1: Save edit handler
+  const saveEdit = () => {
+    dispatch({
+      type: 'edit-cheat',
+      id: editId,
+      patch: {
+        ...editForm,
+        signatures: editForm.signatures.split(',').map(s => s.trim()).filter(Boolean),
+        relatedTo: editForm.relatedTo.split(',').map(s => s.trim()).filter(Boolean),
+      },
+    })
+    setEditOpen(false)
+  }
+
+  // Feature 2: Export functions
+  const exportJSON = () => {
+    const data = JSON.stringify(state.customCheats, null, 2)
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(new Blob([data], { type: 'application/json' }))
+    a.download = 'cheat-database.json'
+    a.click()
+  }
+  const exportCSV = () => {
+    const header = 'name,type,game,severity,version,signatures,notes'
+    const rows = state.customCheats.map(c =>
+      [c.name, c.type, c.game, c.severity, c.version || '', (c.signatures || []).join(';'), (c.notes || '').replace(/,/g, ';')].map(v => `"${v}"`).join(',')
+    )
+    const csv = [header, ...rows].join('\n')
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }))
+    a.download = 'cheat-database.csv'
+    a.click()
   }
 
   return (
@@ -143,6 +198,12 @@ export default function CheatDatabase() {
                 <Plus size={16} /> Bulk Import
               </button>
             )}
+            <button onClick={exportJSON} className="bd txt flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium hover:border-sky-500">
+              <Download size={16} /> JSON
+            </button>
+            <button onClick={exportCSV} className="bd txt flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium hover:border-sky-500">
+              <Download size={16} /> CSV
+            </button>
             <button
               onClick={() => setOpen(true)}
               className="flex items-center gap-2 rounded-xl bg-sky-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-sky-500"
@@ -191,10 +252,44 @@ export default function CheatDatabase() {
           </button>
         </div>
 
+        {/* Feature 4: Bulk action bar */}
+        {selected.size > 0 && (
+          <div className="mt-3 flex items-center gap-3 rounded-lg border border-sky-500/20 bg-sky-500/5 px-4 py-2.5">
+            <span className="text-sm font-medium txt">{selected.size} ausgewählt</span>
+            <button onClick={() => {
+              selected.forEach(id => dispatch({ type: 'toggle-cheat-active', id }))
+              setSelected(new Set())
+            }} className="rounded-lg border bd txt px-3 py-1.5 text-xs hover:border-sky-500">
+              Aktivierung umschalten
+            </button>
+            <button onClick={() => {
+              if (!confirm(`${selected.size} Einträge löschen?`)) return
+              selected.forEach(id => {
+                const c = state.customCheats.find(x => x.id === id)
+                if (c && !c.builtin) dispatch({ type: 'delete-cheat', id })
+              })
+              setSelected(new Set())
+            }} className="rounded-lg border border-red-500/30 text-red-400 px-3 py-1.5 text-xs hover:bg-red-500/10">
+              Löschen
+            </button>
+            <button onClick={() => setSelected(new Set())} className="ml-auto muted text-xs hover:txt">
+              Abwählen
+            </button>
+          </div>
+        )}
+
         <div className="mt-5 overflow-x-auto">
           <table className="w-full min-w-[760px] text-left">
             <thead>
               <tr className="caps-label bd border-b">
+                {/* Feature 4: select-all checkbox */}
+                <th className="px-3 py-3">
+                  <input type="checkbox"
+                    checked={rows.length > 0 && selected.size === rows.length}
+                    onChange={e => setSelected(e.target.checked ? new Set(rows.map(r => r.id)) : new Set())}
+                    className="rounded"
+                  />
+                </th>
                 {['', 'Name', 'Version', 'Type', 'Game', 'Severity', 'Signatures', 'Notes', ''].map((h) => (
                   <th key={h} className="px-3 py-3 font-semibold">{h}</th>
                 ))}
@@ -203,13 +298,20 @@ export default function CheatDatabase() {
             <tbody>
               {rows.length === 0 && (
                 <tr>
-                  <td colSpan={9} className="muted px-3 py-12 text-center text-sm">
+                  <td colSpan={10} className="muted px-3 py-12 text-center text-sm">
                     No entries match your filters.
                   </td>
                 </tr>
               )}
               {rows.map((c) => (
                 <tr key={c.id} className="hoverable bd border-b align-top text-sm">
+                  {/* Feature 4: row checkbox */}
+                  <td className="px-3 py-4">
+                    <input type="checkbox" checked={selected.has(c.id)}
+                      onChange={e => setSelected(prev => { const s = new Set(prev); e.target.checked ? s.add(c.id) : s.delete(c.id); return s })}
+                      className="rounded"
+                    />
+                  </td>
                   <td className="px-3 py-4">
                     <button
                       onClick={() => dispatch({ type: 'toggle-cheat-active', id: c.id })}
@@ -278,6 +380,27 @@ export default function CheatDatabase() {
                           <ExternalLink size={12} />
                         </a>
                       )}
+                      {/* Feature 1: Edit button */}
+                      <button
+                        className="muted hover:text-sky-400"
+                        title="Edit"
+                        onClick={() => {
+                          setEditId(c.id)
+                          setEditForm({
+                            name: c.name,
+                            type: c.type,
+                            game: c.game,
+                            severity: c.severity,
+                            signatures: c.signatures.join(', '),
+                            notes: c.notes || '',
+                            version: c.version || '',
+                            relatedTo: (c.relatedTo || []).join(', '),
+                          })
+                          setEditOpen(true)
+                        }}
+                      >
+                        <Edit2 size={14} />
+                      </button>
                       {!c.builtin && (
                         <button
                           className="muted hover:text-red-500"
@@ -298,6 +421,7 @@ export default function CheatDatabase() {
         </div>
       </Card>
 
+      {/* Add Entry Modal */}
       <Modal
         open={open}
         onClose={() => setOpen(false)}
@@ -379,6 +503,54 @@ export default function CheatDatabase() {
           <Field label="Related Cheats (comma separated names, optional)">
             <Input value={Array.isArray(form.relatedTo) ? form.relatedTo.join(', ') : form.relatedTo}
               onChange={(e) => setForm({ ...form, relatedTo: e.target.value.split(',').map(s => s.trim()).filter(Boolean) })}
+              placeholder="e.g. Vape V4, Novoline" />
+          </Field>
+        </div>
+      </Modal>
+
+      {/* Feature 1: Edit Entry Modal */}
+      <Modal
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        title="Edit Entry"
+        footer={
+          <>
+            <button onClick={() => setEditOpen(false)} className="bd txt rounded-lg border px-4 py-2 text-sm">
+              Cancel
+            </button>
+            <button onClick={saveEdit} className="rounded-lg bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-500">
+              Save
+            </button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <Field label="Name">
+            <Input autoFocus value={editForm.name || ''} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} placeholder="e.g. Skillclient" />
+          </Field>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Type">
+              <Select value={editForm.type || 'Free Client'} onChange={(v) => setEditForm({ ...editForm, type: v })} options={TYPES.map((t) => ({ value: t, label: t }))} />
+            </Field>
+            <Field label="Game">
+              <Select value={editForm.game || 'MINECRAFT'} onChange={(v) => setEditForm({ ...editForm, game: v })} options={ALL_GAMES.map((g) => ({ value: g, label: g }))} />
+            </Field>
+          </div>
+          <Field label="Severity">
+            <Select value={editForm.severity || 'Medium'} onChange={(v) => setEditForm({ ...editForm, severity: v })} options={SEVERITIES.map((s) => ({ value: s, label: s }))} />
+          </Field>
+          <Field label="Signatures (comma separated)">
+            <Input value={editForm.signatures || ''} onChange={(e) => setEditForm({ ...editForm, signatures: e.target.value })} placeholder="domain.gg, package.name, loader.exe" />
+          </Field>
+          <Field label="Notes">
+            <Input value={editForm.notes || ''} onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })} placeholder="Detection guidance" />
+          </Field>
+          <Field label="Version (optional)">
+            <Input value={editForm.version || ''} onChange={(e) => setEditForm({ ...editForm, version: e.target.value })} placeholder="e.g. 4.2+" />
+          </Field>
+          <Field label="Related Cheats (comma separated names, optional)">
+            <Input value={editForm.relatedTo || ''}
+              onChange={(e) => setEditForm({ ...editForm, relatedTo: e.target.value })}
               placeholder="e.g. Vape V4, Novoline" />
           </Field>
         </div>
