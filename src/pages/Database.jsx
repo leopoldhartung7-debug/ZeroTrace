@@ -7,6 +7,62 @@ import { useStore, ALL_GAMES } from '../store.jsx'
 const TYPES = ['Paid Client', 'Free Client', 'Utility Mod', 'External Tool', 'Spoofer']
 const SEVERITIES = ['Low', 'Medium', 'High', 'Critical']
 
+function extractFromText(text) {
+  const t = text
+  const lower = t.toLowerCase()
+  const result = {}
+
+  // Name: first quoted string, or first line, or capitalized phrase before keywords
+  const quotedMatch = t.match(/["']([^"']{2,60})["']/)
+  if (quotedMatch) {
+    result.name = quotedMatch[1].trim()
+  } else {
+    const firstLine = t.split(/\n/)[0].trim()
+    const knownKeywords = /\b(free|paid|client|loader|cheat|hack|mod|spoofer|tool|inject|bypass|esp|aimbot|wallhack)\b/i
+    const nameLine = firstLine.replace(/[^\w\s.\-+]/g, '').trim()
+    if (nameLine.length <= 60) result.name = nameLine
+  }
+
+  // Signatures: .exe/.dll/.bat files, domains, hashes, IPs
+  const sigs = new Set()
+  const fileMatches = t.match(/[\w\-. ]+\.(exe|dll|bat|sys|jar|vbs|ps1|lua)/gi) || []
+  fileMatches.forEach(s => sigs.add(s.trim()))
+  const domainMatches = t.match(/\b(?:[a-z0-9](?:[a-z0-9\-]{0,61}[a-z0-9])?\.)+(?:gg|com|net|org|io|xyz|cc|to|club|shop|me|ru|de|nl)\b/gi) || []
+  domainMatches.forEach(s => sigs.add(s.toLowerCase()))
+  const hashMatches = t.match(/\b[0-9a-f]{32,64}\b/gi) || []
+  hashMatches.forEach(s => sigs.add(s.toLowerCase()))
+  const ipMatches = t.match(/\b(?:\d{1,3}\.){3}\d{1,3}\b/g) || []
+  ipMatches.forEach(s => sigs.add(s))
+  if (sigs.size > 0) result.signatures = [...sigs].join(', ')
+
+  // Game detection
+  if (/fivem|fiveM|gta\s*5|gta\s*v|rage\s*mp|ragemp|alt\s*v|altv/i.test(t)) result.game = 'FIVEM'
+  else if (/minecraft|mc\s+cheat|mc\s+client/i.test(t)) result.game = 'MINECRAFT'
+  else if (/rust\s+(cheat|hack|client)/i.test(t)) result.game = 'RUST'
+  else if (/fortnite/i.test(t)) result.game = 'FORTNITE'
+  else if (/valorant/i.test(t)) result.game = 'VALORANT'
+  else if (/csgo|cs2|counter.strike/i.test(t)) result.game = 'CS2'
+
+  // Type detection
+  if (/\bspoof(er|ing)?\b/i.test(t)) result.type = 'Spoofer'
+  else if (/\bexternal\b/i.test(t)) result.type = 'External Tool'
+  else if (/\butility\b|\bmod\b|\btools?\b/i.test(t)) result.type = 'Utility Mod'
+  else if (/\bpaid\b|\bpremium\b|\bsubscription\b|\bmonthly\b|\bprice\b|\bcost\b|\b€\b|\b\$\b/i.test(t)) result.type = 'Paid Client'
+  else if (/\bfree\b|\bopen.?source\b/i.test(t)) result.type = 'Free Client'
+
+  // Severity
+  if (/\bcritical\b|\bundetected.*all\b|\bwidespread\b|\bvery\s+dangerous\b/i.test(t)) result.severity = 'Critical'
+  else if (/\bhigh\b|\bdangerous\b|\bwidely\s+used\b|\bcommon\b|\bdetect.*many\b/i.test(t)) result.severity = 'High'
+  else if (/\blow\b|\brare\b|\bseldom\b|\bnot\s+common\b/i.test(t)) result.severity = 'Low'
+  else if (/\bmedium\b|\bmoderate\b/i.test(t)) result.severity = 'Medium'
+
+  // Version: v1.2, 4.2+, version 3
+  const verMatch = t.match(/\bv?(\d+\.\d+[\w.+\-]*)\b|\bversion\s+(\d[\w.+\-]*)/i)
+  if (verMatch) result.version = verMatch[1] || verMatch[2]
+
+  return result
+}
+
 export default function CheatDatabase() {
   const { state, dispatch } = useStore()
   const toast = useToast()
@@ -20,6 +76,23 @@ export default function CheatDatabase() {
   const [form, setForm] = useState({
     name: '', type: 'Free Client', game: 'MINECRAFT', severity: 'Medium', signatures: '', notes: '', version: '', relatedTo: [],
   })
+  const [smartText, setSmartText] = useState('')
+  const [smartDone, setSmartDone] = useState(false)
+
+  const runExtract = () => {
+    if (!smartText.trim()) return
+    const extracted = extractFromText(smartText)
+    setForm(prev => ({
+      ...prev,
+      ...(extracted.name && !prev.name ? { name: extracted.name } : {}),
+      ...(extracted.type ? { type: extracted.type } : {}),
+      ...(extracted.game ? { game: extracted.game } : {}),
+      ...(extracted.severity ? { severity: extracted.severity } : {}),
+      ...(extracted.signatures && !prev.signatures ? { signatures: extracted.signatures } : {}),
+      ...(extracted.version && !prev.version ? { version: extracted.version } : {}),
+    }))
+    setSmartDone(true)
+  }
 
   const rows = useMemo(
     () =>
@@ -48,6 +121,8 @@ export default function CheatDatabase() {
     })
     toast({ type: 'success', title: 'Cheat added', body: form.name })
     setForm({ name: '', type: 'Free Client', game: 'MINECRAFT', severity: 'Medium', signatures: '', notes: '', version: '', relatedTo: [] })
+    setSmartText('')
+    setSmartDone(false)
     setOpen(false)
   }
 
@@ -229,7 +304,7 @@ export default function CheatDatabase() {
         title="Add Cheat Entry"
         footer={
           <>
-            <button onClick={() => setOpen(false)} className="bd txt rounded-lg border px-4 py-2 text-sm">
+            <button onClick={() => { setOpen(false); setSmartText(''); setSmartDone(false) }} className="bd txt rounded-lg border px-4 py-2 text-sm">
               Cancel
             </button>
             <button onClick={add} className="rounded-lg bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-500">
@@ -239,6 +314,45 @@ export default function CheatDatabase() {
         }
       >
         <div className="space-y-4">
+          <div className="rounded-xl border bd overflow-hidden">
+            <div className="flex items-center justify-between px-3 py-2 bg-white/[0.03] border-b bd">
+              <span className="text-xs font-semibold caps-label">Smart Extract</span>
+              {smartDone && <span className="text-[11px] text-green-400 font-medium">Felder automatisch ausgefüllt</span>}
+            </div>
+            <textarea
+              value={smartText}
+              onChange={(e) => { setSmartText(e.target.value); setSmartDone(false) }}
+              onPaste={(e) => {
+                const pasted = e.clipboardData.getData('text')
+                setTimeout(() => {
+                  setSmartText(pasted)
+                  const extracted = extractFromText(pasted)
+                  setForm(prev => ({
+                    ...prev,
+                    ...(extracted.name && !prev.name ? { name: extracted.name } : {}),
+                    ...(extracted.type ? { type: extracted.type } : {}),
+                    ...(extracted.game ? { game: extracted.game } : {}),
+                    ...(extracted.severity ? { severity: extracted.severity } : {}),
+                    ...(extracted.signatures && !prev.signatures ? { signatures: extracted.signatures } : {}),
+                    ...(extracted.version && !prev.version ? { version: extracted.version } : {}),
+                  }))
+                  setSmartDone(true)
+                }, 0)
+              }}
+              rows={3}
+              placeholder="Paste cheat info, description, or any text here — fields below are filled automatically…"
+              className="bd tile txt w-full p-3 text-xs font-mono focus:outline-none resize-none bg-transparent"
+            />
+            <div className="px-3 py-2 flex justify-end border-t bd">
+              <button
+                onClick={runExtract}
+                className="rounded-lg bg-sky-600/80 hover:bg-sky-600 px-3 py-1.5 text-xs font-semibold text-white"
+              >
+                Extrahieren
+              </button>
+            </div>
+          </div>
+
           <Field label="Name">
             <Input autoFocus value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="e.g. Skillclient" />
           </Field>
