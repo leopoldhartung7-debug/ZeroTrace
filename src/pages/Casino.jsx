@@ -36,7 +36,7 @@ function useCountUp(value) {
   return shown
 }
 
-const WHEEL_COLORS = ['#0ea5e9', '#1e293b', '#38bdf8', '#0f172a', '#0284c7', '#1e293b', '#38bdf8', '#0f172a', '#0ea5e9', '#1e293b']
+const WHEEL_COLORS = ['#b4b4c8', '#1c1c22', '#848eb0', '#141417', '#636c8a', '#1c1c22', '#848eb0', '#141417', '#b4b4c8', '#1c1c22']
 const WHEEL_MULT = 7 // hit your exact number → 7× your stake back
 
 function polar(cx, cy, r, deg) {
@@ -129,7 +129,7 @@ function LuckyWheel({ wallet, dispatch, toast, fx = {} }) {
                 </g>
               )
             })}
-            <circle cx="100" cy="100" r="14" fill="#0b0e14" stroke="#38bdf8" strokeWidth="2" />
+            <circle cx="100" cy="100" r="14" fill="#0b0e14" stroke="#848eb0" strokeWidth="2" />
           </svg>
         </div>
         {last && (
@@ -1111,7 +1111,7 @@ function Crash({ wallet, dispatch, toast, fx }) {
               <path
                 d={`M 6 94 L ${lineLeft} ${100 - lineBottom}`}
                 fill="none"
-                stroke={crashed ? '#dc2626' : '#38bdf8'}
+                stroke={crashed ? '#dc2626' : '#848eb0'}
                 strokeWidth="1.5"
                 strokeOpacity="0.6"
               />

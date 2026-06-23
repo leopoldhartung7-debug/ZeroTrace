@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 
-const COLORS = ['#38bdf8', '#22c55e', '#eab308', '#dc2626', '#a855f7', '#fff']
+const COLORS = ['#848eb0', '#22c55e', '#eab308', '#dc2626', '#a855f7', '#fff']
 
 /* Fires a one-shot confetti burst whenever `trigger` changes to a truthy value. */
 export default function Confetti({ trigger }) {

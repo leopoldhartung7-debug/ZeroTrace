@@ -40,20 +40,23 @@ function contrastRatio(hex1, hex2) {
 
 // ── preset themes ───────────────────────────────────────────────────────────
 
+// Monochrome steel/silver collection — matches the ZeroTrace brand.
+// All accents stay within the silver–steel–graphite family; variety comes
+// from background darkness, tone (cool/warm grey) and accent brightness.
 const PRESET_THEMES = [
-  { label: 'Dark Navy',        colors: { background: '#0d1326', mutedBackground: '#161d33', titlebar: '#070b16', text: '#e8eaf0', mutedText: '#8b93a7', accent: '#848eb0' }, animations: { bgEffect: 'none', glowAccent: false } },
-  { label: 'Midnight Purple',  colors: { background: '#0f0b1e', mutedBackground: '#1a1430', titlebar: '#07050d', text: '#ede8f5', mutedText: '#9b90b8', accent: '#a78bfa' }, animations: { bgEffect: 'scanlines', glowAccent: true } },
-  { label: 'Forest',           colors: { background: '#0a150f', mutedBackground: '#111f18', titlebar: '#050a07', text: '#dff0e5', mutedText: '#88aa95', accent: '#22c55e' }, animations: { bgEffect: 'grid', glowAccent: false } },
-  { label: 'Sunset',           colors: { background: '#1a0e08', mutedBackground: '#261508', titlebar: '#0d0703', text: '#f5ede5', mutedText: '#b09080', accent: '#f97316' }, animations: { bgEffect: 'glow-pulse', glowAccent: true } },
-  { label: 'Rose',             colors: { background: '#1a0a12', mutedBackground: '#26101c', titlebar: '#0d0509', text: '#f5e0ea', mutedText: '#b09098', accent: '#f43f5e' }, animations: { bgEffect: 'scanlines', glowAccent: true } },
-  { label: 'Ice Blue',         colors: { background: '#060e18', mutedBackground: '#0d1e2e', titlebar: '#030810', text: '#d8edf8', mutedText: '#5c8aa0', accent: '#67e8f9' }, animations: { bgEffect: 'aurora', glowAccent: true } },
-  { label: 'Deep Space',       colors: { background: '#04040c', mutedBackground: '#0a0a18', titlebar: '#020208', text: '#d0d0f0', mutedText: '#5050a0', accent: '#818cf8' }, animations: { bgEffect: 'particles', glowAccent: true } },
-  { label: 'Arctic',           colors: { background: '#08101a', mutedBackground: '#101c28', titlebar: '#040a10', text: '#e0eef8', mutedText: '#607888', accent: '#7dd3fc' }, animations: { bgEffect: 'rain', glowAccent: false } },
-  { label: 'Lava',             colors: { background: '#120403', mutedBackground: '#1e0804', titlebar: '#080202', text: '#f8e0d0', mutedText: '#a05030', accent: '#ef4444' }, animations: { bgEffect: 'vortex', glowAccent: true } },
-  { label: 'Toxic',            colors: { background: '#030d05', mutedBackground: '#071508', titlebar: '#020602', text: '#d8f0dc', mutedText: '#407848', accent: '#4ade80' }, animations: { bgEffect: 'matrix', glowAccent: true } },
-  { label: 'Golden',           colors: { background: '#100d02', mutedBackground: '#1c1604', titlebar: '#080601', text: '#f5edd0', mutedText: '#907840', accent: '#fbbf24' }, animations: { bgEffect: 'glow-pulse', glowAccent: true } },
-  { label: 'Sakura',           colors: { background: '#14080e', mutedBackground: '#1e0e18', titlebar: '#0a0408', text: '#f5d8e8', mutedText: '#a06080', accent: '#f472b6' }, animations: { bgEffect: 'particles', glowAccent: true } },
-  { label: 'Ghost',            colors: { background: '#0a0a0e', mutedBackground: '#141418', titlebar: '#050508', text: '#e8e8f0', mutedText: '#686870', accent: '#c4b5fd' }, animations: { bgEffect: 'circuit', glowAccent: false } },
+  { label: 'Steel',            colors: { background: '#0e0e11', mutedBackground: '#16161a', titlebar: '#08080a', text: '#eeeef4', mutedText: '#80808c', accent: '#848eb0' }, animations: { bgEffect: 'none', glowAccent: false } },
+  { label: 'Graphite',         colors: { background: '#0c0c0e', mutedBackground: '#15151a', titlebar: '#070708', text: '#e6e6ec', mutedText: '#75757f', accent: '#9ca3b5' }, animations: { bgEffect: 'grid', glowAccent: false } },
+  { label: 'Silver',           colors: { background: '#101015', mutedBackground: '#1a1a22', titlebar: '#0a0a0e', text: '#f2f2f8', mutedText: '#8a8a98', accent: '#c4c8d6' }, animations: { bgEffect: 'glow-pulse', glowAccent: true } },
+  { label: 'Carbon',           colors: { background: '#060608', mutedBackground: '#101013', titlebar: '#030304', text: '#e0e0e8', mutedText: '#66666f', accent: '#7a8298' }, animations: { bgEffect: 'particles', glowAccent: false } },
+  { label: 'Slate',            colors: { background: '#0b0d12', mutedBackground: '#141822', titlebar: '#06070b', text: '#e4e8f2', mutedText: '#70788a', accent: '#8a94b0' }, animations: { bgEffect: 'scanlines', glowAccent: true } },
+  { label: 'Platinum',         colors: { background: '#111114', mutedBackground: '#1c1c20', titlebar: '#0a0a0c', text: '#f5f5fa', mutedText: '#9094a0', accent: '#d4d8e2' }, animations: { bgEffect: 'aurora', glowAccent: true } },
+  { label: 'Gunmetal',         colors: { background: '#0a0b0d', mutedBackground: '#131519', titlebar: '#050607', text: '#dcdee4', mutedText: '#6a6e76', accent: '#6b7280' }, animations: { bgEffect: 'circuit', glowAccent: false } },
+  { label: 'Frost',            colors: { background: '#0a0d12', mutedBackground: '#13181f', titlebar: '#05070a', text: '#e6ecf4', mutedText: '#74808c', accent: '#b8c2d0' }, animations: { bgEffect: 'rain', glowAccent: true } },
+  { label: 'Onyx',             colors: { background: '#050505', mutedBackground: '#0f0f10', titlebar: '#020202', text: '#dedee2', mutedText: '#626266', accent: '#909098' }, animations: { bgEffect: 'vortex', glowAccent: false } },
+  { label: 'Titanium',         colors: { background: '#0d0d10', mutedBackground: '#18181c', titlebar: '#080809', text: '#ececf0', mutedText: '#82828a', accent: '#a8acb8' }, animations: { bgEffect: 'glow-pulse', glowAccent: true } },
+  { label: 'Chrome',           colors: { background: '#0f0f13', mutedBackground: '#1a1a20', titlebar: '#090909', text: '#f6f6fb', mutedText: '#9498a4', accent: '#e6e8f0' }, animations: { bgEffect: 'matrix', glowAccent: true } },
+  { label: 'Shadow',           colors: { background: '#070708', mutedBackground: '#101012', titlebar: '#040404', text: '#dcdce2', mutedText: '#5e5e66', accent: '#727282' }, animations: { bgEffect: 'scanlines', glowAccent: false } },
+  { label: 'Ghost',            colors: { background: '#0a0a0e', mutedBackground: '#141418', titlebar: '#050508', text: '#e8e8f0', mutedText: '#686870', accent: '#c4c4d8' }, animations: { bgEffect: 'circuit', glowAccent: false } },
 ]
 
 const ANIMATION_PRESETS = [
@@ -279,11 +282,11 @@ function DropSelect({ value, options, onChange, color = 'sky' }) {
 }
 
 const PRESETS = [
-  { name: 'Midnight', colors: { background: '#0A0E14', mutedBackground: '#111722', accent: '#38BDF8', text: '#C8D2DA', mutedText: '#5A6772', titlebar: '#1E2530' } },
-  { name: 'Ice',      colors: { background: '#060D14', mutedBackground: '#0D1923', accent: '#67E8F9', text: '#D0E8F0', mutedText: '#4A7088', titlebar: '#142233' } },
-  { name: 'Blood',    colors: { background: '#0E0A0A', mutedBackground: '#1A1010', accent: '#F87171', text: '#F0D8D8', mutedText: '#885050', titlebar: '#2E1414' } },
-  { name: 'Ghost',    colors: { background: '#0C0C0F', mutedBackground: '#141418', accent: '#A78BFA', text: '#D8D4F0', mutedText: '#5C5880', titlebar: '#1C1A2E' } },
-  { name: 'Forest',   colors: { background: '#08110A', mutedBackground: '#0F1C12', accent: '#4ADE80', text: '#C8E0CC', mutedText: '#4A7055', titlebar: '#132018' } },
+  { name: 'Steel',    colors: { background: '#0E0E11', mutedBackground: '#16161A', accent: '#848EB0', text: '#EEEEF4', mutedText: '#80808C', titlebar: '#1C1C22' } },
+  { name: 'Silver',   colors: { background: '#101015', mutedBackground: '#1A1A22', accent: '#C4C8D6', text: '#F2F2F8', mutedText: '#8A8A98', titlebar: '#22222C' } },
+  { name: 'Carbon',   colors: { background: '#060608', mutedBackground: '#101013', accent: '#7A8298', text: '#E0E0E8', mutedText: '#66666F', titlebar: '#16161A' } },
+  { name: 'Platinum', colors: { background: '#111114', mutedBackground: '#1C1C20', accent: '#D4D8E2', text: '#F5F5FA', mutedText: '#9094A0', titlebar: '#26262C' } },
+  { name: 'Gunmetal', colors: { background: '#0A0B0D', mutedBackground: '#131519', accent: '#6B7280', text: '#DCDEE4', mutedText: '#6A6E76', titlebar: '#1A1C20' } },
 ]
 
 const PIN_QUICK_DESIGNS = [
