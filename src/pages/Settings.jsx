@@ -359,7 +359,7 @@ function WeeklyReportTab() {
             embeds: [
               {
                 title: 'ZeroTrace — Weekly summary',
-                color: 0x38bdf8,
+                color: 0x848eb0,
                 fields: [
                   { name: 'Total scans (7d)', value: String(recent.length), inline: true },
                   { name: 'Cheating', value: String(cheats), inline: true },

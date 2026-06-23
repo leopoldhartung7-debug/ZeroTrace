@@ -392,7 +392,7 @@ function seed() {
       emailJsServiceId: DEFAULT_EMAILJS.serviceId,
       emailJsTemplateId: DEFAULT_EMAILJS.templateId,
       emailJsPublicKey: DEFAULT_EMAILJS.publicKey,
-      webhookCustom: { username: 'ZeroTrace Anti-Cheat', color: '#38bdf8', footer: 'ZeroTrace Anti-Cheat' },
+      webhookCustom: { username: 'ZeroTrace Anti-Cheat', color: '#848eb0', footer: 'ZeroTrace Anti-Cheat' },
       discordWebhooks: [],
       slackWebhook: '',
       slackWebhooks: [],

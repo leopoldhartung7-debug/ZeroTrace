@@ -3,11 +3,11 @@
    needs `{{{message_html}}}` in its body and `{{subject}}` in its
    subject — every other element (logo, layout, colors) is baked in. */
 
-const ACCENT = '#38bdf8'
-const ACCENT_DARK = '#0284c7'
-const BG = '#101114'
-const PANEL = '#191b20'
-const BORDER = '#2a2c33'
+const ACCENT = '#848eb0'
+const ACCENT_DARK = '#636c8a'
+const BG = '#0e0e11'
+const PANEL = '#141417'
+const BORDER = '#28282e'
 const TEXT = '#e7e8ea'
 const MUTED = '#8a8d93'
 

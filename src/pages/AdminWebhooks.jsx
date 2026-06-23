@@ -44,7 +44,7 @@ export default function AdminWebhooks() {
           embeds: [{
             title: 'Webhook test',
             description: 'This is a manual health check from the ZeroTrace admin panel.',
-            color: 0x38bdf8,
+            color: 0x848eb0,
             timestamp: new Date().toISOString(),
           }],
         }),

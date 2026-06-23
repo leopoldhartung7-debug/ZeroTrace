@@ -122,7 +122,7 @@ export default function PlayerProfile() {
                       contentStyle={{ background: '#191b20', border: '1px solid #34363b', borderRadius: 8 }}
                       labelStyle={{ color: '#e7e8ea' }}
                     />
-                    <Line type="monotone" dataKey="risk" stroke="#38bdf8" strokeWidth={2} dot={{ r: 4 }} />
+                    <Line type="monotone" dataKey="risk" stroke="#848eb0" strokeWidth={2} dot={{ r: 4 }} />
                   </LineChart>
                 </ResponsiveContainer>
               </div>

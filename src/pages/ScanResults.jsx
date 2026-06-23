@@ -446,7 +446,7 @@ export default function ScanResults() {
               <p className="muted text-xs">Information about the users PC</p>
             </div>
           </div>
-          <KV color="#38bdf8" label="System" value={report.pc.system} />
+          <KV color="#848eb0" label="System" value={report.pc.system} />
           <KV
             color="#ec4899"
             label="IP Address"
@@ -533,7 +533,7 @@ export default function ScanResults() {
                 detects: { accent: '#dc2626', Icon: AlertTriangle, title: 'Detects Logs', badge: 'Boot instance', bcls: 'border-red-600/40 bg-red-600/15 text-red-500' },
                 integrity: { accent: '#22c55e', Icon: CheckCircle2, title: 'Integrity Logs', badge: 'Boot instance', bcls: 'border-green-600/40 bg-green-600/15 text-green-500' },
                 warnings: { accent: '#eab308', Icon: AlertTriangle, title: 'Warnings Logs', badge: 'Warning', bcls: 'border-yellow-600/40 bg-yellow-600/15 text-yellow-500' },
-                suspicious: { accent: '#38bdf8', Icon: Eye, title: 'Suspicious logs', badge: 'Suspicious', bcls: 'border-sky-600/40 bg-sky-600/15 text-sky-400' },
+                suspicious: { accent: '#848eb0', Icon: Eye, title: 'Suspicious logs', badge: 'Suspicious', bcls: 'border-sky-600/40 bg-sky-600/15 text-sky-400' },
               }
               const cs = CS[cat]
               const copyDetail = (t) => {

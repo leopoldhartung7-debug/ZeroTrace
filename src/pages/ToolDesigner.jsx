@@ -41,7 +41,7 @@ function contrastRatio(hex1, hex2) {
 // ── preset themes ───────────────────────────────────────────────────────────
 
 const PRESET_THEMES = [
-  { label: 'Dark Navy',        colors: { background: '#0d1326', mutedBackground: '#161d33', titlebar: '#070b16', text: '#e8eaf0', mutedText: '#8b93a7', accent: '#38bdf8' }, animations: { bgEffect: 'none', glowAccent: false } },
+  { label: 'Dark Navy',        colors: { background: '#0d1326', mutedBackground: '#161d33', titlebar: '#070b16', text: '#e8eaf0', mutedText: '#8b93a7', accent: '#848eb0' }, animations: { bgEffect: 'none', glowAccent: false } },
   { label: 'Midnight Purple',  colors: { background: '#0f0b1e', mutedBackground: '#1a1430', titlebar: '#07050d', text: '#ede8f5', mutedText: '#9b90b8', accent: '#a78bfa' }, animations: { bgEffect: 'scanlines', glowAccent: true } },
   { label: 'Forest',           colors: { background: '#0a150f', mutedBackground: '#111f18', titlebar: '#050a07', text: '#dff0e5', mutedText: '#88aa95', accent: '#22c55e' }, animations: { bgEffect: 'grid', glowAccent: false } },
   { label: 'Sunset',           colors: { background: '#1a0e08', mutedBackground: '#261508', titlebar: '#0d0703', text: '#f5ede5', mutedText: '#b09080', accent: '#f97316' }, animations: { bgEffect: 'glow-pulse', glowAccent: true } },

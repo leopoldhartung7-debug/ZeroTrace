@@ -504,9 +504,9 @@ export default function Account() {
                       </Field>
                       <Field label="Accent color (hex)">
                         <input
-                          value={state.integrations.webhookCustom?.color || '#38bdf8'}
+                          value={state.integrations.webhookCustom?.color || '#848eb0'}
                           onChange={(e) => dispatch({ type: 'set-webhook-custom', value: { color: e.target.value } })}
-                          placeholder="#38bdf8"
+                          placeholder="#848eb0"
                           className={inputCls}
                         />
                       </Field>
