@@ -430,7 +430,7 @@ export function defaultToolStyle() {
       background: '#0d1326',
       mutedBackground: '#161d33',
       titlebar: '#070b16',
-      accent: '#38bdf8',
+      accent: '#848eb0',
     },
     text: {
       pin: 'Enter a pin below:',

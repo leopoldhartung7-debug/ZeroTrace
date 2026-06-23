@@ -1,47 +1,59 @@
-/* ZeroTrace brand logo — crosshair mark + wordmark. */
+/* ZeroTrace brand logo — ZT monogram mark + wordmark */
 
 const SIZES = {
-  sm: { box: 30, brand: '1.05rem', sub: '0.55rem', gap: 10 },
-  md: { box: 40, brand: '1.5rem', sub: '0.62rem', gap: 14 },
-  lg: { box: 52, brand: '2.4rem', sub: '0.7rem', gap: 20 },
+  sm: { box: 28, brand: '1.05rem', sub: '0.52rem', gap: 10 },
+  md: { box: 38, brand: '1.45rem', sub: '0.58rem', gap: 13 },
+  lg: { box: 52, brand: '2.2rem',  sub: '0.68rem', gap: 18 },
 }
 
 export default function Logo({ size = 'md', sub = false }) {
   const s = SIZES[size] || SIZES.md
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: s.gap }}>
-      <span style={{ width: s.box, height: s.box, flexShrink: 0, display: 'block' }}>
-        <svg viewBox="0 0 52 52" fill="none" width="100%" height="100%">
-          <circle cx="26" cy="26" r="22" stroke="#0284c7" strokeWidth="1.5" opacity="0.5" />
-          <circle cx="26" cy="26" r="5" stroke="#38bdf8" strokeWidth="1.5" />
-          <circle cx="26" cy="26" r="1.5" fill="#38bdf8" />
-          <line x1="26" y1="4" x2="26" y2="18" stroke="#38bdf8" strokeWidth="1.8" strokeLinecap="round" />
-          <line x1="26" y1="34" x2="26" y2="48" stroke="#38bdf8" strokeWidth="1.8" strokeLinecap="round" />
-          <line x1="4" y1="26" x2="18" y2="26" stroke="#38bdf8" strokeWidth="1.8" strokeLinecap="round" />
-          <line x1="34" y1="26" x2="48" y2="26" stroke="#38bdf8" strokeWidth="1.8" strokeLinecap="round" />
+      <span style={{ width: s.box, height: s.box * (52 / 60), flexShrink: 0, display: 'block' }}>
+        <svg viewBox="0 0 60 52" fill="none" width="100%" height="100%">
+          <defs>
+            <linearGradient id="zt-silver" x1="0" y1="0" x2="60" y2="52" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stopColor="#f4f4f8" />
+              <stop offset="55%" stopColor="#d8d8e4" />
+              <stop offset="100%" stopColor="#b8b8c8" />
+            </linearGradient>
+          </defs>
+          {/*
+            ZT monogram:
+            - Outer chamfered rectangle (chamfer top-left + bottom-right)
+            - Diagonal triangle hole = Z diagonal cut, leaves T stem intact
+          */}
+          <path
+            fillRule="evenodd"
+            fill="url(#zt-silver)"
+            d="M 5,0 H 60 V 46 L 55,52 H 0 V 5 Z M 44,14 V 38 H 0 Z"
+          />
         </svg>
       </span>
+
       <span style={{ display: 'flex', flexDirection: 'column', gap: 2, lineHeight: 1 }}>
         <span
           style={{
-            fontFamily: "'Oxanium', sans-serif",
+            fontFamily: "'Inter', system-ui, sans-serif",
             fontWeight: 800,
             fontSize: s.brand,
-            letterSpacing: '0.02em',
+            letterSpacing: '-0.01em',
+            color: 'var(--text)',
           }}
         >
-          <span style={{ color: '#38bdf8' }}>Zero</span>
-          <span style={{ color: '#b0b0c0' }}>Trace</span>
+          Zero<span style={{ color: 'var(--muted)' }}>Trace</span>
         </span>
         {sub && (
           <span
             style={{
-              fontFamily: "'Rajdhani', sans-serif",
+              fontFamily: "'Inter', system-ui, sans-serif",
               fontWeight: 600,
               fontSize: s.sub,
-              letterSpacing: '0.25em',
-              color: '#2a6b7a',
+              letterSpacing: '0.2em',
+              color: 'var(--muted)',
               textTransform: 'uppercase',
+              opacity: 0.7,
             }}
           >
             Anticheat Scanner

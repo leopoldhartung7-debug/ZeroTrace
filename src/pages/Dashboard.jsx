@@ -276,8 +276,8 @@ export default function Dashboard() {
                 <AreaChart data={stats.trend}>
                   <defs>
                     <linearGradient id="gS" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#38bdf8" stopOpacity={0.4} />
-                      <stop offset="95%" stopColor="#38bdf8" stopOpacity={0} />
+                      <stop offset="5%" stopColor="#848eb0" stopOpacity={0.4} />
+                      <stop offset="95%" stopColor="#848eb0" stopOpacity={0} />
                     </linearGradient>
                     <linearGradient id="gD" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#dc2626" stopOpacity={0.4} />
@@ -289,7 +289,7 @@ export default function Dashboard() {
                   <YAxis tick={{ fill: 'var(--muted)', fontSize: 11 }} stroke="var(--border)" allowDecimals={false} />
                   <Tooltip content={<ChartTooltip />} />
                   <Legend wrapperStyle={{ fontSize: 12 }} />
-                  <Area type="monotone" dataKey="scans" stroke="#38bdf8" fill="url(#gS)" name="Scans" />
+                  <Area type="monotone" dataKey="scans" stroke="#848eb0" fill="url(#gS)" name="Scans" />
                   <Area type="monotone" dataKey="detections" stroke="#dc2626" fill="url(#gD)" name="Detections" />
                 </AreaChart>
               </ResponsiveContainer>
@@ -309,7 +309,7 @@ export default function Dashboard() {
                   <Tooltip content={<ChartTooltip />} cursor={{ fill: 'var(--hover)' }} />
                   <Legend wrapperStyle={{ fontSize: 12 }} />
                   <Bar dataKey="detections" fill="#dc2626" name="Detections" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="scans" fill="#38bdf8" name="Scans" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="scans" fill="#848eb0" name="Scans" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -334,7 +334,7 @@ export default function Dashboard() {
                     <XAxis dataKey="hour" tick={{ fill: 'var(--muted)', fontSize: 10 }} stroke="var(--border)" interval={2} />
                     <YAxis tick={{ fill: 'var(--muted)', fontSize: 11 }} stroke="var(--border)" allowDecimals={false} />
                     <Tooltip content={<ChartTooltip />} cursor={{ fill: 'var(--hover)' }} />
-                    <Bar dataKey="count" fill="#38bdf8" name="Scans" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="count" fill="#848eb0" name="Scans" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>

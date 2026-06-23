@@ -480,7 +480,7 @@ export function DownloadPage() {
         <DownloadCard icon={Monitor} name="Linux" tagTone="#f59e0b" accent="#d97706"
           desc="Cheat detection for Linux systems" hint="Enter your 8-character PIN."
           pins={state.pins} toast={toast} />
-        <DownloadCard icon={Shield} name="Anti SS Tool" tagTone="#38bdf8" accent="#0ea5e9"
+        <DownloadCard icon={Shield} name="Anti SS Tool" tagTone="#848eb0" accent="#636c8a"
           desc="Bypass blocks preventing ZeroTrace from running"
           hint="Enter your 8-character PIN to download the Anti SS Tool."
           pins={state.pins} toast={toast} />
@@ -534,7 +534,7 @@ function HeroBanner({ title, subtitle, meta }) {
         className="absolute inset-0 opacity-[0.5]"
         style={{
           backgroundImage:
-            'linear-gradient(rgba(56,189,248,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(56,189,248,0.06) 1px, transparent 1px)',
+            'linear-gradient(rgba(132,142,176,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(132,142,176,0.06) 1px, transparent 1px)',
           backgroundSize: '34px 34px',
           maskImage: 'radial-gradient(80% 100% at 10% 0%, #000 30%, transparent 75%)',
         }}

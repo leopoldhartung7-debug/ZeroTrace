@@ -74,7 +74,7 @@ function SecurityMock() {
         <div className="mt-4 flex justify-center"><Server size={26} className="text-neutral-500" /></div>
       </div>
       <svg className="absolute inset-0 h-full w-full" viewBox="0 0 300 200" fill="none" preserveAspectRatio="none">
-        <path d="M120 150 C 200 150, 230 110, 230 70" stroke="#38bdf8" strokeWidth="2" />
+        <path d="M120 150 C 200 150, 230 110, 230 70" stroke="#848eb0" strokeWidth="2" />
       </svg>
       <div className="absolute bottom-3 left-3 w-44 rounded-lg border border-white/10 bg-white/[0.06] p-4">
         <div className="flex items-center justify-between">
@@ -101,7 +101,7 @@ function WebhookMock() {
         </div>
       </div>
       <svg className="absolute inset-0 h-full w-full" viewBox="0 0 300 200" fill="none" preserveAspectRatio="none">
-        <path d="M80 50 C 150 50, 180 110, 230 150" stroke="#38bdf8" strokeWidth="2" strokeDasharray="4 4" />
+        <path d="M80 50 C 150 50, 180 110, 230 150" stroke="#848eb0" strokeWidth="2" strokeDasharray="4 4" />
       </svg>
       <span className="absolute left-1/2 top-1/2 flex h-7 w-7 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-sky-500/50 bg-sky-500/15 text-sky-400">
         <Webhook size={14} />

@@ -1,36 +1,37 @@
 import { useToast } from '../components/ui.jsx'
 import Logo from '../components/Logo.jsx'
 
-/* ZeroTrace crosshair mark (shared by the live logo and asset exports). */
-const CROSSHAIR = `
-  <circle cx="26" cy="26" r="22" stroke="#0284c7" stroke-width="1.5" opacity="0.5"/>
-  <circle cx="26" cy="26" r="5" stroke="#38bdf8" stroke-width="1.5"/>
-  <circle cx="26" cy="26" r="1.5" fill="#38bdf8"/>
-  <line x1="26" y1="4"  x2="26" y2="18" stroke="#38bdf8" stroke-width="1.8" stroke-linecap="round"/>
-  <line x1="26" y1="34" x2="26" y2="48" stroke="#38bdf8" stroke-width="1.8" stroke-linecap="round"/>
-  <line x1="4"  y1="26" x2="18" y2="26" stroke="#38bdf8" stroke-width="1.8" stroke-linecap="round"/>
-  <line x1="34" y1="26" x2="48" y2="26" stroke="#38bdf8" stroke-width="1.8" stroke-linecap="round"/>`
+/* ZeroTrace ZT monogram mark (shared by the live logo and asset exports). */
+const ZT_PATH = `
+  <defs>
+    <linearGradient id="zt-g" x1="0" y1="0" x2="60" y2="52" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#f4f4f8"/>
+      <stop offset="55%" stop-color="#d8d8e4"/>
+      <stop offset="100%" stop-color="#b8b8c8"/>
+    </linearGradient>
+  </defs>
+  <path fill-rule="evenodd" fill="url(#zt-g)" d="M 5,0 H 60 V 46 L 55,52 H 0 V 5 Z M 44,14 V 38 H 0 Z"/>`
 
 function drawZeroTrace(ctx, w, h) {
-  ctx.fillStyle = '#07070f'
+  ctx.fillStyle = '#0e0e11'
   ctx.fillRect(0, 0, w, h)
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
-  ctx.font = `800 ${Math.floor(h / 5)}px Oxanium, Inter, sans-serif`
   const fs = Math.floor(h / 5)
-  ctx.fillStyle = '#38bdf8'
+  ctx.font = `800 ${fs}px Inter, system-ui, sans-serif`
   const zero = 'Zero'
   const trace = 'Trace'
   const zw = ctx.measureText(zero).width
   const tw = ctx.measureText(trace).width
   const startX = w / 2 - (zw + tw) / 2
   ctx.textAlign = 'left'
+  ctx.fillStyle = '#eeeef4'
   ctx.fillText(zero, startX, h / 2)
-  ctx.fillStyle = '#b0b0c0'
+  ctx.fillStyle = '#80808c'
   ctx.fillText(trace, startX + zw, h / 2)
   ctx.textAlign = 'center'
-  ctx.fillStyle = '#2a6b7a'
-  ctx.font = `600 ${Math.floor(fs / 4)}px Rajdhani, Inter, sans-serif`
+  ctx.fillStyle = '#60606c'
+  ctx.font = `600 ${Math.floor(fs / 4)}px Inter, system-ui, sans-serif`
   ctx.fillText('ANTICHEAT SCANNER', w / 2, h / 2 + fs * 0.85)
 }
 
@@ -59,9 +60,10 @@ function downloadPNG(draw, w, h, filename) {
 }
 
 const COLORS = [
-  { hex: '#38bdf8', rgb: 'rgb(56,189,248)' },
-  { hex: '#F1F2F2', rgb: 'rgb(241, 242, 242)' },
-  { hex: '#DFDFDF', rgb: 'rgb(223, 223, 223)' },
+  { hex: '#eeeef4', rgb: 'rgb(238,238,244)' },
+  { hex: '#848eb0', rgb: 'rgb(132,142,176)' },
+  { hex: '#28282e', rgb: 'rgb(40,40,46)' },
+  { hex: '#0e0e11', rgb: 'rgb(14,14,17)' },
 ]
 const WEIGHTS = [
   { w: 'Regular', m: '400 · BODY', c: 'font-normal' },
@@ -148,7 +150,7 @@ export default function Branding() {
             <button
               onClick={() =>
                 downloadSVG(
-                  `<g transform="translate(263 95) scale(1.4)">${CROSSHAIR}</g><text x="50%" y="78%" dominant-baseline="middle" text-anchor="middle" font-family="Oxanium, sans-serif" font-size="56" font-weight="800"><tspan fill="#38bdf8">Zero</tspan><tspan fill="#b0b0c0">Trace</tspan></text>`,
+                  `<g transform="translate(270 110) scale(1.5)">${ZT_PATH}</g><text x="50%" y="78%" dominant-baseline="middle" text-anchor="middle" font-family="Inter, sans-serif" font-size="56" font-weight="800"><tspan fill="#eeeef4">Zero</tspan><tspan fill="#80808c">Trace</tspan></text>`,
                   'zerotrace-logo.svg',
                 )
               }
@@ -164,8 +166,8 @@ export default function Branding() {
       </Section>
 
       {/* 02 Color */}
-      <Section n="02" label="PALETTE" title="Color" desc="A base of grays and black; teal as an accent.">
-        <div className="grid w-full grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      <Section n="02" label="PALETTE" title="Color" desc="Monochrome steel palette — light silver, steel-blue accent, deep border, near-black background.">
+        <div className="grid w-full grid-cols-2 gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {COLORS.map((c) => (
             <button key={c.hex} onClick={() => copy(c)} className="text-left">
               <div className="h-44 w-full rounded-sm" style={{ background: c.hex }} />
