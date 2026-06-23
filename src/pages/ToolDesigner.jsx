@@ -451,7 +451,6 @@ function GuiPreview({ s }) {
   }, [tick, animKey]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const showCustom = !s.useDefaultLogo && !!s.logoUrl && !imgErr
-  const stageIdx   = stage === 'intro-video' ? -1 : stage === 'pin' ? 0 : stage === 'scanning' ? 1 : 2
 
   const introStyle = intro === 'fade'
     ? { opacity: visible ? 1 : 0, transition: `opacity ${Math.max(durMs, 200)}ms ease` }
@@ -488,123 +487,162 @@ function GuiPreview({ s }) {
     letterSpacing: letSp,
   }
 
+  // Path simulation text based on scan progress
+  const scanPaths = [
+    'C:\\Users\\Player\\AppData\\Local\\FiveM\\FiveM.app\\data',
+    'HKCU\\Software\\FiveM\\Addons',
+    'Scanning running processes…',
+    'C:\\Users\\Player\\Downloads\\mods',
+  ]
+  const pathIdx = Math.floor((bar1 / 100) * scanPaths.length)
+  const simPath = scanPaths[Math.min(pathIdx, scanPaths.length - 1)]
+  const overallPct = Math.round((bar1 + bar2) / 2)
+
   return (
     <div>
       <style>{ANIM_CSS}</style>
-      <div className="overflow-hidden" style={{
-        borderRadius: cornerR,
-        border: `${borderW}px solid ${borderClr}`,
-        boxShadow: shadowVal,
-        opacity: fr.opacity / 100,
-      }}>
-        {/* Titlebar */}
-        <div className="flex items-center gap-2 px-3 py-2" style={{ background: c.titlebar, borderRadius: `${cornerR}px ${cornerR}px 0 0` }}>
-          <span className="h-2.5 w-2.5 rounded-full bg-red-500" />
-          <span className="h-2.5 w-2.5 rounded-full bg-yellow-500" />
-          <span className="h-2.5 w-2.5 rounded-full bg-green-500" />
-          <span className="ml-2 text-xs flex-1" style={{ color: c.mutedText }}>ZeroTrace FiveM Scanner</span>
-          <div className="flex gap-1 mr-1">
-            {[0,1,2].map(i => (
-              <span key={i} className="h-1.5 w-1.5 rounded-full transition-colors duration-300"
-                style={{ background: i === stageIdx ? c.accent : c.mutedText + '55' }} />
-            ))}
-          </div>
-        </div>
 
-        {/* ── Intro Video Stage ── */}
+      {/* ── Scanner window card ── */}
+      <div style={{
+        borderRadius: Math.max(cornerR, 14),
+        border: borderW > 0 ? `${borderW}px solid ${borderClr}` : `1px solid ${c.accent}40`,
+        boxShadow: shadowVal !== 'none' ? shadowVal : '0 16px 48px rgba(0,0,0,0.55)',
+        overflow: 'hidden',
+        opacity: fr.opacity / 100,
+        background: c.mutedBackground,
+        position: 'relative',
+        ...introStyle,
+      }}>
+        {/* Top accent gradient line */}
+        <div style={{ height: 2, background: `linear-gradient(90deg, transparent, ${c.accent}, transparent)` }} />
+
+        {/* ── Intro video (full overlay on right column) ── */}
         {stage === 'intro-video' && (
-          <div className="flex flex-col items-center justify-center gap-3 py-12"
-            style={{ background: '#000', ...introStyle }}>
-            <div style={{ animation: 'ztVideoIcon 1s ease-in-out infinite', color: c.accent, fontSize: 32 }}>▶</div>
-            <p className="text-xs font-mono" style={{ color: c.mutedText }}>
-              {iv.path ? iv.path : 'intro.mp4'}
-            </p>
-            <p className="text-[10px]" style={{ color: c.mutedText + '88' }}>Intro-Video wird abgespielt…</p>
+          <div style={{ display: 'flex', minHeight: 170 }}>
+            {/* Left always shown */}
+            <div style={{ width: '36%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '14px 10px', position: 'relative', flexShrink: 0, background: c.mutedBackground }}>
+              {showCustom ? (
+                <img src={s.logoUrl} alt="logo" onError={() => setImgErr(true)} style={{ height: 46, maxWidth: 110, objectFit: 'contain', marginBottom: 4 }} />
+              ) : (
+                <>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 4 }}>
+                    <svg width="30" height="30" viewBox="0 0 38 38" style={{ flexShrink: 0 }}>
+                      <ellipse cx="19" cy="19" rx="17.8" ry="17.8" fill="none" stroke={c.accent} strokeWidth="2.4" />
+                      <ellipse cx="19" cy="19" rx="5.5" ry="5.5" fill="none" stroke={c.accent} strokeWidth="2" />
+                      <ellipse cx="19" cy="19" rx="2" ry="2" fill={c.accent} />
+                    </svg>
+                    <span style={{ fontSize: 17, fontWeight: 'bold', lineHeight: 1 }}>
+                      <span style={{ color: c.accent, animation: glitchText ? 'ztGlitch 7s step-start infinite' : 'none', ...accentTextStyle }}>Zero</span>
+                      <span style={{ color: '#8A9AAA' }}>Trace</span>
+                    </span>
+                  </div>
+                  <div style={{ color: '#5A6772', fontSize: 10 }}>Host-Scanner</div>
+                  <div style={{ color: '#46505C', fontSize: 9, textAlign: 'center', marginTop: 3, lineHeight: 1.4, maxWidth: 110 }}>Lokale Cheat- &amp; Manipulations-Analyse</div>
+                  <div style={{ color: '#3A444E', fontSize: 9, marginTop: 6 }}>{s.version || 'v1.3'}</div>
+                </>
+              )}
+              {!s.useDefaultLogo && s.logoUrl && imgErr && (
+                <p style={{ fontSize: 9, color: '#ef4444', marginTop: 4, textAlign: 'center' }}>Logo-Fehler</p>
+              )}
+              <div style={{ position: 'absolute', right: 0, top: '15%', bottom: '15%', width: 1, background: '#242A33' }} />
+            </div>
+            {/* Right: video */}
+            <div className="flex flex-col items-center justify-center gap-2 flex-1" style={{ background: '#000' }}>
+              <div style={{ animation: 'ztVideoIcon 1s ease-in-out infinite', color: c.accent, fontSize: 28 }}>▶</div>
+              <p className="text-[10px] font-mono" style={{ color: c.mutedText }}>{iv.path || 'intro.mp4'}</p>
+            </div>
           </div>
         )}
 
-        {/* ── Scanner Body ── */}
+        {/* ── Main scanner body ── */}
         {stage !== 'intro-video' && (
-          <div style={{ position: 'relative', ...introStyle }}>
-            {/* Base background */}
-            <div style={{
-              position: 'absolute', inset: 0,
-              background: s.gameBackground
-                ? `radial-gradient(120% 90% at 50% 0%, ${c.mutedBackground}, ${c.background})`
-                : c.background,
-            }} />
-            {/* Scanlines overlay */}
+          <div style={{ display: 'flex', position: 'relative', minHeight: 170 }}>
+            {/* Background effects */}
+            <div style={{ position: 'absolute', inset: 0, background: c.background }} />
             {bgEffect === 'scanlines' && (
-              <div style={{
-                position: 'absolute', inset: 0, pointerEvents: 'none',
-                backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.13) 2px, rgba(0,0,0,0.13) 4px)',
-              }} />
+              <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.13) 2px, rgba(0,0,0,0.13) 4px)' }} />
             )}
-            {/* Grid overlay */}
             {bgEffect === 'grid' && (
-              <div style={{
-                position: 'absolute', inset: 0, pointerEvents: 'none',
-                backgroundImage: `linear-gradient(${c.accent}16 1px, transparent 1px), linear-gradient(90deg, ${c.accent}16 1px, transparent 1px)`,
-                backgroundSize: '22px 22px',
-              }} />
+              <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', backgroundImage: `linear-gradient(${c.accent}16 1px, transparent 1px), linear-gradient(90deg, ${c.accent}16 1px, transparent 1px)`, backgroundSize: '22px 22px' }} />
             )}
-            {/* Glow-pulse overlay */}
             {bgEffect === 'glow-pulse' && (
-              <div style={{
-                position: 'absolute', inset: 0, pointerEvents: 'none',
-                background: `radial-gradient(65% 55% at 50% 30%, ${c.accent}2c, transparent)`,
-                animation: 'ztGlowPulse 3s ease-in-out infinite',
-              }} />
+              <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: `radial-gradient(65% 55% at 50% 30%, ${c.accent}2c, transparent)`, animation: 'ztGlowPulse 3s ease-in-out infinite' }} />
             )}
 
-            {/* Content */}
-            <div className="px-8 py-10" style={{ position: 'relative', ...bodyStyle }}>
-              {/* Logo */}
-              <div className="flex flex-col items-center mb-7">
-                {showCustom ? (
-                  <img src={s.logoUrl} alt="logo" onError={() => setImgErr(true)}
-                    className="h-[72px] w-[160px] rounded object-fill" />
-                ) : (
-                  <p className="font-mono text-2xl font-bold" style={{
-                    color: c.accent,
-                    animation: glitchText ? 'ztGlitch 7s step-start infinite' : 'none',
-                    ...accentTextStyle,
-                  }}>ZEROTRACE</p>
-                )}
-                {!s.useDefaultLogo && s.logoUrl && imgErr && (
-                  <p className="mt-1 text-[10px] text-red-400">Logo konnte nicht geladen werden</p>
-                )}
-                <p className="mt-1 text-[11px]" style={{ color: c.mutedText }}>{s.version}</p>
-              </div>
+            {/* Close button */}
+            <div style={{ position: 'absolute', top: 8, right: 10, color: '#5A6772', fontSize: 11, zIndex: 2 }}>✕</div>
+
+            {/* Left branding column */}
+            <div style={{ width: '36%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '14px 10px', position: 'relative', flexShrink: 0, zIndex: 1 }}>
+              {showCustom ? (
+                <img src={s.logoUrl} alt="logo" onError={() => setImgErr(true)} style={{ height: 46, maxWidth: 110, objectFit: 'contain', marginBottom: 4 }} />
+              ) : (
+                <>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 4 }}>
+                    <svg width="30" height="30" viewBox="0 0 38 38" style={{ flexShrink: 0 }}>
+                      <ellipse cx="19" cy="19" rx="17.8" ry="17.8" fill="none" stroke={c.accent} strokeWidth="2.4" />
+                      <ellipse cx="19" cy="19" rx="5.5" ry="5.5" fill="none" stroke={c.accent} strokeWidth="2" />
+                      <ellipse cx="19" cy="19" rx="2" ry="2" fill={c.accent} />
+                    </svg>
+                    <span style={{ fontSize: 17, fontWeight: 'bold', lineHeight: 1 }}>
+                      <span style={{ color: c.accent, animation: glitchText ? 'ztGlitch 7s step-start infinite' : 'none', ...accentTextStyle }}>Zero</span>
+                      <span style={{ color: '#8A9AAA' }}>Trace</span>
+                    </span>
+                  </div>
+                  <div style={{ color: '#5A6772', fontSize: 10 }}>Host-Scanner</div>
+                  <div style={{ color: '#46505C', fontSize: 9, textAlign: 'center', marginTop: 3, lineHeight: 1.4, maxWidth: 110 }}>Lokale Cheat- &amp; Manipulations-Analyse</div>
+                  <div style={{ color: '#3A444E', fontSize: 9, marginTop: 6 }}>{s.version || 'v1.3'}</div>
+                </>
+              )}
+              {!s.useDefaultLogo && s.logoUrl && imgErr && (
+                <p style={{ fontSize: 9, color: '#ef4444', marginTop: 4, textAlign: 'center' }}>Logo-Fehler</p>
+              )}
+              {/* Vertical divider */}
+              <div style={{ position: 'absolute', right: 0, top: '15%', bottom: '15%', width: 1, background: '#242A33' }} />
+            </div>
+
+            {/* Right flow column */}
+            <div style={{ flex: 1, padding: '14px 24px', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', zIndex: 1, ...bodyStyle }}>
 
               {/* PIN stage */}
               {stage === 'pin' && (
-                <div>
-                  <p className="mb-2.5" style={{ color: c.text }}>{s.text.pin}</p>
-                  <div className="px-4 py-3 text-lg tracking-[0.3em] font-mono flex items-center gap-1"
-                    style={{
-                      background: pin.border === 'none' ? 'transparent' : c.mutedBackground,
-                      color: c.accent,
-                      borderRadius: pin.border === 'rounded' ? 8 : pin.border === 'square' ? 2 : 0,
-                      borderBottom: pin.border === 'bottom' ? `2px solid ${c.accent}` : 'none',
-                      border: pin.border === 'full' ? `1px solid ${c.accent}44` : pin.border === 'rounded' ? 'none' : pin.border === 'square' ? `1px solid ${c.accent}44` : 'none',
-                      ...accentTextStyle,
-                    }}>
-                    {SIM_PIN.map((_, i) => (
-                      <span key={i} style={{ opacity: i < pinDisplay.length ? 1 : 0.22, transition: 'opacity 80ms' }}>
-                        {i < pinDisplay.length ? pinCh.f : pinCh.e}
-                      </span>
-                    ))}
-                    {pinDisplay.length < SIM_PIN.length && (
-                      <span className="ml-0.5 animate-pulse" style={{ color: c.accent }}>|</span>
-                    )}
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+                  <div style={{ border: '1px solid #2A3038', borderRadius: 11, padding: '12px 14px', background: 'rgba(0,0,0,0.02)' }}>
+                    <p style={{ color: '#8A9AAA', fontSize: 10, textAlign: 'center', marginBottom: 10 }}>{s.text?.pin || 'Gib deinen 6-stelligen PIN ein'}</p>
+                    <div style={{ display: 'flex', gap: 5, justifyContent: 'center' }}>
+                      {SIM_PIN.map((_, i) => {
+                        const filled = i < pinDisplay.length
+                        return (
+                          <div key={i} style={{
+                            width: 26, height: 30, borderRadius: 5, flexShrink: 0,
+                            border: `1px solid ${filled ? c.accent + '88' : '#3A4350'}`,
+                            background: 'transparent',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontSize: 13, fontWeight: 'bold', color: '#C8D2DA',
+                            transition: durMs === 0 ? 'none' : `border-color ${durMs * 0.5}ms ease`,
+                            boxShadow: glowAccent && filled ? `0 0 6px ${c.accent}55` : 'none',
+                            ...accentTextStyle,
+                          }}>
+                            {filled ? pinCh.f : ''}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                  <div style={{ background: c.accent, color: '#0E1418', fontSize: 11, fontWeight: '600', borderRadius: 6, padding: '6px 20px', opacity: pinDisplay.length < 6 ? 0.4 : 1 }}>
+                    Weiter
                   </div>
                 </div>
               )}
 
               {/* Scanning stage */}
               {stage === 'scanning' && (
-                <div style={{ position: 'relative' }}>
+                <div style={{ position: 'relative', width: '100%' }}>
+                  {/* Real scanner header: "X% LÄUFT" */}
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 8 }}>
+                    <span style={{ color: '#C8D4DC', fontSize: 12, fontWeight: 'bold', fontFamily: 'monospace', minWidth: 34 }}>{overallPct}%</span>
+                    <span style={{ color: '#5A6772', fontSize: 10, letterSpacing: '0.06em' }}>LÄUFT</span>
+                  </div>
                   {/* Scan sweep line */}
                   {scanSweep && (
                     <div style={{
@@ -1055,21 +1093,27 @@ function GuiPreview({ s }) {
                       ))}
                     </div>
                   )}
+                  {/* Current path text (real scanner style) */}
+                  <div style={{ marginTop: 10 }}>
+                    <div style={{ color: '#5A6772', fontSize: 9, marginBottom: 3 }}>{s.text?.scanning || 'Scanne gerade'}</div>
+                    <div style={{ color: '#C8D4DC', fontSize: 10, fontWeight: '600', fontFamily: 'monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 220 }}>{simPath}</div>
+                  </div>
                 </div>
               )}
 
-              {/* Done stage */}
+              {/* Done stage — SVG checkmark like real scanner */}
               {stage === 'done' && (
-                <div className="flex flex-col items-center gap-3 py-2">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full text-xl font-bold"
-                    style={{
-                      background: doneClr + '22',
-                      color: doneClr,
-                      boxShadow: glowAccent ? `0 0 20px 5px ${doneClr}55` : 'none',
-                      animation: doneAnimCSS,
-                    }}>{doneIcon}</div>
-                  <p className="text-center font-medium" style={{ color: c.text }}>{s.text.finished}</p>
-                  <p className="text-xs" style={{ color: c.mutedText }}>Bericht wird generiert…</p>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+                  <div style={{ animation: doneAnimCSS }}>
+                    <svg width="72" height="72" viewBox="0 0 140 140">
+                      <ellipse cx="70" cy="70" rx="55" ry="55" stroke={doneClr} strokeWidth="1.5" fill="none" opacity="0.15" />
+                      <path stroke={doneClr} strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" fill="none"
+                        d="M 38 70 L 58 90 L 102 48"
+                        style={{ filter: glowAccent ? `drop-shadow(0 0 6px ${doneClr}cc)` : 'none' }} />
+                    </svg>
+                  </div>
+                  <p style={{ color: '#C8D2DA', fontSize: 13, fontWeight: 'bold', textAlign: 'center' }}>{s.text?.finished || 'Scan abgeschlossen'}</p>
+                  <p style={{ color: '#5A6772', fontSize: 9 }}>3 Funde · Bericht wird generiert…</p>
                 </div>
               )}
             </div>
