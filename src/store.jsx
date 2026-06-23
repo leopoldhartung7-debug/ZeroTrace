@@ -466,8 +466,15 @@ export function defaultToolStyle() {
       spacing: 'normal', // normal | wide | ultra
     },
     pinField: {
-      char:   'dot',     // dot | square | asterisk | block
-      border: 'rounded', // none | bottom | rounded | square
+      char:      'dot',     // dot | square | asterisk | block
+      border:    'rounded', // none | bottom | rounded | square
+      length:    6,         // 4 | 6 | 8
+      size:      'normal',  // small | normal | large
+      gap:       'normal',  // compact | normal | wide
+      shape:     'rounded', // rounded | square | circle | pill
+      cellBg:    '',        // '' = transparent
+      fillColor: '',        // '' = accent
+      cellAnim:  'none',    // none | pop | fade | pulse
     },
     bar: {
       height:     'normal', // slim | normal | thick | chunky

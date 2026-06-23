@@ -425,6 +425,10 @@ const ANIM_CSS = `
   0%,100% { stroke-dashoffset: 200; opacity: 0.15; }
   50%     { stroke-dashoffset: 0;   opacity: 0.55; }
 }
+@keyframes ztPinPulse {
+  0%,100% { box-shadow: 0 0 4px 0px currentColor; }
+  50%     { box-shadow: 0 0 10px 3px currentColor; }
+}
 @keyframes ztFloat8  { 0%,100%{transform:translate(0,0)} 50%{transform:translate(3px,-14px)} }
 @keyframes ztFloat9  { 0%,100%{transform:translate(0,0)} 33%{transform:translate(-9px,-5px)} 66%{transform:translate(5px,-12px)} }
 @keyframes ztFloat10 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(13px,-8px)} }
@@ -481,7 +485,17 @@ function GuiPreview({ s, scenario = 0 }) {
   const barHPx    = BAR_H[bar.height]     ?? 6
   const barCapR   = bar.caps === 'round' ? 999 : 0
   const trackClr  = bar.trackColor || c.background
-  const pinCh     = PIN_CHARS[pin.char] ?? PIN_CHARS.dot
+  const pinCh      = PIN_CHARS[pin.char] ?? PIN_CHARS.dot
+  const pinLen     = Number(pin.length) || 6
+  const _PIN_SZ    = { small: { w: 22, h: 28, fs: 12 }, normal: { w: 28, h: 33, fs: 15 }, large: { w: 36, h: 44, fs: 18 } }
+  const pinSz      = _PIN_SZ[pin.size || 'normal'] || _PIN_SZ.normal
+  const pinGap     = { compact: 2, normal: 4, wide: 8 }[pin.gap || 'normal'] ?? 4
+  const pinRadius  = { rounded: 5, square: 0, circle: 999, pill: 16 }[pin.shape || 'rounded'] ?? 5
+  const pinFillClr = pin.fillColor || c.accent
+  const pinCellBg  = pin.cellBg || 'transparent'
+  const pinIsCircle = pin.shape === 'circle'
+  const SIM_CHARS  = ['F','1','T','5','F','8','C','0']
+  const simPinArr  = SIM_CHARS.slice(0, pinLen)
   const doneClr   = dn.color || c.accent
   const doneIcon  = DONE_ICONS[dn.icon] ?? '✓'
   const doneAnimCSS = { none: 'none', pop: 'ztDonePop 0.5s ease forwards', bounce: 'ztDoneBounce 0.6s ease 0.1s both', spin: 'ztDoneSpin 0.5s ease forwards' }[dn.anim] ?? 'none'
@@ -513,9 +527,9 @@ function GuiPreview({ s, scenario = 0 }) {
 
     at(() => setVisible(true), offset + 50)
     const pinStart = offset + introDur + 350
-    SIM_PIN.forEach((_, i) => at(() => setPinDisplay(SIM_PIN.slice(0, i + 1).join('')), pinStart + i * 130))
+    simPinArr.forEach((_, i) => at(() => setPinDisplay(simPinArr.slice(0, i + 1).join('')), pinStart + i * 130))
 
-    const scanStart = pinStart + SIM_PIN.length * 130 + 550
+    const scanStart = pinStart + simPinArr.length * 130 + 550
     const step = Math.max(scenarioSpeed, 200)
     at(() => setStage('scanning'), scanStart)
     at(() => setBar1(38), scanStart + 80)
@@ -1040,31 +1054,53 @@ function GuiPreview({ s, scenario = 0 }) {
                   </div>
                 )}
 
-                {/* PIN view — matches PinView XAML exactly */}
+                {/* PIN view */}
                 {stage === 'pin' && (
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                     <div style={{ border: '1px solid #2A3038', borderRadius: 11, padding: '12px 14px', background: 'rgba(255,255,255,0.012)' }}>
-                      <div style={{ color: '#8A9AAA', fontSize: 11, textAlign: 'center', marginBottom: 10 }}>{s.text?.pin || 'Gib deinen 6-stelligen PIN ein'}</div>
+                      <div style={{ color: '#8A9AAA', fontSize: 11, textAlign: 'center', marginBottom: 10 }}>
+                        {s.text?.pin || `Gib deinen ${pinLen}-stelligen PIN ein`}
+                      </div>
                       <div style={{ display: 'flex', justifyContent: 'center' }}>
-                        {SIM_PIN.map((_, i) => {
+                        {Array.from({ length: pinLen }, (_, i) => {
                           const filled = i < pinDisplay.length
+                          const cellW = pinIsCircle ? pinSz.h : pinSz.w
+                          const bdrClr = filled ? pinFillClr + '99' : '#3A4350'
+                          const borderStyle = pin.border === 'none'
+                            ? {}
+                            : pin.border === 'bottom'
+                              ? { border: 'none', borderBottom: `2px solid ${bdrClr}`, borderRadius: 0 }
+                              : pin.border === 'square'
+                                ? { border: `1px solid ${bdrClr}`, borderRadius: 0 }
+                                : { border: `1px solid ${bdrClr}`, borderRadius: pinRadius }
+                          const cellAnim = pin.cellAnim || 'none'
+                          const animStyle = cellAnim === 'pop'
+                            ? { transform: `scale(${filled ? 1 : 0.72})`, transition: `transform 280ms cubic-bezier(0.175, 0.885, 0.32, 1.35)` }
+                            : cellAnim === 'fade'
+                              ? { opacity: filled ? 1 : 0, transform: `scale(${filled ? 1 : 0.85})`, transition: durMs === 0 ? 'none' : 'opacity 200ms ease, transform 200ms ease' }
+                              : cellAnim === 'pulse' && filled
+                                ? { animation: 'ztPinPulse 1.4s ease-in-out infinite', color: pinFillClr }
+                                : {}
                           return (
                             <div key={i} style={{
-                              width: 28, height: 33, margin: '0 3px', borderRadius: 5, flexShrink: 0,
-                              border: `1px solid ${filled ? c.accent + '99' : '#3A4350'}`,
-                              background: 'transparent',
+                              width: cellW, height: pinSz.h,
+                              margin: `0 ${pinGap}px`, flexShrink: 0,
+                              background: filled ? pinCellBg : 'transparent',
                               display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              fontSize: 15, fontWeight: 'bold', color: '#C8D2DA',
-                              transition: durMs === 0 ? 'none' : `border-color ${durMs * 0.5}ms ease`,
-                              boxShadow: glowAccent && filled ? `0 0 8px ${c.accent}66` : 'none',
+                              fontSize: pinSz.fs, fontWeight: 'bold',
+                              color: filled ? pinFillClr : '#4A5560',
+                              transition: durMs === 0 ? 'none' : `border-color ${durMs * 0.3}ms ease`,
+                              boxShadow: glowAccent && filled ? `0 0 8px ${pinFillClr}66` : 'none',
+                              ...borderStyle,
+                              ...animStyle,
                             }}>
-                              {filled ? pinCh.f : ''}
+                              {filled ? pinCh.f : pinCh.e ? pinCh.e : ''}
                             </div>
                           )
                         })}
                       </div>
                     </div>
-                    <div style={{ background: c.accent, color: '#0E1418', fontSize: 12.5, fontWeight: '600', borderRadius: 6, padding: '8px 22px', marginTop: 8, opacity: pinDisplay.length < 6 ? 0.4 : 1, cursor: 'default' }}>Weiter</div>
+                    <div style={{ background: pinFillClr, color: '#0E1418', fontSize: 12.5, fontWeight: '600', borderRadius: 6, padding: '8px 22px', marginTop: 8, opacity: pinDisplay.length < pinLen ? 0.4 : 1, cursor: 'default' }}>Weiter</div>
                   </div>
                 )}
 
@@ -1714,12 +1750,29 @@ export default function ToolDesigner({ embedded = false }) {
           {/* ── PIN-Feld ── */}
           <p className="caps-label mb-4 flex items-center gap-2">⬤ PIN-Feld</p>
 
-          <Field label="Zeichen-Stil">
+          <Field label="PIN-Länge">
+            <DropSelect value={String(pinF.length ?? 6)} onChange={v => setPinF({ length: Number(v) })} color="fuchsia" options={[
+              { value: '4', label: '4 Stellen', desc: '···· ', icon: '4' },
+              { value: '6', label: '6 Stellen', desc: '······', icon: '6' },
+              { value: '8', label: '8 Stellen', desc: '········', icon: '8' },
+            ]} />
+          </Field>
+
+          <Field label="Zeichen-Stil" className="mt-4">
             <DropSelect value={pinF.char} onChange={v => setPinF({ char: v })} color="fuchsia" options={[
               { value: 'dot',      label: 'Punkte',   desc: '● ○', icon: '●' },
               { value: 'square',   label: 'Quadrate', desc: '■ □', icon: '■' },
               { value: 'asterisk', label: 'Sterne',   desc: '★ ☆', icon: '★' },
               { value: 'block',    label: 'Blöcke',   desc: '█ ░', icon: '█' },
+            ]} />
+          </Field>
+
+          <Field label="Zell-Form" className="mt-4">
+            <DropSelect value={pinF.shape ?? 'rounded'} onChange={v => setPinF({ shape: v })} color="fuchsia" options={[
+              { value: 'rounded', label: 'Abgerundet', desc: '5px',  icon: '▢' },
+              { value: 'square',  label: 'Eckig',      desc: '0px',  icon: '▪' },
+              { value: 'circle',  label: 'Kreis',      desc: '50%',  icon: '○' },
+              { value: 'pill',    label: 'Pille',      desc: 'Oval', icon: '⬭' },
             ]} />
           </Field>
 
@@ -1731,6 +1784,57 @@ export default function ToolDesigner({ embedded = false }) {
               { value: 'square',  label: 'Eckig',         desc: 'Box',         icon: '▪' },
             ]} />
           </Field>
+
+          <Field label="Zell-Größe" className="mt-4">
+            <DropSelect value={pinF.size ?? 'normal'} onChange={v => setPinF({ size: v })} color="fuchsia" options={[
+              { value: 'small',  label: 'Klein',  desc: '22×28', icon: '⊟' },
+              { value: 'normal', label: 'Normal', desc: '28×33', icon: '⊞' },
+              { value: 'large',  label: 'Groß',   desc: '36×44', icon: '⊠' },
+            ]} />
+          </Field>
+
+          <Field label="Zell-Abstand" className="mt-4">
+            <DropSelect value={pinF.gap ?? 'normal'} onChange={v => setPinF({ gap: v })} color="fuchsia" options={[
+              { value: 'compact', label: 'Kompakt', desc: '2px', icon: '▪▪' },
+              { value: 'normal',  label: 'Normal',  desc: '4px', icon: '▪ ▪' },
+              { value: 'wide',    label: 'Weit',    desc: '8px', icon: '▪  ▪' },
+            ]} />
+          </Field>
+
+          <Field label="Eingabe-Animation" className="mt-4">
+            <DropSelect value={pinF.cellAnim ?? 'none'} onChange={v => setPinF({ cellAnim: v })} color="fuchsia" options={[
+              { value: 'none',  label: 'Keine',      desc: 'Statisch',  icon: '─' },
+              { value: 'pop',   label: 'Pop',        desc: 'Aufpoppen', icon: '◎' },
+              { value: 'fade',  label: 'Einblenden', desc: 'Fade-in',   icon: '◌' },
+              { value: 'pulse', label: 'Pulsieren',  desc: 'Glühen',    icon: '◉' },
+            ]} />
+          </Field>
+
+          <div className="mt-4">
+            <ColorField
+              label="Hervorhebungsfarbe (Standard = Akzentfarbe)"
+              value={pinF.fillColor || s.colors.accent}
+              onChange={v => setPinF({ fillColor: v })}
+            />
+            {pinF.fillColor && (
+              <button onClick={() => setPinF({ fillColor: '' })} className="muted mt-1.5 text-[11px] hover:txt">
+                × Zurücksetzen auf Akzentfarbe
+              </button>
+            )}
+          </div>
+
+          <div className="mt-4">
+            <ColorField
+              label="Zell-Hintergrund (Standard = Transparent)"
+              value={pinF.cellBg || s.colors.background}
+              onChange={v => setPinF({ cellBg: v })}
+            />
+            {pinF.cellBg && (
+              <button onClick={() => setPinF({ cellBg: '' })} className="muted mt-1.5 text-[11px] hover:txt">
+                × Zurücksetzen auf Transparent
+              </button>
+            )}
+          </div>
 
           <div className="bd my-7 border-t" />
 
