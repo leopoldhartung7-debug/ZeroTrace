@@ -386,6 +386,48 @@ const ANIM_CSS = `
   from { transform: rotate(0deg); }
   to   { transform: rotate(360deg); }
 }
+@keyframes ztAurora1 {
+  0%,100% { transform: translate(0%,0%) scale(1); opacity: 0.7; }
+  33%     { transform: translate(18%,12%) scale(1.25); opacity: 1; }
+  66%     { transform: translate(-12%,18%) scale(0.85); opacity: 0.5; }
+}
+@keyframes ztAurora2 {
+  0%,100% { transform: translate(0%,0%) scale(1); opacity: 0.6; }
+  40%     { transform: translate(-22%,-8%) scale(1.15); opacity: 0.9; }
+  70%     { transform: translate(14%,-18%) scale(1.3); opacity: 0.4; }
+}
+@keyframes ztAurora3 {
+  0%,100% { transform: translate(0%,0%) scale(1); }
+  50%     { transform: translate(-18%,-25%) scale(1.2); opacity: 0.8; }
+}
+@keyframes ztFloat0 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(4px,-9px)} }
+@keyframes ztFloat1 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(-6px,-5px)} }
+@keyframes ztFloat2 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(5px,-11px)} }
+@keyframes ztFloat3 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(-3px,-7px)} }
+@keyframes ztRainDrop {
+  0%   { transform: translateY(0);    opacity: 0; }
+  8%   { opacity: 1; }
+  92%  { opacity: 0.85; }
+  100% { transform: translateY(800%); opacity: 0; }
+}
+@keyframes ztMatrixFall {
+  0%   { transform: translateY(-110%); }
+  100% { transform: translateY(220%); }
+}
+@keyframes ztVortex {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+@keyframes ztCircuit {
+  0%,100% { stroke-dashoffset: 200; opacity: 0.15; }
+  50%     { stroke-dashoffset: 0;   opacity: 0.55; }
+}
+@keyframes ztNoise {
+  0%,100% { background-position: 0 0; }
+  25%     { background-position: 3px 2px; }
+  50%     { background-position: -2px 4px; }
+  75%     { background-position: 4px -3px; }
+}
 `
 
 function GuiPreview({ s, scenario = 0 }) {
@@ -772,6 +814,102 @@ function GuiPreview({ s, scenario = 0 }) {
               {bgEffect === 'scanlines' && <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.13) 2px, rgba(0,0,0,0.13) 4px)' }} />}
               {bgEffect === 'grid' && <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', backgroundImage: `linear-gradient(${c.accent}16 1px, transparent 1px), linear-gradient(90deg, ${c.accent}16 1px, transparent 1px)`, backgroundSize: '22px 22px' }} />}
               {bgEffect === 'glow-pulse' && <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: `radial-gradient(65% 55% at 50% 30%, ${c.accent}2c, transparent)`, animation: 'ztGlowPulse 3s ease-in-out infinite' }} />}
+              {bgEffect === 'aurora' && (
+                <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden' }}>
+                  <div style={{ position: 'absolute', width: '70%', height: '65%', top: '-15%', left: '5%', background: `radial-gradient(ellipse, ${c.accent}45, transparent 70%)`, borderRadius: '50%', animation: 'ztAurora1 9s ease-in-out infinite' }} />
+                  <div style={{ position: 'absolute', width: '55%', height: '55%', top: '15%', right: '-8%', background: `radial-gradient(ellipse, ${c.accent}28, transparent 70%)`, borderRadius: '50%', animation: 'ztAurora2 11s ease-in-out infinite' }} />
+                  <div style={{ position: 'absolute', width: '45%', height: '65%', bottom: '-25%', left: '28%', background: `radial-gradient(ellipse, ${c.accent}22, transparent 70%)`, borderRadius: '50%', animation: 'ztAurora3 13s ease-in-out infinite' }} />
+                </div>
+              )}
+              {bgEffect === 'particles' && (
+                <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden' }}>
+                  {Array.from({ length: 22 }, (_, i) => (
+                    <div key={i} style={{
+                      position: 'absolute',
+                      width: 2 + (i % 3),
+                      height: 2 + (i % 3),
+                      borderRadius: '50%',
+                      background: c.accent,
+                      left: `${(i * 41 + 7) % 94}%`,
+                      top: `${(i * 61 + 13) % 88}%`,
+                      opacity: 0.25 + (i % 4) * 0.1,
+                      animation: `ztFloat${i % 4} ${3.5 + (i % 4) * 0.8}s ease-in-out infinite`,
+                      animationDelay: `${(i * 0.28) % 3.2}s`,
+                      boxShadow: `0 0 ${3 + (i % 4)}px ${c.accent}99`,
+                    }} />
+                  ))}
+                </div>
+              )}
+              {bgEffect === 'rain' && (
+                <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden' }}>
+                  {Array.from({ length: 18 }, (_, i) => (
+                    <div key={i} style={{
+                      position: 'absolute',
+                      top: '-20%',
+                      left: `${(i * 6 + 2) % 98}%`,
+                      width: 1,
+                      height: `${14 + (i % 18)}%`,
+                      background: `linear-gradient(transparent, ${c.accent}dd, transparent)`,
+                      animation: `ztRainDrop ${1.2 + (i % 6) * 0.2}s linear infinite`,
+                      animationDelay: `${(i * 0.18) % 1.8}s`,
+                    }} />
+                  ))}
+                </div>
+              )}
+              {bgEffect === 'matrix' && (
+                <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden' }}>
+                  {Array.from({ length: 16 }, (_, col) => (
+                    <div key={col} style={{
+                      position: 'absolute',
+                      left: `${col * 6.2 + 0.5}%`,
+                      width: '6%',
+                      top: 0,
+                      fontFamily: 'monospace',
+                      fontSize: 9,
+                      color: c.accent,
+                      lineHeight: '13px',
+                      animation: `ztMatrixFall ${1.8 + (col % 4) * 0.4}s linear infinite`,
+                      animationDelay: `${(col * 0.22) % 2.2}s`,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 1,
+                      opacity: 0.35,
+                    }}>
+                      {'ZTRACE01FIVEM9SCAN24DETECT57HACK'.split('').slice(0, 10 + col % 8).map((ch, j) => (
+                        <span key={j} style={{ opacity: 1 - j * 0.07, display: 'block' }}>{ch}</span>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              )}
+              {bgEffect === 'vortex' && (
+                <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden' }}>
+                  <div style={{ position: 'absolute', inset: -60, background: `conic-gradient(from 0deg, transparent 0%, ${c.accent}18 20%, transparent 40%, ${c.accent}10 60%, transparent 80%)`, animation: 'ztVortex 14s linear infinite', transformOrigin: 'center center' }} />
+                  <div style={{ position: 'absolute', inset: -40, background: `conic-gradient(from 180deg, transparent 0%, ${c.accent}0a 30%, transparent 50%, ${c.accent}14 75%, transparent 90%)`, animation: 'ztVortex 9s linear infinite reverse', transformOrigin: 'center center' }} />
+                  <div style={{ position: 'absolute', inset: 0, background: `radial-gradient(circle at center, transparent 25%, ${c.background}88 100%)` }} />
+                </div>
+              )}
+              {bgEffect === 'circuit' && (
+                <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden' }}>
+                  <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }} viewBox="0 0 400 330" preserveAspectRatio="xMidYMid slice">
+                    {[
+                      'M 20 80 H 80 V 40 H 160 V 80 H 240',
+                      'M 40 160 H 100 V 200 H 180 V 160 H 280 V 200',
+                      'M 0 260 H 60 V 220 H 140 V 260 H 220',
+                      'M 320 20 V 80 H 380 V 140',
+                      'M 300 180 H 360 V 240 H 400',
+                      'M 200 320 V 260 H 300 V 300',
+                    ].map((d, i) => (
+                      <path key={i} d={d} fill="none" stroke={c.accent} strokeWidth="0.8"
+                        strokeDasharray="200" strokeLinecap="round"
+                        style={{ animation: `ztCircuit ${2.5 + i * 0.4}s ease-in-out infinite`, animationDelay: `${i * 0.5}s` }} />
+                    ))}
+                    {[[80,80],[160,80],[160,40],[240,80],[100,160],[180,160],[180,200],[280,160],[320,80],[380,140]].map(([cx,cy], i) => (
+                      <circle key={i} cx={cx} cy={cy} r="2.5" fill={c.accent} opacity="0.4" />
+                    ))}
+                  </svg>
+                </div>
+              )}
 
               {/* Close button — top right */}
               <div style={{ position: 'absolute', top: 8, right: 10, width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#5A6772', fontSize: 13, zIndex: 2, cursor: 'default' }}>✕</div>
@@ -1364,6 +1502,12 @@ export default function ToolDesigner({ embedded = false }) {
               { value: 'scanlines',  label: 'Scanlines', desc: 'Retro',      icon: '≡' },
               { value: 'grid',       label: 'Gitter',    desc: 'Cyber',      icon: '⊞' },
               { value: 'glow-pulse', label: 'Glühen',    desc: 'Pulsierend', icon: '◉' },
+              { value: 'aurora',     label: 'Aurora',    desc: 'Nordlicht',  icon: '🌌' },
+              { value: 'particles',  label: 'Partikel',  desc: 'Schwebend',  icon: '✦' },
+              { value: 'rain',       label: 'Regen',     desc: 'Linien',     icon: '│' },
+              { value: 'matrix',     label: 'Matrix',    desc: 'Zeichen',    icon: '▓' },
+              { value: 'vortex',     label: 'Vortex',    desc: 'Rotation',   icon: '⊛' },
+              { value: 'circuit',    label: 'Schaltkreis', desc: 'Leitungen', icon: '⌁' },
             ]} />
           </Field>
 
