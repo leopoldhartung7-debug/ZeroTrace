@@ -81,6 +81,8 @@ export default function Sidebar() {
               { to: '/admin/maintenance', label: t('nav.maintenance'), icon: WrenchIcon },
               { to: '/admin/audit', label: t('nav.audit'), icon: History },
               { to: '/admin/proposals', label: t('nav.proposals'), icon: ListChecks },
+              { to: '/admin/stats', label: 'DB Statistiken', icon: BarChart3 },
+              { to: '/admin/activity', label: 'Aktivitäts-Log', icon: Activity },
             ],
           },
         ]
