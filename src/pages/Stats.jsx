@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { BarChart3, ShieldAlert, Database, Flame } from 'lucide-react'
-import { PageHeader, Card, StatTile } from '../components/kit.jsx'
+import { PageHeader, Card, StatTile, Ring } from '../components/kit.jsx'
 import { useStore } from '../store.jsx'
 
 const GAME_COLORS = {
@@ -16,15 +16,21 @@ const GAME_COLORS = {
 const SEV_COLORS = { Critical: '#EF4444', High: '#F97316', Medium: '#EAB308', Low: '#22C55E' }
 
 function HBar({ label, value, max, color, extra }) {
-  const pct = max > 0 ? (value / max) * 100 : 0
+  const pct = max > 0 ? Math.round((value / max) * 100) : 0
   return (
-    <div className="flex items-center gap-3 py-1.5">
-      <span className="w-36 truncate text-xs txt font-medium">{label}</span>
-      <div className="flex-1 h-2 rounded-full bg-white/5 overflow-hidden">
-        <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, background: color || '#38BDF8' }} />
+    <div className="flex items-center gap-3 py-2">
+      <div className="flex w-36 min-w-0 items-center gap-2 shrink-0">
+        <span className="inline-block h-1.5 w-1.5 shrink-0 rounded-sm" style={{ background: color || 'var(--accent)' }} />
+        <span className="truncate text-xs txt">{label}</span>
       </div>
-      <span className="w-8 text-right text-xs muted">{value}</span>
-      {extra && <span className="text-[10px] muted">{extra}</span>}
+      <div className="flex-1 overflow-hidden rounded-full" style={{ height: 3, background: 'var(--border)' }}>
+        <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, background: color || 'var(--accent)' }} />
+      </div>
+      <div className="flex w-16 items-center justify-end gap-1.5 shrink-0">
+        <span className="text-xs txt font-medium">{value}</span>
+        <span className="text-[10px] muted">{pct}%</span>
+        {extra && <span className="text-[10px] muted">{extra}</span>}
+      </div>
     </div>
   )
 }
@@ -55,9 +61,8 @@ export default function StatsPage() {
   )
 
   const maxGame = byGame[0]?.[1] || 1
-  const maxSev = Math.max(...bySeverity.map(([, v]) => v), 1)
   const maxDet = topDetected[0]?.detectionCount || 1
-
+  const totalEntries = cheats.length || 1
   const totalDetections = cheats.reduce((s, c) => s + (c.detectionCount || 0), 0)
 
   return (
@@ -86,11 +91,21 @@ export default function StatsPage() {
         </Card>
 
         <Card className="p-5">
-          <h3 className="mb-4 text-sm font-semibold txt">Einträge nach Schweregrad</h3>
-          {bySeverity.map(([sev, count]) => (
-            <HBar key={sev} label={sev} value={count} max={maxSev} color={SEV_COLORS[sev]} />
-          ))}
+          <h3 className="mb-5 text-sm font-semibold txt">Einträge nach Schweregrad</h3>
           {bySeverity.length === 0 && <p className="muted text-xs text-center py-6">Keine Daten</p>}
+          <div className={`grid gap-4 ${bySeverity.length <= 2 ? 'grid-cols-2' : 'grid-cols-2 sm:grid-cols-4'}`}>
+            {bySeverity.map(([sev, count]) => {
+              const pct = Math.round((count / totalEntries) * 100)
+              return (
+                <div key={sev} className="flex flex-col items-center gap-1.5 py-1">
+                  <Ring value={count} max={totalEntries} color={SEV_COLORS[sev]} size={56} thickness={4} />
+                  <p className="mt-1 text-xs muted">{sev}</p>
+                  <p className="text-base font-semibold txt">{count}</p>
+                  <p className="text-[11px] muted">{pct}%</p>
+                </div>
+              )
+            })}
+          </div>
         </Card>
 
         <Card className="p-5 lg:col-span-2">

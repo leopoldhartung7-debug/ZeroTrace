@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Wand2, Save, Download, Upload, RotateCcw, Eye, Copy, FileJson, Link, AlertTriangle, Check, Play, Zap, FolderOpen, Wifi, WifiOff } from 'lucide-react'
-import { PageHeader, Card, Field } from '../components/kit.jsx'
+import { PageHeader, Card, Field, Textarea } from '../components/kit.jsx'
 import { useToast } from '../components/ui.jsx'
 import { useStore, defaultToolStyle } from '../store.jsx'
 
@@ -425,6 +425,27 @@ const ANIM_CSS = `
   0%,100% { stroke-dashoffset: 200; opacity: 0.15; }
   50%     { stroke-dashoffset: 0;   opacity: 0.55; }
 }
+@keyframes ztFloat8  { 0%,100%{transform:translate(0,0)} 50%{transform:translate(3px,-14px)} }
+@keyframes ztFloat9  { 0%,100%{transform:translate(0,0)} 33%{transform:translate(-9px,-5px)} 66%{transform:translate(5px,-12px)} }
+@keyframes ztFloat10 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(13px,-8px)} }
+@keyframes ztFloat11 { 0%,100%{transform:translate(0,0)} 25%{transform:translate(-11px,-6px)} 75%{transform:translate(4px,-15px)} }
+@keyframes ztFirefly {
+  0%   { transform: translate(0,0) scale(1); opacity: 0.15; }
+  25%  { transform: translate(8px,-12px) scale(1.4); opacity: 0.85; }
+  50%  { transform: translate(-6px,-8px) scale(0.8); opacity: 0.4; }
+  75%  { transform: translate(12px,-4px) scale(1.2); opacity: 0.8; }
+  100% { transform: translate(0,0) scale(1); opacity: 0.15; }
+}
+@keyframes ztNebula {
+  0%,100% { transform: translate(0,0) scale(1); opacity: 0.18; }
+  50%     { transform: translate(-12%,7%) scale(1.25); opacity: 0.38; }
+}
+@keyframes ztDrift {
+  0%   { transform: translateX(0) rotate(0deg); opacity: 0; }
+  10%  { opacity: 1; }
+  90%  { opacity: 0.7; }
+  100% { transform: translateX(100px) rotate(360deg); opacity: 0; }
+}
 @keyframes ztNoise {
   0%,100% { background-position: 0 0; }
   25%     { background-position: 3px 2px; }
@@ -442,12 +463,12 @@ function GuiPreview({ s, scenario = 0 }) {
   const pin  = { ...def.pinField,   ...(s.pinField   || {}) }
   const bar  = { ...def.bar,        ...(s.bar        || {}) }
   const dn   = { ...def.done,       ...(s.done       || {}) }
-  const { speed, barStyle, barShape, scanLayout, scanSweep, intro, bgEffect, glowAccent, glitchText } = anim
+  const { speed, barStyle, barShape, scanLayout, scanSweep, intro, bgEffect, glowAccent, glitchText, customBgCss } = anim
   const iv     = s.introVideo || { enabled: false, path: '' }
   const durMs  = SPEED_MS[speed] ?? 550
   const scenarioSpeed = SCENARIOS[scenario]?.speed ?? 550
   const timing = TIMING[barStyle] ?? 'ease-out'
-  const animKey = `${speed}|${barStyle}|${barShape}|${scanLayout}|${scanSweep}|${intro}|${bgEffect}|${glowAccent}|${glitchText}|${iv.enabled}|${scenario}|${JSON.stringify(fr)}|${JSON.stringify(typo)}|${JSON.stringify(pin)}|${JSON.stringify(bar)}|${JSON.stringify(dn)}`
+  const animKey = `${speed}|${barStyle}|${barShape}|${scanLayout}|${scanSweep}|${intro}|${bgEffect}|${glowAccent}|${glitchText}|${customBgCss}|${iv.enabled}|${scenario}|${JSON.stringify(fr)}|${JSON.stringify(typo)}|${JSON.stringify(pin)}|${JSON.stringify(bar)}|${JSON.stringify(dn)}`
 
   // Derived values
   const cornerR   = CORNER_MAP[fr.cornerRadius] ?? 10
@@ -826,39 +847,85 @@ function GuiPreview({ s, scenario = 0 }) {
               )}
               {bgEffect === 'particles' && (
                 <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden' }}>
-                  {/* Main floating particles */}
-                  {Array.from({ length: 38 }, (_, i) => {
-                    const sz = [1,1,1,2,2,2,3,4][i % 8]
+                  {Array.from({ length: 60 }, (_, i) => {
+                    const sz = [1,1,1,1,2,2,2,3,3,4][i % 10]
+                    const isDiamond = i % 9 === 4
+                    const isRing = i % 12 === 8
+                    const isWhite = i % 11 === 0
+                    return (
+                      <div key={i} style={{
+                        position: 'absolute',
+                        width: sz, height: sz,
+                        borderRadius: isRing ? '50%' : isDiamond ? 1 : '50%',
+                        background: isRing ? 'transparent' : isWhite ? 'rgba(255,255,255,0.9)' : c.accent,
+                        border: isRing ? `1px solid ${c.accent}88` : 'none',
+                        left: `${(i * 43 + 7) % 95}%`,
+                        top: `${(i * 67 + 13) % 90}%`,
+                        opacity: isRing ? 0.5 : 0.12 + (i % 6) * 0.1,
+                        transform: isDiamond ? 'rotate(45deg)' : undefined,
+                        animation: `ztFloat${i % 12} ${2.5 + (i % 8) * 0.55}s ease-in-out infinite`,
+                        animationDelay: `${(i * 0.18) % 5}s`,
+                        boxShadow: sz >= 3 && !isRing ? `0 0 ${sz * 3}px ${c.accent}cc, 0 0 ${sz * 6}px ${c.accent}44` : sz >= 2 && !isRing ? `0 0 3px ${c.accent}88` : 'none',
+                      }} />
+                    )
+                  })}
+                  {Array.from({ length: 8 }, (_, i) => (
+                    <div key={`s${i}`} style={{
+                      position: 'absolute',
+                      width: 28 + i * 10, height: 1.5,
+                      background: `linear-gradient(90deg, transparent, ${c.accent}ee, white, transparent)`,
+                      left: `${(i * 17 + 4) % 65}%`,
+                      top: `${(i * 23 + 8) % 82}%`,
+                      borderRadius: 2,
+                      transform: `rotate(${-30 + i * 7}deg)`,
+                      animation: `ztShootingStar ${1.8 + i * 0.6}s ease-in-out infinite`,
+                      animationDelay: `${i * 0.9}s`,
+                    }} />
+                  ))}
+                </div>
+              )}
+              {bgEffect === 'fireflies' && (
+                <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden' }}>
+                  {Array.from({ length: 55 }, (_, i) => {
+                    const sz = [2,2,2,3,3,4][i % 6]
                     return (
                       <div key={i} style={{
                         position: 'absolute',
                         width: sz, height: sz,
                         borderRadius: '50%',
-                        background: i % 9 === 0 ? 'white' : c.accent,
+                        background: i % 7 === 0 ? 'white' : c.accent,
                         left: `${(i * 43 + 7) % 95}%`,
                         top: `${(i * 67 + 13) % 90}%`,
-                        opacity: 0.15 + (i % 6) * 0.1,
-                        animation: `ztFloat${i % 8} ${3 + (i % 6) * 0.65}s ease-in-out infinite`,
-                        animationDelay: `${(i * 0.21) % 4}s`,
-                        boxShadow: sz >= 3 ? `0 0 ${sz * 3}px ${c.accent}cc, 0 0 ${sz * 6}px ${c.accent}44` : `0 0 3px ${c.accent}77`,
+                        boxShadow: `0 0 ${sz * 3}px ${sz * 2}px ${c.accent}55, 0 0 ${sz * 8}px ${c.accent}22`,
+                        animation: `ztFirefly ${3.5 + (i % 9) * 0.45}s ease-in-out infinite`,
+                        animationDelay: `${(i * 0.22) % 5.5}s`,
                       }} />
                     )
                   })}
-                  {/* Shooting stars */}
-                  {Array.from({ length: 5 }, (_, i) => (
-                    <div key={`s${i}`} style={{
+                </div>
+              )}
+              {bgEffect === 'nebula' && (
+                <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden' }}>
+                  <div style={{ position: 'absolute', width: '110%', height: '85%', top: '-20%', left: '-5%', background: `radial-gradient(ellipse, ${c.accent}28, transparent 65%)`, animation: 'ztNebula 14s ease-in-out infinite' }} />
+                  <div style={{ position: 'absolute', width: '80%', height: '90%', bottom: '-25%', right: '-10%', background: `radial-gradient(ellipse, ${c.accent}18, transparent 65%)`, animation: 'ztNebula 18s ease-in-out infinite reverse', animationDelay: '4s' }} />
+                  <div style={{ position: 'absolute', width: '60%', height: '60%', top: '20%', left: '20%', background: `radial-gradient(ellipse, ${c.accent}10, transparent 70%)`, animation: 'ztNebula 11s ease-in-out infinite', animationDelay: '2s' }} />
+                  {Array.from({ length: 50 }, (_, i) => (
+                    <div key={i} style={{
                       position: 'absolute',
-                      width: 35 + i * 12, height: 1.5,
-                      background: `linear-gradient(90deg, transparent, ${c.accent}ee, white, transparent)`,
-                      left: `${(i * 19 + 4) % 65}%`,
-                      top: `${(i * 29 + 8) % 82}%`,
-                      borderRadius: 2,
-                      transform: `rotate(${-25 + i * 8}deg)`,
-                      animation: `ztShootingStar ${2 + i * 0.7}s ease-in-out infinite`,
-                      animationDelay: `${i * 1.1}s`,
+                      width: 1.5, height: 1.5,
+                      borderRadius: '50%',
+                      background: i % 8 === 0 ? 'white' : c.accent,
+                      left: `${(i * 43 + 7) % 95}%`,
+                      top: `${(i * 67 + 13) % 90}%`,
+                      opacity: 0.08 + (i % 5) * 0.06,
+                      animation: `ztFloat${i % 12} ${4 + (i % 5) * 0.9}s ease-in-out infinite`,
+                      animationDelay: `${(i * 0.19) % 5}s`,
                     }} />
                   ))}
                 </div>
+              )}
+              {bgEffect === 'custom' && customBgCss && (
+                <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: customBgCss }} />
               )}
               {bgEffect === 'rain' && (
                 <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden' }}>
@@ -1530,17 +1597,32 @@ export default function ToolDesigner({ embedded = false }) {
           {/* Background effect */}
           <Field label="Hintergrund-Effekt" className="mt-4">
             <DropSelect value={anim.bgEffect} onChange={v => setAnim({ bgEffect: v })} color="amber" options={[
-              { value: 'none',       label: 'Keiner',    desc: 'Standard',   icon: '□' },
-              { value: 'scanlines',  label: 'Scanlines', desc: 'Retro',      icon: '≡' },
-              { value: 'grid',       label: 'Gitter',    desc: 'Cyber',      icon: '⊞' },
-              { value: 'glow-pulse', label: 'Glühen',    desc: 'Pulsierend', icon: '◉' },
-              { value: 'aurora',     label: 'Aurora',    desc: 'Nordlicht',  icon: '🌌' },
-              { value: 'particles',  label: 'Partikel',  desc: 'Schwebend',  icon: '✦' },
-              { value: 'rain',       label: 'Regen',     desc: 'Linien',     icon: '│' },
-              { value: 'matrix',     label: 'Matrix',    desc: 'Zeichen',    icon: '▓' },
-              { value: 'vortex',     label: 'Vortex',    desc: 'Rotation',   icon: '⊛' },
-              { value: 'circuit',    label: 'Schaltkreis', desc: 'Leitungen', icon: '⌁' },
+              { value: 'none',       label: 'Keiner',      desc: 'Standard',    icon: '□' },
+              { value: 'scanlines',  label: 'Scanlines',   desc: 'Retro',       icon: '≡' },
+              { value: 'grid',       label: 'Gitter',      desc: 'Cyber',       icon: '⊞' },
+              { value: 'glow-pulse', label: 'Glühen',      desc: 'Pulsierend',  icon: '◉' },
+              { value: 'aurora',     label: 'Aurora',      desc: 'Nordlicht',   icon: '🌌' },
+              { value: 'particles',  label: 'Partikel',    desc: '60 Teilchen', icon: '✦' },
+              { value: 'fireflies',  label: 'Glühwürmchen', desc: 'Leuchtend',  icon: '✺' },
+              { value: 'nebula',     label: 'Nebel',       desc: 'Weich',       icon: '◎' },
+              { value: 'rain',       label: 'Regen',       desc: 'Linien',      icon: '│' },
+              { value: 'matrix',     label: 'Matrix',      desc: 'Zeichen',     icon: '▓' },
+              { value: 'vortex',     label: 'Vortex',      desc: 'Rotation',    icon: '⊛' },
+              { value: 'circuit',    label: 'Schaltkreis', desc: 'Leitungen',   icon: '⌁' },
+              { value: 'custom',     label: 'Eigener CSS', desc: 'Custom',      icon: '✏' },
             ]} />
+            {anim.bgEffect === 'custom' && (
+              <div className="mt-2">
+                <Textarea
+                  value={anim.customBgCss || ''}
+                  onChange={e => setAnim({ customBgCss: e.target.value })}
+                  placeholder={'linear-gradient(135deg, #0a0a14, #0d1b2a)\noder: radial-gradient(circle at 30% 70%, #1a0a2e, #0a0a0a)'}
+                  rows={3}
+                  className="font-mono text-xs"
+                />
+                <p className="muted mt-1 text-[11px]">CSS background-Wert eingeben (Gradient, Farbe, …)</p>
+              </div>
+            )}
           </Field>
 
           {/* Visual effect toggles */}

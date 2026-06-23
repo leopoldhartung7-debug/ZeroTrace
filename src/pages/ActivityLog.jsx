@@ -71,7 +71,7 @@ export default function ActivityLogPage() {
         <div className="space-y-0 divide-y divide-white/5">
           {events.map(e => (
             <div key={e.id} className="flex items-start gap-4 py-3">
-              <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/5">
+              <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md tile border bd">
                 <span className={`text-[9px] font-bold uppercase ${KIND_COLORS[e.kind] || 'text-sky-400'}`}>{(e.kind || '?')[0]}</span>
               </div>
               <div className="flex-1 min-w-0">

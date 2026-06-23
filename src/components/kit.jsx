@@ -97,6 +97,36 @@ export function Accordion({ items }) {
   )
 }
 
+export function ProgressBar({ value, max = 100, color }) {
+  const pct = max > 0 ? Math.min((value / max) * 100, 100) : 0
+  return (
+    <div className="h-1.5 w-full overflow-hidden rounded-full" style={{ background: 'var(--border)' }}>
+      <div
+        className="h-full rounded-full transition-all duration-500"
+        style={{ width: `${pct}%`, background: color || 'var(--accent)' }}
+      />
+    </div>
+  )
+}
+
+export function Ring({ value, max = 100, color, size = 52, thickness = 4 }) {
+  const pct = max > 0 ? Math.min(value / max, 1) : 0
+  const r = (size - thickness) / 2
+  const circ = 2 * Math.PI * r
+  const dash = circ * pct
+  return (
+    <svg width={size} height={size} style={{ transform: 'rotate(-90deg)', display: 'block' }}>
+      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--border)" strokeWidth={thickness} />
+      <circle
+        cx={size / 2} cy={size / 2} r={r} fill="none"
+        stroke={color || 'var(--accent)'} strokeWidth={thickness}
+        strokeDasharray={`${dash} ${circ - dash}`} strokeLinecap="round"
+        style={{ transition: 'stroke-dasharray 0.6s ease' }}
+      />
+    </svg>
+  )
+}
+
 export function Field({ label, hint, children, className = '' }) {
   return (
     <div className={className}>

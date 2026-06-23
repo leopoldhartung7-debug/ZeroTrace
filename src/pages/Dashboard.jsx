@@ -125,12 +125,12 @@ function StatCard({ icon: Icon, label, value, accent = 'neutral' }) {
 
 function RateBar({ label, value, color }) {
   return (
-    <div className="mb-6">
-      <div className="mb-2 flex items-center justify-between text-sm">
-        <span className="txt">{label}</span>
-        <span className="txt font-semibold">{value}%</span>
+    <div className="mb-5">
+      <div className="mb-1.5 flex items-center justify-between">
+        <span className="text-sm txt">{label}</span>
+        <span className="text-sm font-semibold txt">{value}%</span>
       </div>
-      <div className="tile h-2 w-full overflow-hidden rounded-full border-0">
+      <div className="h-1.5 w-full overflow-hidden rounded-full" style={{ background: 'var(--border)' }}>
         <div
           className="h-full rounded-full transition-all duration-500"
           style={{ width: `${value}%`, background: color }}
