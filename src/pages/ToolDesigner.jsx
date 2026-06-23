@@ -367,6 +367,10 @@ const ANIM_CSS = `
   0%   { transform: scale(0.8); opacity: 1; }
   100% { transform: scale(1.5); opacity: 0; }
 }
+@keyframes ztSpinRot {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
 `
 
 function GuiPreview({ s }) {
@@ -897,6 +901,50 @@ function GuiPreview({ s }) {
                                 </div>
                               </div>
                             )}
+                            {/* ── Spinner (endlos drehender Schweif-Ring) ── */}
+                            {barShape === 'spinner' && (() => {
+                              const sz = 58, sw = 3, r = (sz - sw) / 2
+                              const circ = 2 * Math.PI * r
+                              const cx = sz / 2, cy = sz / 2
+                              const spinDur = Math.max(1000, durMs === 0 ? 1000 : durMs * 1.8)
+                              const arc = (pct) => `${circ * pct} ${circ * (1 - pct)}`
+                              const rotStyle = (multiplier) => ({
+                                transformOrigin: `${cx}px ${cy}px`,
+                                animation: `ztSpinRot ${spinDur * multiplier}ms linear infinite`,
+                              })
+                              return (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                                  <div style={{ position: 'relative', width: sz, height: sz, flexShrink: 0 }}>
+                                    <svg width={sz} height={sz} style={{ position: 'absolute', inset: 0 }}>
+                                      {/* track */}
+                                      <circle cx={cx} cy={cy} r={r} fill="none" stroke={c.accent + '14'} strokeWidth={sw} />
+                                      {/* far tail — slowest, shortest, most transparent */}
+                                      <circle cx={cx} cy={cy} r={r} fill="none" stroke={c.accent}
+                                        strokeWidth={sw + 1} strokeLinecap="round"
+                                        strokeDasharray={arc(0.28)} opacity={0.18}
+                                        style={rotStyle(1.22)} />
+                                      {/* mid trail */}
+                                      <circle cx={cx} cy={cy} r={r} fill="none" stroke={c.accent}
+                                        strokeWidth={sw} strokeLinecap="round"
+                                        strokeDasharray={arc(0.48)} opacity={0.42}
+                                        style={rotStyle(1.1)} />
+                                      {/* main arc — fastest, brightest */}
+                                      <circle cx={cx} cy={cy} r={r} fill="none" stroke={c.accent}
+                                        strokeWidth={sw} strokeLinecap="round"
+                                        strokeDasharray={arc(0.68)}
+                                        style={{
+                                          ...rotStyle(1),
+                                          filter: glowAccent ? `drop-shadow(0 0 5px ${c.accent}cc)` : 'none',
+                                        }} />
+                                    </svg>
+                                    <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                      <span style={{ color: c.mutedText, fontSize: 10, fontFamily: 'monospace' }}>{Math.round(step.w)}%</span>
+                                    </div>
+                                  </div>
+                                  <p style={{ color: c.text, fontSize: 12 }}>{step.label}</p>
+                                </div>
+                              )
+                            })()}
                           </div>
                         )
                       })}
@@ -1433,6 +1481,7 @@ export default function ToolDesigner({ embedded = false }) {
               { value: 'bar',      label: 'Balken',   desc: 'Klassisch',    icon: '▬' },
               { value: 'glass',    label: 'Glass',    desc: 'Label innen',  icon: '▰' },
               { value: 'line',     label: 'Linie',    desc: 'Dot am Ende',  icon: '—•' },
+              { value: 'spinner',  label: 'Spinner',  desc: 'Dreht immer',  icon: '↻' },
               { value: 'donut',    label: 'Donut',    desc: 'Dünner Ring',  icon: '◯' },
               { value: 'comet',    label: 'Komet',    desc: 'Zieht nach',   icon: '🌑' },
               { value: 'ring',     label: 'Ring',     desc: 'Kreis + Bar',  icon: '○' },
