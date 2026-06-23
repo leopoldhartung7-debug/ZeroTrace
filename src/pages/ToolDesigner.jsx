@@ -41,40 +41,33 @@ function contrastRatio(hex1, hex2) {
 // ── preset themes ───────────────────────────────────────────────────────────
 
 const PRESET_THEMES = [
-  {
-    label: 'Dark Navy',
-    colors: { background: '#0d1326', mutedBackground: '#161d33', titlebar: '#070b16', text: '#e8eaf0', mutedText: '#8b93a7', accent: '#38bdf8' },
-    animations: { speed: 'normal', barStyle: 'smooth', intro: 'fade', bgEffect: 'none', glowAccent: false, glitchText: false },
-  },
-  {
-    label: 'Midnight Purple',
-    colors: { background: '#0f0b1e', mutedBackground: '#1a1430', titlebar: '#07050d', text: '#ede8f5', mutedText: '#9b90b8', accent: '#a78bfa' },
-    animations: { speed: 'slow', barStyle: 'pulse', intro: 'fade', bgEffect: 'scanlines', glowAccent: true, glitchText: false },
-  },
-  {
-    label: 'Forest',
-    colors: { background: '#0a150f', mutedBackground: '#111f18', titlebar: '#050a07', text: '#dff0e5', mutedText: '#88aa95', accent: '#22c55e' },
-    animations: { speed: 'normal', barStyle: 'smooth', intro: 'none', bgEffect: 'grid', glowAccent: false, glitchText: false },
-  },
-  {
-    label: 'Sunset',
-    colors: { background: '#1a0e08', mutedBackground: '#261508', titlebar: '#0d0703', text: '#f5ede5', mutedText: '#b09080', accent: '#f97316' },
-    animations: { speed: 'fast', barStyle: 'smooth', intro: 'slide', bgEffect: 'glow-pulse', glowAccent: true, glitchText: false },
-  },
-  {
-    label: 'Rose',
-    colors: { background: '#1a0a12', mutedBackground: '#26101c', titlebar: '#0d0509', text: '#f5e0ea', mutedText: '#b09098', accent: '#f43f5e' },
-    animations: { speed: 'slow', barStyle: 'pulse', intro: 'fade', bgEffect: 'scanlines', glowAccent: true, glitchText: true },
-  },
+  { label: 'Dark Navy',        colors: { background: '#0d1326', mutedBackground: '#161d33', titlebar: '#070b16', text: '#e8eaf0', mutedText: '#8b93a7', accent: '#38bdf8' }, animations: { bgEffect: 'none', glowAccent: false } },
+  { label: 'Midnight Purple',  colors: { background: '#0f0b1e', mutedBackground: '#1a1430', titlebar: '#07050d', text: '#ede8f5', mutedText: '#9b90b8', accent: '#a78bfa' }, animations: { bgEffect: 'scanlines', glowAccent: true } },
+  { label: 'Forest',           colors: { background: '#0a150f', mutedBackground: '#111f18', titlebar: '#050a07', text: '#dff0e5', mutedText: '#88aa95', accent: '#22c55e' }, animations: { bgEffect: 'grid', glowAccent: false } },
+  { label: 'Sunset',           colors: { background: '#1a0e08', mutedBackground: '#261508', titlebar: '#0d0703', text: '#f5ede5', mutedText: '#b09080', accent: '#f97316' }, animations: { bgEffect: 'glow-pulse', glowAccent: true } },
+  { label: 'Rose',             colors: { background: '#1a0a12', mutedBackground: '#26101c', titlebar: '#0d0509', text: '#f5e0ea', mutedText: '#b09098', accent: '#f43f5e' }, animations: { bgEffect: 'scanlines', glowAccent: true } },
+  { label: 'Ice Blue',         colors: { background: '#060e18', mutedBackground: '#0d1e2e', titlebar: '#030810', text: '#d8edf8', mutedText: '#5c8aa0', accent: '#67e8f9' }, animations: { bgEffect: 'aurora', glowAccent: true } },
+  { label: 'Deep Space',       colors: { background: '#04040c', mutedBackground: '#0a0a18', titlebar: '#020208', text: '#d0d0f0', mutedText: '#5050a0', accent: '#818cf8' }, animations: { bgEffect: 'particles', glowAccent: true } },
+  { label: 'Arctic',           colors: { background: '#08101a', mutedBackground: '#101c28', titlebar: '#040a10', text: '#e0eef8', mutedText: '#607888', accent: '#7dd3fc' }, animations: { bgEffect: 'rain', glowAccent: false } },
+  { label: 'Lava',             colors: { background: '#120403', mutedBackground: '#1e0804', titlebar: '#080202', text: '#f8e0d0', mutedText: '#a05030', accent: '#ef4444' }, animations: { bgEffect: 'vortex', glowAccent: true } },
+  { label: 'Toxic',            colors: { background: '#030d05', mutedBackground: '#071508', titlebar: '#020602', text: '#d8f0dc', mutedText: '#407848', accent: '#4ade80' }, animations: { bgEffect: 'matrix', glowAccent: true } },
+  { label: 'Golden',           colors: { background: '#100d02', mutedBackground: '#1c1604', titlebar: '#080601', text: '#f5edd0', mutedText: '#907840', accent: '#fbbf24' }, animations: { bgEffect: 'glow-pulse', glowAccent: true } },
+  { label: 'Sakura',           colors: { background: '#14080e', mutedBackground: '#1e0e18', titlebar: '#0a0408', text: '#f5d8e8', mutedText: '#a06080', accent: '#f472b6' }, animations: { bgEffect: 'particles', glowAccent: true } },
+  { label: 'Ghost',            colors: { background: '#0a0a0e', mutedBackground: '#141418', titlebar: '#050508', text: '#e8e8f0', mutedText: '#686870', accent: '#c4b5fd' }, animations: { bgEffect: 'circuit', glowAccent: false } },
 ]
 
 const ANIMATION_PRESETS = [
-  { label: 'Minimal',     speed: 'instant', barStyle: 'smooth',  intro: 'none',  bgEffect: 'none',       glowAccent: false, glitchText: false },
-  { label: 'Standard',    speed: 'normal',  barStyle: 'smooth',  intro: 'fade',  bgEffect: 'none',       glowAccent: false, glitchText: false },
-  { label: 'Neon',        speed: 'normal',  barStyle: 'pulse',   intro: 'fade',  bgEffect: 'scanlines',  glowAccent: true,  glitchText: false },
-  { label: 'Matrix',      speed: 'normal',  barStyle: 'stepped', intro: 'fade',  bgEffect: 'grid',       glowAccent: true,  glitchText: false },
-  { label: 'Cinematisch', speed: 'slow',    barStyle: 'pulse',   intro: 'fade',  bgEffect: 'glow-pulse', glowAccent: true,  glitchText: false },
-  { label: 'Cyber',       speed: 'fast',    barStyle: 'smooth',  intro: 'slide', bgEffect: 'scanlines',  glowAccent: true,  glitchText: true  },
+  { label: 'Minimal',          speed: 'instant', barStyle: 'smooth',  intro: 'none',  bgEffect: 'none',      glowAccent: false, glitchText: false },
+  { label: 'Standard',         speed: 'normal',  barStyle: 'smooth',  intro: 'fade',  bgEffect: 'none',      glowAccent: false, glitchText: false },
+  { label: 'Neon',             speed: 'normal',  barStyle: 'pulse',   intro: 'fade',  bgEffect: 'scanlines', glowAccent: true,  glitchText: false },
+  { label: 'Matrix Rain',      speed: 'normal',  barStyle: 'stepped', intro: 'fade',  bgEffect: 'matrix',    glowAccent: true,  glitchText: false },
+  { label: 'Cinematisch',      speed: 'slow',    barStyle: 'pulse',   intro: 'fade',  bgEffect: 'glow-pulse',glowAccent: true,  glitchText: false },
+  { label: 'Cyber',            speed: 'fast',    barStyle: 'smooth',  intro: 'slide', bgEffect: 'scanlines', glowAccent: true,  glitchText: true  },
+  { label: 'Aurora',           speed: 'slow',    barStyle: 'shine',   intro: 'fade',  bgEffect: 'aurora',    glowAccent: true,  glitchText: false },
+  { label: 'Partikel-Sturm',   speed: 'normal',  barStyle: 'pulse',   intro: 'slide', bgEffect: 'particles', glowAccent: true,  glitchText: false },
+  { label: 'Regen',            speed: 'normal',  barStyle: 'stripe',  intro: 'fade',  bgEffect: 'rain',      glowAccent: false, glitchText: false },
+  { label: 'Vortex',           speed: 'fast',    barStyle: 'smooth',  intro: 'slide', bgEffect: 'vortex',    glowAccent: true,  glitchText: true  },
+  { label: 'Schaltkreis',      speed: 'slow',    barStyle: 'shine',   intro: 'none',  bgEffect: 'circuit',   glowAccent: false, glitchText: false },
 ]
 
 // ── scanner export helpers ───────────────────────────────────────────────────
@@ -404,6 +397,16 @@ const ANIM_CSS = `
 @keyframes ztFloat1 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(-6px,-5px)} }
 @keyframes ztFloat2 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(5px,-11px)} }
 @keyframes ztFloat3 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(-3px,-7px)} }
+@keyframes ztFloat4 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(-8px,-4px)} }
+@keyframes ztFloat5 { 0%,100%{transform:translate(0,0)} 33%{transform:translate(7px,-13px)} 66%{transform:translate(-5px,-6px)} }
+@keyframes ztFloat6 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(11px,-7px)} }
+@keyframes ztFloat7 { 0%,100%{transform:translate(0,0)} 25%{transform:translate(-4px,-3px)} 75%{transform:translate(8px,-10px)} }
+@keyframes ztShootingStar {
+  0%   { opacity: 0; transform: translateX(-30px); }
+  20%  { opacity: 0.8; }
+  80%  { opacity: 0.8; }
+  100% { opacity: 0; transform: translateX(30px); }
+}
 @keyframes ztRainDrop {
   0%   { transform: translateY(0);    opacity: 0; }
   8%   { opacity: 1; }
@@ -823,19 +826,36 @@ function GuiPreview({ s, scenario = 0 }) {
               )}
               {bgEffect === 'particles' && (
                 <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden' }}>
-                  {Array.from({ length: 22 }, (_, i) => (
-                    <div key={i} style={{
+                  {/* Main floating particles */}
+                  {Array.from({ length: 38 }, (_, i) => {
+                    const sz = [1,1,1,2,2,2,3,4][i % 8]
+                    return (
+                      <div key={i} style={{
+                        position: 'absolute',
+                        width: sz, height: sz,
+                        borderRadius: '50%',
+                        background: i % 9 === 0 ? 'white' : c.accent,
+                        left: `${(i * 43 + 7) % 95}%`,
+                        top: `${(i * 67 + 13) % 90}%`,
+                        opacity: 0.15 + (i % 6) * 0.1,
+                        animation: `ztFloat${i % 8} ${3 + (i % 6) * 0.65}s ease-in-out infinite`,
+                        animationDelay: `${(i * 0.21) % 4}s`,
+                        boxShadow: sz >= 3 ? `0 0 ${sz * 3}px ${c.accent}cc, 0 0 ${sz * 6}px ${c.accent}44` : `0 0 3px ${c.accent}77`,
+                      }} />
+                    )
+                  })}
+                  {/* Shooting stars */}
+                  {Array.from({ length: 5 }, (_, i) => (
+                    <div key={`s${i}`} style={{
                       position: 'absolute',
-                      width: 2 + (i % 3),
-                      height: 2 + (i % 3),
-                      borderRadius: '50%',
-                      background: c.accent,
-                      left: `${(i * 41 + 7) % 94}%`,
-                      top: `${(i * 61 + 13) % 88}%`,
-                      opacity: 0.25 + (i % 4) * 0.1,
-                      animation: `ztFloat${i % 4} ${3.5 + (i % 4) * 0.8}s ease-in-out infinite`,
-                      animationDelay: `${(i * 0.28) % 3.2}s`,
-                      boxShadow: `0 0 ${3 + (i % 4)}px ${c.accent}99`,
+                      width: 35 + i * 12, height: 1.5,
+                      background: `linear-gradient(90deg, transparent, ${c.accent}ee, white, transparent)`,
+                      left: `${(i * 19 + 4) % 65}%`,
+                      top: `${(i * 29 + 8) % 82}%`,
+                      borderRadius: 2,
+                      transform: `rotate(${-25 + i * 8}deg)`,
+                      animation: `ztShootingStar ${2 + i * 0.7}s ease-in-out infinite`,
+                      animationDelay: `${i * 1.1}s`,
                     }} />
                   ))}
                 </div>
@@ -1064,6 +1084,8 @@ export default function ToolDesigner({ embedded = false }) {
   const [urlLoading, setUrlLoading] = useState(false)
   const [harmonyMode, setHarmonyMode] = useState(false)
   const [scenario, setScenario] = useState(0)
+  const [themePreset, setThemePreset] = useState('none')
+  const [animPreset, setAnimPreset] = useState('none')
   const [dirHandle, setDirHandle] = useState(null)
   const [syncStatus, setSyncStatus] = useState('idle') // idle | syncing | synced | error | needs-permission
 
@@ -1273,23 +1295,30 @@ export default function ToolDesigner({ embedded = false }) {
 
           {/* ── Preset themes ── */}
           <p className="caps-label mb-4">Vorgefertigte Themes</p>
-          <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
-            {PRESET_THEMES.map((theme) => (
-              <button
-                key={theme.label}
-                onClick={() => set({ colors: theme.colors, ...(theme.animations ? { animations: theme.animations } : {}) })}
-                title={theme.label}
-                className="bd hoverable group flex flex-col items-center gap-2 rounded-xl border px-2 py-3 text-center transition-colors hover:border-sky-500"
-              >
-                <div className="flex gap-1">
-                  <span className="h-3 w-3 rounded-full border border-white/10" style={{ background: theme.colors.background }} />
-                  <span className="h-3 w-3 rounded-full border border-white/10" style={{ background: theme.colors.accent }} />
-                  <span className="h-3 w-3 rounded-full border border-white/10" style={{ background: theme.colors.text }} />
-                </div>
-                <span className="txt text-[11px] font-medium leading-tight">{theme.label}</span>
-              </button>
-            ))}
-          </div>
+          <DropSelect
+            value={themePreset}
+            color="sky"
+            onChange={(v) => {
+              setThemePreset(v)
+              const theme = PRESET_THEMES.find(t => t.label === v)
+              if (theme) {
+                setS(prev => ({
+                  ...prev,
+                  colors: { ...prev.colors, ...theme.colors },
+                  animations: { ...prev.animations, ...(theme.animations || {}) },
+                }))
+              }
+            }}
+            options={[
+              { value: 'none', label: 'Theme wählen…', icon: '◈' },
+              ...PRESET_THEMES.map(t => ({
+                value: t.label,
+                label: t.label,
+                icon: '◉',
+                desc: t.colors.accent,
+              })),
+            ]}
+          />
 
           <div className="bd my-7 border-t" />
 
@@ -1409,21 +1438,24 @@ export default function ToolDesigner({ embedded = false }) {
           <p className="caps-label mb-4 flex items-center gap-2"><Zap size={12} /> Animationen & Effekte</p>
 
           {/* Animation quick-presets */}
-          <p className="muted mb-2 text-xs">Schnell-Vorlagen</p>
-          <div className="mb-5 flex flex-wrap gap-2">
-            {ANIMATION_PRESETS.map(p => {
-              const { label: _l, ...fields } = p
-              const active = Object.entries(fields).every(([k, v]) => anim[k] === v)
-              return (
-                <button key={p.label} onClick={() => setAnim(p)}
-                  className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors ${
-                    active ? 'border-sky-500 bg-sky-600/20 text-sky-400' : 'bd tile muted hover:txt'
-                  }`}>
-                  {p.label}
-                </button>
-              )
-            })}
-          </div>
+          <Field label="Animations-Vorlage" className="mb-5">
+            <DropSelect
+              value={animPreset}
+              color="violet"
+              onChange={(v) => {
+                setAnimPreset(v)
+                const p = ANIMATION_PRESETS.find(x => x.label === v)
+                if (p) {
+                  const { label: _l, ...fields } = p
+                  setAnim(fields)
+                }
+              }}
+              options={[
+                { value: 'none', label: 'Vorlage wählen…', icon: '⚙' },
+                ...ANIMATION_PRESETS.map(p => ({ value: p.label, label: p.label, icon: '▶', desc: p.bgEffect !== 'none' ? p.bgEffect : '' })),
+              ]}
+            />
+          </Field>
 
           {/* Speed */}
           <Field label="Animationsgeschwindigkeit">
