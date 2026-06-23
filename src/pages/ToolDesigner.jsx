@@ -296,6 +296,24 @@ const ANIM_CSS = `
   from { transform: rotate(-30deg) scale(0.8); opacity: 0; }
   to   { transform: rotate(0deg)   scale(1);   opacity: 1; }
 }
+@keyframes ztWave0 { 0%,100%{height:4px} 50%{height:26px} }
+@keyframes ztWave1 { 0%,100%{height:12px} 50%{height:32px} }
+@keyframes ztWave2 { 0%,100%{height:6px} 50%{height:20px} }
+@keyframes ztWave3 { 0%,100%{height:18px} 50%{height:10px} }
+@keyframes ztWave4 { 0%,100%{height:8px} 50%{height:28px} }
+@keyframes ztWave5 { 0%,100%{height:3px} 50%{height:22px} }
+@keyframes ztSweep {
+  0%   { top: -4px; opacity: 0.9; }
+  90%  { opacity: 0.9; }
+  100% { top: 100%; opacity: 0; }
+}
+@keyframes ztTermBlink {
+  0%,100%{opacity:1} 50%{opacity:0}
+}
+@keyframes ztHudPing {
+  0%   { transform: scale(0.8); opacity: 1; }
+  100% { transform: scale(1.5); opacity: 0; }
+}
 `
 
 function GuiPreview({ s }) {
@@ -307,11 +325,11 @@ function GuiPreview({ s }) {
   const pin  = { ...def.pinField,   ...(s.pinField   || {}) }
   const bar  = { ...def.bar,        ...(s.bar        || {}) }
   const dn   = { ...def.done,       ...(s.done       || {}) }
-  const { speed, barStyle, barShape, intro, bgEffect, glowAccent, glitchText } = anim
+  const { speed, barStyle, barShape, scanLayout, scanSweep, intro, bgEffect, glowAccent, glitchText } = anim
   const iv     = s.introVideo || { enabled: false, path: '' }
   const durMs  = SPEED_MS[speed] ?? 550
   const timing = TIMING[barStyle] ?? 'ease-out'
-  const animKey = `${speed}|${barStyle}|${barShape}|${intro}|${bgEffect}|${glowAccent}|${glitchText}|${iv.enabled}|${JSON.stringify(fr)}|${JSON.stringify(typo)}|${JSON.stringify(pin)}|${JSON.stringify(bar)}|${JSON.stringify(dn)}`
+  const animKey = `${speed}|${barStyle}|${barShape}|${scanLayout}|${scanSweep}|${intro}|${bgEffect}|${glowAccent}|${glitchText}|${iv.enabled}|${JSON.stringify(fr)}|${JSON.stringify(typo)}|${JSON.stringify(pin)}|${JSON.stringify(bar)}|${JSON.stringify(dn)}`
 
   // Derived values
   const cornerR   = CORNER_MAP[fr.cornerRadius] ?? 10
@@ -359,13 +377,16 @@ function GuiPreview({ s }) {
     SIM_PIN.forEach((_, i) => at(() => setPinDisplay(SIM_PIN.slice(0, i + 1).join('')), pinStart + i * 130))
 
     const scanStart = pinStart + SIM_PIN.length * 130 + 550
+    const step = Math.max(durMs, 200)
     at(() => setStage('scanning'), scanStart)
-    at(() => setBar1(30), scanStart + 80)
+    at(() => setBar1(38), scanStart + 80)
+    at(() => setBar1(72), scanStart + step + 200)
+    at(() => setBar2(45), scanStart + step + 350)
+    at(() => setBar1(100), scanStart + step * 2 + 300)
+    at(() => setBar2(88), scanStart + step * 2 + 400)
+    at(() => setBar2(100), scanStart + step * 2 + Math.max(step, 300) + 250)
 
-    const bar2Start = scanStart + Math.max(durMs, 250) + 350
-    at(() => setBar2(76), bar2Start)
-
-    const doneAt = bar2Start + Math.max(durMs, 250) + 450
+    const doneAt = scanStart + step * 2 + Math.max(step, 300) + 700
     at(() => setStage('done'), doneAt)
     at(() => setTick(t => t + 1), doneAt + 2200)
 
@@ -526,83 +547,194 @@ function GuiPreview({ s }) {
 
               {/* Scanning stage */}
               {stage === 'scanning' && (
-                <div className="space-y-4">
-                  {[{ label: s.text.scanning, w: bar1 }, { label: s.text.heuristic, w: bar2 }].map((step, i) => {
-                    const rp = ringProgress(step.w)
-                    return (
-                      <div key={i} className="rounded-lg p-4" style={{ background: c.mutedBackground }}>
-                        <div className="flex items-center justify-between mb-3">
-                          <p className="text-sm" style={{ color: c.text }}>{step.label}</p>
-                          <p className="text-xs font-mono" style={{ color: c.mutedText }}>{Math.round(step.w)}%</p>
-                        </div>
+                <div style={{ position: 'relative' }}>
+                  {/* Scan sweep line */}
+                  {scanSweep && (
+                    <div style={{
+                      position: 'absolute', left: 0, right: 0, height: 2, zIndex: 10, pointerEvents: 'none',
+                      background: `linear-gradient(90deg, transparent, ${c.accent}cc, transparent)`,
+                      boxShadow: `0 0 8px 2px ${c.accent}88`,
+                      animation: `ztSweep ${Math.max(durMs * 2, 1200)}ms linear infinite`,
+                    }} />
+                  )}
 
-                        {/* ── Bar ── */}
-                        {barShape === 'bar' && (
-                          <div className="w-full overflow-hidden" style={{ height: barHPx, borderRadius: barCapR, background: trackClr }}>
+                  {/* ── Layout: Cards ── */}
+                  {(scanLayout === 'cards' || !scanLayout) && (
+                    <div className="space-y-4">
+                      {[{ label: s.text.scanning, w: bar1 }, { label: s.text.heuristic, w: bar2 }].map((step, i) => {
+                        const rp = ringProgress(step.w)
+                        return (
+                          <div key={i} className="rounded-lg p-4" style={{ background: c.mutedBackground }}>
+                            <div className="flex items-center justify-between mb-3">
+                              <p className="text-sm" style={{ color: c.text }}>{step.label}</p>
+                              <p className="text-xs font-mono" style={{ color: c.mutedText }}>{Math.round(step.w)}%</p>
+                            </div>
+                            {barShape === 'bar' && (
+                              <div className="w-full overflow-hidden" style={{ height: barHPx, borderRadius: barCapR, background: trackClr }}>
+                                <div style={{ ...barFill(step.w), height: '100%', borderRadius: barCapR }} />
+                              </div>
+                            )}
+                            {barShape === 'ring' && (
+                              <div className="flex items-center gap-4">
+                                <svg width={rp.size} height={rp.size} style={{ transform: 'rotate(-90deg)', flexShrink: 0, filter: rp.shadow }}>
+                                  <circle cx={rp.size/2} cy={rp.size/2} r={rp.r} fill="none" stroke={trackClr || c.accent + '22'} strokeWidth={rp.sw} />
+                                  <circle cx={rp.size/2} cy={rp.size/2} r={rp.r} fill="none" stroke={c.accent} strokeWidth={rp.sw}
+                                    strokeDasharray={rp.circ} strokeDashoffset={rp.offset} strokeLinecap={bar.caps === 'round' ? 'round' : 'butt'}
+                                    style={{ transition: durMs === 0 ? 'none' : `stroke-dashoffset ${durMs}ms ${timing}` }} />
+                                </svg>
+                                <div className="flex-1 overflow-hidden" style={{ height: barHPx, borderRadius: barCapR, background: trackClr }}>
+                                  <div style={{ ...barFill(step.w), height: '100%', borderRadius: barCapR }} />
+                                </div>
+                              </div>
+                            )}
+                            {barShape === 'dots' && (
+                              <div className="flex flex-wrap gap-1.5 pt-0.5">
+                                {Array.from({ length: 14 }, (_, j) => {
+                                  const filled = step.w >= ((j + 1) / 14 * 100)
+                                  return (
+                                    <div key={j} className="rounded-full" style={{
+                                      width: 9, height: 9,
+                                      background: filled ? c.accent : c.accent + '22',
+                                      boxShadow: glowAccent && filled ? `0 0 6px 2px ${c.accent}88` : 'none',
+                                      transition: durMs === 0 ? 'none' : `background ${Math.max(durMs * 0.4, 120)}ms ease`,
+                                      animation: glowAccent && filled ? 'ztDotPop 0.3s ease' : 'none',
+                                    }} />
+                                  )
+                                })}
+                              </div>
+                            )}
+                            {barShape === 'segments' && (
+                              <div className="flex items-center gap-3">
+                                <div style={{ position: 'relative', width: 50, height: 50, flexShrink: 0 }}>
+                                  <svg width={50} height={50} style={{ position: 'absolute', inset: 0, animation: step.w > 0 ? 'ztSegSpin 1.4s linear infinite' : 'none' }}>
+                                    {[0,1,2,3,4,5,6,7].map(seg => {
+                                      const angle = (seg / 8) * 2 * Math.PI - Math.PI / 2
+                                      const x = 25 + 18 * Math.cos(angle)
+                                      const y = 25 + 18 * Math.sin(angle)
+                                      const filled = (seg / 8 * 100) < step.w
+                                      return (
+                                        <circle key={seg} cx={x} cy={y} r={3.5}
+                                          fill={filled ? c.accent : c.accent + '30'}
+                                          style={{ filter: glowAccent && filled ? `drop-shadow(0 0 3px ${c.accent})` : 'none' }} />
+                                      )
+                                    })}
+                                  </svg>
+                                </div>
+                                <div className="flex-1 h-1.5 overflow-hidden rounded-full" style={{ background: c.background }}>
+                                  <div className="h-full rounded-full" style={barFill(step.w)} />
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+
+                  {/* ── Layout: Minimal ── */}
+                  {scanLayout === 'minimal' && (
+                    <div className="space-y-5 py-2">
+                      {[{ label: s.text.scanning, w: bar1 }, { label: s.text.heuristic, w: bar2 }].map((step, i) => (
+                        <div key={i}>
+                          <div className="flex justify-between mb-1.5">
+                            <span style={{ color: c.mutedText, fontSize: 11 }}>{step.label}</span>
+                            <span style={{ color: c.accent, fontSize: 11, fontFamily: 'monospace' }}>{Math.round(step.w)}%</span>
+                          </div>
+                          <div style={{ height: barHPx, borderRadius: barCapR, background: trackClr, overflow: 'hidden' }}>
                             <div style={{ ...barFill(step.w), height: '100%', borderRadius: barCapR }} />
                           </div>
-                        )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
 
-                        {/* ── Ring ── */}
-                        {barShape === 'ring' && (
-                          <div className="flex items-center gap-4">
-                            <svg width={rp.size} height={rp.size} style={{ transform: 'rotate(-90deg)', flexShrink: 0, filter: rp.shadow }}>
-                              <circle cx={rp.size/2} cy={rp.size/2} r={rp.r} fill="none" stroke={trackClr || c.accent + '22'} strokeWidth={rp.sw} />
-                              <circle cx={rp.size/2} cy={rp.size/2} r={rp.r} fill="none" stroke={c.accent} strokeWidth={rp.sw}
-                                strokeDasharray={rp.circ} strokeDashoffset={rp.offset} strokeLinecap={bar.caps === 'round' ? 'round' : 'butt'}
-                                style={{ transition: durMs === 0 ? 'none' : `stroke-dashoffset ${durMs}ms ${timing}` }} />
-                            </svg>
-                            <div className="flex-1 overflow-hidden" style={{ height: barHPx, borderRadius: barCapR, background: trackClr }}>
+                  {/* ── Layout: Terminal ── */}
+                  {scanLayout === 'terminal' && (
+                    <div style={{
+                      background: '#050810', border: `1px solid ${c.accent}33`, borderRadius: 6,
+                      padding: '12px 16px', fontFamily: '"Consolas","JetBrains Mono",monospace', fontSize: 11,
+                    }}>
+                      <div className="flex items-center gap-2 mb-3 pb-2" style={{ borderBottom: `1px solid ${c.accent}22` }}>
+                        <span style={{ color: c.accent, opacity: 0.6 }}>●</span>
+                        <span style={{ color: c.accent, fontSize: 10, letterSpacing: '0.12em' }}>ZEROTRACE SCAN ENGINE — ACTIVE</span>
+                      </div>
+                      {[{ w: bar1, cmd: 'proc_scan()' }, { w: bar2, cmd: 'heur_check()' }].map((step, i) => (
+                        <div key={i} style={{ marginBottom: i < 1 ? 10 : 0 }}>
+                          <div style={{ color: c.mutedText, marginBottom: 3 }}>
+                            <span style={{ color: c.accent + 'aa' }}>{'> '}</span>
+                            <span>{step.cmd}</span>
+                            {step.w < 100 && <span style={{ animation: 'ztTermBlink 0.8s step-start infinite', marginLeft: 4, color: c.accent }}>█</span>}
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 14 }}>
+                            <div style={{ flex: 1, height: barHPx, background: c.accent + '15', borderRadius: barCapR, overflow: 'hidden' }}>
                               <div style={{ ...barFill(step.w), height: '100%', borderRadius: barCapR }} />
                             </div>
+                            <span style={{ color: c.accent, minWidth: 34, textAlign: 'right', fontSize: 11 }}>{Math.round(step.w)}%</span>
                           </div>
-                        )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
 
-                        {/* ── Dots ── */}
-                        {barShape === 'dots' && (
-                          <div className="flex flex-wrap gap-1.5 pt-0.5">
-                            {Array.from({ length: 14 }, (_, j) => {
-                              const filled = step.w >= ((j + 1) / 14 * 100)
+                  {/* ── Layout: HUD ── */}
+                  {scanLayout === 'hud' && (
+                    <div className="space-y-3">
+                      {[{ w: bar1, id: 'PROC' }, { w: bar2, id: 'HEUR' }].map((step, i) => (
+                        <div key={i} style={{ position: 'relative', padding: '10px 18px' }}>
+                          <div style={{ position: 'absolute', top: 0, left: 0, width: 10, height: 10, borderTop: `2px solid ${c.accent}`, borderLeft: `2px solid ${c.accent}` }} />
+                          <div style={{ position: 'absolute', top: 0, right: 0, width: 10, height: 10, borderTop: `2px solid ${c.accent}`, borderRight: `2px solid ${c.accent}` }} />
+                          <div style={{ position: 'absolute', bottom: 0, left: 0, width: 10, height: 10, borderBottom: `2px solid ${c.accent}`, borderLeft: `2px solid ${c.accent}` }} />
+                          <div style={{ position: 'absolute', bottom: 0, right: 0, width: 10, height: 10, borderBottom: `2px solid ${c.accent}`, borderRight: `2px solid ${c.accent}` }} />
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <div style={{ position: 'relative', width: 8, height: 8, flexShrink: 0 }}>
+                              <div style={{ width: 8, height: 8, borderRadius: '50%', background: c.accent, boxShadow: glowAccent ? `0 0 8px ${c.accent}` : 'none' }} />
+                              {step.w < 100 && <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: c.accent + '44', animation: 'ztHudPing 1.4s ease-out infinite' }} />}
+                            </div>
+                            <div style={{ flex: 1 }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
+                                <span style={{ color: c.mutedText, fontSize: 9, fontFamily: 'monospace', letterSpacing: '0.12em' }}>SYS.{step.id}</span>
+                                <span style={{ color: c.accent, fontSize: 15, fontWeight: 'bold', fontFamily: 'monospace' }}>{Math.round(step.w).toString().padStart(3, '0')}</span>
+                              </div>
+                              <div style={{ height: barHPx, borderRadius: barCapR, background: c.accent + '15', overflow: 'hidden' }}>
+                                <div style={{ ...barFill(step.w), height: '100%', borderRadius: barCapR }} />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* ── Layout: Wave ── */}
+                  {scanLayout === 'wave' && (
+                    <div className="space-y-5 py-1">
+                      {[{ label: s.text.scanning, w: bar1 }, { label: s.text.heuristic, w: bar2 }].map((step, i) => (
+                        <div key={i}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                            <span style={{ color: c.text, fontSize: 12 }}>{step.label}</span>
+                            <span style={{ color: c.accent, fontSize: 11, fontFamily: 'monospace' }}>{Math.round(step.w)}%</span>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', height: 36, gap: 2 }}>
+                            {Array.from({ length: 20 }, (_, j) => {
+                              const filled = step.w >= ((j + 1) / 20 * 100)
                               return (
-                                <div key={j} className="rounded-full" style={{
-                                  width: 9, height: 9,
-                                  background: filled ? c.accent : c.accent + '22',
-                                  boxShadow: glowAccent && filled ? `0 0 6px 2px ${c.accent}88` : 'none',
-                                  transition: durMs === 0 ? 'none' : `background ${Math.max(durMs * 0.4, 120)}ms ease`,
-                                  animation: glowAccent && filled ? 'ztDotPop 0.3s ease' : 'none',
+                                <div key={j} style={{
+                                  width: 3,
+                                  height: filled && step.w < 100 ? undefined : 4,
+                                  alignSelf: 'center',
+                                  background: filled ? c.accent : c.accent + '1a',
+                                  borderRadius: 2,
+                                  animation: filled && step.w < 100 ? `ztWave${j % 6} ${(0.6 + (j % 5) * 0.15).toFixed(2)}s ease-in-out infinite` : 'none',
+                                  boxShadow: glowAccent && filled ? `0 0 6px ${c.accent}88` : 'none',
+                                  transition: `background ${Math.max(durMs * 0.3, 100)}ms ease`,
                                 }} />
                               )
                             })}
                           </div>
-                        )}
-
-                        {/* ── Segments ── */}
-                        {barShape === 'segments' && (
-                          <div className="flex items-center gap-3">
-                            <div style={{ position: 'relative', width: 50, height: 50, flexShrink: 0 }}>
-                              {/* Spinner ring */}
-                              <svg width={50} height={50} style={{ position: 'absolute', inset: 0, animation: step.w > 0 ? 'ztSegSpin 1.4s linear infinite' : 'none' }}>
-                                {[0,1,2,3,4,5,6,7].map(seg => {
-                                  const angle = (seg / 8) * 2 * Math.PI - Math.PI / 2
-                                  const x = 25 + 18 * Math.cos(angle)
-                                  const y = 25 + 18 * Math.sin(angle)
-                                  const filled = (seg / 8 * 100) < step.w
-                                  return (
-                                    <circle key={seg} cx={x} cy={y} r={3.5}
-                                      fill={filled ? c.accent : c.accent + '30'}
-                                      style={{ filter: glowAccent && filled ? `drop-shadow(0 0 3px ${c.accent})` : 'none' }} />
-                                  )
-                                })}
-                              </svg>
-                            </div>
-                            <div className="flex-1 h-1.5 overflow-hidden rounded-full" style={{ background: c.background }}>
-                              <div className="h-full rounded-full" style={barFill(step.w)} />
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )
-                  })}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -1071,6 +1203,39 @@ export default function ToolDesigner({ embedded = false }) {
               })}
             </div>
           </Field>
+
+          {/* Scan layout */}
+          <Field label="Scan-Layout" className="mt-4">
+            <div className="grid grid-cols-5 gap-1.5">
+              {[
+                { value: 'cards',    label: 'Karten',    desc: 'Standard'  },
+                { value: 'minimal',  label: 'Minimal',   desc: 'Sauber'    },
+                { value: 'terminal', label: 'Terminal',  desc: 'CLI'       },
+                { value: 'hud',      label: 'HUD',       desc: 'Cyber'     },
+                { value: 'wave',     label: 'Wave',      desc: 'Audio'     },
+              ].map(({ value, label, desc }) => {
+                const sel = (anim.scanLayout ?? 'cards') === value
+                return (
+                  <button key={value} onClick={() => setAnim({ scanLayout: value })}
+                    className={`flex flex-col items-center gap-0.5 rounded-xl border py-2.5 text-xs font-semibold transition-all ${
+                      sel ? 'border-orange-500 bg-orange-600/20 text-orange-400' : 'bd tile muted hover:txt'
+                    }`}>
+                    {label}
+                    <span className={`text-[10px] font-normal ${sel ? 'text-orange-400/70' : 'muted'}`}>{desc}</span>
+                  </button>
+                )
+              })}
+            </div>
+          </Field>
+
+          {/* Scan sweep */}
+          <div className="bd mt-4 rounded-xl border p-4">
+            <Toggle
+              label="Scan-Sweep — leuchtende Linie, die während des Scans abwärts läuft"
+              checked={anim.scanSweep ?? false}
+              onChange={v => setAnim({ scanSweep: v })}
+            />
+          </div>
 
           {/* Intro effect */}
           <Field label="Intro-Effekt (Fenster-Einblendung)" className="mt-4">

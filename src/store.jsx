@@ -439,13 +439,15 @@ export function defaultToolStyle() {
       finished: 'Scan complete — generating report',
     },
     animations: {
-      speed: 'normal',     // instant | fast | normal | slow
-      barStyle: 'smooth',  // smooth | pulse | stepped | stripe | shine
-      barShape: 'bar',     // bar | ring | dots | segments
-      intro: 'fade',       // none | fade | slide
-      bgEffect: 'none',    // none | scanlines | grid | glow-pulse
-      glowAccent: false,   // neon glow on accent elements
-      glitchText: false,   // occasional glitch on title
+      speed: 'normal',        // instant | fast | normal | slow
+      barStyle: 'smooth',     // smooth | pulse | stepped | stripe | shine
+      barShape: 'bar',        // bar | ring | dots | segments
+      scanLayout: 'cards',    // cards | minimal | terminal | hud | wave
+      scanSweep: false,       // scan-line sweeping effect during scan
+      intro: 'fade',          // none | fade | slide
+      bgEffect: 'none',       // none | scanlines | grid | glow-pulse
+      glowAccent: false,
+      glitchText: false,
     },
     introVideo: {
       enabled: false,

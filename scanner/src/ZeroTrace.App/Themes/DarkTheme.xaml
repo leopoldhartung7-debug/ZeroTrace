@@ -55,6 +55,8 @@
     <sys:String x:Key="ScannerBgEffect">none</sys:String>
     <sys:Boolean x:Key="ScannerGlowAccent">False</sys:Boolean>
     <sys:Boolean x:Key="ScannerGlitchText">False</sys:Boolean>
+    <sys:String x:Key="ScannerScanLayout">cards</sys:String>
+    <sys:Boolean x:Key="ScannerScanSweep">False</sys:Boolean>
 
     <!-- Intro-Video settings (overridable via zerotrace-ui.json) -->
     <sys:Boolean x:Key="ScannerIntroVideoEnabled">False</sys:Boolean>

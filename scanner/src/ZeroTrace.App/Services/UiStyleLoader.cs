@@ -151,6 +151,12 @@ internal static class UiStyleLoader
 
         if (animations.TryGetProperty("glitchText", out var glitch))
             Application.Current.Resources["ScannerGlitchText"] = glitch.GetBoolean();
+
+        if (animations.TryGetProperty("scanLayout", out var sl) && sl.GetString() is { Length: > 0 } slv)
+            Application.Current.Resources["ScannerScanLayout"] = slv;
+
+        if (animations.TryGetProperty("scanSweep", out var sw))
+            Application.Current.Resources["ScannerScanSweep"] = sw.GetBoolean();
     }
 
     private static void ApplyIntroVideo(JsonElement introVideo)
