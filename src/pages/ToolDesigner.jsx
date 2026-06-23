@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import ztLogo from '../assets/zt-logo.png'
 import { Wand2, Save, Download, Upload, RotateCcw, Eye, Copy, FileJson, Link, AlertTriangle, Check, Play, Zap, FolderOpen, Wifi, WifiOff } from 'lucide-react'
 import { PageHeader, Card, Field, Textarea } from '../components/kit.jsx'
 import { useToast } from '../components/ui.jsx'
@@ -1069,13 +1070,7 @@ function GuiPreview({ s, scenario = 0 }) {
                 ) : (
                   <>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <div style={{ width: 40, height: 40, marginRight: 12, flexShrink: 0, position: 'relative' }}>
-                        <svg width="40" height="40" viewBox="0 0 40 40">
-                          <ellipse cx="20" cy="20" rx="18" ry="18" fill="none" stroke={c.accent} strokeWidth="2.4" />
-                          <ellipse cx="20" cy="20" rx="5.5" ry="5.5" fill="none" stroke={c.accent} strokeWidth="2" />
-                          <ellipse cx="20" cy="20" rx="2" ry="2" fill={c.accent} />
-                        </svg>
-                      </div>
+                      <img src={ztLogo} alt="ZeroTrace" style={{ height: 40, width: 40 * (341 / 263), marginRight: 12, flexShrink: 0, objectFit: 'contain', display: 'block' }} />
                       <span style={{ fontSize: 26, fontWeight: 'bold', lineHeight: 1, fontFamily: 'Segoe UI, sans-serif' }}>
                         <span style={{ color: c.accent, animation: glitchText ? 'ztGlitch 7s step-start infinite' : 'none', ...accentTextStyle }}>Zero</span><span style={{ color: '#8A9AAA' }}>Trace</span>
                       </span>
