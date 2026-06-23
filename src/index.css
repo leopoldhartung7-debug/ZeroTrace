@@ -3,35 +3,35 @@
 @tailwind utilities;
 
 :root {
-  --bg: #1a1b1e;
-  --panel: #212226;
-  --tile: #26272b;
-  --border: #34363b;
-  --text: #e7e8ea;
-  --muted: #8a8d93;
+  --bg: #111113;
+  --panel: #17171a;
+  --tile: #1d1d20;
+  --border: #2c2c32;
+  --text: #f0f0f2;
+  --muted: #82828c;
   --hover: rgba(255, 255, 255, 0.04);
   --accent: #38bdf8;
 }
 
 :root.light {
-  --bg: #f3f5f9;
+  --bg: #f5f5f7;
   --panel: #ffffff;
-  --tile: #eef1f6;
-  --border: #dde2ea;
-  --text: #161b22;
-  --muted: #687180;
-  --hover: rgba(56, 189, 248, 0.07);
+  --tile: #f0f0f4;
+  --border: #e2e2e8;
+  --text: #111113;
+  --muted: #6b6b78;
+  --hover: rgba(0, 0, 0, 0.04);
   --accent: #0284c7;
 }
 
 /* Public marketing pages stay dark regardless of the dashboard theme */
 .force-dark {
-  --bg: #1a1b1e;
-  --panel: #212226;
-  --tile: #26272b;
-  --border: #34363b;
-  --text: #e7e8ea;
-  --muted: #8a8d93;
+  --bg: #111113;
+  --panel: #17171a;
+  --tile: #1d1d20;
+  --border: #2c2c32;
+  --text: #f0f0f2;
+  --muted: #82828c;
   --hover: rgba(255, 255, 255, 0.04);
   --accent: #38bdf8;
 }
@@ -48,12 +48,14 @@
     background: var(--bg);
     color: var(--text);
     -webkit-font-smoothing: antialiased;
+    font-family: 'Inter', system-ui, sans-serif;
   }
   h1,
   h2,
   h3 {
-    font-family: 'Oxanium', 'Inter', system-ui, sans-serif;
-    letter-spacing: -0.01em;
+    font-family: 'Inter', system-ui, sans-serif;
+    letter-spacing: -0.02em;
+    font-weight: 700;
   }
 }
 
@@ -79,7 +81,7 @@
     border-color: var(--border);
   }
   .hoverable {
-    transition: background-color 0.15s;
+    transition: background-color 0.12s;
   }
   .hoverable:hover {
     background: var(--hover);
@@ -87,7 +89,7 @@
   .caps-label {
     font-size: 11px;
     font-weight: 600;
-    letter-spacing: 0.14em;
+    letter-spacing: 0.05em;
     text-transform: uppercase;
     color: var(--muted);
   }
@@ -108,7 +110,7 @@
 }
 
 ::selection {
-  background: rgba(56, 189, 248, 0.28);
+  background: rgba(56, 189, 248, 0.2);
   color: var(--text);
 }
 
@@ -155,16 +157,17 @@
 .zt-flipin { animation: zt-flipin 0.3s ease-out; }
 
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 5px;
+  height: 5px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
   background: var(--border);
-  border-radius: 4px;
+  border-radius: 99px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #2a3445;
+  background: var(--muted);
 }
+
