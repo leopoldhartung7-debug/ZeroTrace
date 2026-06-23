@@ -1,41 +1,51 @@
 /* ZeroTrace brand logo — ZT monogram mark + wordmark */
 
 const SIZES = {
-  sm: { box: 30, brand: '1.05rem', sub: '0.52rem', gap: 10 },
-  md: { box: 40, brand: '1.45rem', sub: '0.58rem', gap: 13 },
-  lg: { box: 54, brand: '2.2rem',  sub: '0.68rem', gap: 18 },
+  sm: { box: 32, brand: '1.05rem', sub: '0.52rem', gap: 10 },
+  md: { box: 44, brand: '1.45rem', sub: '0.58rem', gap: 13 },
+  lg: { box: 60, brand: '2.2rem',  sub: '0.68rem', gap: 18 },
 }
 
 /*
-  ZT monogram — constructed from three white bars:
-    · Full-width top bar  (Z crossbar = T crossbar)
-    · Full-width bottom bar (Z base)
-    · Full-height right bar (T stem)
-  Plus a triangular dark "slash" in the middle-left = the Z diagonal.
-  Outer shape has chamfered corners top-left and bottom-right.
+  ZT monogram — exact shape from the ZeroTrace logo:
 
-  viewBox "0 0 58 50"
-  Outer: M 10,0 H 58 V 40 L 48,50 H 0 V 10 Z
-  Hole:  M 43,13 V 37 H 0 Z
+  Outer boundary: parallelogram-ish with italic left edge
+    - Top-left: pointed at (12, 0) — the logo leans forward
+    - Top edge: horizontal from (12,0) to (58,0)
+    - Right edge: vertical from (58,0) to (58,42)
+    - Bottom-right: chamfer (58,42) → (48,52)
+    - Bottom edge: horizontal from (48,52) to (0,52)
+    - Left edge: SLANTED from (0,52) diagonally back to (12,0)
+      → this italic left edge is the key visual detail
+
+  Z diagonal cut (dark hole):
+    Triangle (44,13) → (44,39) → (4,39)
+    - Creates Z diagonal going upper-right to lower-left
+    - Upper-left of hole = white (Z body connecting top bar to left)
+    - Inside hole = dark background visible = Z diagonal slash
+
+  T stem: the right portion x=44-58 stays solid white full height
+  Top bar: y=0-13 full width (shared Z crossbar + T crossbar)
+  Bottom bar: y=39-52 full width (Z base)
 */
 export default function Logo({ size = 'md', sub = false }) {
   const s = SIZES[size] || SIZES.md
-  const h = s.box * (50 / 58)
+  const h = s.box * (52 / 58)
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: s.gap }}>
       <span style={{ width: s.box, height: h, flexShrink: 0, display: 'block' }}>
-        <svg viewBox="0 0 58 50" fill="none" width="100%" height="100%">
+        <svg viewBox="0 0 58 52" fill="none" width="100%" height="100%">
           <defs>
-            <linearGradient id="zt-grad" x1="0" y1="0" x2="58" y2="50" gradientUnits="userSpaceOnUse">
+            <linearGradient id="zt-grad" x1="12" y1="0" x2="46" y2="52" gradientUnits="userSpaceOnUse">
               <stop offset="0%"   stopColor="#ffffff" />
-              <stop offset="40%"  stopColor="#e8e8f2" />
-              <stop offset="100%" stopColor="#b0b0c4" />
+              <stop offset="40%"  stopColor="#ececf4" />
+              <stop offset="100%" stopColor="#b4b4c8" />
             </linearGradient>
           </defs>
           <path
             fillRule="evenodd"
             fill="url(#zt-grad)"
-            d="M 10,0 H 58 V 40 L 48,50 H 0 V 10 Z M 43,13 V 37 H 0 Z"
+            d="M 12,0 H 58 V 42 L 48,52 H 0 Z M 44,13 V 39 H 4 Z"
           />
         </svg>
       </span>

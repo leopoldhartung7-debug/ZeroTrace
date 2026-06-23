@@ -4,13 +4,13 @@ import Logo from '../components/Logo.jsx'
 /* ZeroTrace ZT monogram mark (shared by the live logo and asset exports). */
 const ZT_PATH = `
   <defs>
-    <linearGradient id="zt-g" x1="0" y1="0" x2="60" y2="52" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#f4f4f8"/>
-      <stop offset="55%" stop-color="#d8d8e4"/>
-      <stop offset="100%" stop-color="#b8b8c8"/>
+    <linearGradient id="zt-g" x1="12" y1="0" x2="46" y2="52" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="40%" stop-color="#ececf4"/>
+      <stop offset="100%" stop-color="#b4b4c8"/>
     </linearGradient>
   </defs>
-  <path fill-rule="evenodd" fill="url(#zt-g)" d="M 5,0 H 60 V 46 L 55,52 H 0 V 5 Z M 44,14 V 38 H 0 Z"/>`
+  <path fill-rule="evenodd" fill="url(#zt-g)" d="M 12,0 H 58 V 42 L 48,52 H 0 Z M 44,13 V 39 H 4 Z"/>`
 
 function drawZeroTrace(ctx, w, h) {
   ctx.fillStyle = '#0e0e11'
