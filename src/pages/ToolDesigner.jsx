@@ -487,7 +487,18 @@ function GuiPreview({ s }) {
     letterSpacing: letSp,
   }
 
-  // Path simulation text based on scan progress
+  const containerRef = useRef(null)
+  const [previewScale, setPreviewScale] = useState(0.5)
+
+  useEffect(() => {
+    if (!containerRef.current) return
+    const obs = new ResizeObserver(([e]) => {
+      setPreviewScale(Math.min(e.contentRect.width / 800, 1))
+    })
+    obs.observe(containerRef.current)
+    return () => obs.disconnect()
+  }, [])
+
   const scanPaths = [
     'C:\\Users\\Player\\AppData\\Local\\FiveM\\FiveM.app\\data',
     'HKCU\\Software\\FiveM\\Addons',
@@ -496,631 +507,366 @@ function GuiPreview({ s }) {
   ]
   const pathIdx = Math.floor((bar1 / 100) * scanPaths.length)
   const simPath = scanPaths[Math.min(pathIdx, scanPaths.length - 1)]
-  const overallPct = Math.round((bar1 + bar2) / 2)
+
+  const scanBarContent = (w) => {
+    switch (barShape) {
+      case 'ring': {
+        const sz = 54, sw = 5, r = (sz - sw) / 2
+        const circ = 2 * Math.PI * r
+        const off = circ * (1 - w / 100)
+        return (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 2 }}>
+            <svg width={sz} height={sz} style={{ transform: 'rotate(-90deg)', flexShrink: 0, filter: glowAccent && w > 0 ? `drop-shadow(0 0 4px ${c.accent}bb)` : 'none' }}>
+              <circle cx={sz/2} cy={sz/2} r={r} fill="none" stroke={c.accent + '22'} strokeWidth={sw} />
+              <circle cx={sz/2} cy={sz/2} r={r} fill="none" stroke={c.accent} strokeWidth={sw}
+                strokeDasharray={circ} strokeDashoffset={off} strokeLinecap="round"
+                style={{ transition: durMs === 0 ? 'none' : `stroke-dashoffset ${durMs}ms ${timing}` }} />
+            </svg>
+            <div style={{ flex: 1, height: 16, borderRadius: 3, background: '#191D24', overflow: 'hidden' }}>
+              <div style={{ ...barFill(w), height: '100%', borderRadius: 3 }} />
+            </div>
+          </div>
+        )
+      }
+      case 'dots': {
+        return (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, paddingBottom: 4 }}>
+            {Array.from({ length: 14 }, (_, j) => {
+              const filled = w >= ((j + 1) / 14 * 100)
+              return (
+                <div key={j} style={{
+                  width: 10, height: 10, borderRadius: '50%',
+                  background: filled ? c.accent : c.accent + '22',
+                  boxShadow: glowAccent && filled ? `0 0 6px 2px ${c.accent}88` : 'none',
+                  transition: durMs === 0 ? 'none' : `background ${Math.max(durMs * 0.4, 120)}ms ease`,
+                }} />
+              )
+            })}
+          </div>
+        )
+      }
+      case 'segments': {
+        return (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ position: 'relative', width: 50, height: 50, flexShrink: 0 }}>
+              <svg width={50} height={50} style={{ animation: w > 0 ? 'ztSegSpin 1.4s linear infinite' : 'none' }}>
+                {[0,1,2,3,4,5,6,7].map(seg => {
+                  const angle = (seg / 8) * 2 * Math.PI - Math.PI / 2
+                  const x = 25 + 18 * Math.cos(angle)
+                  const y = 25 + 18 * Math.sin(angle)
+                  const filled = (seg / 8 * 100) < w
+                  return <circle key={seg} cx={x} cy={y} r={3.5} fill={filled ? c.accent : c.accent + '30'} style={{ filter: glowAccent && filled ? `drop-shadow(0 0 3px ${c.accent})` : 'none' }} />
+                })}
+              </svg>
+            </div>
+            <div style={{ flex: 1, height: 16, borderRadius: 3, background: '#191D24', overflow: 'hidden' }}>
+              <div style={{ ...barFill(w), height: '100%', borderRadius: 3 }} />
+            </div>
+          </div>
+        )
+      }
+      case 'arc': {
+        const sw2 = 7, r2 = 36, totalW = 76
+        const circ2 = Math.PI * r2
+        const off2 = circ2 * (1 - w / 100)
+        const arcD = `M ${sw2/2} ${r2+sw2/2} A ${r2} ${r2} 0 0 0 ${totalW+sw2/2} ${r2+sw2/2}`
+        return (
+          <div style={{ display: 'flex', justifyContent: 'center', paddingBottom: 4 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+              <svg width={totalW+sw2} height={r2+sw2+2} style={{ overflow: 'visible' }}>
+                <path d={arcD} fill="none" stroke={c.accent + '22'} strokeWidth={sw2} strokeLinecap="round" />
+                <path d={arcD} fill="none" stroke={c.accent} strokeWidth={sw2} strokeLinecap="round"
+                  strokeDasharray={circ2} strokeDashoffset={off2}
+                  style={{ transition: durMs === 0 ? 'none' : `stroke-dashoffset ${durMs}ms ${timing}`, filter: glowAccent && w > 0 ? `drop-shadow(0 0 4px ${c.accent}bb)` : 'none' }} />
+              </svg>
+              <span style={{ fontSize: 11, fontFamily: 'monospace', color: '#8A9AAA' }}>{Math.round(w)}%</span>
+            </div>
+          </div>
+        )
+      }
+      case 'blocks': {
+        return (
+          <div style={{ display: 'flex', gap: 3, marginBottom: 2 }}>
+            {Array.from({ length: 10 }, (_, j) => {
+              const filled = w >= ((j + 1) / 10 * 100)
+              return <div key={j} style={{ flex: 1, height: 16, background: filled ? c.accent : c.accent + '18', borderRadius: 2, transition: durMs === 0 ? 'none' : `background ${Math.max(durMs * 0.4, 120)}ms ease`, boxShadow: glowAccent && filled ? `0 0 6px ${c.accent}88` : 'none' }} />
+            })}
+          </div>
+        )
+      }
+      case 'steps': {
+        return (
+          <div style={{ display: 'flex', alignItems: 'center', marginBottom: 2 }}>
+            {[0,1,2,3].map(j => {
+              const done = w >= (j + 1) * 25
+              return (
+                <div key={j} style={{ display: 'flex', alignItems: 'center', flex: j < 3 ? 1 : undefined }}>
+                  <div style={{ width: 26, height: 26, borderRadius: '50%', flexShrink: 0, background: done ? c.accent : 'transparent', border: `2px solid ${done ? c.accent : c.accent + '33'}`, color: done ? '#0E1418' : '#5A6772', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 'bold', boxShadow: glowAccent && done ? `0 0 10px ${c.accent}88` : 'none', transition: durMs === 0 ? 'none' : `all ${durMs}ms ease` }}>{done ? '✓' : j+1}</div>
+                  {j < 3 && <div style={{ flex: 1, height: 2, background: w > (j+1)*25 ? c.accent : c.accent + '22', transition: durMs === 0 ? 'none' : `background ${durMs}ms ease` }} />}
+                </div>
+              )
+            })}
+          </div>
+        )
+      }
+      case 'gauge': {
+        const sz = 54, sw = 6, r = (sz - sw) / 2
+        const circ = 2 * Math.PI * r
+        const off = circ * (1 - w / 100)
+        const shadow = glowAccent && w > 0 ? `drop-shadow(0 0 4px ${c.accent}bb)` : 'none'
+        return (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <div style={{ position: 'relative', width: sz, height: sz, flexShrink: 0 }}>
+              <svg width={sz} height={sz} style={{ transform: 'rotate(-90deg)', position: 'absolute', inset: 0, filter: shadow }}>
+                <circle cx={sz/2} cy={sz/2} r={r} fill="none" stroke={c.accent + '22'} strokeWidth={sw} />
+                <circle cx={sz/2} cy={sz/2} r={r} fill="none" stroke={c.accent} strokeWidth={sw}
+                  strokeDasharray={circ} strokeDashoffset={off} strokeLinecap="round"
+                  style={{ transition: durMs === 0 ? 'none' : `stroke-dashoffset ${durMs}ms ${timing}` }} />
+              </svg>
+              <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                <span style={{ color: c.accent, fontSize: 13, fontWeight: 'bold', fontFamily: 'monospace', lineHeight: 1, textShadow: glowAccent ? `0 0 10px ${c.accent}` : 'none' }}>{Math.round(w)}</span>
+                <span style={{ color: '#8A9AAA', fontSize: 8 }}>%</span>
+              </div>
+            </div>
+          </div>
+        )
+      }
+      case 'comet': {
+        const sz = 54, sw = 3, r = (sz - sw) / 2
+        const circ = 2 * Math.PI * r
+        const mainOff  = circ * (1 - w / 100)
+        const trailOff = circ * (1 - Math.max(0, w - 18) / 100)
+        const tailOff  = circ * (1 - Math.max(0, w - 36) / 100)
+        const cx = sz/2, cy = sz/2
+        const angle = (w / 100) * 2 * Math.PI - Math.PI / 2
+        const dotX = cx + r * Math.cos(angle)
+        const dotY = cy + r * Math.sin(angle)
+        return (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <div style={{ position: 'relative', width: sz, height: sz, flexShrink: 0 }}>
+              <svg width={sz} height={sz} style={{ transform: 'rotate(-90deg)', position: 'absolute', inset: 0 }}>
+                <circle cx={cx} cy={cy} r={r} fill="none" stroke={c.accent + '14'} strokeWidth={sw} />
+                <circle cx={cx} cy={cy} r={r} fill="none" stroke={c.accent} strokeWidth={sw+1} opacity={0.18} strokeDasharray={circ} strokeDashoffset={tailOff} strokeLinecap="round" style={{ transition: durMs === 0 ? 'none' : `stroke-dashoffset ${durMs*1.5}ms ${timing}` }} />
+                <circle cx={cx} cy={cy} r={r} fill="none" stroke={c.accent} strokeWidth={sw} opacity={0.45} strokeDasharray={circ} strokeDashoffset={trailOff} strokeLinecap="round" style={{ transition: durMs === 0 ? 'none' : `stroke-dashoffset ${durMs*1.2}ms ${timing}` }} />
+                <circle cx={cx} cy={cy} r={r} fill="none" stroke={c.accent} strokeWidth={sw} strokeDasharray={circ} strokeDashoffset={mainOff} strokeLinecap="round" style={{ transition: durMs === 0 ? 'none' : `stroke-dashoffset ${durMs}ms ${timing}`, filter: glowAccent ? `drop-shadow(0 0 5px ${c.accent}cc)` : 'none' }} />
+              </svg>
+              {w > 1 && (
+                <svg width={sz} height={sz} style={{ position: 'absolute', inset: 0, filter: glowAccent ? `drop-shadow(0 0 5px ${c.accent}cc)` : 'none' }}>
+                  <circle cx={dotX} cy={dotY} r={3.5} fill={c.accent} />
+                </svg>
+              )}
+              <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <span style={{ color: '#8A9AAA', fontSize: 10, fontFamily: 'monospace' }}>{Math.round(w)}%</span>
+              </div>
+            </div>
+          </div>
+        )
+      }
+      case 'donut': {
+        const sz = 54, sw = 2.5, r = (sz - sw) / 2
+        const circ = 2 * Math.PI * r
+        const off = circ * (1 - w / 100)
+        return (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <div style={{ position: 'relative', width: sz, height: sz, flexShrink: 0 }}>
+              <svg width={sz} height={sz} style={{ transform: 'rotate(-90deg)', position: 'absolute', inset: 0 }}>
+                <circle cx={sz/2} cy={sz/2} r={r} fill="none" stroke={c.accent + '18'} strokeWidth={sw} />
+                <circle cx={sz/2} cy={sz/2} r={r} fill="none" stroke={c.accent} strokeWidth={sw}
+                  strokeDasharray={circ} strokeDashoffset={off} strokeLinecap="round"
+                  style={{ transition: durMs === 0 ? 'none' : `stroke-dashoffset ${durMs}ms ${timing}`, filter: glowAccent ? `drop-shadow(0 0 3px ${c.accent}99)` : 'none' }} />
+              </svg>
+              <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                <span style={{ color: '#E6E8EE', fontSize: 12, fontWeight: '600', lineHeight: 1 }}>{Math.round(w)}</span>
+                <span style={{ color: '#8A9AAA', fontSize: 8, marginTop: 1 }}>%</span>
+              </div>
+            </div>
+          </div>
+        )
+      }
+      case 'glass': {
+        return (
+          <div style={{ position: 'relative', height: 16, borderRadius: 3, background: c.accent + '14', overflow: 'hidden', marginBottom: 2 }}>
+            <div style={{ position: 'absolute', inset: 0, right: `${100 - w}%`, background: `linear-gradient(90deg, ${c.accent}cc, ${c.accent})`, borderRadius: 3, transition: durMs === 0 ? 'none' : `right ${durMs}ms ${timing}`, boxShadow: glowAccent && w > 0 ? `0 0 12px ${c.accent}66` : 'none' }} />
+            <span style={{ position: 'absolute', right: 6, top: '50%', transform: 'translateY(-50%)', fontSize: 9, fontWeight: '600', fontFamily: 'monospace', color: w > 85 ? '#0E1418' : c.accent }}>{Math.round(w)}%</span>
+          </div>
+        )
+      }
+      case 'line': {
+        return (
+          <div style={{ position: 'relative', height: 12, display: 'flex', alignItems: 'center', marginBottom: 2 }}>
+            <div style={{ position: 'absolute', left: 0, right: 0, height: 1, background: c.accent + '20', borderRadius: 1 }} />
+            <div style={{ position: 'absolute', left: 0, height: 1, width: `${w}%`, background: c.accent, borderRadius: 1, transition: durMs === 0 ? 'none' : `width ${durMs}ms ${timing}` }} />
+            {w > 0 && <div style={{ position: 'absolute', width: 8, height: 8, borderRadius: '50%', background: c.accent, left: `calc(${w}% - 4px)`, boxShadow: glowAccent ? `0 0 8px ${c.accent}` : `0 0 4px ${c.accent}99`, transition: durMs === 0 ? 'none' : `left ${durMs}ms ${timing}` }} />}
+          </div>
+        )
+      }
+      case 'spinner': {
+        const sz = 54, sw = 3, r = (sz - sw) / 2
+        const circ = 2 * Math.PI * r
+        const spinDur = Math.max(1000, durMs === 0 ? 1000 : durMs * 1.8)
+        const cx = sz/2, cy = sz/2
+        const arc = (pct) => `${circ * pct} ${circ * (1 - pct)}`
+        const rotStyle = (m) => ({ transformOrigin: `${cx}px ${cy}px`, animation: `ztSpinRot ${spinDur * m}ms linear infinite` })
+        return (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <div style={{ position: 'relative', width: sz, height: sz, flexShrink: 0 }}>
+              <svg width={sz} height={sz} style={{ position: 'absolute', inset: 0 }}>
+                <circle cx={cx} cy={cy} r={r} fill="none" stroke={c.accent + '14'} strokeWidth={sw} />
+                <circle cx={cx} cy={cy} r={r} fill="none" stroke={c.accent} strokeWidth={sw+1} strokeLinecap="round" strokeDasharray={arc(0.28)} opacity={0.18} style={rotStyle(1.22)} />
+                <circle cx={cx} cy={cy} r={r} fill="none" stroke={c.accent} strokeWidth={sw} strokeLinecap="round" strokeDasharray={arc(0.48)} opacity={0.42} style={rotStyle(1.1)} />
+                <circle cx={cx} cy={cy} r={r} fill="none" stroke={c.accent} strokeWidth={sw} strokeLinecap="round" strokeDasharray={arc(0.68)} style={{ ...rotStyle(1), filter: glowAccent ? `drop-shadow(0 0 5px ${c.accent}cc)` : 'none' }} />
+              </svg>
+              <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <span style={{ color: '#8A9AAA', fontSize: 10, fontFamily: 'monospace' }}>{Math.round(w)}%</span>
+              </div>
+            </div>
+          </div>
+        )
+      }
+      default: {
+        // bar (default — matches real scanner exactly)
+        return (
+          <div style={{ height: 16, background: '#191D24', borderRadius: 3, overflow: 'hidden' }}>
+            <div style={{ ...barFill(w), height: '100%', borderRadius: 3 }} />
+          </div>
+        )
+      }
+    }
+  }
 
   return (
-    <div>
+    <div ref={containerRef} style={{ width: '100%' }}>
       <style>{ANIM_CSS}</style>
 
-      {/* ── Scanner window card ── */}
-      <div style={{
-        borderRadius: Math.max(cornerR, 14),
-        border: borderW > 0 ? `${borderW}px solid ${borderClr}` : `1px solid ${c.accent}40`,
-        boxShadow: shadowVal !== 'none' ? shadowVal : '0 16px 48px rgba(0,0,0,0.55)',
-        overflow: 'hidden',
-        opacity: fr.opacity / 100,
-        background: c.mutedBackground,
-        position: 'relative',
-        ...introStyle,
-      }}>
-        {/* Top accent gradient line */}
-        <div style={{ height: 2, background: `linear-gradient(90deg, transparent, ${c.accent}, transparent)` }} />
+      {/* Outer wrapper: scaled to fit container, preserving 800×400 aspect ratio */}
+      <div style={{ width: '100%', height: 400 * previewScale, position: 'relative', overflow: 'hidden' }}>
+        <div style={{ width: 800, height: 400, transform: `scale(${previewScale})`, transformOrigin: 'top left', position: 'absolute', top: 0, left: 0 }}>
 
-        {/* ── Intro video (full overlay on right column) ── */}
-        {stage === 'intro-video' && (
-          <div style={{ display: 'flex', minHeight: 170 }}>
-            {/* Left always shown */}
-            <div style={{ width: '36%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '14px 10px', position: 'relative', flexShrink: 0, background: c.mutedBackground }}>
-              {showCustom ? (
-                <img src={s.logoUrl} alt="logo" onError={() => setImgErr(true)} style={{ height: 46, maxWidth: 110, objectFit: 'contain', marginBottom: 4 }} />
-              ) : (
-                <>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 4 }}>
-                    <svg width="30" height="30" viewBox="0 0 38 38" style={{ flexShrink: 0 }}>
-                      <ellipse cx="19" cy="19" rx="17.8" ry="17.8" fill="none" stroke={c.accent} strokeWidth="2.4" />
-                      <ellipse cx="19" cy="19" rx="5.5" ry="5.5" fill="none" stroke={c.accent} strokeWidth="2" />
-                      <ellipse cx="19" cy="19" rx="2" ry="2" fill={c.accent} />
-                    </svg>
-                    <span style={{ fontSize: 17, fontWeight: 'bold', lineHeight: 1 }}>
-                      <span style={{ color: c.accent, animation: glitchText ? 'ztGlitch 7s step-start infinite' : 'none', ...accentTextStyle }}>Zero</span>
-                      <span style={{ color: '#8A9AAA' }}>Trace</span>
-                    </span>
-                  </div>
-                  <div style={{ color: '#5A6772', fontSize: 10 }}>Host-Scanner</div>
-                  <div style={{ color: '#46505C', fontSize: 9, textAlign: 'center', marginTop: 3, lineHeight: 1.4, maxWidth: 110 }}>Lokale Cheat- &amp; Manipulations-Analyse</div>
-                  <div style={{ color: '#3A444E', fontSize: 9, marginTop: 6 }}>{s.version || 'v1.3'}</div>
-                </>
-              )}
-              {!s.useDefaultLogo && s.logoUrl && imgErr && (
-                <p style={{ fontSize: 9, color: '#ef4444', marginTop: 4, textAlign: 'center' }}>Logo-Fehler</p>
-              )}
-              <div style={{ position: 'absolute', right: 0, top: '15%', bottom: '15%', width: 1, background: '#242A33' }} />
-            </div>
-            {/* Right: video */}
-            <div className="flex flex-col items-center justify-center gap-2 flex-1" style={{ background: '#000' }}>
-              <div style={{ animation: 'ztVideoIcon 1s ease-in-out infinite', color: c.accent, fontSize: 28 }}>▶</div>
-              <p className="text-[10px] font-mono" style={{ color: c.mutedText }}>{iv.path || 'intro.mp4'}</p>
-            </div>
-          </div>
-        )}
+          {/* Scanner window — native 800×400 pixel values match XAML exactly */}
+          <div style={{ margin: 16, height: 368, borderRadius: 14, overflow: 'hidden', position: 'relative', display: 'flex', flexDirection: 'column', background: c.mutedBackground, border: `1px solid rgba(78,188,210,0.15)`, boxShadow: '0 0 40px rgba(0,0,0,0.55)', opacity: fr.opacity / 100, ...introStyle }}>
 
-        {/* ── Main scanner body ── */}
-        {stage !== 'intro-video' && (
-          <div style={{ display: 'flex', position: 'relative', minHeight: 170 }}>
-            {/* Background effects */}
-            <div style={{ position: 'absolute', inset: 0, background: c.background }} />
-            {bgEffect === 'scanlines' && (
-              <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.13) 2px, rgba(0,0,0,0.13) 4px)' }} />
-            )}
-            {bgEffect === 'grid' && (
-              <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', backgroundImage: `linear-gradient(${c.accent}16 1px, transparent 1px), linear-gradient(90deg, ${c.accent}16 1px, transparent 1px)`, backgroundSize: '22px 22px' }} />
-            )}
-            {bgEffect === 'glow-pulse' && (
-              <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: `radial-gradient(65% 55% at 50% 30%, ${c.accent}2c, transparent)`, animation: 'ztGlowPulse 3s ease-in-out infinite' }} />
-            )}
+            {/* Top accent gradient line (2px) */}
+            <div style={{ height: 2, flexShrink: 0, background: `linear-gradient(90deg, transparent, ${c.accent}, transparent)` }} />
 
-            {/* Close button */}
-            <div style={{ position: 'absolute', top: 8, right: 10, color: '#5A6772', fontSize: 11, zIndex: 2 }}>✕</div>
+            {/* Content row */}
+            <div style={{ flex: 1, display: 'flex', position: 'relative', overflow: 'hidden' }}>
 
-            {/* Left branding column */}
-            <div style={{ width: '36%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '14px 10px', position: 'relative', flexShrink: 0, zIndex: 1 }}>
-              {showCustom ? (
-                <img src={s.logoUrl} alt="logo" onError={() => setImgErr(true)} style={{ height: 46, maxWidth: 110, objectFit: 'contain', marginBottom: 4 }} />
-              ) : (
-                <>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 4 }}>
-                    <svg width="30" height="30" viewBox="0 0 38 38" style={{ flexShrink: 0 }}>
-                      <ellipse cx="19" cy="19" rx="17.8" ry="17.8" fill="none" stroke={c.accent} strokeWidth="2.4" />
-                      <ellipse cx="19" cy="19" rx="5.5" ry="5.5" fill="none" stroke={c.accent} strokeWidth="2" />
-                      <ellipse cx="19" cy="19" rx="2" ry="2" fill={c.accent} />
-                    </svg>
-                    <span style={{ fontSize: 17, fontWeight: 'bold', lineHeight: 1 }}>
-                      <span style={{ color: c.accent, animation: glitchText ? 'ztGlitch 7s step-start infinite' : 'none', ...accentTextStyle }}>Zero</span>
-                      <span style={{ color: '#8A9AAA' }}>Trace</span>
-                    </span>
-                  </div>
-                  <div style={{ color: '#5A6772', fontSize: 10 }}>Host-Scanner</div>
-                  <div style={{ color: '#46505C', fontSize: 9, textAlign: 'center', marginTop: 3, lineHeight: 1.4, maxWidth: 110 }}>Lokale Cheat- &amp; Manipulations-Analyse</div>
-                  <div style={{ color: '#3A444E', fontSize: 9, marginTop: 6 }}>{s.version || 'v1.3'}</div>
-                </>
-              )}
-              {!s.useDefaultLogo && s.logoUrl && imgErr && (
-                <p style={{ fontSize: 9, color: '#ef4444', marginTop: 4, textAlign: 'center' }}>Logo-Fehler</p>
-              )}
-              {/* Vertical divider */}
-              <div style={{ position: 'absolute', right: 0, top: '15%', bottom: '15%', width: 1, background: '#242A33' }} />
-            </div>
+              {/* Background effects */}
+              <div style={{ position: 'absolute', inset: 0, background: c.background }} />
+              {bgEffect === 'scanlines' && <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.13) 2px, rgba(0,0,0,0.13) 4px)' }} />}
+              {bgEffect === 'grid' && <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', backgroundImage: `linear-gradient(${c.accent}16 1px, transparent 1px), linear-gradient(90deg, ${c.accent}16 1px, transparent 1px)`, backgroundSize: '22px 22px' }} />}
+              {bgEffect === 'glow-pulse' && <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: `radial-gradient(65% 55% at 50% 30%, ${c.accent}2c, transparent)`, animation: 'ztGlowPulse 3s ease-in-out infinite' }} />}
 
-            {/* Right flow column */}
-            <div style={{ flex: 1, padding: '14px 24px', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', zIndex: 1, ...bodyStyle }}>
+              {/* Close button — top right */}
+              <div style={{ position: 'absolute', top: 8, right: 10, width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#5A6772', fontSize: 13, zIndex: 2, cursor: 'default' }}>✕</div>
 
-              {/* PIN stage */}
-              {stage === 'pin' && (
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
-                  <div style={{ border: '1px solid #2A3038', borderRadius: 11, padding: '12px 14px', background: 'rgba(0,0,0,0.02)' }}>
-                    <p style={{ color: '#8A9AAA', fontSize: 10, textAlign: 'center', marginBottom: 10 }}>{s.text?.pin || 'Gib deinen 6-stelligen PIN ein'}</p>
-                    <div style={{ display: 'flex', gap: 5, justifyContent: 'center' }}>
-                      {SIM_PIN.map((_, i) => {
-                        const filled = i < pinDisplay.length
-                        return (
-                          <div key={i} style={{
-                            width: 26, height: 30, borderRadius: 5, flexShrink: 0,
-                            border: `1px solid ${filled ? c.accent + '88' : '#3A4350'}`,
-                            background: 'transparent',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            fontSize: 13, fontWeight: 'bold', color: '#C8D2DA',
-                            transition: durMs === 0 ? 'none' : `border-color ${durMs * 0.5}ms ease`,
-                            boxShadow: glowAccent && filled ? `0 0 6px ${c.accent}55` : 'none',
-                            ...accentTextStyle,
-                          }}>
-                            {filled ? pinCh.f : ''}
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </div>
-                  <div style={{ background: c.accent, color: '#0E1418', fontSize: 11, fontWeight: '600', borderRadius: 6, padding: '6px 20px', opacity: pinDisplay.length < 6 ? 0.4 : 1 }}>
-                    Weiter
-                  </div>
-                </div>
-              )}
-
-              {/* Scanning stage */}
-              {stage === 'scanning' && (
-                <div style={{ position: 'relative', width: '100%' }}>
-                  {/* Real scanner header: "X% LÄUFT" */}
-                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 8 }}>
-                    <span style={{ color: '#C8D4DC', fontSize: 12, fontWeight: 'bold', fontFamily: 'monospace', minWidth: 34 }}>{overallPct}%</span>
-                    <span style={{ color: '#5A6772', fontSize: 10, letterSpacing: '0.06em' }}>LÄUFT</span>
-                  </div>
-                  {/* Scan sweep line */}
-                  {scanSweep && (
-                    <div style={{
-                      position: 'absolute', left: 0, right: 0, height: 2, zIndex: 10, pointerEvents: 'none',
-                      background: `linear-gradient(90deg, transparent, ${c.accent}cc, transparent)`,
-                      boxShadow: `0 0 8px 2px ${c.accent}88`,
-                      animation: `ztSweep ${Math.max(durMs * 2, 1200)}ms linear infinite`,
-                    }} />
-                  )}
-
-                  {/* ── Layout: Cards ── */}
-                  {(scanLayout === 'cards' || !scanLayout) && (
-                    <div className="space-y-4">
-                      {[{ label: s.text.scanning, w: bar1 }, { label: s.text.heuristic, w: bar2 }].map((step, i) => {
-                        const rp = ringProgress(step.w)
-                        return (
-                          <div key={i} className="rounded-lg p-4" style={{ background: c.mutedBackground }}>
-                            <div className="flex items-center justify-between mb-3">
-                              <p className="text-sm" style={{ color: c.text }}>{step.label}</p>
-                              <p className="text-xs font-mono" style={{ color: c.mutedText }}>{Math.round(step.w)}%</p>
-                            </div>
-                            {barShape === 'bar' && (
-                              <div className="w-full overflow-hidden" style={{ height: barHPx, borderRadius: barCapR, background: trackClr }}>
-                                <div style={{ ...barFill(step.w), height: '100%', borderRadius: barCapR }} />
-                              </div>
-                            )}
-                            {barShape === 'ring' && (
-                              <div className="flex items-center gap-4">
-                                <svg width={rp.size} height={rp.size} style={{ transform: 'rotate(-90deg)', flexShrink: 0, filter: rp.shadow }}>
-                                  <circle cx={rp.size/2} cy={rp.size/2} r={rp.r} fill="none" stroke={trackClr || c.accent + '22'} strokeWidth={rp.sw} />
-                                  <circle cx={rp.size/2} cy={rp.size/2} r={rp.r} fill="none" stroke={c.accent} strokeWidth={rp.sw}
-                                    strokeDasharray={rp.circ} strokeDashoffset={rp.offset} strokeLinecap={bar.caps === 'round' ? 'round' : 'butt'}
-                                    style={{ transition: durMs === 0 ? 'none' : `stroke-dashoffset ${durMs}ms ${timing}` }} />
-                                </svg>
-                                <div className="flex-1 overflow-hidden" style={{ height: barHPx, borderRadius: barCapR, background: trackClr }}>
-                                  <div style={{ ...barFill(step.w), height: '100%', borderRadius: barCapR }} />
-                                </div>
-                              </div>
-                            )}
-                            {barShape === 'dots' && (
-                              <div className="flex flex-wrap gap-1.5 pt-0.5">
-                                {Array.from({ length: 14 }, (_, j) => {
-                                  const filled = step.w >= ((j + 1) / 14 * 100)
-                                  return (
-                                    <div key={j} className="rounded-full" style={{
-                                      width: 9, height: 9,
-                                      background: filled ? c.accent : c.accent + '22',
-                                      boxShadow: glowAccent && filled ? `0 0 6px 2px ${c.accent}88` : 'none',
-                                      transition: durMs === 0 ? 'none' : `background ${Math.max(durMs * 0.4, 120)}ms ease`,
-                                      animation: glowAccent && filled ? 'ztDotPop 0.3s ease' : 'none',
-                                    }} />
-                                  )
-                                })}
-                              </div>
-                            )}
-                            {barShape === 'segments' && (
-                              <div className="flex items-center gap-3">
-                                <div style={{ position: 'relative', width: 50, height: 50, flexShrink: 0 }}>
-                                  <svg width={50} height={50} style={{ position: 'absolute', inset: 0, animation: step.w > 0 ? 'ztSegSpin 1.4s linear infinite' : 'none' }}>
-                                    {[0,1,2,3,4,5,6,7].map(seg => {
-                                      const angle = (seg / 8) * 2 * Math.PI - Math.PI / 2
-                                      const x = 25 + 18 * Math.cos(angle)
-                                      const y = 25 + 18 * Math.sin(angle)
-                                      const filled = (seg / 8 * 100) < step.w
-                                      return (
-                                        <circle key={seg} cx={x} cy={y} r={3.5}
-                                          fill={filled ? c.accent : c.accent + '30'}
-                                          style={{ filter: glowAccent && filled ? `drop-shadow(0 0 3px ${c.accent})` : 'none' }} />
-                                      )
-                                    })}
-                                  </svg>
-                                </div>
-                                <div className="flex-1 h-1.5 overflow-hidden rounded-full" style={{ background: c.background }}>
-                                  <div className="h-full rounded-full" style={barFill(step.w)} />
-                                </div>
-                              </div>
-                            )}
-                            {/* ── Arc (semicircle gauge) ── */}
-                            {barShape === 'arc' && (() => {
-                              const sw = 7, r = 36, totalW = 76
-                              const circ = Math.PI * r
-                              const off = circ * (1 - step.w / 100)
-                              const arcD = `M ${sw / 2} ${r + sw / 2} A ${r} ${r} 0 0 0 ${totalW + sw / 2} ${r + sw / 2}`
-                              const arcShadow = glowAccent && step.w > 0 ? `drop-shadow(0 0 4px ${c.accent}bb)` : 'none'
-                              return (
-                                <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 2 }}>
-                                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-                                    <svg width={totalW + sw} height={r + sw + 2} style={{ overflow: 'visible' }}>
-                                      <path d={arcD} fill="none" stroke={trackClr || c.accent + '22'} strokeWidth={sw}
-                                        strokeLinecap={bar.caps === 'round' ? 'round' : 'butt'} />
-                                      <path d={arcD} fill="none" stroke={c.accent} strokeWidth={sw}
-                                        strokeLinecap={bar.caps === 'round' ? 'round' : 'butt'}
-                                        strokeDasharray={circ} strokeDashoffset={off}
-                                        style={{ transition: durMs === 0 ? 'none' : `stroke-dashoffset ${durMs}ms ${timing}`, filter: arcShadow }} />
-                                    </svg>
-                                    <span style={{ fontSize: 11, fontFamily: 'monospace', color: c.mutedText }}>{Math.round(step.w)}%</span>
-                                  </div>
-                                </div>
-                              )
-                            })()}
-                            {/* ── Blocks (segmented rectangles) ── */}
-                            {barShape === 'blocks' && (
-                              <div style={{ display: 'flex', gap: 3 }}>
-                                {Array.from({ length: 10 }, (_, j) => {
-                                  const filled = step.w >= ((j + 1) / 10 * 100)
-                                  return (
-                                    <div key={j} style={{
-                                      flex: 1, height: Math.max(barHPx, 8),
-                                      background: filled ? c.accent : c.accent + '18',
-                                      borderRadius: barCapR / 2,
-                                      transition: durMs === 0 ? 'none' : `background ${Math.max(durMs * 0.4, 120)}ms ease`,
-                                      boxShadow: glowAccent && filled ? `0 0 6px ${c.accent}88` : 'none',
-                                    }} />
-                                  )
-                                })}
-                              </div>
-                            )}
-                            {/* ── Steps (numbered progress circles) ── */}
-                            {barShape === 'steps' && (
-                              <div style={{ display: 'flex', alignItems: 'center' }}>
-                                {[0, 1, 2, 3].map(j => {
-                                  const done = step.w >= (j + 1) * 25
-                                  return (
-                                    <div key={j} style={{ display: 'flex', alignItems: 'center', flex: j < 3 ? 1 : undefined }}>
-                                      <div style={{
-                                        width: 26, height: 26, borderRadius: '50%', flexShrink: 0,
-                                        background: done ? c.accent : 'transparent',
-                                        border: `2px solid ${done ? c.accent : c.accent + '33'}`,
-                                        color: done ? c.titlebar : c.mutedText,
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                        fontSize: 11, fontWeight: 'bold', fontFamily: 'monospace',
-                                        boxShadow: glowAccent && done ? `0 0 10px ${c.accent}88` : 'none',
-                                        transition: durMs === 0 ? 'none' : `all ${durMs}ms ease`,
-                                      }}>{done ? '✓' : j + 1}</div>
-                                      {j < 3 && (
-                                        <div style={{
-                                          flex: 1, height: 2,
-                                          background: step.w > (j + 1) * 25 ? c.accent : c.accent + '22',
-                                          transition: durMs === 0 ? 'none' : `background ${durMs}ms ease`,
-                                          boxShadow: glowAccent && step.w > (j + 1) * 25 ? `0 0 6px ${c.accent}88` : 'none',
-                                        }} />
-                                      )}
-                                    </div>
-                                  )
-                                })}
-                              </div>
-                            )}
-                            {/* ── Gauge (ring + big number) ── */}
-                            {barShape === 'gauge' && (() => {
-                              const rg = ringProgress(step.w, 58, 6)
-                              return (
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                                  <div style={{ position: 'relative', width: rg.size, height: rg.size, flexShrink: 0 }}>
-                                    <svg width={rg.size} height={rg.size} style={{ transform: 'rotate(-90deg)', position: 'absolute', inset: 0, filter: rg.shadow }}>
-                                      <circle cx={rg.size / 2} cy={rg.size / 2} r={rg.r} fill="none" stroke={trackClr || c.accent + '22'} strokeWidth={rg.sw} />
-                                      <circle cx={rg.size / 2} cy={rg.size / 2} r={rg.r} fill="none" stroke={c.accent} strokeWidth={rg.sw}
-                                        strokeDasharray={rg.circ} strokeDashoffset={rg.offset} strokeLinecap={bar.caps === 'round' ? 'round' : 'butt'}
-                                        style={{ transition: durMs === 0 ? 'none' : `stroke-dashoffset ${durMs}ms ${timing}` }} />
-                                    </svg>
-                                    <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                                      <span style={{ color: c.accent, fontSize: 14, fontWeight: 'bold', fontFamily: 'monospace', lineHeight: 1, textShadow: glowAccent ? `0 0 10px ${c.accent}` : 'none' }}>{Math.round(step.w)}</span>
-                                      <span style={{ color: c.mutedText, fontSize: 8 }}>%</span>
-                                    </div>
-                                  </div>
-                                  <p style={{ color: c.text, fontSize: 12 }}>{step.label}</p>
-                                </div>
-                              )
-                            })()}
-                            {/* ── Comet (trailing ring) ── */}
-                            {barShape === 'comet' && (() => {
-                              const sz = 58, sw = 3, r = (sz - sw) / 2
-                              const circ = 2 * Math.PI * r
-                              const pct = step.w
-                              const mainOff  = circ * (1 - pct / 100)
-                              const trailOff = circ * (1 - Math.max(0, pct - 18) / 100)
-                              const tailOff  = circ * (1 - Math.max(0, pct - 36) / 100)
-                              const cx = sz / 2, cy = sz / 2
-                              const angle  = (pct / 100) * 2 * Math.PI - Math.PI / 2
-                              const dotX = cx + r * Math.cos(angle)
-                              const dotY = cy + r * Math.sin(angle)
-                              const glowFilter = glowAccent && pct > 0 ? `drop-shadow(0 0 5px ${c.accent}cc)` : 'none'
-                              return (
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                                  <div style={{ position: 'relative', width: sz, height: sz, flexShrink: 0 }}>
-                                    <svg width={sz} height={sz} style={{ transform: 'rotate(-90deg)', position: 'absolute', inset: 0 }}>
-                                      {/* track */}
-                                      <circle cx={cx} cy={cy} r={r} fill="none" stroke={c.accent + '14'} strokeWidth={sw} />
-                                      {/* far tail — slowest */}
-                                      <circle cx={cx} cy={cy} r={r} fill="none" stroke={c.accent + '28'} strokeWidth={sw + 1}
-                                        strokeDasharray={circ} strokeDashoffset={tailOff} strokeLinecap="round"
-                                        style={{ transition: durMs === 0 ? 'none' : `stroke-dashoffset ${durMs * 1.5}ms ${timing}` }} />
-                                      {/* mid trail */}
-                                      <circle cx={cx} cy={cy} r={r} fill="none" stroke={c.accent + '55'} strokeWidth={sw}
-                                        strokeDasharray={circ} strokeDashoffset={trailOff} strokeLinecap="round"
-                                        style={{ transition: durMs === 0 ? 'none' : `stroke-dashoffset ${durMs * 1.2}ms ${timing}` }} />
-                                      {/* main arc — fastest */}
-                                      <circle cx={cx} cy={cy} r={r} fill="none" stroke={c.accent} strokeWidth={sw}
-                                        strokeDasharray={circ} strokeDashoffset={mainOff} strokeLinecap="round"
-                                        style={{ transition: durMs === 0 ? 'none' : `stroke-dashoffset ${durMs}ms ${timing}` }} />
-                                    </svg>
-                                    {/* leading dot */}
-                                    {pct > 1 && (
-                                      <svg width={sz} height={sz} style={{ position: 'absolute', inset: 0, filter: glowFilter }}>
-                                        <circle cx={dotX} cy={dotY} r={3.5} fill={c.accent}
-                                          style={{ transition: durMs === 0 ? 'none' : `cx ${durMs}ms ${timing}, cy ${durMs}ms ${timing}` }} />
-                                      </svg>
-                                    )}
-                                    <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                      <span style={{ color: c.mutedText, fontSize: 10, fontFamily: 'monospace' }}>{Math.round(pct)}%</span>
-                                    </div>
-                                  </div>
-                                  <p style={{ color: c.text, fontSize: 12 }}>{step.label}</p>
-                                </div>
-                              )
-                            })()}
-                            {/* ── Donut (ultra-thin clean ring) ── */}
-                            {barShape === 'donut' && (() => {
-                              const sz = 58, sw = 2.5, r = (sz - sw) / 2
-                              const circ = 2 * Math.PI * r
-                              const off = circ * (1 - step.w / 100)
-                              const glowFilter = glowAccent && step.w > 0 ? `drop-shadow(0 0 3px ${c.accent}99)` : 'none'
-                              return (
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                                  <div style={{ position: 'relative', width: sz, height: sz, flexShrink: 0 }}>
-                                    <svg width={sz} height={sz} style={{ transform: 'rotate(-90deg)', position: 'absolute', inset: 0 }}>
-                                      <circle cx={sz / 2} cy={sz / 2} r={r} fill="none" stroke={c.accent + '18'} strokeWidth={sw} />
-                                      <circle cx={sz / 2} cy={sz / 2} r={r} fill="none" stroke={c.accent} strokeWidth={sw}
-                                        strokeDasharray={circ} strokeDashoffset={off} strokeLinecap="round"
-                                        style={{ transition: durMs === 0 ? 'none' : `stroke-dashoffset ${durMs}ms ${timing}`, filter: glowFilter }} />
-                                    </svg>
-                                    <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 0 }}>
-                                      <span style={{ color: c.text, fontSize: 13, fontWeight: '600', lineHeight: 1 }}>{Math.round(step.w)}</span>
-                                      <span style={{ color: c.mutedText, fontSize: 8, marginTop: 1 }}>%</span>
-                                    </div>
-                                  </div>
-                                  <p style={{ color: c.text, fontSize: 12 }}>{step.label}</p>
-                                </div>
-                              )
-                            })()}
-                            {/* ── Glass (bar with label inside fill) ── */}
-                            {barShape === 'glass' && (
-                              <div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
-                                  <span style={{ color: c.mutedText, fontSize: 11 }}>{step.label}</span>
-                                </div>
-                                <div style={{
-                                  position: 'relative', height: Math.max(barHPx, 18),
-                                  borderRadius: barCapR, background: c.accent + '14',
-                                  overflow: 'hidden',
-                                }}>
-                                  <div style={{
-                                    position: 'absolute', inset: 0, right: `${100 - step.w}%`,
-                                    background: `linear-gradient(90deg, ${c.accent}cc, ${c.accent})`,
-                                    borderRadius: barCapR,
-                                    transition: durMs === 0 ? 'none' : `right ${durMs}ms ${timing}`,
-                                    boxShadow: glowAccent && step.w > 0 ? `0 0 12px ${c.accent}66` : 'none',
-                                  }} />
-                                  <span style={{
-                                    position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)',
-                                    fontSize: 10, fontWeight: '600', fontFamily: 'monospace',
-                                    color: step.w > 85 ? c.titlebar : c.accent,
-                                    transition: durMs === 0 ? 'none' : `color ${durMs}ms ease`,
-                                  }}>{Math.round(step.w)}%</span>
-                                </div>
-                              </div>
-                            )}
-                            {/* ── Line (thin line + glowing leading dot) ── */}
-                            {barShape === 'line' && (
-                              <div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                                  <span style={{ color: c.mutedText, fontSize: 11 }}>{step.label}</span>
-                                  <span style={{ color: c.accent, fontSize: 11, fontFamily: 'monospace' }}>{Math.round(step.w)}%</span>
-                                </div>
-                                <div style={{ position: 'relative', height: 12, display: 'flex', alignItems: 'center' }}>
-                                  {/* track */}
-                                  <div style={{ position: 'absolute', left: 0, right: 0, height: 1, background: c.accent + '20', borderRadius: 1 }} />
-                                  {/* filled line */}
-                                  <div style={{
-                                    position: 'absolute', left: 0, height: 1,
-                                    width: `${step.w}%`, background: c.accent,
-                                    borderRadius: 1,
-                                    transition: durMs === 0 ? 'none' : `width ${durMs}ms ${timing}`,
-                                  }} />
-                                  {/* leading dot */}
-                                  {step.w > 0 && (
-                                    <div style={{
-                                      position: 'absolute', width: 8, height: 8, borderRadius: '50%',
-                                      background: c.accent,
-                                      left: `calc(${step.w}% - 4px)`,
-                                      boxShadow: glowAccent ? `0 0 8px ${c.accent}, 0 0 16px ${c.accent}88` : `0 0 4px ${c.accent}99`,
-                                      transition: durMs === 0 ? 'none' : `left ${durMs}ms ${timing}`,
-                                    }} />
-                                  )}
-                                </div>
-                              </div>
-                            )}
-                            {/* ── Spinner (endlos drehender Schweif-Ring) ── */}
-                            {barShape === 'spinner' && (() => {
-                              const sz = 58, sw = 3, r = (sz - sw) / 2
-                              const circ = 2 * Math.PI * r
-                              const cx = sz / 2, cy = sz / 2
-                              const spinDur = Math.max(1000, durMs === 0 ? 1000 : durMs * 1.8)
-                              const arc = (pct) => `${circ * pct} ${circ * (1 - pct)}`
-                              const rotStyle = (multiplier) => ({
-                                transformOrigin: `${cx}px ${cy}px`,
-                                animation: `ztSpinRot ${spinDur * multiplier}ms linear infinite`,
-                              })
-                              return (
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                                  <div style={{ position: 'relative', width: sz, height: sz, flexShrink: 0 }}>
-                                    <svg width={sz} height={sz} style={{ position: 'absolute', inset: 0 }}>
-                                      {/* track */}
-                                      <circle cx={cx} cy={cy} r={r} fill="none" stroke={c.accent + '14'} strokeWidth={sw} />
-                                      {/* far tail — slowest, shortest, most transparent */}
-                                      <circle cx={cx} cy={cy} r={r} fill="none" stroke={c.accent}
-                                        strokeWidth={sw + 1} strokeLinecap="round"
-                                        strokeDasharray={arc(0.28)} opacity={0.18}
-                                        style={rotStyle(1.22)} />
-                                      {/* mid trail */}
-                                      <circle cx={cx} cy={cy} r={r} fill="none" stroke={c.accent}
-                                        strokeWidth={sw} strokeLinecap="round"
-                                        strokeDasharray={arc(0.48)} opacity={0.42}
-                                        style={rotStyle(1.1)} />
-                                      {/* main arc — fastest, brightest */}
-                                      <circle cx={cx} cy={cy} r={r} fill="none" stroke={c.accent}
-                                        strokeWidth={sw} strokeLinecap="round"
-                                        strokeDasharray={arc(0.68)}
-                                        style={{
-                                          ...rotStyle(1),
-                                          filter: glowAccent ? `drop-shadow(0 0 5px ${c.accent}cc)` : 'none',
-                                        }} />
-                                    </svg>
-                                    <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                      <span style={{ color: c.mutedText, fontSize: 10, fontFamily: 'monospace' }}>{Math.round(step.w)}%</span>
-                                    </div>
-                                  </div>
-                                  <p style={{ color: c.text, fontSize: 12 }}>{step.label}</p>
-                                </div>
-                              )
-                            })()}
-                          </div>
-                        )
-                      })}
-                    </div>
-                  )}
-
-                  {/* ── Layout: Minimal ── */}
-                  {scanLayout === 'minimal' && (
-                    <div className="space-y-5 py-2">
-                      {[{ label: s.text.scanning, w: bar1 }, { label: s.text.heuristic, w: bar2 }].map((step, i) => (
-                        <div key={i}>
-                          <div className="flex justify-between mb-1.5">
-                            <span style={{ color: c.mutedText, fontSize: 11 }}>{step.label}</span>
-                            <span style={{ color: c.accent, fontSize: 11, fontFamily: 'monospace' }}>{Math.round(step.w)}%</span>
-                          </div>
-                          <div style={{ height: barHPx, borderRadius: barCapR, background: trackClr, overflow: 'hidden' }}>
-                            <div style={{ ...barFill(step.w), height: '100%', borderRadius: barCapR }} />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* ── Layout: Terminal ── */}
-                  {scanLayout === 'terminal' && (
-                    <div style={{
-                      background: '#050810', border: `1px solid ${c.accent}33`, borderRadius: 6,
-                      padding: '12px 16px', fontFamily: '"Consolas","JetBrains Mono",monospace', fontSize: 11,
-                    }}>
-                      <div className="flex items-center gap-2 mb-3 pb-2" style={{ borderBottom: `1px solid ${c.accent}22` }}>
-                        <span style={{ color: c.accent, opacity: 0.6 }}>●</span>
-                        <span style={{ color: c.accent, fontSize: 10, letterSpacing: '0.12em' }}>ZEROTRACE SCAN ENGINE — ACTIVE</span>
+              {/* ── Left branding column (290px) ── */}
+              <div style={{ width: 290, flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', position: 'relative', zIndex: 1, padding: '0 20px' }}>
+                {showCustom ? (
+                  <img src={s.logoUrl} alt="logo" onError={() => setImgErr(true)} style={{ height: 54, maxWidth: 180, objectFit: 'contain' }} />
+                ) : (
+                  <>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <div style={{ width: 40, height: 40, marginRight: 12, flexShrink: 0, position: 'relative' }}>
+                        <svg width="40" height="40" viewBox="0 0 40 40">
+                          <ellipse cx="20" cy="20" rx="18" ry="18" fill="none" stroke={c.accent} strokeWidth="2.4" />
+                          <ellipse cx="20" cy="20" rx="5.5" ry="5.5" fill="none" stroke={c.accent} strokeWidth="2" />
+                          <ellipse cx="20" cy="20" rx="2" ry="2" fill={c.accent} />
+                        </svg>
                       </div>
-                      {[{ w: bar1, cmd: 'proc_scan()' }, { w: bar2, cmd: 'heur_check()' }].map((step, i) => (
-                        <div key={i} style={{ marginBottom: i < 1 ? 10 : 0 }}>
-                          <div style={{ color: c.mutedText, marginBottom: 3 }}>
-                            <span style={{ color: c.accent + 'aa' }}>{'> '}</span>
-                            <span>{step.cmd}</span>
-                            {step.w < 100 && <span style={{ animation: 'ztTermBlink 0.8s step-start infinite', marginLeft: 4, color: c.accent }}>█</span>}
-                          </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 14 }}>
-                            <div style={{ flex: 1, height: barHPx, background: c.accent + '15', borderRadius: barCapR, overflow: 'hidden' }}>
-                              <div style={{ ...barFill(step.w), height: '100%', borderRadius: barCapR }} />
-                            </div>
-                            <span style={{ color: c.accent, minWidth: 34, textAlign: 'right', fontSize: 11 }}>{Math.round(step.w)}%</span>
-                          </div>
-                        </div>
-                      ))}
+                      <span style={{ fontSize: 26, fontWeight: 'bold', lineHeight: 1, fontFamily: 'Segoe UI, sans-serif' }}>
+                        <span style={{ color: c.accent, animation: glitchText ? 'ztGlitch 7s step-start infinite' : 'none', ...accentTextStyle }}>Zero</span><span style={{ color: '#8A9AAA' }}>Trace</span>
+                      </span>
                     </div>
-                  )}
+                    <div style={{ color: '#5A6772', fontSize: 13, marginTop: 10, textAlign: 'center', fontFamily: 'Segoe UI, sans-serif' }}>Host-Scanner</div>
+                    <div style={{ color: '#46505C', fontSize: 11, marginTop: 6, textAlign: 'center', fontFamily: 'Segoe UI, sans-serif', lineHeight: 1.45 }}>Lokale Cheat- &amp; Manipulations-Analyse</div>
+                    <div style={{ color: '#3A444E', fontSize: 11, marginTop: 10, textAlign: 'center', fontFamily: 'Segoe UI, sans-serif' }}>{s.version || 'v1.3'}</div>
+                  </>
+                )}
+                {!s.useDefaultLogo && s.logoUrl && imgErr && <p style={{ fontSize: 10, color: '#ef4444', marginTop: 4, textAlign: 'center' }}>Logo-Fehler</p>}
+                {/* Vertical divider — Margin="0,40" in XAML = 40px top/bottom */}
+                <div style={{ position: 'absolute', right: 0, top: 40, bottom: 40, width: 1, background: '#242A33' }} />
+              </div>
 
-                  {/* ── Layout: HUD ── */}
-                  {scanLayout === 'hud' && (
-                    <div className="space-y-3">
-                      {[{ w: bar1, id: 'PROC' }, { w: bar2, id: 'HEUR' }].map((step, i) => (
-                        <div key={i} style={{ position: 'relative', padding: '10px 18px' }}>
-                          <div style={{ position: 'absolute', top: 0, left: 0, width: 10, height: 10, borderTop: `2px solid ${c.accent}`, borderLeft: `2px solid ${c.accent}` }} />
-                          <div style={{ position: 'absolute', top: 0, right: 0, width: 10, height: 10, borderTop: `2px solid ${c.accent}`, borderRight: `2px solid ${c.accent}` }} />
-                          <div style={{ position: 'absolute', bottom: 0, left: 0, width: 10, height: 10, borderBottom: `2px solid ${c.accent}`, borderLeft: `2px solid ${c.accent}` }} />
-                          <div style={{ position: 'absolute', bottom: 0, right: 0, width: 10, height: 10, borderBottom: `2px solid ${c.accent}`, borderRight: `2px solid ${c.accent}` }} />
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                            <div style={{ position: 'relative', width: 8, height: 8, flexShrink: 0 }}>
-                              <div style={{ width: 8, height: 8, borderRadius: '50%', background: c.accent, boxShadow: glowAccent ? `0 0 8px ${c.accent}` : 'none' }} />
-                              {step.w < 100 && <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: c.accent + '44', animation: 'ztHudPing 1.4s ease-out infinite' }} />}
-                            </div>
-                            <div style={{ flex: 1 }}>
-                              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
-                                <span style={{ color: c.mutedText, fontSize: 9, fontFamily: 'monospace', letterSpacing: '0.12em' }}>SYS.{step.id}</span>
-                                <span style={{ color: c.accent, fontSize: 15, fontWeight: 'bold', fontFamily: 'monospace' }}>{Math.round(step.w).toString().padStart(3, '0')}</span>
-                              </div>
-                              <div style={{ height: barHPx, borderRadius: barCapR, background: c.accent + '15', overflow: 'hidden' }}>
-                                <div style={{ ...barFill(step.w), height: '100%', borderRadius: barCapR }} />
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+              {/* ── Right flow column (*) — Margin="34,16" in XAML ── */}
+              <div style={{ flex: 1, padding: '16px 34px', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', zIndex: 1, fontFamily: 'Segoe UI, sans-serif' }}>
 
-                  {/* ── Layout: Wave ── */}
-                  {scanLayout === 'wave' && (
-                    <div className="space-y-5 py-1">
-                      {[{ label: s.text.scanning, w: bar1 }, { label: s.text.heuristic, w: bar2 }].map((step, i) => (
-                        <div key={i}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                            <span style={{ color: c.text, fontSize: 12 }}>{step.label}</span>
-                            <span style={{ color: c.accent, fontSize: 11, fontFamily: 'monospace' }}>{Math.round(step.w)}%</span>
-                          </div>
-                          <div style={{ display: 'flex', alignItems: 'center', height: 36, gap: 2 }}>
-                            {Array.from({ length: 20 }, (_, j) => {
-                              const filled = step.w >= ((j + 1) / 20 * 100)
-                              return (
-                                <div key={j} style={{
-                                  width: 3,
-                                  height: filled && step.w < 100 ? undefined : 4,
-                                  alignSelf: 'center',
-                                  background: filled ? c.accent : c.accent + '1a',
-                                  borderRadius: 2,
-                                  animation: filled && step.w < 100 ? `ztWave${j % 6} ${(0.6 + (j % 5) * 0.15).toFixed(2)}s ease-in-out infinite` : 'none',
-                                  boxShadow: glowAccent && filled ? `0 0 6px ${c.accent}88` : 'none',
-                                  transition: `background ${Math.max(durMs * 0.3, 100)}ms ease`,
-                                }} />
-                              )
-                            })}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  {/* Current path text (real scanner style) */}
-                  <div style={{ marginTop: 10 }}>
-                    <div style={{ color: '#5A6772', fontSize: 9, marginBottom: 3 }}>{s.text?.scanning || 'Scanne gerade'}</div>
-                    <div style={{ color: '#C8D4DC', fontSize: 10, fontWeight: '600', fontFamily: 'monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 220 }}>{simPath}</div>
+                {/* Intro video */}
+                {stage === 'intro-video' && (
+                  <div style={{ position: 'absolute', inset: 0, background: '#000', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                    <div style={{ animation: 'ztVideoIcon 1s ease-in-out infinite', color: c.accent, fontSize: 36 }}>▶</div>
+                    <p style={{ fontFamily: 'monospace', fontSize: 12, color: '#8A9AAA' }}>{iv.path || 'intro.mp4'}</p>
                   </div>
-                </div>
-              )}
+                )}
 
-              {/* Done stage — SVG checkmark like real scanner */}
-              {stage === 'done' && (
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
-                  <div style={{ animation: doneAnimCSS }}>
-                    <svg width="72" height="72" viewBox="0 0 140 140">
-                      <ellipse cx="70" cy="70" rx="55" ry="55" stroke={doneClr} strokeWidth="1.5" fill="none" opacity="0.15" />
-                      <path stroke={doneClr} strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" fill="none"
-                        d="M 38 70 L 58 90 L 102 48"
-                        style={{ filter: glowAccent ? `drop-shadow(0 0 6px ${doneClr}cc)` : 'none' }} />
-                    </svg>
+                {/* PIN view — matches PinView XAML exactly */}
+                {stage === 'pin' && (
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                    <div style={{ border: '1px solid #2A3038', borderRadius: 11, padding: '12px 14px', background: 'rgba(255,255,255,0.012)' }}>
+                      <div style={{ color: '#8A9AAA', fontSize: 11, textAlign: 'center', marginBottom: 10 }}>{s.text?.pin || 'Gib deinen 6-stelligen PIN ein'}</div>
+                      <div style={{ display: 'flex', justifyContent: 'center' }}>
+                        {SIM_PIN.map((_, i) => {
+                          const filled = i < pinDisplay.length
+                          return (
+                            <div key={i} style={{
+                              width: 28, height: 33, margin: '0 3px', borderRadius: 5, flexShrink: 0,
+                              border: `1px solid ${filled ? c.accent + '99' : '#3A4350'}`,
+                              background: 'transparent',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              fontSize: 15, fontWeight: 'bold', color: '#C8D2DA',
+                              transition: durMs === 0 ? 'none' : `border-color ${durMs * 0.5}ms ease`,
+                              boxShadow: glowAccent && filled ? `0 0 8px ${c.accent}66` : 'none',
+                            }}>
+                              {filled ? pinCh.f : ''}
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                    <div style={{ background: c.accent, color: '#0E1418', fontSize: 12.5, fontWeight: '600', borderRadius: 6, padding: '8px 22px', marginTop: 8, opacity: pinDisplay.length < 6 ? 0.4 : 1, cursor: 'default' }}>Weiter</div>
                   </div>
-                  <p style={{ color: '#C8D2DA', fontSize: 13, fontWeight: 'bold', textAlign: 'center' }}>{s.text?.finished || 'Scan abgeschlossen'}</p>
-                  <p style={{ color: '#5A6772', fontSize: 9 }}>3 Funde · Bericht wird generiert…</p>
-                </div>
-              )}
+                )}
+
+                {/* Scan view — matches ScanView XAML exactly */}
+                {stage === 'scanning' && (
+                  <div style={{ width: '100%' }}>
+                    {/* X% LÄUFT */}
+                    <div style={{ display: 'flex', alignItems: 'center', marginBottom: 7 }}>
+                      <span style={{ color: '#C8D4DC', fontSize: 13, fontWeight: 'bold', width: 42, fontFamily: 'Segoe UI, sans-serif' }}>{Math.round(bar1)}%</span>
+                      <span style={{ color: '#5A6772', fontSize: 11, fontFamily: 'Segoe UI, sans-serif' }}>LÄUFT</span>
+                    </div>
+                    {/* Progress bar (honours barShape) */}
+                    {scanBarContent(bar1)}
+                    {/* ScannerTextScanning label */}
+                    <div style={{ color: '#5A6772', fontSize: 11, marginTop: 18 }}>{s.text?.scanning || 'Scanne gerade'}</div>
+                    {/* NowPath */}
+                    <div style={{ color: '#C8D4DC', fontSize: 15, fontWeight: '600', marginTop: 6, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{simPath}</div>
+                  </div>
+                )}
+
+                {/* Result view — matches ResultView XAML exactly */}
+                {stage === 'done' && (
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                    <div style={{ width: 92, height: 92, animation: doneAnimCSS }}>
+                      <svg width="92" height="92" viewBox="0 0 140 140">
+                        <ellipse cx="70" cy="70" rx="55" ry="55" stroke={doneClr} strokeWidth="1.5" fill="none" opacity="0.15" />
+                        <path stroke={doneClr} strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" fill="none"
+                          d="M 38 70 L 58 90 L 102 48"
+                          style={{ filter: glowAccent ? `drop-shadow(0 0 6px ${doneClr}cc)` : 'none' }} />
+                      </svg>
+                    </div>
+                    <div style={{ color: '#C8D2DA', fontSize: 19, fontWeight: 'bold', marginTop: 14, textAlign: 'center' }}>{s.text?.finished || 'Scan abgeschlossen'}</div>
+                    <div style={{ color: '#5A6772', fontSize: 11, marginTop: 8 }}>3 Funde · Bericht wird generiert…</div>
+                  </div>
+                )}
+
+              </div>
             </div>
           </div>
-        )}
+        </div>
       </div>
 
+      {/* Bottom status bar */}
       <div className="mt-2 flex items-center justify-between px-0.5">
         <span className="muted text-[11px]">
           {stage === 'intro-video' ? 'Intro-Video' : stage === 'pin' ? 'PIN-Eingabe' : stage === 'scanning' ? 'Wird gescannt…' : 'Scan abgeschlossen'}
