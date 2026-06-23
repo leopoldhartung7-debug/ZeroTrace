@@ -769,6 +769,134 @@ function GuiPreview({ s }) {
                                 </div>
                               )
                             })()}
+                            {/* ── Comet (trailing ring) ── */}
+                            {barShape === 'comet' && (() => {
+                              const sz = 58, sw = 3, r = (sz - sw) / 2
+                              const circ = 2 * Math.PI * r
+                              const pct = step.w
+                              const mainOff  = circ * (1 - pct / 100)
+                              const trailOff = circ * (1 - Math.max(0, pct - 18) / 100)
+                              const tailOff  = circ * (1 - Math.max(0, pct - 36) / 100)
+                              const cx = sz / 2, cy = sz / 2
+                              const angle  = (pct / 100) * 2 * Math.PI - Math.PI / 2
+                              const dotX = cx + r * Math.cos(angle)
+                              const dotY = cy + r * Math.sin(angle)
+                              const glowFilter = glowAccent && pct > 0 ? `drop-shadow(0 0 5px ${c.accent}cc)` : 'none'
+                              return (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                                  <div style={{ position: 'relative', width: sz, height: sz, flexShrink: 0 }}>
+                                    <svg width={sz} height={sz} style={{ transform: 'rotate(-90deg)', position: 'absolute', inset: 0 }}>
+                                      {/* track */}
+                                      <circle cx={cx} cy={cy} r={r} fill="none" stroke={c.accent + '14'} strokeWidth={sw} />
+                                      {/* far tail — slowest */}
+                                      <circle cx={cx} cy={cy} r={r} fill="none" stroke={c.accent + '28'} strokeWidth={sw + 1}
+                                        strokeDasharray={circ} strokeDashoffset={tailOff} strokeLinecap="round"
+                                        style={{ transition: durMs === 0 ? 'none' : `stroke-dashoffset ${durMs * 1.5}ms ${timing}` }} />
+                                      {/* mid trail */}
+                                      <circle cx={cx} cy={cy} r={r} fill="none" stroke={c.accent + '55'} strokeWidth={sw}
+                                        strokeDasharray={circ} strokeDashoffset={trailOff} strokeLinecap="round"
+                                        style={{ transition: durMs === 0 ? 'none' : `stroke-dashoffset ${durMs * 1.2}ms ${timing}` }} />
+                                      {/* main arc — fastest */}
+                                      <circle cx={cx} cy={cy} r={r} fill="none" stroke={c.accent} strokeWidth={sw}
+                                        strokeDasharray={circ} strokeDashoffset={mainOff} strokeLinecap="round"
+                                        style={{ transition: durMs === 0 ? 'none' : `stroke-dashoffset ${durMs}ms ${timing}` }} />
+                                    </svg>
+                                    {/* leading dot */}
+                                    {pct > 1 && (
+                                      <svg width={sz} height={sz} style={{ position: 'absolute', inset: 0, filter: glowFilter }}>
+                                        <circle cx={dotX} cy={dotY} r={3.5} fill={c.accent}
+                                          style={{ transition: durMs === 0 ? 'none' : `cx ${durMs}ms ${timing}, cy ${durMs}ms ${timing}` }} />
+                                      </svg>
+                                    )}
+                                    <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                      <span style={{ color: c.mutedText, fontSize: 10, fontFamily: 'monospace' }}>{Math.round(pct)}%</span>
+                                    </div>
+                                  </div>
+                                  <p style={{ color: c.text, fontSize: 12 }}>{step.label}</p>
+                                </div>
+                              )
+                            })()}
+                            {/* ── Donut (ultra-thin clean ring) ── */}
+                            {barShape === 'donut' && (() => {
+                              const sz = 58, sw = 2.5, r = (sz - sw) / 2
+                              const circ = 2 * Math.PI * r
+                              const off = circ * (1 - step.w / 100)
+                              const glowFilter = glowAccent && step.w > 0 ? `drop-shadow(0 0 3px ${c.accent}99)` : 'none'
+                              return (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                                  <div style={{ position: 'relative', width: sz, height: sz, flexShrink: 0 }}>
+                                    <svg width={sz} height={sz} style={{ transform: 'rotate(-90deg)', position: 'absolute', inset: 0 }}>
+                                      <circle cx={sz / 2} cy={sz / 2} r={r} fill="none" stroke={c.accent + '18'} strokeWidth={sw} />
+                                      <circle cx={sz / 2} cy={sz / 2} r={r} fill="none" stroke={c.accent} strokeWidth={sw}
+                                        strokeDasharray={circ} strokeDashoffset={off} strokeLinecap="round"
+                                        style={{ transition: durMs === 0 ? 'none' : `stroke-dashoffset ${durMs}ms ${timing}`, filter: glowFilter }} />
+                                    </svg>
+                                    <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 0 }}>
+                                      <span style={{ color: c.text, fontSize: 13, fontWeight: '600', lineHeight: 1 }}>{Math.round(step.w)}</span>
+                                      <span style={{ color: c.mutedText, fontSize: 8, marginTop: 1 }}>%</span>
+                                    </div>
+                                  </div>
+                                  <p style={{ color: c.text, fontSize: 12 }}>{step.label}</p>
+                                </div>
+                              )
+                            })()}
+                            {/* ── Glass (bar with label inside fill) ── */}
+                            {barShape === 'glass' && (
+                              <div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
+                                  <span style={{ color: c.mutedText, fontSize: 11 }}>{step.label}</span>
+                                </div>
+                                <div style={{
+                                  position: 'relative', height: Math.max(barHPx, 18),
+                                  borderRadius: barCapR, background: c.accent + '14',
+                                  overflow: 'hidden',
+                                }}>
+                                  <div style={{
+                                    position: 'absolute', inset: 0, right: `${100 - step.w}%`,
+                                    background: `linear-gradient(90deg, ${c.accent}cc, ${c.accent})`,
+                                    borderRadius: barCapR,
+                                    transition: durMs === 0 ? 'none' : `right ${durMs}ms ${timing}`,
+                                    boxShadow: glowAccent && step.w > 0 ? `0 0 12px ${c.accent}66` : 'none',
+                                  }} />
+                                  <span style={{
+                                    position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)',
+                                    fontSize: 10, fontWeight: '600', fontFamily: 'monospace',
+                                    color: step.w > 85 ? c.titlebar : c.accent,
+                                    transition: durMs === 0 ? 'none' : `color ${durMs}ms ease`,
+                                  }}>{Math.round(step.w)}%</span>
+                                </div>
+                              </div>
+                            )}
+                            {/* ── Line (thin line + glowing leading dot) ── */}
+                            {barShape === 'line' && (
+                              <div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                                  <span style={{ color: c.mutedText, fontSize: 11 }}>{step.label}</span>
+                                  <span style={{ color: c.accent, fontSize: 11, fontFamily: 'monospace' }}>{Math.round(step.w)}%</span>
+                                </div>
+                                <div style={{ position: 'relative', height: 12, display: 'flex', alignItems: 'center' }}>
+                                  {/* track */}
+                                  <div style={{ position: 'absolute', left: 0, right: 0, height: 1, background: c.accent + '20', borderRadius: 1 }} />
+                                  {/* filled line */}
+                                  <div style={{
+                                    position: 'absolute', left: 0, height: 1,
+                                    width: `${step.w}%`, background: c.accent,
+                                    borderRadius: 1,
+                                    transition: durMs === 0 ? 'none' : `width ${durMs}ms ${timing}`,
+                                  }} />
+                                  {/* leading dot */}
+                                  {step.w > 0 && (
+                                    <div style={{
+                                      position: 'absolute', width: 8, height: 8, borderRadius: '50%',
+                                      background: c.accent,
+                                      left: `calc(${step.w}% - 4px)`,
+                                      boxShadow: glowAccent ? `0 0 8px ${c.accent}, 0 0 16px ${c.accent}88` : `0 0 4px ${c.accent}99`,
+                                      transition: durMs === 0 ? 'none' : `left ${durMs}ms ${timing}`,
+                                    }} />
+                                  )}
+                                </div>
+                              </div>
+                            )}
                           </div>
                         )
                       })}
@@ -1303,13 +1431,17 @@ export default function ToolDesigner({ embedded = false }) {
           <Field label="Fortschritts-Form" className="mt-4">
             <DropSelect value={anim.barShape ?? 'bar'} onChange={v => setAnim({ barShape: v })} color="pink" options={[
               { value: 'bar',      label: 'Balken',   desc: 'Klassisch',    icon: '▬' },
+              { value: 'glass',    label: 'Glass',    desc: 'Label innen',  icon: '▰' },
+              { value: 'line',     label: 'Linie',    desc: 'Dot am Ende',  icon: '—•' },
+              { value: 'donut',    label: 'Donut',    desc: 'Dünner Ring',  icon: '◯' },
+              { value: 'comet',    label: 'Komet',    desc: 'Zieht nach',   icon: '🌑' },
               { value: 'ring',     label: 'Ring',     desc: 'Kreis + Bar',  icon: '○' },
+              { value: 'gauge',    label: 'Gauge',    desc: 'Ring + Zahl',  icon: '⊕' },
+              { value: 'arc',      label: 'Bogen',    desc: 'Halbkreis',    icon: '◜' },
               { value: 'dots',     label: 'Punkte',   desc: 'Dot-Reihe',   icon: '⠿' },
-              { value: 'segments', label: 'Segmente', desc: 'Spinner',      icon: '◎' },
-              { value: 'arc',      label: 'Bogen',    desc: 'Halbkreis',   icon: '◜' },
               { value: 'blocks',   label: 'Blöcke',   desc: 'Segmentiert', icon: '▪▪▪' },
+              { value: 'segments', label: 'Segmente', desc: 'Spinner',      icon: '◎' },
               { value: 'steps',    label: 'Schritte', desc: '1→2→3→4',     icon: '①' },
-              { value: 'gauge',    label: 'Gauge',    desc: 'Ring + Zahl', icon: '⊕' },
             ]} />
           </Field>
 
