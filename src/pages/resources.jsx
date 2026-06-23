@@ -445,17 +445,18 @@ function DownloadCard({ icon: Icon, name, tagTone, desc, hint, accent, pins, toa
       </div>
       <p className="muted mt-4 text-sm">{hint}</p>
       <label className="txt mb-1.5 mt-4 block text-sm font-medium">Enter your PIN code</label>
-      <div className="flex gap-2">
+      <div className="flex flex-col gap-2">
         <input
           value={pin}
           onChange={(e) => setPin(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))}
           maxLength={8}
           placeholder="A1B2C3D4"
-          className="bd tile txt w-full rounded-lg border px-3 py-2.5 font-mono text-sm focus:outline-none"
+          className="bd tile w-full rounded-lg border px-3 py-2.5 font-mono text-sm focus:outline-none"
+          style={{ color: 'var(--text)', background: 'var(--tile)' }}
         />
         <button
           onClick={go}
-          className="flex shrink-0 items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-white"
+          className="flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-white"
           style={{ background: accent }}
         >
           <Download size={15} /> Download
