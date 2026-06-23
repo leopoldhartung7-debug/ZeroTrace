@@ -285,6 +285,21 @@ function DropSelect({ value, options, onChange, color = 'sky' }) {
   )
 }
 
+const PRESETS = [
+  { name: 'Midnight', colors: { background: '#0A0E14', mutedBackground: '#111722', accent: '#38BDF8', text: '#C8D2DA', mutedText: '#5A6772', titlebar: '#1E2530' } },
+  { name: 'Ice',      colors: { background: '#060D14', mutedBackground: '#0D1923', accent: '#67E8F9', text: '#D0E8F0', mutedText: '#4A7088', titlebar: '#142233' } },
+  { name: 'Blood',    colors: { background: '#0E0A0A', mutedBackground: '#1A1010', accent: '#F87171', text: '#F0D8D8', mutedText: '#885050', titlebar: '#2E1414' } },
+  { name: 'Ghost',    colors: { background: '#0C0C0F', mutedBackground: '#141418', accent: '#A78BFA', text: '#D8D4F0', mutedText: '#5C5880', titlebar: '#1C1A2E' } },
+  { name: 'Forest',   colors: { background: '#08110A', mutedBackground: '#0F1C12', accent: '#4ADE80', text: '#C8E0CC', mutedText: '#4A7055', titlebar: '#132018' } },
+]
+
+const SCENARIOS = [
+  { label: 'Clean PC',         speed: 800 },
+  { label: 'FiveM Heavy User', speed: 350 },
+  { label: 'Minecraft Client', speed: 550 },
+  { label: 'Suspicious Files', speed: 450 },
+]
+
 const SPEED_MS   = { instant: 0, fast: 200, normal: 550, slow: 1400 }
 const TIMING     = { smooth: 'ease-out', pulse: 'ease-in-out', stepped: 'steps(6, end)', stripe: 'linear', shine: 'linear' }
 const SIM_PIN    = ['F','1','T','5','F','8']
@@ -373,7 +388,7 @@ const ANIM_CSS = `
 }
 `
 
-function GuiPreview({ s }) {
+function GuiPreview({ s, scenario = 0 }) {
   const def  = defaultToolStyle()
   const c    = s.colors
   const anim = { ...def.animations, ...(s.animations || {}) }
@@ -385,8 +400,9 @@ function GuiPreview({ s }) {
   const { speed, barStyle, barShape, scanLayout, scanSweep, intro, bgEffect, glowAccent, glitchText } = anim
   const iv     = s.introVideo || { enabled: false, path: '' }
   const durMs  = SPEED_MS[speed] ?? 550
+  const scenarioSpeed = SCENARIOS[scenario]?.speed ?? 550
   const timing = TIMING[barStyle] ?? 'ease-out'
-  const animKey = `${speed}|${barStyle}|${barShape}|${scanLayout}|${scanSweep}|${intro}|${bgEffect}|${glowAccent}|${glitchText}|${iv.enabled}|${JSON.stringify(fr)}|${JSON.stringify(typo)}|${JSON.stringify(pin)}|${JSON.stringify(bar)}|${JSON.stringify(dn)}`
+  const animKey = `${speed}|${barStyle}|${barShape}|${scanLayout}|${scanSweep}|${intro}|${bgEffect}|${glowAccent}|${glitchText}|${iv.enabled}|${scenario}|${JSON.stringify(fr)}|${JSON.stringify(typo)}|${JSON.stringify(pin)}|${JSON.stringify(bar)}|${JSON.stringify(dn)}`
 
   // Derived values
   const cornerR   = CORNER_MAP[fr.cornerRadius] ?? 10
@@ -434,7 +450,7 @@ function GuiPreview({ s }) {
     SIM_PIN.forEach((_, i) => at(() => setPinDisplay(SIM_PIN.slice(0, i + 1).join('')), pinStart + i * 130))
 
     const scanStart = pinStart + SIM_PIN.length * 130 + 550
-    const step = Math.max(durMs, 200)
+    const step = Math.max(scenarioSpeed, 200)
     at(() => setStage('scanning'), scanStart)
     at(() => setBar1(38), scanStart + 80)
     at(() => setBar1(72), scanStart + step + 200)
@@ -828,7 +844,19 @@ function GuiPreview({ s }) {
                 )}
 
                 {/* Scan view — matches ScanView XAML exactly */}
-                {stage === 'scanning' && (
+                {stage === 'scanning' && scanLayout === 'retro' && (
+                  <div style={{ background: '#030F03', padding: '14px 16px', borderRadius: 4, fontFamily: 'Consolas, monospace', color: '#33FF33', fontSize: 12, width: '100%' }}>
+                    <div style={{ marginBottom: 6, color: '#55FF55', fontWeight: 'bold' }}>ZeroTrace Anti-Cheat v2.4.1</div>
+                    <div style={{ marginBottom: 3 }}>{'>'} SCANNING SYSTEM...</div>
+                    <div style={{ marginBottom: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{'>'} PATH: {simPath}</div>
+                    <div style={{ marginBottom: 3 }}>{'>'} PROGRESS: [{
+                      '█'.repeat(Math.round(bar1 / 10)).padEnd(10, '░')
+                    }] {Math.round(bar1)}%</div>
+                    <div style={{ color: '#55FF55' }}>{'>'} STATUS: {bar1 < 100 ? 'RUNNING' : 'COMPLETE'}_</div>
+                  </div>
+                )}
+
+                {stage === 'scanning' && scanLayout !== 'retro' && (
                   <div style={{ width: '100%' }}>
                     {/* X% LÄUFT */}
                     <div style={{ display: 'flex', alignItems: 'center', marginBottom: 7 }}>
@@ -897,6 +925,7 @@ export default function ToolDesigner({ embedded = false }) {
   const [importUrl, setImportUrl] = useState('')
   const [urlLoading, setUrlLoading] = useState(false)
   const [harmonyMode, setHarmonyMode] = useState(false)
+  const [scenario, setScenario] = useState(0)
   const [dirHandle, setDirHandle] = useState(null)
   const [syncStatus, setSyncStatus] = useState('idle') // idle | syncing | synced | error | needs-permission
 
@@ -1149,6 +1178,20 @@ export default function ToolDesigner({ embedded = false }) {
 
           <div className="bd my-7 border-t" />
 
+          {/* ── Theme Presets ── */}
+          <div className="mb-6">
+            <p className="caps-label mb-3">Theme Presets</p>
+            <div className="flex flex-wrap gap-2">
+              {PRESETS.map(p => (
+                <button key={p.name} onClick={() => Object.entries(p.colors).forEach(([k, v]) => setColor(k, v))}
+                  className="flex items-center gap-2 rounded-lg border bd px-3 py-1.5 text-xs font-medium txt hover:border-sky-500 transition-colors">
+                  <span className="h-3 w-3 rounded-full border border-white/10 shrink-0" style={{ background: p.colors.accent }} />
+                  {p.name}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* ── Colours ── */}
           <div className="mb-4 flex items-center justify-between">
             <p className="caps-label">Farben</p>
@@ -1291,7 +1334,8 @@ export default function ToolDesigner({ embedded = false }) {
               { value: 'minimal',  label: 'Minimal',  desc: 'Sauber',   icon: '—' },
               { value: 'terminal', label: 'Terminal', desc: 'CLI',      icon: '>' },
               { value: 'hud',      label: 'HUD',      desc: 'Cyber',    icon: '◧' },
-              { value: 'wave',     label: 'Wave',      desc: 'Audio',   icon: '≋' },
+              { value: 'wave',     label: 'Wave',     desc: 'Audio',    icon: '≋' },
+              { value: 'retro',    label: 'Retro',    desc: 'Terminal', icon: '▓' },
             ]} />
           </Field>
 
@@ -1605,10 +1649,19 @@ export default function ToolDesigner({ embedded = false }) {
           </Card>
 
           <Card className="p-6">
-            <h3 className="txt mb-5 flex items-center gap-2 text-lg font-semibold">
+            <h3 className="txt mb-4 flex items-center gap-2 text-lg font-semibold">
               <Eye size={18} /> Vorschau GUI
             </h3>
-            <GuiPreview s={s} />
+            <div className="mb-4 flex flex-wrap items-center gap-2">
+              <span className="text-xs muted font-medium">Test-Szenario:</span>
+              {SCENARIOS.map((sc, i) => (
+                <button key={sc.label} onClick={() => setScenario(i)}
+                  className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors ${i === scenario ? 'border-sky-500 bg-sky-500/10 text-sky-400' : 'bd txt hover:border-sky-500/50'}`}>
+                  {sc.label}
+                </button>
+              ))}
+            </div>
+            <GuiPreview s={s} scenario={scenario} />
           </Card>
 
           <Card className="p-5">
