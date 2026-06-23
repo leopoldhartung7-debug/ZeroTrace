@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Wand2, Save, Download, Upload, RotateCcw, Eye, Copy, FileJson, Link, AlertTriangle, Check, Play, Zap, FolderOpen, Wifi, WifiOff } from 'lucide-react'
 import { PageHeader, Card, Field } from '../components/kit.jsx'
 import { useToast } from '../components/ui.jsx'
@@ -229,6 +229,59 @@ function Toggle({ label, checked, onChange, accent }) {
       </span>
       <span className="txt">{label}</span>
     </button>
+  )
+}
+
+function DropSelect({ value, options, onChange, color = 'sky' }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+  useEffect(() => {
+    if (!open) return
+    const close = (e) => { if (!ref.current?.contains(e.target)) setOpen(false) }
+    document.addEventListener('mousedown', close)
+    return () => document.removeEventListener('mousedown', close)
+  }, [open])
+  const cur = options.find(o => o.value === value) ?? options[0]
+  const SEL = {
+    sky: 'bg-sky-600/20 text-sky-400', violet: 'bg-violet-600/20 text-violet-400',
+    pink: 'bg-pink-600/20 text-pink-400', emerald: 'bg-emerald-600/20 text-emerald-400',
+    amber: 'bg-amber-600/20 text-amber-400', orange: 'bg-orange-600/20 text-orange-400',
+    cyan: 'bg-cyan-600/20 text-cyan-400', slate: 'bg-slate-400/10 text-slate-300',
+    indigo: 'bg-indigo-600/20 text-indigo-400', fuchsia: 'bg-fuchsia-600/20 text-fuchsia-400',
+    teal: 'bg-teal-600/20 text-teal-400', green: 'bg-green-600/20 text-green-400',
+  }
+  const selCls = SEL[color] ?? SEL.sky
+  return (
+    <div ref={ref} style={{ position: 'relative' }}>
+      <button onClick={() => setOpen(o => !o)}
+        className="bd tile txt flex w-full items-center justify-between rounded-lg border px-3 py-2.5 text-sm transition-colors hover:bg-white/5">
+        <div className="flex items-center gap-2">
+          {cur.icon && <span className="text-base leading-none">{cur.icon}</span>}
+          <span className="font-medium">{cur.label}</span>
+          {cur.desc && <span className="muted text-xs">{cur.desc}</span>}
+        </div>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+          className={`muted shrink-0 transition-transform ${open ? 'rotate-180' : ''}`}>
+          <path d="M6 9l6 6 6-6" />
+        </svg>
+      </button>
+      {open && (
+        <div className="tile bd absolute left-0 right-0 z-50 mt-1 overflow-hidden rounded-xl border shadow-2xl" style={{ top: '100%' }}>
+          {options.map(opt => (
+            <button key={opt.value} onClick={() => { onChange(opt.value); setOpen(false) }}
+              className={`flex w-full items-center justify-between px-4 py-2.5 text-sm transition-colors ${
+                opt.value === value ? selCls : 'muted hover:bg-white/5 hover:txt'
+              }`}>
+              <div className="flex items-center gap-2">
+                {opt.icon && <span className="text-base leading-none">{opt.icon}</span>}
+                <span className="font-medium">{opt.label}</span>
+              </div>
+              {opt.desc && <span className="text-xs opacity-60">{opt.desc}</span>}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   )
 }
 
@@ -625,6 +678,97 @@ function GuiPreview({ s }) {
                                 </div>
                               </div>
                             )}
+                            {/* ── Arc (semicircle gauge) ── */}
+                            {barShape === 'arc' && (() => {
+                              const sw = 7, r = 36, totalW = 76
+                              const circ = Math.PI * r
+                              const off = circ * (1 - step.w / 100)
+                              const arcD = `M ${sw / 2} ${r + sw / 2} A ${r} ${r} 0 0 0 ${totalW + sw / 2} ${r + sw / 2}`
+                              const arcShadow = glowAccent && step.w > 0 ? `drop-shadow(0 0 4px ${c.accent}bb)` : 'none'
+                              return (
+                                <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 2 }}>
+                                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                                    <svg width={totalW + sw} height={r + sw + 2} style={{ overflow: 'visible' }}>
+                                      <path d={arcD} fill="none" stroke={trackClr || c.accent + '22'} strokeWidth={sw}
+                                        strokeLinecap={bar.caps === 'round' ? 'round' : 'butt'} />
+                                      <path d={arcD} fill="none" stroke={c.accent} strokeWidth={sw}
+                                        strokeLinecap={bar.caps === 'round' ? 'round' : 'butt'}
+                                        strokeDasharray={circ} strokeDashoffset={off}
+                                        style={{ transition: durMs === 0 ? 'none' : `stroke-dashoffset ${durMs}ms ${timing}`, filter: arcShadow }} />
+                                    </svg>
+                                    <span style={{ fontSize: 11, fontFamily: 'monospace', color: c.mutedText }}>{Math.round(step.w)}%</span>
+                                  </div>
+                                </div>
+                              )
+                            })()}
+                            {/* ── Blocks (segmented rectangles) ── */}
+                            {barShape === 'blocks' && (
+                              <div style={{ display: 'flex', gap: 3 }}>
+                                {Array.from({ length: 10 }, (_, j) => {
+                                  const filled = step.w >= ((j + 1) / 10 * 100)
+                                  return (
+                                    <div key={j} style={{
+                                      flex: 1, height: Math.max(barHPx, 8),
+                                      background: filled ? c.accent : c.accent + '18',
+                                      borderRadius: barCapR / 2,
+                                      transition: durMs === 0 ? 'none' : `background ${Math.max(durMs * 0.4, 120)}ms ease`,
+                                      boxShadow: glowAccent && filled ? `0 0 6px ${c.accent}88` : 'none',
+                                    }} />
+                                  )
+                                })}
+                              </div>
+                            )}
+                            {/* ── Steps (numbered progress circles) ── */}
+                            {barShape === 'steps' && (
+                              <div style={{ display: 'flex', alignItems: 'center' }}>
+                                {[0, 1, 2, 3].map(j => {
+                                  const done = step.w >= (j + 1) * 25
+                                  return (
+                                    <div key={j} style={{ display: 'flex', alignItems: 'center', flex: j < 3 ? 1 : undefined }}>
+                                      <div style={{
+                                        width: 26, height: 26, borderRadius: '50%', flexShrink: 0,
+                                        background: done ? c.accent : 'transparent',
+                                        border: `2px solid ${done ? c.accent : c.accent + '33'}`,
+                                        color: done ? c.titlebar : c.mutedText,
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        fontSize: 11, fontWeight: 'bold', fontFamily: 'monospace',
+                                        boxShadow: glowAccent && done ? `0 0 10px ${c.accent}88` : 'none',
+                                        transition: durMs === 0 ? 'none' : `all ${durMs}ms ease`,
+                                      }}>{done ? '✓' : j + 1}</div>
+                                      {j < 3 && (
+                                        <div style={{
+                                          flex: 1, height: 2,
+                                          background: step.w > (j + 1) * 25 ? c.accent : c.accent + '22',
+                                          transition: durMs === 0 ? 'none' : `background ${durMs}ms ease`,
+                                          boxShadow: glowAccent && step.w > (j + 1) * 25 ? `0 0 6px ${c.accent}88` : 'none',
+                                        }} />
+                                      )}
+                                    </div>
+                                  )
+                                })}
+                              </div>
+                            )}
+                            {/* ── Gauge (ring + big number) ── */}
+                            {barShape === 'gauge' && (() => {
+                              const rg = ringProgress(step.w, 58, 6)
+                              return (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                                  <div style={{ position: 'relative', width: rg.size, height: rg.size, flexShrink: 0 }}>
+                                    <svg width={rg.size} height={rg.size} style={{ transform: 'rotate(-90deg)', position: 'absolute', inset: 0, filter: rg.shadow }}>
+                                      <circle cx={rg.size / 2} cy={rg.size / 2} r={rg.r} fill="none" stroke={trackClr || c.accent + '22'} strokeWidth={rg.sw} />
+                                      <circle cx={rg.size / 2} cy={rg.size / 2} r={rg.r} fill="none" stroke={c.accent} strokeWidth={rg.sw}
+                                        strokeDasharray={rg.circ} strokeDashoffset={rg.offset} strokeLinecap={bar.caps === 'round' ? 'round' : 'butt'}
+                                        style={{ transition: durMs === 0 ? 'none' : `stroke-dashoffset ${durMs}ms ${timing}` }} />
+                                    </svg>
+                                    <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                                      <span style={{ color: c.accent, fontSize: 14, fontWeight: 'bold', fontFamily: 'monospace', lineHeight: 1, textShadow: glowAccent ? `0 0 10px ${c.accent}` : 'none' }}>{Math.round(step.w)}</span>
+                                      <span style={{ color: c.mutedText, fontSize: 8 }}>%</span>
+                                    </div>
+                                  </div>
+                                  <p style={{ color: c.text, fontSize: 12 }}>{step.label}</p>
+                                </div>
+                              )
+                            })()}
                           </div>
                         )
                       })}
@@ -1136,96 +1280,48 @@ export default function ToolDesigner({ embedded = false }) {
 
           {/* Speed */}
           <Field label="Animationsgeschwindigkeit">
-            <div className="grid grid-cols-4 gap-1.5">
-              {[
-                { value: 'instant', label: 'Keine',    sub: '0 ms'   },
-                { value: 'fast',    label: 'Schnell',  sub: '200 ms' },
-                { value: 'normal',  label: 'Normal',   sub: '550 ms' },
-                { value: 'slow',    label: 'Langsam',  sub: '1,4 s'  },
-              ].map(({ value, label, sub }) => {
-                const sel = anim.speed === value
-                return (
-                  <button key={value} onClick={() => setAnim({ speed: value })}
-                    className={`flex flex-col items-center gap-0.5 rounded-xl border py-2.5 text-xs font-semibold transition-all ${
-                      sel ? 'border-sky-500 bg-sky-600/20 text-sky-400' : 'bd tile muted hover:txt'
-                    }`}>
-                    {label}
-                    <span className={`text-[10px] font-normal ${sel ? 'text-sky-400/70' : 'muted'}`}>{sub}</span>
-                  </button>
-                )
-              })}
-            </div>
+            <DropSelect value={anim.speed} onChange={v => setAnim({ speed: v })} color="sky" options={[
+              { value: 'instant', label: 'Keine',   desc: '0 ms',   icon: '⚡' },
+              { value: 'fast',    label: 'Schnell', desc: '200 ms', icon: '▶' },
+              { value: 'normal',  label: 'Normal',  desc: '550 ms', icon: '▷' },
+              { value: 'slow',    label: 'Langsam', desc: '1,4 s',  icon: '◁' },
+            ]} />
           </Field>
 
           {/* Bar style */}
           <Field label="Balken-Animation" className="mt-4">
-            <div className="grid grid-cols-5 gap-1.5">
-              {[
-                { value: 'smooth',  label: 'Flüssig',  desc: 'Klassisch'  },
-                { value: 'pulse',   label: 'Puls',     desc: 'Glühend'    },
-                { value: 'stripe',  label: 'Streifen', desc: 'Diagonal'   },
-                { value: 'shine',   label: 'Glanz',    desc: 'Lichtblitz' },
-                { value: 'stepped', label: 'Stufen',   desc: 'Diskret'    },
-              ].map(({ value, label, desc }) => {
-                const sel = anim.barStyle === value
-                return (
-                  <button key={value} onClick={() => setAnim({ barStyle: value })}
-                    className={`flex flex-col items-center gap-0.5 rounded-xl border py-2.5 text-xs font-semibold transition-all ${
-                      sel ? 'border-violet-500 bg-violet-600/20 text-violet-400' : 'bd tile muted hover:txt'
-                    }`}>
-                    {label}
-                    <span className={`text-[10px] font-normal ${sel ? 'text-violet-400/70' : 'muted'}`}>{desc}</span>
-                  </button>
-                )
-              })}
-            </div>
+            <DropSelect value={anim.barStyle} onChange={v => setAnim({ barStyle: v })} color="violet" options={[
+              { value: 'smooth',  label: 'Flüssig',  desc: 'Klassisch',  icon: '▬' },
+              { value: 'pulse',   label: 'Puls',     desc: 'Glühend',    icon: '◈' },
+              { value: 'stripe',  label: 'Streifen', desc: 'Diagonal',   icon: '▧' },
+              { value: 'shine',   label: 'Glanz',    desc: 'Lichtblitz', icon: '✦' },
+              { value: 'stepped', label: 'Stufen',   desc: 'Diskret',    icon: '▮' },
+            ]} />
           </Field>
 
           {/* Bar shape */}
           <Field label="Fortschritts-Form" className="mt-4">
-            <div className="grid grid-cols-4 gap-1.5">
-              {[
-                { value: 'bar',      label: 'Balken',   desc: 'Klassisch'   },
-                { value: 'ring',     label: 'Ring',     desc: 'Kreis + Bar' },
-                { value: 'dots',     label: 'Punkte',   desc: 'Dot-Reihe'  },
-                { value: 'segments', label: 'Segmente', desc: 'Spinner'    },
-              ].map(({ value, label, desc }) => {
-                const sel = (anim.barShape ?? 'bar') === value
-                return (
-                  <button key={value} onClick={() => setAnim({ barShape: value })}
-                    className={`flex flex-col items-center gap-0.5 rounded-xl border py-2.5 text-xs font-semibold transition-all ${
-                      sel ? 'border-pink-500 bg-pink-600/20 text-pink-400' : 'bd tile muted hover:txt'
-                    }`}>
-                    {label}
-                    <span className={`text-[10px] font-normal ${sel ? 'text-pink-400/70' : 'muted'}`}>{desc}</span>
-                  </button>
-                )
-              })}
-            </div>
+            <DropSelect value={anim.barShape ?? 'bar'} onChange={v => setAnim({ barShape: v })} color="pink" options={[
+              { value: 'bar',      label: 'Balken',   desc: 'Klassisch',    icon: '▬' },
+              { value: 'ring',     label: 'Ring',     desc: 'Kreis + Bar',  icon: '○' },
+              { value: 'dots',     label: 'Punkte',   desc: 'Dot-Reihe',   icon: '⠿' },
+              { value: 'segments', label: 'Segmente', desc: 'Spinner',      icon: '◎' },
+              { value: 'arc',      label: 'Bogen',    desc: 'Halbkreis',   icon: '◜' },
+              { value: 'blocks',   label: 'Blöcke',   desc: 'Segmentiert', icon: '▪▪▪' },
+              { value: 'steps',    label: 'Schritte', desc: '1→2→3→4',     icon: '①' },
+              { value: 'gauge',    label: 'Gauge',    desc: 'Ring + Zahl', icon: '⊕' },
+            ]} />
           </Field>
 
           {/* Scan layout */}
           <Field label="Scan-Layout" className="mt-4">
-            <div className="grid grid-cols-5 gap-1.5">
-              {[
-                { value: 'cards',    label: 'Karten',    desc: 'Standard'  },
-                { value: 'minimal',  label: 'Minimal',   desc: 'Sauber'    },
-                { value: 'terminal', label: 'Terminal',  desc: 'CLI'       },
-                { value: 'hud',      label: 'HUD',       desc: 'Cyber'     },
-                { value: 'wave',     label: 'Wave',      desc: 'Audio'     },
-              ].map(({ value, label, desc }) => {
-                const sel = (anim.scanLayout ?? 'cards') === value
-                return (
-                  <button key={value} onClick={() => setAnim({ scanLayout: value })}
-                    className={`flex flex-col items-center gap-0.5 rounded-xl border py-2.5 text-xs font-semibold transition-all ${
-                      sel ? 'border-orange-500 bg-orange-600/20 text-orange-400' : 'bd tile muted hover:txt'
-                    }`}>
-                    {label}
-                    <span className={`text-[10px] font-normal ${sel ? 'text-orange-400/70' : 'muted'}`}>{desc}</span>
-                  </button>
-                )
-              })}
-            </div>
+            <DropSelect value={anim.scanLayout ?? 'cards'} onChange={v => setAnim({ scanLayout: v })} color="orange" options={[
+              { value: 'cards',    label: 'Karten',   desc: 'Standard', icon: '▣' },
+              { value: 'minimal',  label: 'Minimal',  desc: 'Sauber',   icon: '—' },
+              { value: 'terminal', label: 'Terminal', desc: 'CLI',      icon: '>' },
+              { value: 'hud',      label: 'HUD',      desc: 'Cyber',    icon: '◧' },
+              { value: 'wave',     label: 'Wave',      desc: 'Audio',   icon: '≋' },
+            ]} />
           </Field>
 
           {/* Scan sweep */}
@@ -1239,47 +1335,21 @@ export default function ToolDesigner({ embedded = false }) {
 
           {/* Intro effect */}
           <Field label="Intro-Effekt (Fenster-Einblendung)" className="mt-4">
-            <div className="grid grid-cols-3 gap-1.5">
-              {[
-                { value: 'none',  label: 'Keiner',     desc: 'Sofort' },
-                { value: 'fade',  label: 'Einblenden', desc: 'Fade'   },
-                { value: 'slide', label: 'Einfahren',  desc: 'Slide'  },
-              ].map(({ value, label, desc }) => {
-                const sel = anim.intro === value
-                return (
-                  <button key={value} onClick={() => setAnim({ intro: value })}
-                    className={`flex flex-col items-center gap-0.5 rounded-xl border py-2.5 text-xs font-semibold transition-all ${
-                      sel ? 'border-emerald-500 bg-emerald-600/20 text-emerald-400' : 'bd tile muted hover:txt'
-                    }`}>
-                    {label}
-                    <span className={`text-[10px] font-normal ${sel ? 'text-emerald-400/70' : 'muted'}`}>{desc}</span>
-                  </button>
-                )
-              })}
-            </div>
+            <DropSelect value={anim.intro} onChange={v => setAnim({ intro: v })} color="emerald" options={[
+              { value: 'none',  label: 'Keiner',     desc: 'Sofort', icon: '·' },
+              { value: 'fade',  label: 'Einblenden', desc: 'Fade',   icon: '◌' },
+              { value: 'slide', label: 'Einfahren',  desc: 'Slide',  icon: '↑' },
+            ]} />
           </Field>
 
           {/* Background effect */}
           <Field label="Hintergrund-Effekt" className="mt-4">
-            <div className="grid grid-cols-4 gap-1.5">
-              {[
-                { value: 'none',       label: 'Keiner',    desc: 'Standard'   },
-                { value: 'scanlines',  label: 'Scanlines', desc: 'Retro'      },
-                { value: 'grid',       label: 'Gitter',    desc: 'Cyber'      },
-                { value: 'glow-pulse', label: 'Glühen',    desc: 'Pulsierend' },
-              ].map(({ value, label, desc }) => {
-                const sel = anim.bgEffect === value
-                return (
-                  <button key={value} onClick={() => setAnim({ bgEffect: value })}
-                    className={`flex flex-col items-center gap-0.5 rounded-xl border py-2.5 text-xs font-semibold transition-all ${
-                      sel ? 'border-amber-500 bg-amber-600/20 text-amber-400' : 'bd tile muted hover:txt'
-                    }`}>
-                    {label}
-                    <span className={`text-[10px] font-normal ${sel ? 'text-amber-400/70' : 'muted'}`}>{desc}</span>
-                  </button>
-                )
-              })}
-            </div>
+            <DropSelect value={anim.bgEffect} onChange={v => setAnim({ bgEffect: v })} color="amber" options={[
+              { value: 'none',       label: 'Keiner',    desc: 'Standard',   icon: '□' },
+              { value: 'scanlines',  label: 'Scanlines', desc: 'Retro',      icon: '≡' },
+              { value: 'grid',       label: 'Gitter',    desc: 'Cyber',      icon: '⊞' },
+              { value: 'glow-pulse', label: 'Glühen',    desc: 'Pulsierend', icon: '◉' },
+            ]} />
           </Field>
 
           {/* Visual effect toggles */}
@@ -1295,50 +1365,30 @@ export default function ToolDesigner({ embedded = false }) {
           <p className="caps-label mb-4 flex items-center gap-2">◻ Fenster-Rahmen</p>
 
           <Field label="Eckenradius">
-            <div className="grid grid-cols-4 gap-1.5">
-              {[{ v:'sharp',   l:'Eckig',      r:4  }, { v:'rounded', l:'Abgerundet', r:10 },
-                { v:'soft',    l:'Weich',       r:18 }, { v:'pill',    l:'Pill',       r:32 }].map(({ v, l, r }) => {
-                const sel = fr.cornerRadius === v
-                return (
-                  <button key={v} onClick={() => setFr({ cornerRadius: v })}
-                    className={`flex flex-col items-center gap-1 border py-2.5 text-xs font-semibold transition-all ${sel ? 'border-sky-500 bg-sky-600/20 text-sky-400' : 'bd tile muted hover:txt'}`}
-                    style={{ borderRadius: r }}>
-                    {l}
-                    <span className={`text-[10px] font-normal ${sel ? 'text-sky-400/70' : 'muted'}`}>{r}px</span>
-                  </button>
-                )
-              })}
-            </div>
+            <DropSelect value={fr.cornerRadius} onChange={v => setFr({ cornerRadius: v })} color="sky" options={[
+              { value: 'sharp',   label: 'Eckig',      desc: '4 px',  icon: '⬜' },
+              { value: 'rounded', label: 'Abgerundet', desc: '10 px', icon: '▢' },
+              { value: 'soft',    label: 'Weich',      desc: '18 px', icon: '◻' },
+              { value: 'pill',    label: 'Pill',       desc: '32 px', icon: '⬭' },
+            ]} />
           </Field>
 
           <Field label="Fenster-Schatten" className="mt-4">
-            <div className="grid grid-cols-4 gap-1.5">
-              {[{ v:'none',   l:'Keiner', d:'Flach'  }, { v:'soft',   l:'Weich',  d:'Subtil' },
-                { v:'strong', l:'Stark',  d:'Tief'   }, { v:'neon',   l:'Neon',   d:'Leuchten' }].map(({ v, l, d }) => {
-                const sel = fr.shadow === v
-                return (
-                  <button key={v} onClick={() => setFr({ shadow: v })}
-                    className={`flex flex-col items-center gap-0.5 rounded-xl border py-2.5 text-xs font-semibold transition-all ${sel ? 'border-cyan-500 bg-cyan-600/20 text-cyan-400' : 'bd tile muted hover:txt'}`}>
-                    {l}<span className={`text-[10px] font-normal ${sel ? 'text-cyan-400/70' : 'muted'}`}>{d}</span>
-                  </button>
-                )
-              })}
-            </div>
+            <DropSelect value={fr.shadow} onChange={v => setFr({ shadow: v })} color="cyan" options={[
+              { value: 'none',   label: 'Keiner', desc: 'Flach',    icon: '□' },
+              { value: 'soft',   label: 'Weich',  desc: 'Subtil',   icon: '▧' },
+              { value: 'strong', label: 'Stark',  desc: 'Tief',     icon: '■' },
+              { value: 'neon',   label: 'Neon',   desc: 'Leuchten', icon: '◈' },
+            ]} />
           </Field>
 
           <Field label="Rahmenbreite" className="mt-4">
-            <div className="grid grid-cols-4 gap-1.5">
-              {[{ v:'none', l:'Kein', d:'0px' }, { v:'thin', l:'Dünn', d:'1px' },
-                { v:'normal', l:'Normal', d:'2px' }, { v:'thick', l:'Dick', d:'3px' }].map(({ v, l, d }) => {
-                const sel = fr.borderWidth === v
-                return (
-                  <button key={v} onClick={() => setFr({ borderWidth: v })}
-                    className={`flex flex-col items-center gap-0.5 rounded-xl border py-2.5 text-xs font-semibold transition-all ${sel ? 'border-slate-400 bg-slate-400/10 text-slate-300' : 'bd tile muted hover:txt'}`}>
-                    {l}<span className={`text-[10px] font-normal ${sel ? 'text-slate-400/70' : 'muted'}`}>{d}</span>
-                  </button>
-                )
-              })}
-            </div>
+            <DropSelect value={fr.borderWidth} onChange={v => setFr({ borderWidth: v })} color="slate" options={[
+              { value: 'none',   label: 'Kein',   desc: '0 px', icon: '·' },
+              { value: 'thin',   label: 'Dünn',   desc: '1 px', icon: '─' },
+              { value: 'normal', label: 'Normal', desc: '2 px', icon: '━' },
+              { value: 'thick',  label: 'Dick',   desc: '3 px', icon: '▬' },
+            ]} />
           </Field>
 
           {fr.borderWidth !== 'none' && (
@@ -1362,49 +1412,28 @@ export default function ToolDesigner({ embedded = false }) {
           <p className="caps-label mb-4 flex items-center gap-2">Aa Typografie</p>
 
           <Field label="Schriftart">
-            <div className="grid grid-cols-4 gap-1.5">
-              {[{ v:'segoe', l:'Segoe UI', f:'"Segoe UI", sans-serif' },
-                { v:'mono',  l:'Mono',     f:'"Consolas", monospace' },
-                { v:'inter', l:'Inter',    f:'"Inter", sans-serif' },
-                { v:'roboto',l:'Roboto',   f:'"Roboto", sans-serif' }].map(({ v, l, f }) => {
-                const sel = typo.font === v
-                return (
-                  <button key={v} onClick={() => setTypo({ font: v })}
-                    className={`flex items-center justify-center rounded-xl border py-2.5 text-xs font-semibold transition-all ${sel ? 'border-indigo-500 bg-indigo-600/20 text-indigo-400' : 'bd tile muted hover:txt'}`}
-                    style={{ fontFamily: f }}>
-                    {l}
-                  </button>
-                )
-              })}
-            </div>
+            <DropSelect value={typo.font} onChange={v => setTypo({ font: v })} color="indigo" options={[
+              { value: 'segoe',  label: 'Segoe UI', desc: 'Standard', icon: 'S' },
+              { value: 'mono',   label: 'Mono',     desc: 'Terminal', icon: 'M' },
+              { value: 'inter',  label: 'Inter',    desc: 'Modern',   icon: 'I' },
+              { value: 'roboto', label: 'Roboto',   desc: 'Clean',    icon: 'R' },
+            ]} />
           </Field>
 
           <Field label="Schriftgröße" className="mt-4">
-            <div className="grid grid-cols-3 gap-1.5">
-              {[{ v:'small', l:'Klein', d:'11px' }, { v:'normal', l:'Normal', d:'13px' }, { v:'large', l:'Groß', d:'15px' }].map(({ v, l, d }) => {
-                const sel = typo.size === v
-                return (
-                  <button key={v} onClick={() => setTypo({ size: v })}
-                    className={`flex flex-col items-center gap-0.5 rounded-xl border py-2.5 text-xs font-semibold transition-all ${sel ? 'border-indigo-500 bg-indigo-600/20 text-indigo-400' : 'bd tile muted hover:txt'}`}>
-                    {l}<span className={`text-[10px] font-normal ${sel ? 'text-indigo-400/70' : 'muted'}`}>{d}</span>
-                  </button>
-                )
-              })}
-            </div>
+            <DropSelect value={typo.size} onChange={v => setTypo({ size: v })} color="indigo" options={[
+              { value: 'small',  label: 'Klein',  desc: '11 px', icon: 'a' },
+              { value: 'normal', label: 'Normal', desc: '13 px', icon: 'A' },
+              { value: 'large',  label: 'Groß',   desc: '15 px', icon: 'Ａ' },
+            ]} />
           </Field>
 
           <Field label="Zeichenabstand" className="mt-4">
-            <div className="grid grid-cols-3 gap-1.5">
-              {[{ v:'normal', l:'Normal', d:'Standard' }, { v:'wide', l:'Weit', d:'0.06em' }, { v:'ultra', l:'Ultra', d:'0.16em' }].map(({ v, l, d }) => {
-                const sel = typo.spacing === v
-                return (
-                  <button key={v} onClick={() => setTypo({ spacing: v })}
-                    className={`flex flex-col items-center gap-0.5 rounded-xl border py-2.5 text-xs font-semibold transition-all ${sel ? 'border-indigo-500 bg-indigo-600/20 text-indigo-400' : 'bd tile muted hover:txt'}`}>
-                    {l}<span className={`text-[10px] font-normal ${sel ? 'text-indigo-400/70' : 'muted'}`}>{d}</span>
-                  </button>
-                )
-              })}
-            </div>
+            <DropSelect value={typo.spacing} onChange={v => setTypo({ spacing: v })} color="indigo" options={[
+              { value: 'normal', label: 'Normal', desc: 'Standard', icon: 'ab' },
+              { value: 'wide',   label: 'Weit',   desc: '0.06 em',  icon: 'a b' },
+              { value: 'ultra',  label: 'Ultra',  desc: '0.16 em',  icon: 'a  b' },
+            ]} />
           </Field>
 
           <div className="bd my-7 border-t" />
@@ -1413,38 +1442,21 @@ export default function ToolDesigner({ embedded = false }) {
           <p className="caps-label mb-4 flex items-center gap-2">⬤ PIN-Feld</p>
 
           <Field label="Zeichen-Stil">
-            <div className="grid grid-cols-4 gap-1.5">
-              {[{ v:'dot',      l:'Punkte',    c:'●○' },
-                { v:'square',   l:'Quadrate',  c:'■□' },
-                { v:'asterisk', l:'Sterne',    c:'★☆' },
-                { v:'block',    l:'Blöcke',    c:'█░' }].map(({ v, l, c: ch }) => {
-                const sel = pinF.char === v
-                return (
-                  <button key={v} onClick={() => setPinF({ char: v })}
-                    className={`flex flex-col items-center gap-0.5 rounded-xl border py-2.5 text-xs font-semibold transition-all ${sel ? 'border-fuchsia-500 bg-fuchsia-600/20 text-fuchsia-400' : 'bd tile muted hover:txt'}`}>
-                    <span className="font-mono text-sm">{ch}</span>
-                    <span className={`text-[10px] font-normal ${sel ? 'text-fuchsia-400/70' : 'muted'}`}>{l}</span>
-                  </button>
-                )
-              })}
-            </div>
+            <DropSelect value={pinF.char} onChange={v => setPinF({ char: v })} color="fuchsia" options={[
+              { value: 'dot',      label: 'Punkte',   desc: '● ○', icon: '●' },
+              { value: 'square',   label: 'Quadrate', desc: '■ □', icon: '■' },
+              { value: 'asterisk', label: 'Sterne',   desc: '★ ☆', icon: '★' },
+              { value: 'block',    label: 'Blöcke',   desc: '█ ░', icon: '█' },
+            ]} />
           </Field>
 
           <Field label="Rahmen-Stil" className="mt-4">
-            <div className="grid grid-cols-4 gap-1.5">
-              {[{ v:'none',    l:'Keiner',       d:'Transparent' },
-                { v:'bottom',  l:'Unterstrichen', d:'Linie'      },
-                { v:'rounded', l:'Abgerundet',   d:'Box'         },
-                { v:'square',  l:'Eckig',        d:'Box'         }].map(({ v, l, d }) => {
-                const sel = pinF.border === v
-                return (
-                  <button key={v} onClick={() => setPinF({ border: v })}
-                    className={`flex flex-col items-center gap-0.5 rounded-xl border py-2.5 text-xs font-semibold transition-all ${sel ? 'border-fuchsia-500 bg-fuchsia-600/20 text-fuchsia-400' : 'bd tile muted hover:txt'}`}>
-                    {l}<span className={`text-[10px] font-normal ${sel ? 'text-fuchsia-400/70' : 'muted'}`}>{d}</span>
-                  </button>
-                )
-              })}
-            </div>
+            <DropSelect value={pinF.border} onChange={v => setPinF({ border: v })} color="fuchsia" options={[
+              { value: 'none',    label: 'Keiner',        desc: 'Transparent', icon: '·' },
+              { value: 'bottom',  label: 'Unterstrichen', desc: 'Linie',       icon: '_' },
+              { value: 'rounded', label: 'Abgerundet',    desc: 'Box',         icon: '▢' },
+              { value: 'square',  label: 'Eckig',         desc: 'Box',         icon: '▪' },
+            ]} />
           </Field>
 
           <div className="bd my-7 border-t" />
@@ -1453,32 +1465,19 @@ export default function ToolDesigner({ embedded = false }) {
           <p className="caps-label mb-4 flex items-center gap-2">▬ Balken-Details</p>
 
           <Field label="Balkenhöhe">
-            <div className="grid grid-cols-4 gap-1.5">
-              {[{ v:'slim', l:'Slim', d:'2px' }, { v:'normal', l:'Normal', d:'6px' },
-                { v:'thick', l:'Dick', d:'10px' }, { v:'chunky', l:'Massiv', d:'16px' }].map(({ v, l, d }) => {
-                const sel = barD.height === v
-                return (
-                  <button key={v} onClick={() => setBarD({ height: v })}
-                    className={`flex flex-col items-center gap-0.5 rounded-xl border py-2.5 text-xs font-semibold transition-all ${sel ? 'border-teal-500 bg-teal-600/20 text-teal-400' : 'bd tile muted hover:txt'}`}>
-                    {l}<span className={`text-[10px] font-normal ${sel ? 'text-teal-400/70' : 'muted'}`}>{d}</span>
-                  </button>
-                )
-              })}
-            </div>
+            <DropSelect value={barD.height} onChange={v => setBarD({ height: v })} color="teal" options={[
+              { value: 'slim',   label: 'Slim',   desc: '2 px',  icon: '─' },
+              { value: 'normal', label: 'Normal', desc: '6 px',  icon: '━' },
+              { value: 'thick',  label: 'Dick',   desc: '10 px', icon: '▬' },
+              { value: 'chunky', label: 'Massiv', desc: '16 px', icon: '█' },
+            ]} />
           </Field>
 
           <Field label="Balken-Enden" className="mt-4">
-            <div className="grid grid-cols-2 gap-1.5">
-              {[{ v:'round', l:'Rund', d:'Abgerundet' }, { v:'sharp', l:'Eckig', d:'90°' }].map(({ v, l, d }) => {
-                const sel = barD.caps === v
-                return (
-                  <button key={v} onClick={() => setBarD({ caps: v })}
-                    className={`flex flex-col items-center gap-0.5 rounded-xl border py-2.5 text-xs font-semibold transition-all ${sel ? 'border-teal-500 bg-teal-600/20 text-teal-400' : 'bd tile muted hover:txt'}`}>
-                    {l}<span className={`text-[10px] font-normal ${sel ? 'text-teal-400/70' : 'muted'}`}>{d}</span>
-                  </button>
-                )
-              })}
-            </div>
+            <DropSelect value={barD.caps} onChange={v => setBarD({ caps: v })} color="teal" options={[
+              { value: 'round', label: 'Rund',  desc: 'Abgerundet', icon: '⌢' },
+              { value: 'sharp', label: 'Eckig', desc: '90°',        icon: '⌐' },
+            ]} />
           </Field>
 
           <div className="mt-4">
@@ -1500,19 +1499,12 @@ export default function ToolDesigner({ embedded = false }) {
           <p className="caps-label mb-4 flex items-center gap-2">✓ Abschluss-Bildschirm</p>
 
           <Field label="Icon-Stil">
-            <div className="grid grid-cols-4 gap-1.5">
-              {[{ v:'check',  l:'Check',  i:'✓' }, { v:'shield', l:'Schild', i:'⊛' },
-                { v:'star',   l:'Stern',  i:'★' }, { v:'ring',   l:'Ring',   i:'◉' }].map(({ v, l, i }) => {
-                const sel = doneD.icon === v
-                return (
-                  <button key={v} onClick={() => setDoneD({ icon: v })}
-                    className={`flex flex-col items-center gap-1 rounded-xl border py-2.5 text-xs font-semibold transition-all ${sel ? 'border-green-500 bg-green-600/20 text-green-400' : 'bd tile muted hover:txt'}`}>
-                    <span className="text-lg">{i}</span>
-                    <span className={`text-[10px] font-normal ${sel ? 'text-green-400/70' : 'muted'}`}>{l}</span>
-                  </button>
-                )
-              })}
-            </div>
+            <DropSelect value={doneD.icon} onChange={v => setDoneD({ icon: v })} color="green" options={[
+              { value: 'check',  label: 'Check',  desc: 'Klassisch', icon: '✓' },
+              { value: 'shield', label: 'Schild', desc: 'Sicher',    icon: '⊛' },
+              { value: 'star',   label: 'Stern',  desc: 'Belohnung', icon: '★' },
+              { value: 'ring',   label: 'Ring',   desc: 'Minimal',   icon: '◉' },
+            ]} />
           </Field>
 
           <div className="mt-4">
@@ -1529,18 +1521,12 @@ export default function ToolDesigner({ embedded = false }) {
           </div>
 
           <Field label="Icon-Animation" className="mt-4">
-            <div className="grid grid-cols-4 gap-1.5">
-              {[{ v:'none',   l:'Keine',  d:'Sofort'  }, { v:'pop',    l:'Pop',    d:'Aufpoppen' },
-                { v:'bounce', l:'Bounce', d:'Hüpfen'  }, { v:'spin',   l:'Spin',   d:'Eindrehen' }].map(({ v, l, d }) => {
-                const sel = doneD.anim === v
-                return (
-                  <button key={v} onClick={() => setDoneD({ anim: v })}
-                    className={`flex flex-col items-center gap-0.5 rounded-xl border py-2.5 text-xs font-semibold transition-all ${sel ? 'border-green-500 bg-green-600/20 text-green-400' : 'bd tile muted hover:txt'}`}>
-                    {l}<span className={`text-[10px] font-normal ${sel ? 'text-green-400/70' : 'muted'}`}>{d}</span>
-                  </button>
-                )
-              })}
-            </div>
+            <DropSelect value={doneD.anim} onChange={v => setDoneD({ anim: v })} color="green" options={[
+              { value: 'none',   label: 'Keine',  desc: 'Sofort',    icon: '·' },
+              { value: 'pop',    label: 'Pop',    desc: 'Aufpoppen', icon: '⊕' },
+              { value: 'bounce', label: 'Bounce', desc: 'Hüpfen',    icon: '↕' },
+              { value: 'spin',   label: 'Spin',   desc: 'Eindrehen', icon: '↻' },
+            ]} />
           </Field>
 
           <div className="bd my-7 border-t" />
