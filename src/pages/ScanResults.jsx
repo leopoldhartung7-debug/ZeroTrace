@@ -464,12 +464,12 @@ export default function ScanResults() {
           <KV color="#22c55e" label="Game" value={report.pc.game} />
           {report.pc.hardware ? (
             <>
-              <KV color="#06b6d4" label="CPU" value={report.pc.hardware.cpu || '—'} />
-              <KV color="#06b6d4" label="RAM" value={report.pc.hardware.ram || '—'} />
-              <KV color="#06b6d4" label="GPU" value={report.pc.hardware.gpu || '—'} />
+              <KV color="#848eb0" label="CPU" value={report.pc.hardware.cpu || '—'} />
+              <KV color="#848eb0" label="RAM" value={report.pc.hardware.ram || '—'} />
+              <KV color="#848eb0" label="GPU" value={report.pc.hardware.gpu || '—'} />
             </>
           ) : (
-            <KV color="#06b6d4" label="Hardware Stats" value="Not available" />
+            <KV color="#848eb0" label="Hardware Stats" value="Not available" />
           )}
         </Card>
       </div>
@@ -1671,7 +1671,7 @@ function SteamIdRow({ pin, dispatch, toast }) {
   return (
     <div className="bd flex items-center justify-between gap-2 border-b py-3.5 text-sm last:border-0">
       <span className="muted flex items-center gap-2.5">
-        <span className="h-2 w-2 rounded-full" style={{ background: '#0ea5e9' }} />
+        <span className="h-2 w-2 rounded-full" style={{ background: '#848eb0' }} />
         Steam ID
       </span>
       <span className="flex items-center gap-2">

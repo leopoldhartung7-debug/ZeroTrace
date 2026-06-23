@@ -4,7 +4,7 @@ import { PageHeader, Card, StatTile, Ring } from '../components/kit.jsx'
 import { useStore } from '../store.jsx'
 
 const GAME_COLORS = {
-  FIVEM: '#38BDF8',
+  FIVEM: '#848eb0',
   MINECRAFT: '#4ADE80',
   RUST: '#FB923C',
   FORTNITE: '#A78BFA',
@@ -115,7 +115,7 @@ export default function StatsPage() {
           )}
           {topDetected.map(c => (
             <HBar key={c.id} label={c.name} value={c.detectionCount || 0} max={maxDet}
-              color={SEV_COLORS[c.severity] || '#38BDF8'} extra={c.game} />
+              color={SEV_COLORS[c.severity] || '#848eb0'} extra={c.game} />
           ))}
         </Card>
       </div>
