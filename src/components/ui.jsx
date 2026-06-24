@@ -36,8 +36,8 @@ export function Modal({ open, onClose, title, children, footer }) {
   if (!open) return null
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="panel relative z-10 flex max-h-[88vh] w-full max-w-md flex-col rounded-2xl border shadow-2xl">
+      <div className="zt-fade-in absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="zt-scale-in panel relative z-10 flex max-h-[88vh] w-full max-w-md flex-col rounded-2xl border shadow-2xl">
         <div className="bd flex shrink-0 items-center justify-between border-b px-6 py-4">
           <h3 className="txt text-lg font-semibold">{title}</h3>
           <button onClick={onClose} className="muted hover:txt rounded-md p-1">
@@ -59,8 +59,8 @@ export function Drawer({ open, onClose, title, children }) {
   if (!open) return null
   return createPortal(
     <div className="fixed inset-0 z-50">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="panel absolute right-0 top-0 z-10 flex h-full w-full max-w-md flex-col border-l shadow-2xl">
+      <div className="zt-fade-in absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="panel absolute right-0 top-0 z-10 flex h-full w-full max-w-md flex-col border-l shadow-2xl" style={{ animation: 'zt-drawer-in 0.3s cubic-bezier(0.22,1,0.36,1) both' }}>
         <div className="bd flex shrink-0 items-center justify-between border-b p-5">
           <h3 className="txt text-lg font-semibold">{title}</h3>
           <button onClick={onClose} className="muted hover:txt rounded-md p-1">
@@ -86,7 +86,7 @@ export function Menu({ trigger, items, header }) {
     <div className="relative" ref={ref}>
       <span onClick={() => setOpen((o) => !o)}>{trigger}</span>
       {open && (
-        <div className="panel absolute right-0 z-20 mt-2 w-56 overflow-hidden rounded-xl border py-1.5 shadow-2xl">
+        <div className="zt-scale-in panel absolute right-0 z-20 mt-2 w-56 origin-top-right overflow-hidden rounded-xl border py-1.5 shadow-2xl">
           {header && (
             <p className="txt px-3 pb-1.5 pt-1 text-sm font-semibold">{header}</p>
           )}
@@ -185,7 +185,7 @@ export function ToastProvider({ children }) {
                     }
                   : undefined
               }
-              className={`panel flex items-start gap-3 rounded-lg border px-4 py-3 shadow-xl ${
+              className={`zt-slide-in panel flex items-start gap-3 rounded-xl border px-4 py-3 shadow-xl ${
                 t.onClick ? 'hoverable cursor-pointer' : ''
               }`}
             >

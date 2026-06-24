@@ -3,26 +3,31 @@ import { ChevronDown } from 'lucide-react'
 
 export function PageHeader({ kicker, title, subtitle, actions, icon: Icon }) {
   return (
-    <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-      <div>
-        {kicker && <p className="caps-label mb-2">{kicker}</p>}
-        <h1 className="txt flex items-center gap-2.5 text-2xl font-semibold tracking-tight md:text-3xl">
-          {Icon && (
-            <span className="tile flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border">
-              <Icon size={16} className="text-sky-400" />
-            </span>
-          )}
-          {title}
-        </h1>
-        {subtitle && <p className="muted mt-1.5 text-sm">{subtitle}</p>}
+    <div className="mb-8">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          {kicker && <p className="caps-label mb-2">{kicker}</p>}
+          <h1 className="txt flex items-center gap-3 text-2xl font-semibold tracking-tight md:text-3xl">
+            {Icon && (
+              <span className="tile flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border shadow-[var(--elev-1)]">
+                <Icon size={18} className="text-sky-400" />
+              </span>
+            )}
+            {title}
+          </h1>
+          {subtitle && <p className="muted mt-2 text-sm">{subtitle}</p>}
+        </div>
+        {actions && <div className="flex shrink-0 flex-wrap gap-2">{actions}</div>}
       </div>
-      {actions && <div className="flex shrink-0 flex-wrap gap-2">{actions}</div>}
+      <div className="accent-rule mt-5" />
     </div>
   )
 }
 
 export function Card({ className = '', children }) {
-  return <div className={`panel rounded-xl border ${className}`}>{children}</div>
+  return (
+    <div className={`card-glass card-hover rounded-2xl ${className}`}>{children}</div>
+  )
 }
 
 const SEV = {
@@ -57,7 +62,7 @@ export function EmptyState({ icon: Icon, title, hint }) {
 
 export function StatTile({ icon: Icon, label, value, accent = 'muted', sub }) {
   return (
-    <div className="panel rounded-xl border p-4 transition-colors hover:border-sky-500/20">
+    <div className="card-glass card-hover rounded-2xl p-4">
       <div className="flex items-start justify-between">
         <div className="min-w-0 flex-1">
           <p className="caps-label mb-1">{label}</p>
@@ -66,8 +71,8 @@ export function StatTile({ icon: Icon, label, value, accent = 'muted', sub }) {
           </p>
           {sub && <p className="muted mt-0.5 text-xs">{sub}</p>}
         </div>
-        <div className="tile ml-3 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border">
-          <Icon size={16} className={accent} />
+        <div className="tile ml-3 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border shadow-[var(--elev-1)]">
+          <Icon size={17} className={accent} />
         </div>
       </div>
     </div>

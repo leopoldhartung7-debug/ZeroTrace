@@ -110,12 +110,16 @@ export default function Sidebar() {
   ]
 
   return (
-    <aside className="panel flex h-screen w-[280px] shrink-0 flex-col overflow-hidden border-r">
-      <NavLink to="/" className="flex items-center gap-3 px-6 py-6" title="Back to home">
+    <aside className="panel relative flex h-screen w-[280px] shrink-0 flex-col overflow-hidden border-r">
+      <div
+        className="pointer-events-none absolute inset-0 -z-0"
+        style={{ background: 'radial-gradient(80% 30% at 0% 0%, var(--glow), transparent 70%)' }}
+      />
+      <NavLink to="/" className="relative z-10 flex items-center gap-3 px-6 py-6 transition-opacity hover:opacity-80" title="Back to home">
         <Logo size="sm" sub />
       </NavLink>
 
-      <nav className="flex-1 overflow-y-auto px-3 pb-2">
+      <nav className="relative z-10 flex-1 overflow-y-auto px-3 pb-2">
         {groups.map((g) => (
           <div key={g.label}>
             <SectionLabel>{g.label}</SectionLabel>
@@ -143,10 +147,10 @@ export default function Sidebar() {
                             key={c.to}
                             to={c.to}
                             className={({ isActive }) =>
-                              `relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                              `relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 ${
                                 isActive
-                                  ? 'bg-sky-500/10 text-sky-400 before:absolute before:left-0 before:top-1/2 before:h-4 before:w-[3px] before:-translate-y-1/2 before:rounded-r-full before:bg-sky-400'
-                                  : 'hoverable'
+                                  ? 'bg-gradient-to-r from-sky-500/15 to-sky-500/5 text-sky-300 before:absolute before:left-0 before:top-1/2 before:h-4 before:w-[3px] before:-translate-y-1/2 before:rounded-r-full before:bg-sky-400 before:shadow-[0_0_8px_var(--accent)]'
+                                  : 'hover:translate-x-0.5 hoverable'
                               }`
                             }
                           >
@@ -168,16 +172,16 @@ export default function Sidebar() {
                   key={to}
                   to={to}
                   className={({ isActive }) =>
-                    `relative mb-1 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                    `group relative mb-1 flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
                       isActive
-                        ? 'bg-sky-500/10 text-sky-400 before:absolute before:left-0 before:top-1/2 before:h-5 before:w-[3px] before:-translate-y-1/2 before:rounded-r-full before:bg-sky-400'
-                        : 'hoverable'
+                        ? 'bg-gradient-to-r from-sky-500/15 to-sky-500/5 text-sky-300 shadow-[var(--elev-1)] before:absolute before:left-0 before:top-1/2 before:h-5 before:w-[3px] before:-translate-y-1/2 before:rounded-r-full before:bg-sky-400 before:shadow-[0_0_8px_var(--accent)]'
+                        : 'hover:translate-x-0.5 hoverable'
                     }`
                   }
                 >
                   {({ isActive }) => (
                     <>
-                      <Icon size={18} className={isActive ? '' : 'muted'} />
+                      <Icon size={18} className={`transition-colors ${isActive ? 'text-sky-300' : 'muted group-hover:text-sky-400/70'}`} />
                       <span className={isActive ? '' : 'txt'}>{label}</span>
                     </>
                   )}

@@ -16,7 +16,10 @@ export default function Tabs({ tabs, active, onChange }) {
             {Icon && <Icon size={16} />}
             {label}
             {isActive && (
-              <span className="absolute inset-x-0 -bottom-px h-0.5 rounded-full bg-sky-500" />
+              <span
+                className="absolute inset-x-0 -bottom-px h-0.5 rounded-full bg-sky-500"
+                style={{ boxShadow: '0 0 8px var(--accent)', animation: 'zt-grow 0.3s cubic-bezier(0.22,1,0.36,1) both' }}
+              />
             )}
           </button>
         )
