@@ -3,64 +3,64 @@
 @tailwind utilities;
 
 /* ──────────────────────────────────────────────────────────────────
-   ZeroTrace — "Technical" theme
-   Cooler graphite palette, flat surfaces with crisp hairline edges,
-   angular corners, Space Grotesk type. Clean, calm, no neon glow.
+   ZeroTrace — "Soft Modern" theme
+   Rounded, airy surfaces with a faint indigo-tinted dark base, soft
+   borders and gentle depth. Calm, friendly, contemporary. Inter type.
    ────────────────────────────────────────────────────────────────── */
 
 :root {
-  --bg: #0d0f13;
-  --bg-2: #111419;
-  --panel: #15181e;
-  --panel-2: #181c22;
-  --tile: #1b1f26;
-  --border: #272c35;
-  --border-soft: #1f242c;
-  --text: #eef1f6;
-  --muted: #7d828f;
-  --hover: rgba(255, 255, 255, 0.035);
-  --accent: #939dbd;
-  --accent-2: #b3bcd8;
-  --accent-soft: rgba(147, 157, 189, 0.12);
-  --elev-1: 0 1px 2px rgba(0, 0, 0, 0.25);
-  --elev-2: 0 6px 18px -10px rgba(0, 0, 0, 0.5);
-  --elev-3: 0 16px 40px -18px rgba(0, 0, 0, 0.6);
+  --bg: #0f1016;
+  --bg-2: #13141c;
+  --panel: #191b23;
+  --panel-2: #1d1f29;
+  --tile: #21232e;
+  --border: #2b2e3a;
+  --border-soft: #23252f;
+  --text: #eceef5;
+  --muted: #888da0;
+  --hover: rgba(255, 255, 255, 0.045);
+  --accent: #9aa4c6;
+  --accent-2: #b6bedb;
+  --accent-soft: rgba(154, 164, 198, 0.14);
+  --elev-1: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --elev-2: 0 10px 30px -12px rgba(0, 0, 0, 0.55);
+  --elev-3: 0 24px 60px -18px rgba(0, 0, 0, 0.65);
 }
 
 :root.light {
-  --bg: #eef0f4;
-  --bg-2: #e7e9ef;
+  --bg: #f3f4f9;
+  --bg-2: #eceef5;
   --panel: #ffffff;
-  --panel-2: #fafbfd;
-  --tile: #eceef3;
-  --border: #d8dae2;
-  --border-soft: #e4e6ed;
-  --text: #16181d;
-  --muted: #5f6470;
-  --hover: rgba(0, 0, 0, 0.035);
-  --accent: #545b78;
-  --accent-2: #424a64;
-  --accent-soft: rgba(84, 91, 120, 0.10);
-  --elev-1: 0 1px 2px rgba(0, 0, 0, 0.05);
-  --elev-2: 0 6px 18px -10px rgba(0, 0, 0, 0.15);
-  --elev-3: 0 16px 40px -18px rgba(0, 0, 0, 0.18);
+  --panel-2: #fbfcff;
+  --tile: #f0f1f7;
+  --border: #e1e3ec;
+  --border-soft: #eaebf2;
+  --text: #181a22;
+  --muted: #646878;
+  --hover: rgba(0, 0, 0, 0.04);
+  --accent: #5a6486;
+  --accent-2: #454e6c;
+  --accent-soft: rgba(90, 100, 134, 0.12);
+  --elev-1: 0 1px 3px rgba(0, 0, 0, 0.05);
+  --elev-2: 0 10px 30px -14px rgba(0, 0, 0, 0.16);
+  --elev-3: 0 24px 60px -20px rgba(0, 0, 0, 0.2);
 }
 
 /* Public marketing pages stay dark regardless of the dashboard theme */
 .force-dark {
-  --bg: #0d0f13;
-  --bg-2: #111419;
-  --panel: #15181e;
-  --panel-2: #181c22;
-  --tile: #1b1f26;
-  --border: #272c35;
-  --border-soft: #1f242c;
-  --text: #eef1f6;
-  --muted: #7d828f;
-  --hover: rgba(255, 255, 255, 0.035);
-  --accent: #939dbd;
-  --accent-2: #b3bcd8;
-  --accent-soft: rgba(147, 157, 189, 0.12);
+  --bg: #0f1016;
+  --bg-2: #13141c;
+  --panel: #191b23;
+  --panel-2: #1d1f29;
+  --tile: #21232e;
+  --border: #2b2e3a;
+  --border-soft: #23252f;
+  --text: #eceef5;
+  --muted: #888da0;
+  --hover: rgba(255, 255, 255, 0.045);
+  --accent: #9aa4c6;
+  --accent-2: #b6bedb;
+  --accent-soft: rgba(154, 164, 198, 0.14);
 }
 
 @layer base {
@@ -75,28 +75,28 @@
     background: var(--bg);
     color: var(--text);
     -webkit-font-smoothing: antialiased;
-    font-family: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+    font-family: 'Inter', system-ui, sans-serif;
   }
   h1,
   h2,
   h3 {
-    font-family: 'Space Grotesk', 'Inter', system-ui, sans-serif;
-    letter-spacing: -0.02em;
+    font-family: 'Inter', system-ui, sans-serif;
+    letter-spacing: -0.022em;
     font-weight: 700;
   }
 }
 
 @layer components {
-  /* Flat technical background: cool base + a single faint top wash.
-     No heavy radial glows — calmer than the previous theme. */
+  /* Soft layered background: faint indigo wash from the top, very gentle. */
   .app-bg {
     background: var(--bg);
-    background-image: linear-gradient(180deg, var(--bg-2), var(--bg) 240px);
+    background-image:
+      radial-gradient(70% 50% at 50% -10%, rgba(154, 164, 198, 0.07), transparent 60%);
     background-attachment: fixed;
   }
-  /* Flat panel with a crisp hairline edge. */
+  /* Soft rounded panel with a faint top highlight for a lifted feel. */
   .panel {
-    background: var(--panel);
+    background: linear-gradient(180deg, var(--panel-2), var(--panel));
     border-color: var(--border);
   }
   .tile {
@@ -113,21 +113,18 @@
     border-color: var(--border);
   }
   .hoverable {
-    transition: background-color 0.14s, transform 0.14s;
+    transition: background-color 0.15s, transform 0.15s;
   }
   .hoverable:hover {
     background: var(--hover);
   }
-  /* Technical uppercase micro-label, slightly wider tracking. */
   .caps-label {
-    font-size: 10.5px;
+    font-size: 11px;
     font-weight: 600;
-    letter-spacing: 0.14em;
+    letter-spacing: 0.07em;
     text-transform: uppercase;
     color: var(--muted);
   }
-  /* Landing page only: override every font with Space Grotesk (no-op now,
-     kept for compatibility with existing class usage). */
   .landing-font,
   .landing-font h1,
   .landing-font h2,
@@ -142,28 +139,40 @@
     font-family: 'Space Grotesk', 'Inter', system-ui, sans-serif;
   }
 
-  /* ── Card system: flat surface, crisp edge, subtle lift on hover ── */
+  /* ── Card system: soft rounded surface, gentle hover lift ── */
   .card-glass {
     position: relative;
-    background: var(--panel);
+    background: linear-gradient(180deg, var(--panel-2), var(--panel));
     border: 1px solid var(--border);
     box-shadow: var(--elev-1);
-    transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1),
-      box-shadow 0.2s ease, border-color 0.2s ease;
+    transition: transform 0.24s cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 0.24s ease, border-color 0.24s ease;
+  }
+  .card-glass::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding-top: 1px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), transparent 45%);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
   }
   .card-hover:hover {
-    transform: translateY(-2px);
+    transform: translateY(-3px);
     box-shadow: var(--elev-2);
-    border-color: #333a45;
+    border-color: var(--accent-soft);
   }
 
-  /* Short technical accent marker used in headers. */
+  /* Rounded accent pill used in headers. */
   .accent-rule {
-    height: 2px;
-    width: 28px;
-    border-radius: 0;
-    background: var(--accent);
-    animation: zt-grow 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+    height: 3px;
+    width: 38px;
+    border-radius: 99px;
+    background: linear-gradient(90deg, var(--accent), var(--accent-soft));
+    animation: zt-grow 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
   }
 }
 
@@ -172,10 +181,10 @@
   color: var(--text);
 }
 
-/* ── Clean animations (no glow) ──────────────────────────────────── */
+/* ── Clean animations ────────────────────────────────────────────── */
 
 @keyframes zt-fade-up {
-  from { opacity: 0; transform: translateY(10px); }
+  from { opacity: 0; transform: translateY(12px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 @keyframes zt-fade-in {
@@ -183,7 +192,7 @@
   to   { opacity: 1; }
 }
 @keyframes zt-scale-in {
-  from { opacity: 0; transform: scale(0.97); }
+  from { opacity: 0; transform: scale(0.96); }
   to   { opacity: 1; transform: scale(1); }
 }
 @keyframes zt-slide-in {
@@ -200,11 +209,11 @@
 }
 
 .zt-page {
-  animation: zt-fade-up 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: zt-fade-up 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .zt-stagger > * {
-  animation: zt-fade-up 0.46s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: zt-fade-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 .zt-stagger > *:nth-child(1) { animation-delay: 0.02s; }
 .zt-stagger > *:nth-child(2) { animation-delay: 0.06s; }
@@ -215,10 +224,10 @@
 .zt-stagger > *:nth-child(7) { animation-delay: 0.26s; }
 .zt-stagger > *:nth-child(8) { animation-delay: 0.30s; }
 
-.zt-fade-up { animation: zt-fade-up 0.42s cubic-bezier(0.22, 1, 0.36, 1) both; }
-.zt-fade-in { animation: zt-fade-in 0.36s ease both; }
-.zt-scale-in { animation: zt-scale-in 0.26s cubic-bezier(0.22, 1, 0.36, 1) both; }
-.zt-slide-in { animation: zt-slide-in 0.28s ease both; }
+.zt-fade-up { animation: zt-fade-up 0.45s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.zt-fade-in { animation: zt-fade-in 0.4s ease both; }
+.zt-scale-in { animation: zt-scale-in 0.28s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.zt-slide-in { animation: zt-slide-in 0.3s ease both; }
 
 @media (prefers-reduced-motion: reduce) {
   .zt-page, .zt-stagger > *, .zt-fade-up, .zt-fade-in, .zt-scale-in,
@@ -271,8 +280,8 @@
 .zt-flipin { animation: zt-flipin 0.3s ease-out; }
 
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 7px;
+  height: 7px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;

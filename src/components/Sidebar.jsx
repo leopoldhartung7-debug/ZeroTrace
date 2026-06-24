@@ -143,10 +143,10 @@ export default function Sidebar() {
                             key={c.to}
                             to={c.to}
                             className={({ isActive }) =>
-                              `relative flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors duration-150 ${
+                              `relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 ${
                                 isActive
-                                  ? 'txt before:absolute before:left-0 before:top-1/2 before:h-3.5 before:w-[2px] before:-translate-y-1/2 before:bg-sky-400'
-                                  : 'hoverable'
+                                  ? 'bg-sky-500/12 text-sky-300'
+                                  : 'hoverable hover:translate-x-0.5'
                               }`
                             }
                           >
@@ -168,17 +168,16 @@ export default function Sidebar() {
                   key={to}
                   to={to}
                   className={({ isActive }) =>
-                    `group relative mb-0.5 flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors duration-150 ${
+                    `group relative mb-1 flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
                       isActive
-                        ? 'txt before:absolute before:left-0 before:top-1/2 before:h-[18px] before:w-[2px] before:-translate-y-1/2 before:bg-sky-400'
-                        : 'hoverable'
+                        ? 'bg-sky-500/12 text-sky-300 shadow-[var(--elev-1)]'
+                        : 'hoverable hover:translate-x-0.5'
                     }`
                   }
-                  style={({ isActive }) => (isActive ? { background: 'var(--tile)' } : undefined)}
                 >
                   {({ isActive }) => (
                     <>
-                      <Icon size={17} className={`transition-colors ${isActive ? 'text-sky-400' : 'muted group-hover:txt'}`} />
+                      <Icon size={18} className={`transition-colors ${isActive ? 'text-sky-300' : 'muted group-hover:txt'}`} />
                       <span className={isActive ? '' : 'txt'}>{label}</span>
                     </>
                   )}

@@ -17,7 +17,7 @@ export default function Tabs({ tabs, active, onChange }) {
             {label}
             {isActive && (
               <span
-                className="absolute inset-x-0 -bottom-px h-0.5 bg-sky-400"
+                className="absolute inset-x-0 -bottom-px h-0.5 rounded-full bg-sky-400"
                 style={{ animation: 'zt-grow 0.3s cubic-bezier(0.22,1,0.36,1) both' }}
               />
             )}
