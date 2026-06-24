@@ -168,17 +168,17 @@ export default function Sidebar() {
                   key={to}
                   to={to}
                   className={({ isActive }) =>
-                    `group relative mb-1 flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
+                    `group relative mb-1 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold uppercase tracking-wide transition-all duration-200 ${
                       isActive
-                        ? 'bg-sky-500/12 text-sky-300 shadow-[var(--elev-1)]'
+                        ? 'bg-sky-500/15 text-sky-200 ring-1 ring-inset ring-sky-500/30 before:absolute before:-left-3 before:top-1/2 before:h-6 before:w-1 before:-translate-y-1/2 before:rounded-r before:bg-sky-400'
                         : 'hoverable hover:translate-x-0.5'
                     }`
                   }
                 >
                   {({ isActive }) => (
                     <>
-                      <Icon size={18} className={`transition-colors ${isActive ? 'text-sky-300' : 'muted group-hover:txt'}`} />
-                      <span className={isActive ? '' : 'txt'}>{label}</span>
+                      <Icon size={18} className={`shrink-0 transition-colors ${isActive ? 'text-sky-300' : 'muted group-hover:txt'}`} />
+                      <span className={`truncate text-[13px] ${isActive ? '' : 'txt'}`}>{label}</span>
                     </>
                   )}
                 </NavLink>

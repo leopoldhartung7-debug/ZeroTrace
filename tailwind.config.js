@@ -34,17 +34,17 @@ export default {
         sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
         mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
       },
-      /* Generous, soft rounding across the whole app for the modern look.
+      /* Balanced medium rounding for the command-center look.
          `full` is kept for pills/avatars/dots. */
       borderRadius: {
         none: '0',
-        sm: '6px',
-        DEFAULT: '8px',
-        md: '10px',
-        lg: '12px',
-        xl: '16px',
-        '2xl': '20px',
-        '3xl': '26px',
+        sm: '4px',
+        DEFAULT: '6px',
+        md: '7px',
+        lg: '9px',
+        xl: '11px',
+        '2xl': '13px',
+        '3xl': '18px',
         full: '9999px',
       },
     },
