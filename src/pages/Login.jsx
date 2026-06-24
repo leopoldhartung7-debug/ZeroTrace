@@ -24,10 +24,12 @@ export default function Login() {
   const [inputCode, setInputCode] = useState('')
   const [checking, setChecking] = useState(false)
   const [discordOpen, setDiscordOpen] = useState(false)
+  const [discordStep, setDiscordStep] = useState('login') // 'login' | 'consent' | 'linking' | 'id'
   const [discordForm, setDiscordForm] = useState({ email: '', pw: '' })
   const [discordShowPw, setDiscordShowPw] = useState(false)
   const [discordChecking, setDiscordChecking] = useState(false)
   const [discordError, setDiscordError] = useState('')
+  const [discordIdInput, setDiscordIdInput] = useState('')
   const [passkeyOpen, setPasskeyOpen] = useState(false)
   const [passkeyUsername, setPasskeyUsername] = useState('')
   const [passkeyChecking, setPasskeyChecking] = useState(false)
@@ -282,24 +284,41 @@ export default function Login() {
     return true
   }
 
+  const openDiscord = () => {
+    setDiscordForm({ email: '', pw: '' })
+    setDiscordError('')
+    setDiscordIdInput('')
+    setDiscordStep('login')
+    setDiscordOpen(true)
+  }
+
+  const closeDiscord = () => {
+    setDiscordOpen(false)
+    setDiscordError('')
+    setDiscordChecking(false)
+  }
+
   const submitDiscordLogin = async () => {
-    const email = discordForm.email.trim().toLowerCase()
-    const pw = discordForm.pw
-    if (!email || !pw) { setDiscordError('Please enter your email and password.'); return }
+    if (!discordForm.email || !discordForm.pw) { setDiscordError('Please enter your email and password.'); return }
     setDiscordError('')
     setDiscordChecking(true)
     await new Promise((r) => setTimeout(r, 1400))
     setDiscordChecking(false)
-    const user = (state.users || []).find((u) => (u.email || '').toLowerCase() === email)
-    if (!user) {
-      setDiscordError('Login failed. Invalid email or password.')
-      return
-    }
-    if (loginAsUser(user)) {
-      setDiscordOpen(false)
-      setDiscordForm({ email: '', pw: '' })
-      setDiscordError('')
-    }
+    setDiscordStep('consent')
+  }
+
+  const authorizeDiscord = async () => {
+    setDiscordStep('linking')
+    await new Promise((r) => setTimeout(r, 1000))
+    setDiscordStep('id')
+  }
+
+  const submitDiscordId = () => {
+    const id = discordIdInput.trim()
+    if (!/^\d{17,20}$/.test(id)) { setDiscordError('Enter your 17–20 digit Discord User ID.'); return }
+    const user = (state.users || []).find((u) => u.discordId === id)
+    if (!user) { setDiscordError('No ZeroTrace account is linked to this Discord ID.'); return }
+    if (loginAsUser(user)) closeDiscord()
   }
 
   const submitPasskeyLogin = async () => {
@@ -494,7 +513,7 @@ export default function Login() {
 
         <div className="grid grid-cols-2 gap-3">
           <button
-            onClick={() => { setDiscordForm({ email: '', pw: '' }); setDiscordError(''); setDiscordOpen(true) }}
+            onClick={openDiscord}
             className="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] py-3 text-sm font-medium hover:bg-white/[0.06]"
           >
             <span className="text-[#5865F2]">◆</span> Discord
@@ -640,106 +659,117 @@ export default function Login() {
       </Modal>
 
       {discordOpen && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.85)' }}>
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.88)' }}>
           <div
-            className="relative w-full max-w-[480px] rounded-[5px] p-8 shadow-2xl"
-            style={{ background: '#313338', fontFamily: '"gg sans","Noto Sans",Helvetica,Arial,sans-serif' }}
+            className="relative w-full max-w-[480px] rounded-[5px] shadow-2xl"
+            style={{ background: '#313338', fontFamily: '"gg sans","Noto Sans",Helvetica,Arial,sans-serif', overflow: 'hidden' }}
           >
-            {discordChecking ? (
-              <div className="flex flex-col items-center gap-5 py-10">
-                <div className="relative">
-                  <div className="absolute inset-0 animate-ping rounded-full" style={{ background: 'rgba(88,101,242,0.25)' }} />
-                  <div className="relative rounded-full p-4" style={{ background: 'rgba(88,101,242,0.15)' }}>
+            {/* ── Step: logging in to Discord ── */}
+            {discordStep === 'login' && (
+              <div className="p-8">
+                <button type="button" onClick={closeDiscord} style={{ position: 'absolute', top: 12, right: 14, background: 'none', border: 'none', cursor: 'pointer', color: '#B5BAC1', fontSize: 20, lineHeight: 1, padding: 4 }}>✕</button>
+                <div style={{ textAlign: 'center', marginBottom: 20 }}>
+                  <span style={{ fontSize: 32, color: '#5865F2', display: 'block', marginBottom: 6 }}>◆</span>
+                  <h2 style={{ color: '#F2F3F5', fontSize: 24, fontWeight: 700, margin: '0 0 4px' }}>Welcome back!</h2>
+                  <p style={{ color: '#B5BAC1', fontSize: 14, margin: 0 }}>We're so excited to see you again!</p>
+                </div>
+                <form onSubmit={(e) => { e.preventDefault(); submitDiscordLogin() }} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  {discordError && <div style={{ background: 'rgba(237,66,69,0.15)', border: '1px solid rgba(237,66,69,0.4)', borderRadius: 4, padding: '8px 12px', color: '#ED4245', fontSize: 13 }}>{discordError}</div>}
+                  <div>
+                    <label style={{ display: 'block', color: '#B5BAC1', fontSize: 12, fontWeight: 700, letterSpacing: '0.02em', textTransform: 'uppercase', marginBottom: 8 }}>Email or Phone Number <span style={{ color: '#ED4245' }}>*</span></label>
+                    <input autoFocus type="email" value={discordForm.email} onChange={(e) => setDiscordForm((f) => ({ ...f, email: e.target.value }))} style={{ width: '100%', background: '#1E1F22', border: 'none', borderRadius: 3, color: '#DBDEE1', fontSize: 16, padding: '10px', outline: 'none', boxSizing: 'border-box' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', color: '#B5BAC1', fontSize: 12, fontWeight: 700, letterSpacing: '0.02em', textTransform: 'uppercase', marginBottom: 8 }}>Password <span style={{ color: '#ED4245' }}>*</span></label>
+                    <div style={{ position: 'relative' }}>
+                      <input type={discordShowPw ? 'text' : 'password'} value={discordForm.pw} onChange={(e) => setDiscordForm((f) => ({ ...f, pw: e.target.value }))} style={{ width: '100%', background: '#1E1F22', border: 'none', borderRadius: 3, color: '#DBDEE1', fontSize: 16, padding: '10px 40px 10px 10px', outline: 'none', boxSizing: 'border-box' }} />
+                      <button type="button" onClick={() => setDiscordShowPw((v) => !v)} style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#B5BAC1', padding: 0, display: 'flex' }}>{discordShowPw ? <EyeOff size={18} /> : <Eye size={18} />}</button>
+                    </div>
+                    <button type="button" style={{ marginTop: 4, background: 'none', border: 'none', cursor: 'pointer', color: '#00A8FC', fontSize: 13, padding: 0 }}>Forgot your password?</button>
+                  </div>
+                  <button type="submit" disabled={!discordForm.email || !discordForm.pw || discordChecking}
+                    style={{ width: '100%', background: '#5865F2', border: 'none', borderRadius: 3, color: '#fff', fontSize: 16, fontWeight: 500, padding: '11px', cursor: 'pointer', opacity: (!discordForm.email || !discordForm.pw || discordChecking) ? 0.5 : 1 }}>
+                    {discordChecking ? 'Signing in…' : 'Log In'}
+                  </button>
+                </form>
+                <p style={{ marginTop: 8, color: '#B5BAC1', fontSize: 13 }}>Need an account? <span style={{ color: '#00A8FC', cursor: 'pointer' }}>Register</span></p>
+              </div>
+            )}
+
+            {/* ── Step: OAuth consent screen ── */}
+            {discordStep === 'consent' && (
+              <div>
+                <div style={{ background: '#5865F2', padding: '20px 24px', display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <span style={{ fontSize: 28, color: '#fff' }}>◆</span>
+                  <div>
+                    <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 11, margin: '0 0 2px', letterSpacing: '0.06em', textTransform: 'uppercase' }}>Discord</p>
+                    <p style={{ color: '#fff', fontSize: 15, fontWeight: 700, margin: 0 }}>Authorization Request</p>
+                  </div>
+                </div>
+                <div style={{ padding: '24px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+                    <div style={{ width: 48, height: 48, borderRadius: '50%', background: '#1E1F22', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>🛡</div>
+                    <div>
+                      <p style={{ color: '#F2F3F5', fontWeight: 700, margin: '0 0 2px', fontSize: 15 }}>ZeroTrace</p>
+                      <p style={{ color: '#B5BAC1', fontSize: 13, margin: 0 }}>zerotrace.gg wants access to your Discord account</p>
+                    </div>
+                  </div>
+                  <div style={{ background: '#2B2D31', borderRadius: 8, padding: '12px 16px', marginBottom: 20 }}>
+                    <p style={{ color: '#B5BAC1', fontSize: 12, margin: '0 0 8px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>This will allow ZeroTrace to:</p>
+                    {['Access your username and avatar', 'Know what servers you\'re in', 'Read your email address'].map((p) => (
+                      <div key={p} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0' }}>
+                        <span style={{ color: '#23A55A', fontSize: 16 }}>✓</span>
+                        <span style={{ color: '#DBDEE1', fontSize: 14 }}>{p}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ display: 'flex', gap: 12 }}>
+                    <button onClick={closeDiscord} style={{ flex: 1, background: '#4E5058', border: 'none', borderRadius: 3, color: '#fff', fontSize: 15, fontWeight: 500, padding: '11px', cursor: 'pointer' }}>Cancel</button>
+                    <button onClick={authorizeDiscord} style={{ flex: 1, background: '#5865F2', border: 'none', borderRadius: 3, color: '#fff', fontSize: 15, fontWeight: 500, padding: '11px', cursor: 'pointer' }}>Authorize</button>
+                  </div>
+                  <p style={{ color: '#B5BAC1', fontSize: 12, marginTop: 12, textAlign: 'center' }}>Make sure you trust ZeroTrace before authorizing.</p>
+                </div>
+              </div>
+            )}
+
+            {/* ── Step: linking animation ── */}
+            {discordStep === 'linking' && (
+              <div style={{ padding: 48, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20 }}>
+                <div style={{ position: 'relative' }}>
+                  <div className="animate-ping" style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: 'rgba(88,101,242,0.25)' }} />
+                  <div style={{ position: 'relative', borderRadius: '50%', background: 'rgba(88,101,242,0.15)', padding: 20 }}>
                     <span style={{ fontSize: 40, color: '#5865F2' }}>◆</span>
                   </div>
                 </div>
-                <p style={{ color: '#B5BAC1', fontSize: 14 }}>Authorizing with Discord…</p>
+                <p style={{ color: '#B5BAC1', fontSize: 14 }}>Linking your Discord account…</p>
               </div>
-            ) : (
-              <>
-                <div className="mb-5 flex flex-col items-center gap-1">
-                  <span style={{ fontSize: 32, color: '#5865F2', marginBottom: 4 }}>◆</span>
-                  <h2 style={{ color: '#F2F3F5', fontSize: 24, fontWeight: 700, margin: 0 }}>Welcome back!</h2>
-                  <p style={{ color: '#B5BAC1', fontSize: 14, margin: 0 }}>We're so excited to see you again!</p>
+            )}
+
+            {/* ── Step: enter Discord User ID ── */}
+            {discordStep === 'id' && (
+              <div className="p-8">
+                <button type="button" onClick={closeDiscord} style={{ position: 'absolute', top: 12, right: 14, background: 'none', border: 'none', cursor: 'pointer', color: '#B5BAC1', fontSize: 20, lineHeight: 1, padding: 4 }}>✕</button>
+                <div style={{ textAlign: 'center', marginBottom: 20 }}>
+                  <span style={{ fontSize: 28, color: '#23A55A', display: 'block', marginBottom: 6 }}>✓</span>
+                  <h2 style={{ color: '#F2F3F5', fontSize: 20, fontWeight: 700, margin: '0 0 4px' }}>Discord verified!</h2>
+                  <p style={{ color: '#B5BAC1', fontSize: 14, margin: 0 }}>Enter your Discord User ID to find your ZeroTrace account.</p>
                 </div>
-
-                <form
-                  onSubmit={(e) => { e.preventDefault(); submitDiscordLogin() }}
-                  className="space-y-4"
-                >
-                  {discordError && (
-                    <div style={{ background: 'rgba(237,66,69,0.15)', border: '1px solid rgba(237,66,69,0.4)', borderRadius: 4, padding: '8px 12px', color: '#ED4245', fontSize: 13 }}>
-                      {discordError}
-                    </div>
-                  )}
-                  <div>
-                    <label style={{ display: 'block', color: '#B5BAC1', fontSize: 12, fontWeight: 700, letterSpacing: '0.02em', textTransform: 'uppercase', marginBottom: 8 }}>
-                      Email or Phone Number <span style={{ color: '#ED4245' }}>*</span>
-                    </label>
-                    <input
-                      autoFocus
-                      type="email"
-                      value={discordForm.email}
-                      onChange={(e) => setDiscordForm((f) => ({ ...f, email: e.target.value }))}
-                      style={{ width: '100%', background: '#1E1F22', border: 'none', borderRadius: 3, color: '#DBDEE1', fontSize: 16, padding: '10px', outline: 'none', boxSizing: 'border-box' }}
-                    />
-                  </div>
-                  <div>
-                    <label style={{ display: 'block', color: '#B5BAC1', fontSize: 12, fontWeight: 700, letterSpacing: '0.02em', textTransform: 'uppercase', marginBottom: 8 }}>
-                      Password <span style={{ color: '#ED4245' }}>*</span>
-                    </label>
-                    <div style={{ position: 'relative' }}>
-                      <input
-                        type={discordShowPw ? 'text' : 'password'}
-                        value={discordForm.pw}
-                        onChange={(e) => setDiscordForm((f) => ({ ...f, pw: e.target.value }))}
-                        style={{ width: '100%', background: '#1E1F22', border: 'none', borderRadius: 3, color: '#DBDEE1', fontSize: 16, padding: '10px 40px 10px 10px', outline: 'none', boxSizing: 'border-box' }}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setDiscordShowPw((v) => !v)}
-                        style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#B5BAC1', padding: 0, display: 'flex' }}
-                      >
-                        {discordShowPw ? <EyeOff size={18} /> : <Eye size={18} />}
-                      </button>
-                    </div>
-                    <button
-                      type="button"
-                      style={{ marginTop: 4, background: 'none', border: 'none', cursor: 'pointer', color: '#00A8FC', fontSize: 13, padding: 0 }}
-                    >
-                      Forgot your password?
-                    </button>
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={!discordForm.email || !discordForm.pw}
-                    style={{
-                      width: '100%', background: '#5865F2', border: 'none', borderRadius: 3,
-                      color: '#fff', fontSize: 16, fontWeight: 500, padding: '11px', cursor: 'pointer',
-                      marginTop: 4, opacity: (!discordForm.email || !discordForm.pw) ? 0.5 : 1,
-                      transition: 'background 0.15s',
-                    }}
-                    onMouseOver={(e) => { if (discordForm.email && discordForm.pw) e.currentTarget.style.background = '#4752C4' }}
-                    onMouseOut={(e) => { e.currentTarget.style.background = '#5865F2' }}
-                  >
-                    Log In
-                  </button>
-                </form>
-
-                <p style={{ marginTop: 8, color: '#B5BAC1', fontSize: 13 }}>
-                  Need an account?{' '}
-                  <span style={{ color: '#00A8FC', cursor: 'pointer' }}>Register</span>
-                </p>
-
-                <button
-                  type="button"
-                  onClick={() => { setDiscordOpen(false); setDiscordError('') }}
-                  style={{ position: 'absolute', top: 12, right: 14, background: 'none', border: 'none', cursor: 'pointer', color: '#B5BAC1', fontSize: 20, lineHeight: 1, padding: 4 }}
-                >
-                  ✕
+                {discordError && <div style={{ background: 'rgba(237,66,69,0.15)', border: '1px solid rgba(237,66,69,0.4)', borderRadius: 4, padding: '8px 12px', color: '#ED4245', fontSize: 13, marginBottom: 12 }}>{discordError}</div>}
+                <label style={{ display: 'block', color: '#B5BAC1', fontSize: 12, fontWeight: 700, letterSpacing: '0.02em', textTransform: 'uppercase', marginBottom: 8 }}>Discord User ID</label>
+                <input
+                  autoFocus
+                  value={discordIdInput}
+                  onChange={(e) => setDiscordIdInput(e.target.value.replace(/\D/g, '').slice(0, 20))}
+                  placeholder="e.g. 145481082291945490"
+                  onKeyDown={(e) => e.key === 'Enter' && submitDiscordId()}
+                  style={{ width: '100%', background: '#1E1F22', border: 'none', borderRadius: 3, color: '#DBDEE1', fontSize: 15, padding: '10px', outline: 'none', boxSizing: 'border-box', fontFamily: 'monospace', marginBottom: 6 }}
+                />
+                <p style={{ color: '#80848E', fontSize: 12, marginBottom: 16 }}>Settings → Advanced → Enable Developer Mode → right-click your name → Copy User ID.</p>
+                <button onClick={submitDiscordId} disabled={discordIdInput.length < 17}
+                  style={{ width: '100%', background: '#5865F2', border: 'none', borderRadius: 3, color: '#fff', fontSize: 15, fontWeight: 500, padding: '11px', cursor: 'pointer', opacity: discordIdInput.length < 17 ? 0.5 : 1 }}>
+                  Sign in
                 </button>
-              </>
+              </div>
             )}
           </div>
         </div>
