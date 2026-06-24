@@ -1,6 +1,8 @@
 @tailwind base;
 @tailwind utilities;
 @tailwind components;
+/* v6 */
+.zt-v6 { --zt-build: 6; }
 
 /* ────────────────────────────────────────────────────────────────────
    ZeroTrace — "Void Neon" theme
