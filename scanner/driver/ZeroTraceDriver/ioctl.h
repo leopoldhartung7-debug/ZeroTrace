@@ -43,13 +43,31 @@
 #define IOCTL_ZTRACE_SCAN_HANDLES \
     CTL_CODE(FILE_DEVICE_UNKNOWN, ZTRACE_BASE + 4, METHOD_BUFFERED, FILE_READ_ACCESS)
 
+/* Input: ZTRACE_PHYSICAL_READ_REQUEST; Output: ZTRACE_PHYSICAL_READ_RESULT.
+ * Reads raw physical RAM via MmMapIoSpace, bypassing all software memory hooks. */
+#define IOCTL_ZTRACE_READ_PHYSICAL \
+    CTL_CODE(FILE_DEVICE_UNKNOWN, ZTRACE_BASE + 5, METHOD_BUFFERED, FILE_READ_ACCESS)
+
+/* Input: ZTRACE_VAD_REQUEST (PID); Output: ZTRACE_VAD_LIST.
+ * Enumerates all virtual memory regions of the target process and flags
+ * executable-private regions (code injection / reflective DLL). */
+#define IOCTL_ZTRACE_GET_VAD \
+    CTL_CODE(FILE_DEVICE_UNKNOWN, ZTRACE_BASE + 6, METHOD_BUFFERED, FILE_READ_ACCESS)
+
+/* Output: ZTRACE_HYPERVISOR_INFO.
+ * CPUID-based hypervisor detection with RDTSC timing verification. */
+#define IOCTL_ZTRACE_DETECT_HYPERVISOR \
+    CTL_CODE(FILE_DEVICE_UNKNOWN, ZTRACE_BASE + 7, METHOD_BUFFERED, FILE_READ_ACCESS)
+
 /* ── Shared structures ────────────────────────────────────────────────────── */
-#define ZTRACE_MAX_PROCESSES  2048
-#define ZTRACE_MAX_HOOKS       512
-#define ZTRACE_MAX_MODULES     512
-#define ZTRACE_MAX_CALLBACKS   128
-#define ZTRACE_MAX_HANDLES     256
-#define ZTRACE_NAME_LEN         64
+#define ZTRACE_MAX_PROCESSES    2048
+#define ZTRACE_MAX_HOOKS         512
+#define ZTRACE_MAX_MODULES       512
+#define ZTRACE_MAX_CALLBACKS     128
+#define ZTRACE_MAX_HANDLES       256
+#define ZTRACE_MAX_VAD_ENTRIES  4096
+#define ZTRACE_PHYS_READ_MAX    4096
+#define ZTRACE_NAME_LEN           64
 
 #pragma pack(push, 8)
 
@@ -119,5 +137,60 @@ typedef struct _ZTRACE_HANDLE_RESULT {
     ULONG              Count;
     ZTRACE_HANDLE_ENTRY Entries[ZTRACE_MAX_HANDLES];
 } ZTRACE_HANDLE_RESULT;
+
+/* ── Physical memory ──────────────────────────────────────────────────────── */
+typedef struct _ZTRACE_PHYSICAL_READ_REQUEST {
+    ULONG64 PhysicalAddress;
+    ULONG   Length;          /* 1 .. ZTRACE_PHYS_READ_MAX bytes */
+    ULONG   Reserved;
+} ZTRACE_PHYSICAL_READ_REQUEST, *PZTRACE_PHYSICAL_READ_REQUEST;
+
+typedef struct _ZTRACE_PHYSICAL_READ_RESULT {
+    ULONG BytesRead;
+    ULONG Reserved;
+    UCHAR Buffer[ZTRACE_PHYS_READ_MAX];
+} ZTRACE_PHYSICAL_READ_RESULT, *PZTRACE_PHYSICAL_READ_RESULT;
+
+/* ── Virtual Address Descriptor (VAD) ────────────────────────────────────── */
+typedef struct _ZTRACE_VAD_REQUEST {
+    ULONG ProcessId;
+} ZTRACE_VAD_REQUEST, *PZTRACE_VAD_REQUEST;
+
+typedef struct _ZTRACE_VAD_ENTRY {
+    ULONG64 BaseAddress;
+    ULONG64 RegionSize;
+    ULONG   State;    /* MEM_COMMIT=0x1000, MEM_RESERVE=0x2000, MEM_FREE=0x10000 */
+    ULONG   Protect;  /* PAGE_* constants */
+    ULONG   Type;     /* MEM_IMAGE=0x1000000, MEM_MAPPED=0x40000, MEM_PRIVATE=0x20000 */
+    ULONG   Flags;    /* 0x1=executable, 0x2=exec-private (injection indicator) */
+} ZTRACE_VAD_ENTRY, *PZTRACE_VAD_ENTRY;
+
+typedef struct _ZTRACE_VAD_LIST {
+    ULONG           Count;
+    ULONG           ProcessId;
+    ZTRACE_VAD_ENTRY Entries[ZTRACE_MAX_VAD_ENTRIES];
+} ZTRACE_VAD_LIST, *PZTRACE_VAD_LIST;
+
+/* ── Hypervisor ───────────────────────────────────────────────────────────── */
+typedef enum _ZTRACE_HV_TYPE {
+    ZTRACE_HV_NONE        = 0,
+    ZTRACE_HV_UNKNOWN     = 1,
+    ZTRACE_HV_HYPER_V     = 2, /* Microsoft Hyper-V / HVCI */
+    ZTRACE_HV_VMWARE      = 3,
+    ZTRACE_HV_KVM         = 4,
+    ZTRACE_HV_XEN         = 5,
+    ZTRACE_HV_VIRTUALBOX  = 6,
+    ZTRACE_HV_PARALLELS   = 7,
+} ZTRACE_HV_TYPE;
+
+typedef struct _ZTRACE_HYPERVISOR_INFO {
+    BOOLEAN        Present;
+    BOOLEAN        TimingAnomalyDetected; /* RDTSC delta > 1000 cycles */
+    UCHAR          Padding[2];
+    ZTRACE_HV_TYPE Type;
+    ULONG          MaxLeaf;           /* highest supported hypervisor CPUID leaf */
+    CHAR           VendorString[16];  /* 12 ASCII chars + NUL */
+    ULONG64        CpuidCycles;       /* RDTSC delta across CPUID(1) — VM-exit cost */
+} ZTRACE_HYPERVISOR_INFO, *PZTRACE_HYPERVISOR_INFO;
 
 #pragma pack(pop)

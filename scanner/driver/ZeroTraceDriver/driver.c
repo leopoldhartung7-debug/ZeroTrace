@@ -20,6 +20,8 @@
 #include "process.h"
 #include "hooks.h"
 #include "callbacks.h"
+#include "memory.h"
+#include "hypervisor.h"
 
 /* ── Forwards ─────────────────────────────────────────────────────────────── */
 static NTSTATUS ZtDispatchCreate (PDEVICE_OBJECT DevObj, PIRP Irp);
@@ -153,6 +155,68 @@ static NTSTATUS ZtDispatchControl(PDEVICE_OBJECT DevObj, PIRP Irp)
         {
             status = ZtEnumerateCallbacks((PZTRACE_CALLBACK_LIST)outBuf);
             if (NT_SUCCESS(status)) written = sizeof(ZTRACE_CALLBACK_LIST);
+        }
+        else status = STATUS_BUFFER_TOO_SMALL;
+        break;
+
+    case IOCTL_ZTRACE_SCAN_HANDLES:
+        if (outBuf && outLen >= sizeof(ZTRACE_HANDLE_RESULT))
+        {
+            /* HandleScan not yet ported to kernel; placeholder path returns empty */
+            RtlZeroMemory(outBuf, sizeof(ZTRACE_HANDLE_RESULT));
+            status  = STATUS_SUCCESS;
+            written = sizeof(ZTRACE_HANDLE_RESULT);
+        }
+        else status = STATUS_BUFFER_TOO_SMALL;
+        break;
+
+    case IOCTL_ZTRACE_READ_PHYSICAL:
+    {
+        ULONG inLen = stack->Parameters.DeviceIoControl.InputBufferLength;
+        if (outBuf && outLen >= sizeof(ZTRACE_PHYSICAL_READ_RESULT)
+                   && inLen  >= sizeof(ZTRACE_PHYSICAL_READ_REQUEST))
+        {
+            /* METHOD_BUFFERED: input and output share SystemBuffer.
+             * Save input fields before we overwrite the buffer with output. */
+            ULONG64 physAddr = ((PZTRACE_PHYSICAL_READ_REQUEST)outBuf)->PhysicalAddress;
+            ULONG   readLen  = ((PZTRACE_PHYSICAL_READ_REQUEST)outBuf)->Length;
+            if (readLen > ZTRACE_PHYS_READ_MAX) readLen = ZTRACE_PHYS_READ_MAX;
+
+            PZTRACE_PHYSICAL_READ_RESULT result = (PZTRACE_PHYSICAL_READ_RESULT)outBuf;
+            RtlZeroMemory(result, sizeof(*result));
+
+            PHYSICAL_ADDRESS pa;
+            pa.QuadPart = (LONGLONG)physAddr;
+            status = ZtReadPhysicalMemory(pa, result->Buffer, readLen);
+            if (NT_SUCCESS(status))
+            {
+                result->BytesRead = readLen;
+                written = sizeof(ZTRACE_PHYSICAL_READ_RESULT);
+            }
+        }
+        else status = STATUS_BUFFER_TOO_SMALL;
+        break;
+    }
+
+    case IOCTL_ZTRACE_GET_VAD:
+    {
+        ULONG inLen = stack->Parameters.DeviceIoControl.InputBufferLength;
+        if (outBuf && outLen >= sizeof(ZTRACE_VAD_LIST)
+                   && inLen  >= sizeof(ZTRACE_VAD_REQUEST))
+        {
+            ULONG pid = ((PZTRACE_VAD_REQUEST)outBuf)->ProcessId;
+            status = ZtEnumerateVadTree(pid, (PZTRACE_VAD_LIST)outBuf);
+            if (NT_SUCCESS(status)) written = sizeof(ZTRACE_VAD_LIST);
+        }
+        else status = STATUS_BUFFER_TOO_SMALL;
+        break;
+    }
+
+    case IOCTL_ZTRACE_DETECT_HYPERVISOR:
+        if (outBuf && outLen >= sizeof(ZTRACE_HYPERVISOR_INFO))
+        {
+            status = ZtDetectHypervisor((PZTRACE_HYPERVISOR_INFO)outBuf);
+            if (NT_SUCCESS(status)) written = sizeof(ZTRACE_HYPERVISOR_INFO);
         }
         else status = STATUS_BUFFER_TOO_SMALL;
         break;

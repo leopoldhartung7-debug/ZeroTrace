@@ -268,6 +268,7 @@ public sealed class ScanEngine
 
         // ── Group 2: fast OS-state reads ─────────────────────────────────────
         // Consecutive same-group entries are batched into one parallel burst.
+        if (o.ScanAntiAnalysis) modules.Add(new AntiAnalysisScanModule());
         if (o.ScanProcesses) modules.Add(new ProcessScanModule());
         if (o.ScanAutostart) modules.Add(new AutostartScanModule());
         if (o.ScanOverlay) modules.Add(new OverlayScanModule());
@@ -285,6 +286,7 @@ public sealed class ScanEngine
         if (o.ScanScheduledTasks) modules.Add(new ScheduledTaskScanModule());
         if (o.ScanKernelDrivers) modules.Add(new DriverScanModule());
         if (o.ScanHiddenDrivers) modules.Add(new HiddenDriverScanModule());
+        if (o.ScanKernelBridge) modules.Add(new KernelBridgeModule());
 
         // ── Group 4: user-data file reads ────────────────────────────────────
         if (o.ScanBrowserHistory) modules.Add(new BrowserHistoryScanModule());
@@ -316,6 +318,11 @@ public sealed class ScanEngine
         if (o.ScanMemory) modules.Add(new MemoryScanModule());
         if (o.ScanDrives) modules.Add(new DriveScanModule());
         if (o.ScanCustomStrings) modules.Add(new CustomStringsScanModule());
+        // Cloud analysis runs after drives so all hashes are collected first.
+        if (o.ScanCloudAnalysis) modules.Add(new CloudAnalysisScanModule(
+            new Services.CloudAnalysisService(
+                new System.Net.Http.HttpClient(),
+                "https://api.zerotrace.gg")));
         // Discord last — cross-correlates findings from all preceding modules.
         if (o.ScanDiscordGuilds) modules.Add(new DiscordScanModule());
 

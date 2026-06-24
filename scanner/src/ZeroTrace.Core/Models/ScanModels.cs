@@ -104,6 +104,31 @@ public sealed class ScanOptions
     public bool ScanSyscallHooks { get; set; } = true;
 
     /// <summary>
+    /// Communicate with the ZeroTrace ring-0 kernel driver (ZeroTraceDriver.sys)
+    /// via DeviceIoControl to obtain detections that cannot be faked from
+    /// userland: DKOM-hidden processes, SSDT hooks, ghost kernel modules, and
+    /// suspicious kernel callbacks. If the driver is not loaded this module
+    /// exits cleanly with an informational finding.
+    /// </summary>
+    public bool ScanKernelBridge { get; set; } = true;
+
+    /// <summary>
+    /// Detect whether ZeroTrace itself is being debugged or reverse-engineered
+    /// (IsDebuggerPresent, debug heap flags, hardware breakpoints DR0–DR3,
+    /// known analysis-tool processes). A Critical finding means the scan may
+    /// have been observed or tampered with by an adversary.
+    /// </summary>
+    public bool ScanAntiAnalysis { get; set; } = true;
+
+    /// <summary>
+    /// Submit collected file hashes to the ZeroTrace cloud indicator database
+    /// for cross-reference against global cheat tool blocklists. Opt-in only:
+    /// disabled by default because it requires outbound HTTPS connectivity and
+    /// explicit user consent to transmit hash data.
+    /// </summary>
+    public bool ScanCloudAnalysis { get; set; } = false;
+
+    /// <summary>
     /// When false (default) the drive module only walks targeted, high-signal
     /// directories (profile, temp, downloads, appdata). When true it walks the
     /// whole drive root for the configured extensions. Far slower.
@@ -206,6 +231,9 @@ public static class ScanProfiles
         ScanDkom = false,
         ScanHandles = false,
         ScanSyscallHooks = true,
+        ScanKernelBridge = true,    // fast — just open device + 1 IOCTL
+        ScanAntiAnalysis = true,    // fast — only API calls
+        ScanCloudAnalysis = false,  // always off in Quick (requires network + consent)
         DeepDriveScan = false,
         ModuleTimeoutSeconds = 60,
     };
