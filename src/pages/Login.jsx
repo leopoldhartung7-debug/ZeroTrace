@@ -23,6 +23,11 @@ export default function Login() {
   const [sentCode, setSentCode] = useState('')
   const [inputCode, setInputCode] = useState('')
   const [checking, setChecking] = useState(false)
+  const [discordOpen, setDiscordOpen] = useState(false)
+  const [discordIdInput, setDiscordIdInput] = useState('')
+  const [passkeyOpen, setPasskeyOpen] = useState(false)
+  const [passkeyUsername, setPasskeyUsername] = useState('')
+  const [passkeyChecking, setPasskeyChecking] = useState(false)
 
   const closeRegister = () => {
     setRegisterOpen(false)
@@ -257,7 +262,58 @@ export default function Login() {
     nav('/dashboard')
   }
 
-  const signIn = (method) => enterDashboard('analyst', method)
+  const loginAsUser = (user) => {
+    const key = (state.licenseKeys || []).find((k) => k.key === user.key)
+    const expired = !key || key.status === 'Revoked' || (key.expiresAt && Date.now() > key.expiresAt)
+    if (expired) {
+      toast({ type: 'error', title: 'License key expired', body: 'Contact an admin for a new key.' })
+      return false
+    }
+    if (user.suspended) {
+      toast({ type: 'error', title: 'Account suspended', body: 'Your account has been suspended.' })
+      return false
+    }
+    dispatch({ type: 'login', role: 'analyst', userId: user.id })
+    toast({ type: 'success', title: 'Welcome back', body: `Signed in as ${user.username}` })
+    nav('/dashboard')
+    return true
+  }
+
+  const submitDiscordLogin = () => {
+    const id = discordIdInput.trim()
+    if (!/^\d{17,20}$/.test(id)) {
+      toast({ type: 'error', title: 'Invalid Discord ID', body: 'Enter your 17–20 digit Discord user ID.' })
+      return
+    }
+    const user = (state.users || []).find((u) => u.discordId === id)
+    if (!user) {
+      toast({ type: 'error', title: 'No account found', body: 'No account is linked to this Discord ID.' })
+      return
+    }
+    if (loginAsUser(user)) {
+      setDiscordOpen(false)
+      setDiscordIdInput('')
+    }
+  }
+
+  const submitPasskeyLogin = async () => {
+    const name = passkeyUsername.trim().toLowerCase()
+    if (!name) return
+    const user = (state.users || []).find(
+      (u) => (u.username || '').toLowerCase() === name || (u.email || '').toLowerCase() === name,
+    )
+    if (!user) {
+      toast({ type: 'error', title: 'No account found', body: 'No account matches that username or email.' })
+      return
+    }
+    setPasskeyChecking(true)
+    await new Promise((r) => setTimeout(r, 1200))
+    setPasskeyChecking(false)
+    if (loginAsUser(user)) {
+      setPasskeyOpen(false)
+      setPasskeyUsername('')
+    }
+  }
 
   const submitRegister = async () => {
     const username = reg.username.trim()
@@ -432,13 +488,13 @@ export default function Login() {
 
         <div className="grid grid-cols-2 gap-3">
           <button
-            onClick={() => signIn('Discord')}
+            onClick={() => { setDiscordIdInput(''); setDiscordOpen(true) }}
             className="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] py-3 text-sm font-medium hover:bg-white/[0.06]"
           >
             <span className="text-[#5865F2]">◆</span> Discord
           </button>
           <button
-            onClick={() => signIn('Passkey')}
+            onClick={() => { setPasskeyUsername(''); setPasskeyOpen(true) }}
             className="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] py-3 text-sm font-medium hover:bg-white/[0.06]"
           >
             <Fingerprint size={17} /> Passkey
@@ -575,6 +631,98 @@ export default function Login() {
             </div>
           </div>
         )}
+      </Modal>
+
+      <Modal
+        open={discordOpen}
+        onClose={() => { setDiscordOpen(false); setDiscordIdInput('') }}
+        title="Sign in with Discord"
+        footer={
+          <button
+            onClick={submitDiscordLogin}
+            disabled={discordIdInput.length < 17}
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#5865F2] px-4 py-3 text-sm font-semibold text-white hover:bg-[#4752C4] disabled:opacity-50"
+          >
+            <span>◆</span> Continue with Discord
+          </button>
+        }
+      >
+        <div className="space-y-4 text-sm">
+          <div className="flex items-center gap-3 rounded-xl border border-[#5865F2]/30 bg-[#5865F2]/10 px-4 py-3">
+            <span className="text-2xl text-[#5865F2]">◆</span>
+            <div>
+              <p className="font-medium text-white">Link your Discord account</p>
+              <p className="text-xs text-neutral-400">Enter the Discord user ID that is linked to your account.</p>
+            </div>
+          </div>
+          <div>
+            <label className="mb-1.5 block text-xs font-medium text-neutral-400">Your Discord User ID</label>
+            <input
+              autoFocus
+              value={discordIdInput}
+              onChange={(e) => setDiscordIdInput(e.target.value.replace(/\D/g, '').slice(0, 20))}
+              placeholder="e.g. 145481082291945490"
+              className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 font-mono text-sm placeholder:text-neutral-600 focus:border-[#5865F2] focus:outline-none"
+              onKeyDown={(e) => e.key === 'Enter' && submitDiscordLogin()}
+            />
+            <p className="mt-1.5 text-[11px] text-neutral-500">
+              Enable Developer Mode in Discord → Settings → Advanced, then right-click your name → Copy User ID.
+            </p>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal
+        open={passkeyOpen}
+        onClose={() => { setPasskeyOpen(false); setPasskeyUsername(''); setPasskeyChecking(false) }}
+        title="Sign in with Passkey"
+        footer={
+          <button
+            onClick={submitPasskeyLogin}
+            disabled={!passkeyUsername.trim() || passkeyChecking}
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-sky-600 px-4 py-3 text-sm font-semibold text-white hover:bg-sky-500 disabled:opacity-50"
+          >
+            {passkeyChecking ? (
+              <>
+                <Fingerprint size={16} className="animate-pulse" />
+                Verifying biometrics…
+              </>
+            ) : (
+              <>
+                <Fingerprint size={16} /> Authenticate
+              </>
+            )}
+          </button>
+        }
+      >
+        <div className="space-y-4 text-sm">
+          {passkeyChecking ? (
+            <div className="flex flex-col items-center gap-4 py-6">
+              <div className="relative">
+                <div className="absolute inset-0 animate-ping rounded-full bg-sky-500/20" />
+                <div className="relative rounded-full bg-sky-500/10 p-5">
+                  <Fingerprint size={40} className="text-sky-400" />
+                </div>
+              </div>
+              <p className="text-center text-neutral-400">Verifying your passkey…</p>
+            </div>
+          ) : (
+            <div>
+              <label className="mb-1.5 block text-xs font-medium text-neutral-400">Username or Email</label>
+              <input
+                autoFocus
+                value={passkeyUsername}
+                onChange={(e) => setPasskeyUsername(e.target.value)}
+                placeholder="Your username or email"
+                className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm placeholder:text-neutral-600 focus:border-sky-500 focus:outline-none"
+                onKeyDown={(e) => e.key === 'Enter' && submitPasskeyLogin()}
+              />
+              <p className="mt-1.5 text-[11px] text-neutral-500">
+                Your device will verify your identity using biometrics or a PIN.
+              </p>
+            </div>
+          )}
+        </div>
       </Modal>
 
       <Modal
