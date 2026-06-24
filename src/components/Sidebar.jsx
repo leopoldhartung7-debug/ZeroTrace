@@ -110,12 +110,8 @@ export default function Sidebar() {
   ]
 
   return (
-    <aside className="panel relative flex h-screen w-[280px] shrink-0 flex-col overflow-hidden border-r">
-      <div
-        className="pointer-events-none absolute inset-0 -z-0"
-        style={{ background: 'radial-gradient(80% 30% at 0% 0%, var(--glow), transparent 70%)' }}
-      />
-      <NavLink to="/" className="relative z-10 flex items-center gap-3 px-6 py-6 transition-opacity hover:opacity-80" title="Back to home">
+    <aside className="panel relative flex h-screen w-[260px] shrink-0 flex-col overflow-hidden border-r">
+      <NavLink to="/" className="bd relative z-10 flex items-center gap-3 border-b px-6 py-5 transition-opacity hover:opacity-80" title="Back to home">
         <Logo size="sm" sub />
       </NavLink>
 
@@ -147,10 +143,10 @@ export default function Sidebar() {
                             key={c.to}
                             to={c.to}
                             className={({ isActive }) =>
-                              `relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 ${
+                              `relative flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors duration-150 ${
                                 isActive
-                                  ? 'bg-gradient-to-r from-sky-500/15 to-sky-500/5 text-sky-300 before:absolute before:left-0 before:top-1/2 before:h-4 before:w-[3px] before:-translate-y-1/2 before:rounded-r-full before:bg-sky-400 before:shadow-[0_0_8px_var(--accent)]'
-                                  : 'hover:translate-x-0.5 hoverable'
+                                  ? 'txt before:absolute before:left-0 before:top-1/2 before:h-3.5 before:w-[2px] before:-translate-y-1/2 before:bg-sky-400'
+                                  : 'hoverable'
                               }`
                             }
                           >
@@ -172,16 +168,17 @@ export default function Sidebar() {
                   key={to}
                   to={to}
                   className={({ isActive }) =>
-                    `group relative mb-1 flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
+                    `group relative mb-0.5 flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors duration-150 ${
                       isActive
-                        ? 'bg-gradient-to-r from-sky-500/15 to-sky-500/5 text-sky-300 shadow-[var(--elev-1)] before:absolute before:left-0 before:top-1/2 before:h-5 before:w-[3px] before:-translate-y-1/2 before:rounded-r-full before:bg-sky-400 before:shadow-[0_0_8px_var(--accent)]'
-                        : 'hover:translate-x-0.5 hoverable'
+                        ? 'txt before:absolute before:left-0 before:top-1/2 before:h-[18px] before:w-[2px] before:-translate-y-1/2 before:bg-sky-400'
+                        : 'hoverable'
                     }`
                   }
+                  style={({ isActive }) => (isActive ? { background: 'var(--tile)' } : undefined)}
                 >
                   {({ isActive }) => (
                     <>
-                      <Icon size={18} className={`transition-colors ${isActive ? 'text-sky-300' : 'muted group-hover:text-sky-400/70'}`} />
+                      <Icon size={17} className={`transition-colors ${isActive ? 'text-sky-400' : 'muted group-hover:txt'}`} />
                       <span className={isActive ? '' : 'txt'}>{label}</span>
                     </>
                   )}

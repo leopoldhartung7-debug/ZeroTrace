@@ -31,8 +31,21 @@ export default {
         },
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+        sans: ['Space Grotesk', 'Inter', 'system-ui', '-apple-system', 'sans-serif'],
         mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
+      },
+      /* Sharper, more angular corners across the whole app for the
+         technical look. `full` is kept for pills/avatars/dots. */
+      borderRadius: {
+        none: '0',
+        sm: '2px',
+        DEFAULT: '3px',
+        md: '4px',
+        lg: '5px',
+        xl: '7px',
+        '2xl': '9px',
+        '3xl': '12px',
+        full: '9999px',
       },
     },
   },

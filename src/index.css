@@ -2,63 +2,65 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ──────────────────────────────────────────────────────────────────
+   ZeroTrace — "Technical" theme
+   Cooler graphite palette, flat surfaces with crisp hairline edges,
+   angular corners, Space Grotesk type. Clean, calm, no neon glow.
+   ────────────────────────────────────────────────────────────────── */
+
 :root {
-  --bg: #0b0b0f;
-  --bg-2: #0f0f15;
-  --panel: #141419;
-  --panel-2: #17171e;
-  --tile: #1b1b22;
-  --border: #26262e;
-  --border-soft: #1e1e25;
-  --text: #f0f0f6;
-  --muted: #82828e;
-  --hover: rgba(255, 255, 255, 0.04);
+  --bg: #0d0f13;
+  --bg-2: #111419;
+  --panel: #15181e;
+  --panel-2: #181c22;
+  --tile: #1b1f26;
+  --border: #272c35;
+  --border-soft: #1f242c;
+  --text: #eef1f6;
+  --muted: #7d828f;
+  --hover: rgba(255, 255, 255, 0.035);
   --accent: #939dbd;
   --accent-2: #b3bcd8;
-  --accent-soft: rgba(147, 157, 189, 0.14);
-  --glow: rgba(147, 157, 189, 0.10);
-  --elev-1: 0 1px 2px rgba(0, 0, 0, 0.3);
-  --elev-2: 0 8px 24px -8px rgba(0, 0, 0, 0.55);
-  --elev-3: 0 20px 50px -16px rgba(0, 0, 0, 0.7);
-  --radius: 14px;
+  --accent-soft: rgba(147, 157, 189, 0.12);
+  --elev-1: 0 1px 2px rgba(0, 0, 0, 0.25);
+  --elev-2: 0 6px 18px -10px rgba(0, 0, 0, 0.5);
+  --elev-3: 0 16px 40px -18px rgba(0, 0, 0, 0.6);
 }
 
 :root.light {
-  --bg: #f1f2f6;
-  --bg-2: #e9eaf0;
+  --bg: #eef0f4;
+  --bg-2: #e7e9ef;
   --panel: #ffffff;
-  --panel-2: #fbfbfe;
-  --tile: #eef0f5;
-  --border: #dcdce5;
-  --border-soft: #e6e6ee;
-  --text: #14141a;
-  --muted: #61616c;
-  --hover: rgba(0, 0, 0, 0.04);
+  --panel-2: #fafbfd;
+  --tile: #eceef3;
+  --border: #d8dae2;
+  --border-soft: #e4e6ed;
+  --text: #16181d;
+  --muted: #5f6470;
+  --hover: rgba(0, 0, 0, 0.035);
   --accent: #545b78;
   --accent-2: #424a64;
-  --accent-soft: rgba(84, 91, 120, 0.12);
-  --glow: rgba(84, 91, 120, 0.10);
-  --elev-1: 0 1px 2px rgba(0, 0, 0, 0.06);
-  --elev-2: 0 8px 24px -10px rgba(0, 0, 0, 0.18);
-  --elev-3: 0 20px 50px -18px rgba(0, 0, 0, 0.22);
+  --accent-soft: rgba(84, 91, 120, 0.10);
+  --elev-1: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --elev-2: 0 6px 18px -10px rgba(0, 0, 0, 0.15);
+  --elev-3: 0 16px 40px -18px rgba(0, 0, 0, 0.18);
 }
 
 /* Public marketing pages stay dark regardless of the dashboard theme */
 .force-dark {
-  --bg: #0b0b0f;
-  --bg-2: #0f0f15;
-  --panel: #141419;
-  --panel-2: #17171e;
-  --tile: #1b1b22;
-  --border: #26262e;
-  --border-soft: #1e1e25;
-  --text: #f0f0f6;
-  --muted: #82828e;
-  --hover: rgba(255, 255, 255, 0.04);
+  --bg: #0d0f13;
+  --bg-2: #111419;
+  --panel: #15181e;
+  --panel-2: #181c22;
+  --tile: #1b1f26;
+  --border: #272c35;
+  --border-soft: #1f242c;
+  --text: #eef1f6;
+  --muted: #7d828f;
+  --hover: rgba(255, 255, 255, 0.035);
   --accent: #939dbd;
   --accent-2: #b3bcd8;
-  --accent-soft: rgba(147, 157, 189, 0.14);
-  --glow: rgba(147, 157, 189, 0.10);
+  --accent-soft: rgba(147, 157, 189, 0.12);
 }
 
 @layer base {
@@ -73,30 +75,28 @@
     background: var(--bg);
     color: var(--text);
     -webkit-font-smoothing: antialiased;
-    font-family: 'Inter', system-ui, sans-serif;
+    font-family: 'Space Grotesk', 'Inter', system-ui, sans-serif;
   }
   h1,
   h2,
   h3 {
-    font-family: 'Inter', system-ui, sans-serif;
+    font-family: 'Space Grotesk', 'Inter', system-ui, sans-serif;
     letter-spacing: -0.02em;
     font-weight: 700;
   }
 }
 
 @layer components {
-  /* Layered app background: base colour + two soft accent glows that sit
-     behind all content. Gives the redesign depth without touching pages. */
+  /* Flat technical background: cool base + a single faint top wash.
+     No heavy radial glows — calmer than the previous theme. */
   .app-bg {
     background: var(--bg);
-    background-image:
-      radial-gradient(60% 50% at 100% 0%, var(--glow), transparent 70%),
-      radial-gradient(50% 50% at 0% 100%, var(--glow), transparent 70%);
+    background-image: linear-gradient(180deg, var(--bg-2), var(--bg) 240px);
     background-attachment: fixed;
   }
+  /* Flat panel with a crisp hairline edge. */
   .panel {
-    background:
-      linear-gradient(180deg, var(--panel-2), var(--panel));
+    background: var(--panel);
     border-color: var(--border);
   }
   .tile {
@@ -113,19 +113,21 @@
     border-color: var(--border);
   }
   .hoverable {
-    transition: background-color 0.15s, transform 0.15s;
+    transition: background-color 0.14s, transform 0.14s;
   }
   .hoverable:hover {
     background: var(--hover);
   }
+  /* Technical uppercase micro-label, slightly wider tracking. */
   .caps-label {
-    font-size: 11px;
+    font-size: 10.5px;
     font-weight: 600;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.14em;
     text-transform: uppercase;
     color: var(--muted);
   }
-  /* Landing page only: override every font (incl. h1/h2/h3) with Space Grotesk. */
+  /* Landing page only: override every font with Space Grotesk (no-op now,
+     kept for compatibility with existing class usage). */
   .landing-font,
   .landing-font h1,
   .landing-font h2,
@@ -140,42 +142,28 @@
     font-family: 'Space Grotesk', 'Inter', system-ui, sans-serif;
   }
 
-  /* ── Redesign helpers ───────────────────────────────────────────── */
-
-  /* Glassy elevated card with a hairline top highlight + hover lift. */
+  /* ── Card system: flat surface, crisp edge, subtle lift on hover ── */
   .card-glass {
     position: relative;
-    background: linear-gradient(180deg, var(--panel-2), var(--panel));
+    background: var(--panel);
     border: 1px solid var(--border);
     box-shadow: var(--elev-1);
-    transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1),
-      box-shadow 0.22s ease, border-color 0.22s ease;
-  }
-  .card-glass::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    padding-top: 1px;
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 40%);
-    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-    -webkit-mask-composite: xor;
-    mask-composite: exclude;
-    pointer-events: none;
+    transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 0.2s ease, border-color 0.2s ease;
   }
   .card-hover:hover {
-    transform: translateY(-3px);
+    transform: translateY(-2px);
     box-shadow: var(--elev-2);
-    border-color: var(--accent-soft);
+    border-color: #333a45;
   }
 
-  /* Animated accent underline used in headers. */
+  /* Short technical accent marker used in headers. */
   .accent-rule {
     height: 2px;
-    width: 44px;
-    border-radius: 99px;
-    background: linear-gradient(90deg, var(--accent), transparent);
-    animation: zt-grow 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+    width: 28px;
+    border-radius: 0;
+    background: var(--accent);
+    animation: zt-grow 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
   }
 }
 
@@ -184,10 +172,10 @@
   color: var(--text);
 }
 
-/* ── Clean global animations ──────────────────────────────────────── */
+/* ── Clean animations (no glow) ──────────────────────────────────── */
 
 @keyframes zt-fade-up {
-  from { opacity: 0; transform: translateY(12px); }
+  from { opacity: 0; transform: translateY(10px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 @keyframes zt-fade-in {
@@ -195,11 +183,11 @@
   to   { opacity: 1; }
 }
 @keyframes zt-scale-in {
-  from { opacity: 0; transform: scale(0.96); }
+  from { opacity: 0; transform: scale(0.97); }
   to   { opacity: 1; transform: scale(1); }
 }
 @keyframes zt-slide-in {
-  from { opacity: 0; transform: translateX(-10px); }
+  from { opacity: 0; transform: translateX(-8px); }
   to   { opacity: 1; transform: translateX(0); }
 }
 @keyframes zt-drawer-in {
@@ -210,23 +198,13 @@
   from { transform: scaleX(0); transform-origin: left; }
   to   { transform: scaleX(1); transform-origin: left; }
 }
-@keyframes zt-shimmer {
-  from { background-position: -200% 0; }
-  to   { background-position: 200% 0; }
-}
-@keyframes zt-float {
-  0%, 100% { transform: translateY(0); }
-  50%      { transform: translateY(-6px); }
-}
 
-/* Page entrance — applied on every route change via a keyed wrapper. */
 .zt-page {
-  animation: zt-fade-up 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: zt-fade-up 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-/* Staggered children: direct children fade up in sequence. */
 .zt-stagger > * {
-  animation: zt-fade-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: zt-fade-up 0.46s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 .zt-stagger > *:nth-child(1) { animation-delay: 0.02s; }
 .zt-stagger > *:nth-child(2) { animation-delay: 0.06s; }
@@ -237,10 +215,10 @@
 .zt-stagger > *:nth-child(7) { animation-delay: 0.26s; }
 .zt-stagger > *:nth-child(8) { animation-delay: 0.30s; }
 
-.zt-fade-up { animation: zt-fade-up 0.45s cubic-bezier(0.22, 1, 0.36, 1) both; }
-.zt-fade-in { animation: zt-fade-in 0.4s ease both; }
-.zt-scale-in { animation: zt-scale-in 0.3s cubic-bezier(0.22, 1, 0.36, 1) both; }
-.zt-slide-in { animation: zt-slide-in 0.3s ease both; }
+.zt-fade-up { animation: zt-fade-up 0.42s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.zt-fade-in { animation: zt-fade-in 0.36s ease both; }
+.zt-scale-in { animation: zt-scale-in 0.26s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.zt-slide-in { animation: zt-slide-in 0.28s ease both; }
 
 @media (prefers-reduced-motion: reduce) {
   .zt-page, .zt-stagger > *, .zt-fade-up, .zt-fade-in, .zt-scale-in,
