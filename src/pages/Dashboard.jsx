@@ -221,11 +221,9 @@ export default function Dashboard() {
         <span className="muted ml-auto hidden text-xs sm:block">{fmtNum(stats.totalScans)} total scans</span>
       </div>
 
-      {/* ── Analytics — 2-col split ──────────────────────────── */}
-      <div className="grid gap-4 lg:grid-cols-3">
-
-        {/* Left: distribution + rate bars */}
-        <div className="panel flex flex-col gap-6 rounded-2xl border p-5">
+      {/* ── Distribution + Rate bars ─────────────────────────── */}
+      <div className="panel rounded-2xl border p-5">
+        <div className="grid gap-6 sm:grid-cols-2">
           <div>
             <p className="caps-label mb-4">Results distribution</p>
             <div className="h-44">
@@ -253,16 +251,17 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div>
+          <div className="flex flex-col justify-center">
             <p className="caps-label mb-4">Detection rates</p>
             <RateBar label="Cheating"   value={stats.rates.cheating}   color="#dc2626" />
             <RateBar label="Suspicious" value={stats.rates.suspicious} color="#eab308" />
             <RateBar label="Legit"      value={stats.rates.legit}      color="#22c55e" />
           </div>
         </div>
+      </div>
 
-        {/* Right: tabbed chart panel (2/3 width) */}
-        <div className="panel overflow-hidden rounded-2xl border lg:col-span-2">
+      {/* ── Tabbed chart panel ───────────────────────────────── */}
+      <div className="panel overflow-hidden rounded-2xl border">
           <div className="bd flex flex-wrap items-center gap-1 border-b px-5 py-3">
             {SUB_TABS.map((tab) => (
               <button key={tab} onClick={() => setSubTab(tab)}
@@ -399,7 +398,6 @@ export default function Dashboard() {
             )}
 
           </div>
-        </div>
       </div>
 
       <AnnouncementCard />
