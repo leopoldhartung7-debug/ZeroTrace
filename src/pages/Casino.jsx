@@ -721,12 +721,12 @@ function SlotMachine({ wallet, dispatch, toast, fx = {} }) {
 /* ---------------- Shop ---------------- */
 
 const SHOP_ITEMS = [
-  { id: 'disc10', kind: 'discount', label: '10% discount code', cost: 3500, desc: '10% off your next license purchase.' },
-  { id: 'disc25', kind: 'discount', label: '25% discount code', cost: 9000, desc: '25% off your next license purchase.' },
-  { id: 'disc50', kind: 'discount', label: '50% discount code', cost: 18000, desc: 'Half off your next license purchase.' },
-  { id: 'key7', kind: 'key', label: '7-day license key', cost: 28000, desc: 'A real 7-day ZeroTrace key.', days: 7 },
-  { id: 'key30', kind: 'key', label: '30-day license key', cost: 75000, desc: 'A real 30-day ZeroTrace key.', days: 30 },
-  { id: 'key365', kind: 'key', label: '1-year license key', cost: 250000, desc: 'A real 1-year ZeroTrace key.', days: 365 },
+  { id: 'disc10', kind: 'discount', label: '10% discount code', cost: 12000,  desc: '10% off your next license purchase.' },
+  { id: 'disc25', kind: 'discount', label: '25% discount code', cost: 30000,  desc: '25% off your next license purchase.' },
+  { id: 'disc50', kind: 'discount', label: '50% discount code', cost: 65000,  desc: 'Half off your next license purchase.' },
+  { id: 'key7',   kind: 'key',      label: '7-day license key', cost: 100000, desc: 'A real 7-day ZeroTrace key.',  days: 7 },
+  { id: 'key30',  kind: 'key',      label: '30-day license key', cost: 275000, desc: 'A real 30-day ZeroTrace key.', days: 30 },
+  { id: 'key365', kind: 'key',      label: '1-year license key', cost: 900000, desc: 'A real 1-year ZeroTrace key.', days: 365 },
 ]
 
 function randCode(prefix) {
