@@ -324,17 +324,17 @@ export default function Landing() {
     <div className="landing-font force-dark app-bg min-h-screen overflow-x-hidden text-white">
       {/* ── Header ── */}
       <header className="sticky top-0 z-30 flex items-center justify-between border-b border-white/5 bg-black/50 px-6 py-4 backdrop-blur md:px-12">
-        <button onClick={() => nav('/')} className="flex items-center gap-3">
+        <button onClick={() => nav('/')} className="flex shrink-0 items-center gap-3">
           <Logo size="md" />
         </button>
-        <nav className="hidden items-center gap-7 lg:flex">
+        <nav className="hidden items-center gap-4 lg:flex">
           {NAV.map((n) => (
             <button key={n} onClick={() => onNav(n)} className="text-sm text-neutral-400 transition-colors hover:text-white">
               {n}
             </button>
           ))}
         </nav>
-        <div className="flex items-center gap-3">
+        <div className="flex shrink-0 items-center gap-3">
           <Globe size={18} className="hidden text-neutral-500 sm:block" />
           {state.auth ? (
             <button onClick={() => nav('/dashboard')} className="flex items-center gap-3">
