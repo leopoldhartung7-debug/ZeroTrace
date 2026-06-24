@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
-  Play, Globe, Clock, ChevronDown, Check, Link2, MoreVertical, FileText,
-  Search, Users, ShieldCheck, Zap, ScanSearch, CheckCircle2, Workflow,
-  Folder, ArrowRight,
+  Play, Globe, ChevronDown, Check, ArrowRight, Link2, MoreVertical, FileText,
+  Users, ShieldCheck, Zap, CheckCircle2, Clock, ScanFace, Webhook, BellRing,
+  SlidersHorizontal, Cpu, LifeBuoy, BookOpen, Lock, AlertTriangle, FastForward,
+  Activity,
 } from 'lucide-react'
 import { useStore } from '../store.jsx'
 import { useToast } from '../components/ui.jsx'
@@ -14,31 +15,49 @@ const NAV = ['Features', 'Pricing', 'Docs', 'Branding', 'FAQ', 'Download', 'Disc
 /* Steel accent in rgba form for glow effects (matches --accent #9aa4c6). */
 const GLOW = 'rgba(154,164,198,'
 
-/* ---- hero scan graphic (detect.ac-style folder grid + magnifier) ---- */
-function ScanGraphic() {
+/* ---- hero verdict graphic (ZeroTrace's own scan-result motif) ---- */
+function VerdictGraphic() {
+  const score = 78
+  const r = 46
+  const circ = 2 * Math.PI * r
   return (
     <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.02] p-6">
       <div
         className="pointer-events-none absolute inset-0"
-        style={{ background: `radial-gradient(45% 45% at 60% 45%, ${GLOW}0.18), transparent 70%)` }}
+        style={{ background: `radial-gradient(50% 50% at 50% 35%, ${GLOW}0.16), transparent 70%)` }}
       />
-      <div className="relative grid grid-cols-5 gap-4">
-        {Array.from({ length: 20 }).map((_, i) => (
-          <Folder
-            key={i}
-            size={34}
-            className="text-sky-400"
-            style={{ opacity: [0.25, 0.5, 0.8, 1][i % 4] }}
-          />
-        ))}
+      <div className="relative flex items-center justify-between text-sm">
+        <span className="text-neutral-300">Results <span className="text-neutral-600">›</span> 238FS64</span>
+        <span className="flex items-center gap-2 text-neutral-600"><Link2 size={14} /> <MoreVertical size={14} /></span>
       </div>
-      <div className="absolute inset-0 flex items-center justify-center">
-        <div
-          className="flex h-20 w-20 items-center justify-center rounded-full bg-sky-500"
-          style={{ boxShadow: `0 0 44px ${GLOW}0.6), 0 0 0 10px ${GLOW}0.08)` }}
-        >
-          <Search size={32} className="text-[#0b0c0e]" strokeWidth={2.5} />
+
+      <div className="relative mt-4 flex flex-col items-center">
+        <div className="relative h-32 w-32">
+          <svg width="128" height="128" className="-rotate-90">
+            <circle cx="64" cy="64" r={r} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="9" />
+            <circle
+              cx="64" cy="64" r={r} fill="none" stroke="#9aa4c6" strokeWidth="9" strokeLinecap="round"
+              strokeDasharray={`${(circ * score) / 100} ${circ}`}
+              style={{ filter: `drop-shadow(0 0 6px ${GLOW}0.8))` }}
+            />
+          </svg>
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <span className="text-3xl font-extrabold text-white">{score}</span>
+            <span className="text-[10px] uppercase tracking-[0.15em] text-neutral-500">Risk</span>
+          </div>
         </div>
+        <span className="mt-4 flex items-center gap-2 rounded-full border border-sky-500/40 bg-sky-500/10 px-4 py-1.5 text-sm font-semibold text-sky-200">
+          <AlertTriangle size={14} /> Cheating · detected
+        </span>
+      </div>
+
+      <div className="relative mt-5 grid grid-cols-3 gap-2.5">
+        {['Memory', 'Modules', 'Registry'].map((t) => (
+          <div key={t} className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-center">
+            <p className="text-[11px] text-neutral-500">{t}</p>
+            <p className="text-xs font-semibold text-sky-300">flagged</p>
+          </div>
+        ))}
       </div>
     </div>
   )
@@ -62,48 +81,123 @@ function StatCard({ icon: Icon, label, value }) {
   )
 }
 
-/* ---- feature card with centred glowing icon ---- */
+/* ---- bento "see why" mocks (original ZeroTrace, restyled steel) ---- */
+function FlowMock() {
+  return (
+    <div className="relative h-full min-h-[210px] w-full">
+      <div className="absolute left-3 top-3 rounded-lg border border-white/10 bg-white/[0.04] px-4 py-2">
+        <p className="text-sm font-medium">Scanning</p>
+        <p className="text-xs text-neutral-500">User PC</p>
+      </div>
+      <svg className="absolute inset-0 h-full w-full" viewBox="0 0 300 200" fill="none" preserveAspectRatio="none">
+        <path d="M70 50 C 70 130, 220 80, 220 160" stroke="#9aa4c6" strokeWidth="2" strokeDasharray="5 5" />
+      </svg>
+      <span className="absolute left-1/2 top-1/2 flex h-8 w-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-sky-500/50 bg-sky-500/15 text-sky-300">
+        <Clock size={14} />
+      </span>
+      <div className="absolute bottom-3 right-3 rounded-lg border border-sky-500/30 bg-white/[0.04] px-4 py-2">
+        <p className="text-sm font-medium">Verdict</p>
+        <p className="text-xs text-neutral-500">~58 seconds</p>
+      </div>
+    </div>
+  )
+}
+function ResultsMock() {
+  const rows = [
+    { c: 'bg-green-500', t: 'Clean' },
+    { c: 'bg-yellow-500', t: 'Suspicious' },
+    { c: 'bg-red-500', t: 'Cheating' },
+  ]
+  return (
+    <div className="flex h-full min-h-[210px] flex-col justify-center gap-2.5">
+      {rows.map((r, i) => (
+        <div
+          key={r.t}
+          className={`flex items-center justify-between rounded-lg border border-white/10 bg-white/[0.03] px-4 py-3 ${i === 2 ? 'ring-1 ring-sky-500/20' : ''}`}
+        >
+          <div className="flex items-center gap-3">
+            <span className={`h-4 w-4 rounded-full ${r.c}`} />
+            <div>
+              <p className="text-sm font-medium">{r.t}</p>
+              <p className="text-xs text-neutral-500">Verdict tier</p>
+            </div>
+          </div>
+          <MoreVertical size={15} className="text-neutral-600" />
+        </div>
+      ))}
+    </div>
+  )
+}
+function WebhookMock() {
+  return (
+    <div className="relative h-full min-h-[210px] w-full">
+      <div className="absolute left-3 top-3 flex items-center gap-3 rounded-lg border border-white/10 bg-white/[0.04] px-4 py-2">
+        <ScanFace size={18} className="text-sky-300" />
+        <div>
+          <p className="text-sm font-medium">Scan finished</p>
+          <p className="text-xs text-neutral-500">Pin · A1B2C3D4</p>
+        </div>
+      </div>
+      <svg className="absolute inset-0 h-full w-full" viewBox="0 0 300 200" fill="none" preserveAspectRatio="none">
+        <path d="M80 50 C 150 50, 180 110, 230 150" stroke="#9aa4c6" strokeWidth="2" strokeDasharray="4 4" />
+      </svg>
+      <span className="absolute left-1/2 top-1/2 flex h-8 w-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-sky-500/50 bg-sky-500/15 text-sky-300">
+        <Webhook size={14} />
+      </span>
+      <div className="absolute bottom-3 right-3 w-52 rounded-lg border border-sky-500/30 bg-white/[0.04] p-3">
+        <div className="flex items-center gap-2 text-sky-300">
+          <BellRing size={14} />
+          <span className="text-xs font-semibold">Cheating · risk 78</span>
+        </div>
+        <p className="mt-1 text-[11px] text-neutral-500">Discord webhook delivered · 1.2 s</p>
+      </div>
+    </div>
+  )
+}
+
+const BENTO = [
+  { icon: FastForward, title: 'A verdict in\nunder a minute', text: 'ZeroTrace is built around a strict time budget — most scans wrap up in about 58 seconds, so checks never stall a tournament.', mock: <FlowMock /> },
+  { icon: Activity, title: 'Three clear\nverdict tiers', text: 'Every scan resolves to a clean, suspicious or cheating verdict, backed by the exact artifacts that drove the call.', mock: <ResultsMock />, reverse: true },
+  { icon: BellRing, title: 'Pushed straight\nto your team', text: 'The moment a scan finishes, the full verdict, risk score and flagged servers land in your Discord webhook — no polling, no waiting.', mock: <WebhookMock />, wide: true },
+]
+
+/* ---- glow feature grid (ZeroTrace's own features, reworded) ---- */
 function GlowCard({ icon: Icon, title, text }) {
   return (
-    <div className="group rounded-3xl border border-white/10 bg-white/[0.02] p-8 text-center transition-all duration-300 hover:-translate-y-1 hover:border-white/20">
-      <div className="flex justify-center">
-        <span
-          className="flex h-14 w-14 items-center justify-center rounded-2xl bg-sky-500/15 text-sky-300 transition-transform duration-300 group-hover:scale-110"
-          style={{ boxShadow: `0 0 28px ${GLOW}0.35)` }}
-        >
-          <Icon size={26} />
-        </span>
-      </div>
+    <div className="group rounded-3xl border border-white/10 bg-white/[0.02] p-7 transition-all duration-300 hover:-translate-y-1 hover:border-white/20">
+      <span
+        className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-sky-500/15 text-sky-300 transition-transform duration-300 group-hover:scale-110"
+        style={{ boxShadow: `0 0 26px ${GLOW}0.3)` }}
+      >
+        <Icon size={24} />
+      </span>
       <h3 className="mt-6 text-xl font-bold text-white">{title}</h3>
       <p className="mt-3 text-sm leading-relaxed text-neutral-400">{text}</p>
     </div>
   )
 }
 
-const GLOW_CARDS = [
-  { icon: ScanSearch, title: 'Deep Forensic Scans', text: 'Advanced memory analysis and process investigation that reaches far beyond surface checks.' },
-  { icon: ShieldCheck, title: 'Anti-Forensic Detection', text: 'Uncover sophisticated hiding techniques, cleaners and bypasses built to fool live anti-cheats.' },
-  { icon: Zap, title: 'Lightning Fast', text: 'Complete a comprehensive, consent-based scan in under 60 seconds — no hour-long manual checks.' },
+const FEATURES = [
+  { icon: SlidersHorizontal, title: 'Rules you control', text: 'Dial in your own detection logic and design — from small UI tweaks to bespoke threat signatures, all part of the service.' },
+  { icon: Cpu, title: 'OS-deep forensics', text: 'Detections grounded in real operating-system internals — memory, modules, drivers and on-disk traces, not just signatures.' },
+  { icon: LifeBuoy, title: 'Support that shows up', text: 'A response team that actually answers, around the clock, so you are never stuck mid-screenshare.' },
+  { icon: Users, title: '500+ server network', text: 'A community that keeps growing — hundreds of active servers and members happy to lend a hand.' },
+  { icon: BookOpen, title: 'Docs for every level', text: 'Guides written for first-time screensharers and seasoned forensic analysts alike.' },
+  { icon: Lock, title: 'Private by design', text: 'Artifacts are gathered with consent and kept encrypted — nothing is sold, shared or quietly stored.' },
 ]
 
 const METRICS = [
-  { icon: CheckCircle2, value: '<0.1%', label: 'False Positives' },
-  { icon: Clock, value: '60s', label: 'Average Scan' },
-  { icon: Users, value: '500+', label: 'Active Servers' },
+  { value: '~58s', label: 'Typical scan time' },
+  { value: '<0.1%', label: 'False-positive rate' },
+  { value: '500+', label: 'Active servers' },
 ]
 
-const KEY_POINTS = [
-  { icon: Zap, title: 'Fast Forensics', text: 'Conduct a comprehensive investigation in under 60 seconds. No more hour-long manual PC checks that stall tournaments or cost server time.' },
-  { icon: CheckCircle2, title: 'Great Accuracy', text: 'With a false-positive rate of less than 0.1%, you can issue bans with confidence that you are not hitting innocent players.' },
-  { icon: ShieldCheck, title: 'Anti-Forensic Detection', text: 'Specifically designed to uncover traces of "cleaners" and bypasses meant to defeat traditional scanners and live anti-cheats.' },
-  { icon: Workflow, title: 'Simplified Workflow', text: 'Removes the risk of needing trained "PC checkers". If the scan says they are cheating, the forensic evidence is right there.' },
-]
-
+/* ---- "where it fits" comparison (reworded, ZeroTrace voice) ---- */
 const COMPARE = [
-  { feature: 'Focus', live: 'Real-time memory and code injection', zt: 'Residual traces and forensic artifacts' },
-  { feature: 'Speed', live: 'Continuous monitoring', zt: 'Deep-dive scan in under 60 seconds' },
-  { feature: 'Goal', live: 'Prevent the cheat from running', zt: 'Prove the cheat was ever there' },
-  { feature: 'Efficiency', live: 'High CPU overhead', zt: 'Zero impact on game performance' },
+  { feature: 'Approach', live: 'Watches the game in real time', zt: 'Investigates the PC after the fact' },
+  { feature: 'Timing', live: 'Always running in the background', zt: 'One deep scan, around a minute' },
+  { feature: 'Outcome', live: 'Blocks cheats while they run', zt: 'Surfaces what was hidden or wiped' },
+  { feature: 'Performance', live: 'Constant CPU overhead', zt: 'No impact on game performance' },
 ]
 
 /* ---- "How ZeroTrace works" step mocks ---- */
@@ -177,9 +271,9 @@ function ReviewMock() {
 }
 
 const STEPS = [
-  { n: '1.', title: 'Downloading', text: 'Effortlessly scan suspects in seconds with two simple clicks that handle everything automatically.', mock: <DownloadMock /> },
-  { n: '2.', title: 'Scanning', text: 'Let ZeroTrace take care of all the hard work for you. Simply wait a few seconds while our advanced technology processes everything and delivers accurate results.', mock: <ScanningMock />, reverse: true },
-  { n: '3.', title: 'Data Review', text: 'Analyze the results on our dashboard and reach a final verdict on the suspect with confidence!', mock: <ReviewMock /> },
+  { n: '1.', title: 'Downloading', text: 'Two clicks and the scanner handles the rest — no setup, no config files, no friction.', mock: <DownloadMock /> },
+  { n: '2.', title: 'Scanning', text: 'Sit back while ZeroTrace works through memory, modules, drivers and disk, then assembles the evidence.', mock: <ScanningMock />, reverse: true },
+  { n: '3.', title: 'Data Review', text: 'Read the verdict on the dashboard, open the underlying artifacts, and make the call with confidence.', mock: <ReviewMock /> },
 ]
 
 const QA = [
@@ -273,23 +367,23 @@ export default function Landing() {
       <section className="relative overflow-hidden">
         <div
           className="pointer-events-none absolute inset-0"
-          style={{ background: `radial-gradient(60% 55% at 75% 5%, ${GLOW}0.22), transparent 60%), radial-gradient(40% 50% at 0% 60%, ${GLOW}0.10), transparent 70%)` }}
+          style={{ background: `radial-gradient(58% 55% at 72% 8%, ${GLOW}0.20), transparent 60%), radial-gradient(42% 50% at 2% 65%, ${GLOW}0.09), transparent 70%)` }}
         />
         <div className="relative mx-auto grid max-w-6xl items-center gap-12 px-6 py-20 md:px-12 md:py-28 lg:grid-cols-[1.1fr_0.9fr]">
           <div>
-            <span
-              className="inline-block rounded-full border border-sky-500/40 bg-sky-500/10 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.18em] text-sky-300"
-            >
-              Forensic Anti-Cheat
+            <span className="inline-block rounded-full border border-sky-500/40 bg-sky-500/10 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.18em] text-sky-300">
+              Forensic Screenshare
             </span>
             <h1 className="mt-7 text-5xl font-extrabold leading-[1.02] tracking-tight md:text-7xl">
-              <span className="bg-gradient-to-br from-white to-[#9aa4c6] bg-clip-text text-transparent">
-                Catch Cheaters Like Never Before
+              <span className="bg-gradient-to-br from-white via-white to-[#9aa4c6] bg-clip-text text-transparent">
+                Cheaters leave traces.
               </span>
+              <br />
+              <span className="text-sky-300">We find them.</span>
             </h1>
             <p className="mt-7 max-w-xl text-lg leading-relaxed text-neutral-400">
-              A brand-new forensic anti-cheat method that catches what live anti-cheats miss.
-              Detect cheaters in 60 seconds with deep, consent-based analysis.
+              ZeroTrace runs a deep, consent-based forensic scan that surfaces what live anti-cheats
+              overlook — then hands you a clear verdict in about a minute.
             </p>
             <div className="mt-9 flex flex-wrap items-center gap-4">
               <button
@@ -303,79 +397,93 @@ export default function Landing() {
                 onClick={() => onNav('Docs')}
                 className="flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.04] px-7 py-3.5 text-base font-semibold text-white backdrop-blur transition-colors hover:bg-white/[0.08]"
               >
-                <Play size={15} className="fill-white" /> Learn More
+                <Play size={15} className="fill-white" /> See how it works
               </button>
             </div>
           </div>
 
           <div className="space-y-5">
-            <ScanGraphic />
+            <VerdictGraphic />
             <div className="grid grid-cols-2 gap-4">
-              <StatCard icon={Search} label="Scans" value="1M+" />
               <StatCard icon={Users} label="Servers" value="500+" />
+              <StatCard icon={CheckCircle2} label="Accuracy" value="99.9%" />
             </div>
           </div>
         </div>
       </section>
 
-      {/* ── Feature cards ── */}
+      {/* ── See why (bento, original ZeroTrace) ── */}
+      <section className="mx-auto max-w-6xl px-6 py-16 md:px-12">
+        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <h2 className="text-4xl font-extrabold tracking-tight md:text-6xl">See why teams switch</h2>
+          <p className="text-lg text-neutral-400">What makes ZeroTrace different</p>
+        </div>
+        <div className="mt-12 grid gap-6 lg:grid-cols-2">
+          {BENTO.map((p) => (
+            <div key={p.title} className={`rounded-3xl border border-white/10 bg-white/[0.02] p-7 ${p.wide ? 'lg:col-span-2' : ''}`}>
+              <div className={`grid items-start gap-6 ${p.wide ? 'md:grid-cols-2' : ''}`}>
+                <div className={p.reverse ? 'md:order-2' : ''}>
+                  <span
+                    className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-sky-500/15 text-sky-300"
+                    style={{ boxShadow: `0 0 24px ${GLOW}0.3)` }}
+                  >
+                    <p.icon size={22} />
+                  </span>
+                  <h3 className="mt-8 whitespace-pre-line text-2xl font-bold md:text-3xl">{p.title}</h3>
+                  <p className="mt-4 max-w-md leading-relaxed text-neutral-400">{p.text}</p>
+                </div>
+                <div className={`rounded-2xl border border-white/10 bg-white/[0.03] p-5 ${p.reverse ? 'md:order-1' : ''}`}>
+                  {p.mock}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── Feature grid + metrics ── */}
       <section id="features" className="mx-auto max-w-6xl px-6 py-16 md:px-12">
-        <div className="grid gap-6 md:grid-cols-3">
-          {GLOW_CARDS.map((c) => (
-            <GlowCard key={c.title} {...c} />
+        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+          <h2 className="max-w-2xl text-4xl font-extrabold leading-[1.05] tracking-tight md:text-6xl">
+            Everything you need to ban with confidence
+          </h2>
+          <p className="max-w-sm text-lg text-neutral-400">
+            The core features and options that ship with every ZeroTrace plan.
+          </p>
+        </div>
+        <div className="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {FEATURES.map((f) => (
+            <GlowCard key={f.title} {...f} />
           ))}
         </div>
         <div className="mt-6 grid gap-6 sm:grid-cols-3">
           {METRICS.map((m) => (
             <div key={m.label} className="rounded-3xl border border-white/10 bg-white/[0.02] p-8 text-center">
-              <div className="flex justify-center">
-                <span
-                  className="flex h-12 w-12 items-center justify-center rounded-2xl bg-sky-500/15 text-sky-300"
-                  style={{ boxShadow: `0 0 24px ${GLOW}0.3)` }}
-                >
-                  <m.icon size={22} />
-                </span>
-              </div>
-              <p className="mt-5 text-4xl font-extrabold tracking-tight text-sky-300">{m.value}</p>
+              <p className="text-4xl font-extrabold tracking-tight text-sky-300">{m.value}</p>
               <p className="mt-1 text-sm text-neutral-400">{m.label}</p>
             </div>
           ))}
         </div>
       </section>
 
-      {/* ── What is ZeroTrace ── */}
+      {/* ── Where ZeroTrace fits (comparison) ── */}
       <section className="mx-auto max-w-5xl px-6 py-20 md:px-12">
         <div className="text-center">
           <h2 className="inline-block text-4xl font-extrabold tracking-tight md:text-5xl">
-            What Is ZeroTrace?
+            Where ZeroTrace fits
             <span className="mx-auto mt-3 block h-1 w-28 rounded-full bg-sky-500" />
           </h2>
-        </div>
-        <p className="mx-auto mt-8 max-w-3xl text-center text-lg leading-relaxed text-neutral-400">
-          Standard anti-cheats are great at catching "loud" software, but they often struggle with
-          sophisticated bypasses and anti-forensic tools designed to hide the cheats. ZeroTrace fills
-          that gap by providing a deep-dive scan that most live systems simply are not built to perform.
-        </p>
-
-        <h3 className="mt-14 text-2xl font-bold">Key Points</h3>
-        <div className="mt-6 grid gap-5 md:grid-cols-2">
-          {KEY_POINTS.map((k) => (
-            <div key={k.title} className="rounded-2xl border border-white/10 bg-white/[0.02] p-6">
-              <div className="flex items-center gap-2.5">
-                <k.icon size={18} className="text-sky-300" />
-                <h4 className="text-base font-bold text-white">{k.title}</h4>
-              </div>
-              <p className="mt-3 text-sm leading-relaxed text-neutral-400">{k.text}</p>
-            </div>
-          ))}
+          <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-neutral-400">
+            Live anti-cheats are great at stopping "loud" cheats as they run. ZeroTrace takes over where
+            they stop — proving what slipped past, after the fact.
+          </p>
         </div>
 
-        {/* Comparison table */}
-        <div className="mt-12 overflow-hidden rounded-2xl border border-white/10">
+        <div className="mt-10 overflow-hidden rounded-2xl border border-white/10">
           <table className="w-full text-left text-sm">
             <thead>
               <tr className="border-b border-white/10 bg-white/[0.02]">
-                <th className="px-5 py-4 text-xs font-bold uppercase tracking-[0.12em] text-neutral-500">Feature</th>
+                <th className="px-5 py-4 text-xs font-bold uppercase tracking-[0.12em] text-neutral-500"> </th>
                 <th className="px-5 py-4 text-xs font-bold uppercase tracking-[0.12em] text-neutral-500">Live Anti-Cheat</th>
                 <th className="px-5 py-4 text-xs font-bold uppercase tracking-[0.12em] text-sky-300">ZeroTrace</th>
               </tr>
@@ -392,17 +500,16 @@ export default function Landing() {
           </table>
         </div>
         <p className="mt-8 text-center text-neutral-400">
-          Think of ZeroTrace not as a replacement, but as the best complement to your existing security.
+          Run them together — live protection up front, ZeroTrace for the proof.
         </p>
       </section>
 
       {/* ── How ZeroTrace works ── */}
       <section className="mx-auto max-w-6xl px-6 py-20 md:px-12">
         <div className="text-center">
-          <h2 className="text-4xl font-extrabold tracking-tight md:text-6xl">How ZeroTrace works</h2>
+          <h2 className="text-4xl font-extrabold tracking-tight md:text-6xl">From download to verdict</h2>
           <p className="mx-auto mt-6 max-w-3xl text-lg text-neutral-400">
-            In just a few steps you download, scan, and get secure results — no complications or
-            lengthy processes.
+            Three short steps — download, scan, review. No complications, no lengthy processes.
           </p>
         </div>
         <div className="mt-16 space-y-20">
@@ -449,9 +556,9 @@ export default function Landing() {
         <div className="relative mx-auto max-w-6xl px-6 py-28 md:px-12">
           <div className="flex flex-col gap-10 lg:flex-row lg:items-center lg:justify-between">
             <h2 className="text-5xl font-extrabold leading-[1.05] tracking-tight md:text-7xl">
-              Start Detecting
+              Two clicks
               <br />
-              Now
+              to certainty
             </h2>
             <div className="flex items-center gap-6">
               <button
@@ -462,9 +569,9 @@ export default function Landing() {
                 Get Started
               </button>
               <p className="text-neutral-400">
-                More than
+                Trusted by
                 <br />
-                <span className="text-white">500+ frequent buyers</span>
+                <span className="text-white">500+ communities</span>
               </p>
             </div>
           </div>
