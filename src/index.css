@@ -10,22 +10,22 @@
    ────────────────────────────────────────────────────────────────── */
 
 :root {
-  --bg: #15171c;
-  --bg-2: #191c22;
-  --panel: #1e2129;
-  --panel-2: #23262f;
-  --tile: #272b34;
-  --border: #31353f;
-  --border-soft: #282c35;
-  --text: #f2f4f8;
-  --muted: #9398a4;
+  --bg: #0c0c0e;          /* dark frame / gap behind floating panels */
+  --bg-2: #0f0f12;
+  --panel: #17181c;       /* floating surfaces — lighter than the frame */
+  --panel-2: #1c1d22;
+  --tile: #212228;
+  --border: #2a2b32;
+  --border-soft: #202127;
+  --text: #f0f1f4;
+  --muted: #8b8d98;
   --hover: rgba(255, 255, 255, 0.05);
-  --accent: #9aa6cc;
+  --accent: #9aa4c6;
   --accent-2: #b7c0de;
-  --accent-soft: rgba(154, 166, 204, 0.16);
-  --elev-1: 0 1px 2px rgba(0, 0, 0, 0.3);
-  --elev-2: 0 10px 28px -12px rgba(0, 0, 0, 0.5);
-  --elev-3: 0 22px 55px -18px rgba(0, 0, 0, 0.6);
+  --accent-soft: rgba(154, 164, 198, 0.16);
+  --elev-1: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --elev-2: 0 14px 36px -14px rgba(0, 0, 0, 0.6);
+  --elev-3: 0 26px 60px -20px rgba(0, 0, 0, 0.7);
 }
 
 :root.light {
@@ -49,19 +49,19 @@
 
 /* Public marketing pages stay dark regardless of the dashboard theme */
 .force-dark {
-  --bg: #15171c;
-  --bg-2: #191c22;
-  --panel: #1e2129;
-  --panel-2: #23262f;
-  --tile: #272b34;
-  --border: #31353f;
-  --border-soft: #282c35;
-  --text: #f2f4f8;
-  --muted: #9398a4;
+  --bg: #0c0c0e;
+  --bg-2: #0f0f12;
+  --panel: #17181c;
+  --panel-2: #1c1d22;
+  --tile: #212228;
+  --border: #2a2b32;
+  --border-soft: #202127;
+  --text: #f0f1f4;
+  --muted: #8b8d98;
   --hover: rgba(255, 255, 255, 0.05);
-  --accent: #9aa6cc;
+  --accent: #9aa4c6;
   --accent-2: #b7c0de;
-  --accent-soft: rgba(154, 166, 204, 0.16);
+  --accent-soft: rgba(154, 164, 198, 0.16);
 }
 
 @layer base {
@@ -88,10 +88,11 @@
 }
 
 @layer components {
-  /* Clean slate backdrop with a single soft top wash. */
+  /* Dark frame behind the floating panels, with a faint cool wash. */
   .app-bg {
     background: var(--bg);
-    background-image: linear-gradient(180deg, var(--bg-2), var(--bg) 280px);
+    background-image:
+      radial-gradient(50% 40% at 50% 0%, rgba(154, 164, 198, 0.06), transparent 60%);
     background-attachment: fixed;
   }
   /* Solid, lifted panel. */
@@ -151,7 +152,7 @@
   .card-hover:hover {
     transform: translateY(-3px);
     box-shadow: var(--elev-2);
-    border-color: #3c414d;
+    border-color: #3a3c45;
   }
 
   /* Accent marker used in headers. */

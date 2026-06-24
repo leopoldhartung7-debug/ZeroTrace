@@ -70,9 +70,9 @@ function DashboardLayout() {
     return <MaintenanceScreen />
   }
   return (
-    <div className="app-bg flex h-screen overflow-hidden">
-      {/* Desktop / tablet sidebar */}
-      <div className="hidden shrink-0 lg:block">
+    <div className="app-bg flex h-screen gap-2.5 overflow-hidden p-2.5">
+      {/* Desktop / tablet sidebar — floating rounded rail */}
+      <div className="hidden h-full shrink-0 lg:block">
         <Sidebar />
       </div>
 
@@ -80,15 +80,19 @@ function DashboardLayout() {
       {navOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setNavOpen(false)} />
-          <div className="absolute left-0 top-0 h-full">
+          <div className="absolute left-0 top-0 h-full p-2.5">
             <Sidebar />
           </div>
         </div>
       )}
 
-      <div className="flex flex-1 flex-col overflow-hidden">
+      {/* Floating content frame */}
+      <div
+        className="bd flex flex-1 flex-col overflow-hidden rounded-2xl border shadow-[var(--elev-2)]"
+        style={{ background: 'var(--bg-2)' }}
+      >
         {/* Mobile top bar */}
-        <div className="bd panel flex shrink-0 items-center gap-3 border-b px-4 py-3 lg:hidden">
+        <div className="bd flex shrink-0 items-center gap-3 border-b px-4 py-3 lg:hidden">
           <button
             onClick={() => setNavOpen((o) => !o)}
             className="txt rounded-lg p-1.5"
