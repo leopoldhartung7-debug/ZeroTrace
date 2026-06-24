@@ -26,6 +26,7 @@ public sealed class ExecutionHistoryScanModule : IScanModule
 {
     public string Name => "Ausfuehrungsverlauf";
     public double Weight => 0.7;
+    public int ParallelGroup => 1; // registry / log read only
 
     private int _emitted;
     private const int MaxFindings = 80;

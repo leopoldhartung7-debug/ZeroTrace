@@ -17,6 +17,7 @@ public sealed class SteamAccountScanModule : IScanModule
 {
     public string Name => "Steam-Konten";
     public double Weight => 0.3;
+    public int ParallelGroup => 1; // loginusers.vdf read only
 
     public Task RunAsync(ScanContext ctx, CancellationToken ct)
     {

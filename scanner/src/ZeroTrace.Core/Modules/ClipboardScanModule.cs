@@ -17,6 +17,7 @@ public sealed class ClipboardScanModule : IScanModule
 {
     public string Name => "Zwischenablage";
     public double Weight => 0.3;
+    public int ParallelGroup => 1; // metadata.json reads only
 
     private static readonly string ClipboardRoot =
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),

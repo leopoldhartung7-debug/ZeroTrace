@@ -14,6 +14,7 @@ public sealed class PrefetchScanModule : IScanModule
 {
     public string Name => "Prefetch";
     public double Weight => 0.4;
+    public int ParallelGroup => 1; // file-name enumeration only
 
     private const string PrefetchDir = @"C:\Windows\Prefetch";
 

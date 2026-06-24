@@ -16,6 +16,7 @@ public sealed class BrowserExtensionScanModule : IScanModule
 {
     public string Name => "Browser-Erweiterungen";
     public double Weight => 0.4;
+    public int ParallelGroup => 1; // manifest.json reads only
 
     // Permissions that are rarely needed by legitimate extensions but give
     // an extension powerful access to inspect or redirect page traffic.

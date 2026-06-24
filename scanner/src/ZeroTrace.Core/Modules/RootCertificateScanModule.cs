@@ -18,6 +18,7 @@ public sealed class RootCertificateScanModule : IScanModule
 {
     public string Name => "Zertifikatsspeicher";
     public double Weight => 0.3;
+    public int ParallelGroup => 1; // cert-store read only
 
     private static readonly string[] CheatKeywords =
     {

@@ -71,57 +71,41 @@ public sealed class ScanEngine
 
         try
         {
-            foreach (var module in modules)
+            // Group sequential (group 0) modules into solo phases and
+            // parallel-group modules (group > 0) into bursts that run with
+            // bounded concurrency. Order within the original list is kept.
+            var phases = BuildPhases(modules);
+
+            foreach (var phase in phases)
             {
                 ct.ThrowIfCancellationRequested();
-                context.CurrentModule = module.Name;
-                context.ModuleBaseline = totalWeight <= 0 ? 0 : consumed / totalWeight;
-                context.ModuleSpan = totalWeight <= 0 ? 1 : module.Weight / totalWeight;
-
-                context.Report(0, $"Starte Modul: {module.Name}");
-
-                // Give each module its own time budget. A linked token lets us tell
-                // a per-module timeout apart from a user-requested cancellation.
-                using var moduleCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
-                if (options.ModuleTimeoutSeconds > 0)
-                    moduleCts.CancelAfter(TimeSpan.FromSeconds(options.ModuleTimeoutSeconds));
-
-                try
+                if (phase.Count == 1)
                 {
-                    await module.RunAsync(context, moduleCts.Token).ConfigureAwait(false);
+                    var m = phase[0];
+                    context.ModuleBaseline = totalWeight <= 0 ? 0 : consumed / totalWeight;
+                    context.ModuleSpan = totalWeight <= 0 ? 1 : m.Weight / totalWeight;
+                    await RunModuleAsync(m, context, options, ct).ConfigureAwait(false);
+                    consumed += m.Weight;
                 }
-                catch (OperationCanceledException) when (ct.IsCancellationRequested)
+                else
                 {
-                    throw; // the user cancelled the whole scan
-                }
-                catch (OperationCanceledException)
-                {
-                    // The module exceeded its time budget: skip it, keep scanning.
-                    context.AddFinding(new Finding
-                    {
-                        Module = module.Name,
-                        Title = "Modul uebersprungen (Zeitueberschreitung)",
-                        Risk = RiskLevel.Low,
-                        Location = "intern",
-                        Reason = $"Modul '{module.Name}' hat das Zeitlimit von " +
-                                 $"{options.ModuleTimeoutSeconds}s ueberschritten und wurde uebersprungen."
-                    });
-                }
-                catch (Exception ex)
-                {
-                    // Isolate the failure: skip this module, keep scanning the rest.
-                    context.AddFinding(new Finding
-                    {
-                        Module = module.Name,
-                        Title = "Modul uebersprungen (Fehler)",
-                        Risk = RiskLevel.Low,
-                        Location = "intern",
-                        Reason = $"Modul '{module.Name}' wurde wegen eines Fehlers uebersprungen: {ex.Message}"
-                    });
-                }
-                context.Report(1, $"Modul abgeschlossen: {module.Name}");
+                    // Parallel burst: every module in this burst shares the
+                    // same progress baseline and span (the burst as a whole).
+                    // The Findings list is locked inside AddFinding, so the
+                    // concurrent emit path is already safe.
+                    var phaseWeight = phase.Sum(m => m.Weight);
+                    context.ModuleBaseline = totalWeight <= 0 ? 0 : consumed / totalWeight;
+                    context.ModuleSpan = totalWeight <= 0 ? 1 : phaseWeight / totalWeight;
+                    context.Report(0, $"Parallel: {string.Join(", ", phase.Select(m => m.Name))}");
 
-                consumed += module.Weight;
+                    var concurrency = Math.Min(phase.Count, Environment.ProcessorCount);
+                    using var sem = new SemaphoreSlim(concurrency);
+                    var tasks = phase.Select(m => RunOneInParallelAsync(
+                        m, context, options, sem, ct)).ToArray();
+                    await Task.WhenAll(tasks).ConfigureAwait(false);
+
+                    consumed += phaseWeight;
+                }
             }
             report.Result = ScanPhase.Completed;
         }
@@ -169,6 +153,113 @@ public sealed class ScanEngine
         });
 
         return report;
+    }
+
+    /// <summary>
+    /// Pack consecutive parallel-group modules into one burst. Mixed phases
+    /// or sequential (group 0) modules each become their own one-item phase
+    /// so order and progress reporting stay predictable.
+    /// </summary>
+    private static List<List<IScanModule>> BuildPhases(List<IScanModule> modules)
+    {
+        var phases = new List<List<IScanModule>>();
+        var current = new List<IScanModule>();
+        int currentGroup = -1;
+
+        foreach (var m in modules)
+        {
+            var g = m.ParallelGroup;
+            if (g == 0)
+            {
+                if (current.Count > 0) { phases.Add(current); current = new(); currentGroup = -1; }
+                phases.Add(new List<IScanModule> { m });
+            }
+            else
+            {
+                if (g != currentGroup && current.Count > 0)
+                {
+                    phases.Add(current);
+                    current = new();
+                }
+                currentGroup = g;
+                current.Add(m);
+            }
+        }
+        if (current.Count > 0) phases.Add(current);
+        return phases;
+    }
+
+    /// <summary>
+    /// Run a single module with its own time budget and isolated error
+    /// handling. Caller is responsible for setting
+    /// <c>ScanContext.ModuleBaseline</c> and <c>ScanContext.ModuleSpan</c>
+    /// before the run.
+    /// </summary>
+    private static async Task RunModuleAsync(
+        IScanModule module,
+        ScanContext context,
+        ScanOptions options,
+        CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+        context.CurrentModule = module.Name;
+
+        context.Report(0, $"Starte Modul: {module.Name}");
+
+        using var moduleCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        if (options.ModuleTimeoutSeconds > 0)
+            moduleCts.CancelAfter(TimeSpan.FromSeconds(options.ModuleTimeoutSeconds));
+
+        try
+        {
+            await module.RunAsync(context, moduleCts.Token).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (OperationCanceledException)
+        {
+            context.AddFinding(new Finding
+            {
+                Module = module.Name,
+                Title = "Modul uebersprungen (Zeitueberschreitung)",
+                Risk = RiskLevel.Low,
+                Location = "intern",
+                Reason = $"Modul '{module.Name}' hat das Zeitlimit von " +
+                         $"{options.ModuleTimeoutSeconds}s ueberschritten und wurde uebersprungen."
+            });
+        }
+        catch (Exception ex)
+        {
+            context.AddFinding(new Finding
+            {
+                Module = module.Name,
+                Title = "Modul uebersprungen (Fehler)",
+                Risk = RiskLevel.Low,
+                Location = "intern",
+                Reason = $"Modul '{module.Name}' wurde wegen eines Fehlers uebersprungen: {ex.Message}"
+            });
+        }
+        context.Report(1, $"Modul abgeschlossen: {module.Name}");
+    }
+
+    private static async Task RunOneInParallelAsync(
+        IScanModule module,
+        ScanContext context,
+        ScanOptions options,
+        SemaphoreSlim sem,
+        CancellationToken ct)
+    {
+        await sem.WaitAsync(ct).ConfigureAwait(false);
+        try
+        {
+            await RunModuleAsync(module, context, options, ct).ConfigureAwait(false);
+        }
+        finally
+        {
+            sem.Release();
+        }
     }
 
     private static List<IScanModule> BuildModules(ScanOptions o)

@@ -13,6 +13,15 @@ public interface IScanModule
     /// <summary>Relative weight for the overall progress bar (sum need not be 1).</summary>
     double Weight { get; }
 
+    /// <summary>
+    /// Module-correlation modules (everything that consumes other modules'
+    /// findings or runs heavy IO that contends with itself) stay sequential
+    /// (group 0). Light read-only modules with no IO contention return a
+    /// non-zero group; modules sharing the same group number run in parallel
+    /// on a bounded thread-pool. Default: 0 (sequential).
+    /// </summary>
+    int ParallelGroup => 0;
+
     Task RunAsync(ScanContext context, CancellationToken ct);
 }
 

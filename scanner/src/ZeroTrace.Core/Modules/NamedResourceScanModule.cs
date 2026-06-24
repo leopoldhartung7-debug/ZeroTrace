@@ -33,6 +33,16 @@ public sealed class NamedResourceScanModule : IScanModule
         // Generic cheat infrastructure
         "HWIDSpooferMutex", "CheatLoaderMutex", "InjectMutex",
         "UnknownCheatsClient", "CheatEngineMutex",
+        // 2025/2026 additions — modern FiveM / GTA menus and Vanguard-bypass tools
+        "YimMenuMutex", "StandMenuMutex", "LambdaMenuMutex", "AbsoluteMenuMutex",
+        "SpectreMenuMutex", "CelestialMutex", "SusanoMutex", "HyperionMutex",
+        "NSAwareMutex", "ReaperMenuMutex", "PrimordialMutex",
+        "PhoenixCheatMutex", "SunsetCheatMutex", "VoidCheatsMutex",
+        // Modern Valorant / Apex / Warzone cheats
+        "ValorHackMutex", "VanguardBypassMutex", "RingoneMutex",
+        "BlackCellMutex", "EngineOwningMutex", "RicochetBypassMutex",
+        // DMA tooling
+        "MemProcFSMutex", "LeechCoreMutex", "PCILeechMutex",
     };
 
     public Task RunAsync(ScanContext ctx, CancellationToken ct)

@@ -71,7 +71,7 @@ public sealed class SqliteDatabase
     /// </summary>
     public void SeedDefaultsIfEmpty()
     {
-        const int CurrentVersion = 3;
+        const int CurrentVersion = 4;
         using var conn = OpenConnection();
 
         // Check stored seed version.
@@ -436,6 +436,70 @@ public sealed class SqliteDatabase
             (IndicatorType.ProcessName, "dbgview",              RiskLevel.Medium, "RE-Tool",   "DebugView – OutputDebugString-Logger."),
             (IndicatorType.ProcessName, "cff explorer",         RiskLevel.Medium, "RE-Tool",   "CFF Explorer – PE-Editor."),
             (IndicatorType.ProcessName, "resource hacker",      RiskLevel.Medium, "RE-Tool",   "Resource Hacker – PE-Ressourcen-Editor."),
+
+            // ── Version 4: 2025/2026 cheat library refresh ───────────────────────
+            // Modern FiveM menu / kernel cheats
+            (IndicatorType.FileNameKeyword, "yimmenu",          RiskLevel.Critical,"GTA-Cheat",       "GTA-Mod-Menu 'YimMenu'."),
+            (IndicatorType.FileNameKeyword, "lambda menu",      RiskLevel.High,    "GTA-Cheat",       "GTA-Cheat 'Lambda Menu'."),
+            (IndicatorType.FileNameKeyword, "absolute menu",    RiskLevel.High,    "GTA-Cheat",       "GTA-Mod-Menu 'Absolute'."),
+            (IndicatorType.FileNameKeyword, "stand menu",       RiskLevel.High,    "GTA-Cheat",       "GTA-Mod-Menu 'Stand'."),
+            (IndicatorType.FileNameKeyword, "spectre menu",     RiskLevel.High,    "FiveM-Cheat",     "FiveM-Cheat 'Spectre'."),
+            (IndicatorType.FileNameKeyword, "celestial",        RiskLevel.High,    "FiveM-Cheat",     "FiveM-Cheat 'Celestial'."),
+            (IndicatorType.FileNameKeyword, "susano",           RiskLevel.High,    "FiveM-Cheat",     "FiveM-Cheat 'Susano'."),
+            (IndicatorType.FileNameKeyword, "hyperion",         RiskLevel.High,    "FiveM-Cheat",     "FiveM-Cheat 'Hyperion'."),
+            (IndicatorType.FileNameKeyword, "nsaware",          RiskLevel.High,    "FiveM-Cheat",     "FiveM-Cheat 'NSAware'."),
+            (IndicatorType.FileNameKeyword, "reaper menu",      RiskLevel.High,    "FiveM-Cheat",     "FiveM-Cheat 'Reaper'."),
+            (IndicatorType.FileNameKeyword, "void cheats",      RiskLevel.High,    "Cheat-Shop",      "'Void Cheats'-Marker."),
+            (IndicatorType.FileNameKeyword, "primordial",       RiskLevel.High,    "Cheat",           "Cheat 'Primordial'."),
+            (IndicatorType.FileNameKeyword, "sunset cheat",     RiskLevel.High,    "FiveM-Cheat",     "FiveM-Cheat 'Sunset'."),
+            (IndicatorType.FileNameKeyword, "phoenix cheat",    RiskLevel.High,    "Cheat",           "Cheat 'Phoenix'."),
+            (IndicatorType.FileNameKeyword, "skript.gg",        RiskLevel.High,    "FiveM-Cheat",     "FiveM 'skript.gg' Marker."),
+            // Modern Valorant / Apex / Warzone cheats
+            (IndicatorType.FileNameKeyword, "valorhack",        RiskLevel.Critical,"Valorant-Cheat",  "Valorant-Cheat 'ValorHack'."),
+            (IndicatorType.FileNameKeyword, "vanguardbypass",   RiskLevel.Critical,"Valorant-Cheat",  "Valorant Vanguard-Bypass."),
+            (IndicatorType.FileNameKeyword, "ringone",          RiskLevel.High,    "Apex-Cheat",      "Apex-Cheat 'Ringone'."),
+            (IndicatorType.FileNameKeyword, "warzone unlock",   RiskLevel.High,    "Warzone-Cheat",   "Warzone-Unlock-Tool."),
+            (IndicatorType.FileNameKeyword, "blackcell",        RiskLevel.High,    "Warzone-Cheat",   "Warzone-Cheat 'BlackCell'."),
+            (IndicatorType.FileNameKeyword, "engineowning",     RiskLevel.High,    "Cheat-Shop",      "EngineOwning-Cheat."),
+            // DMA / external hardware cheats
+            (IndicatorType.FileNameKeyword, "memprocfs",        RiskLevel.High,    "DMA-Tool",        "MemProcFS – DMA-Memory-Reader."),
+            (IndicatorType.FileNameKeyword, "leechcore",        RiskLevel.High,    "DMA-Tool",        "LeechCore – DMA-FPGA-Treiber."),
+            (IndicatorType.FileNameKeyword, "pcileech",         RiskLevel.High,    "DMA-Tool",        "PCILeech – DMA-Tool."),
+            (IndicatorType.FileNameKeyword, "openrgb",          RiskLevel.Low,     "Tool",            "OpenRGB – haeufig neben DMA-Setups."),
+            (IndicatorType.FileNameKeyword, "screamingbee",     RiskLevel.Medium,  "Tool",            "MorphVOX-Stimmenwandler (haeufig bei Smurfern)."),
+            // Modern HWID spoofers
+            (IndicatorType.FileNameKeyword, "permspoofer",      RiskLevel.High,    "Spoofer",         "PermSpoofer-HWID-Tool."),
+            (IndicatorType.FileNameKeyword, "tempspoofer",      RiskLevel.High,    "Spoofer",         "TempSpoofer-HWID-Tool."),
+            (IndicatorType.FileNameKeyword, "ultraspoofer",     RiskLevel.High,    "Spoofer",         "UltraSpoofer-Tool."),
+            (IndicatorType.FileNameKeyword, "veiledspoofer",    RiskLevel.High,    "Spoofer",         "Veiled-Spoofer-Tool."),
+            (IndicatorType.FileNameKeyword, "smbios spoof",     RiskLevel.High,    "Spoofer",         "SMBIOS-Spoofer-Werkzeug."),
+            (IndicatorType.FileNameKeyword, "tpmbypass",        RiskLevel.High,    "Spoofer",         "TPM-Bypass-Werkzeug."),
+            // Modern content strings
+            (IndicatorType.ContentString, "yimmenu",            RiskLevel.High,    "GTA-Cheat",       "YimMenu im Datei-Inhalt."),
+            (IndicatorType.ContentString, "engineowning",       RiskLevel.High,    "Cheat-Shop",      "EngineOwning im Datei-Inhalt."),
+            (IndicatorType.ContentString, "vanguard bypass",    RiskLevel.Critical,"AC-Bypass",       "Vanguard-Bypass im Datei-Inhalt."),
+            (IndicatorType.ContentString, "ricochet bypass",    RiskLevel.Critical,"AC-Bypass",       "Ricochet-Bypass (Warzone) im Datei-Inhalt."),
+            (IndicatorType.ContentString, "permspoof",          RiskLevel.High,    "Spoofer",         "permanent spoof Token im Datei-Inhalt."),
+            (IndicatorType.ContentString, "dma cheat",          RiskLevel.High,    "DMA-Tool",        "'dma cheat' im Datei-Inhalt."),
+            (IndicatorType.ContentString, "screencapture bypass",RiskLevel.High,   "AC-Bypass",       "Screenshare-Bypass im Datei-Inhalt."),
+            (IndicatorType.ContentString, "hwid permanent",     RiskLevel.High,    "Spoofer",         "'hwid permanent' im Datei-Inhalt."),
+            (IndicatorType.ContentString, "secureboot disable", RiskLevel.High,    "AC-Bypass",       "Secure Boot Disable Token im Datei-Inhalt."),
+            // Modern cheat-marketplace URLs
+            (IndicatorType.UrlDomainKeyword, "yimmenu.com",     RiskLevel.High,    "Cheat-Shop",      "yimmenu.com."),
+            (IndicatorType.UrlDomainKeyword, "engineowning",    RiskLevel.High,    "Cheat-Shop",      "EngineOwning-Domain."),
+            (IndicatorType.UrlDomainKeyword, "interwebz",       RiskLevel.High,    "Cheat-Shop",      "InterwebZ-Cheat-Shop."),
+            (IndicatorType.UrlDomainKeyword, "lavicheats",      RiskLevel.High,    "Cheat-Shop",      "LaviCheats-Domain."),
+            (IndicatorType.UrlDomainKeyword, "darkcheats",      RiskLevel.High,    "Cheat-Shop",      "DarkCheats-Domain."),
+            (IndicatorType.UrlDomainKeyword, "iwantcheats",     RiskLevel.High,    "Cheat-Shop",      "IWantCheats-Domain."),
+            (IndicatorType.UrlDomainKeyword, "phantomoverlay",  RiskLevel.High,    "Cheat-Shop",      "PhantomOverlay-Cheat-Shop."),
+            (IndicatorType.UrlDomainKeyword, "ringone",         RiskLevel.High,    "Cheat-Shop",      "Ringone-Domain."),
+            (IndicatorType.UrlDomainKeyword, "celestialcheats", RiskLevel.High,    "Cheat-Shop",      "Celestial-Cheats-Domain."),
+            // Process names (modern)
+            (IndicatorType.ProcessName, "memprocfs",            RiskLevel.High,    "DMA-Tool",        "MemProcFS-Prozess."),
+            (IndicatorType.ProcessName, "leechcore",            RiskLevel.High,    "DMA-Tool",        "LeechCore-Prozess."),
+            (IndicatorType.ProcessName, "pcileech",             RiskLevel.High,    "DMA-Tool",        "PCILeech-Prozess."),
+            (IndicatorType.ProcessName, "yimmenu",              RiskLevel.Critical,"GTA-Cheat",       "YimMenu-Prozess."),
+            (IndicatorType.ProcessName, "stand",                RiskLevel.Critical,"GTA-Cheat",       "Stand-Menu-Prozess."),
         };
 
         using var tx = conn.BeginTransaction();

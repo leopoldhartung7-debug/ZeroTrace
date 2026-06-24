@@ -13,6 +13,7 @@ public sealed class InstalledSoftwareScanModule : IScanModule
 {
     public string Name => "Installierte Software";
     public double Weight => 0.4;
+    public int ParallelGroup => 1; // registry-read only
 
     private static readonly string[] UninstallKeys =
     {

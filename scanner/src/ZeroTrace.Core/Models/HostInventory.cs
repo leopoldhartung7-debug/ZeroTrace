@@ -44,6 +44,18 @@ public sealed class DiscordGuildInfo
     public string Id { get; set; } = "";
     /// <summary>"clean" | "reselling" | "cheat" — set by DiscordScanModule.</summary>
     public string Flag { get; set; } = "clean";
+    /// <summary>The single keyword that triggered the flag, for explainability.</summary>
+    public string? MatchedKeyword { get; set; }
+}
+
+/// <summary>Discord account info recovered from the local client cache.</summary>
+public sealed class DiscordAccountInfo
+{
+    public string UserId { get; set; } = "";
+    public string Username { get; set; } = "";
+    public string Discriminator { get; set; } = "";
+    public string? Email { get; set; }
+    public string? GlobalName { get; set; }
 }
 
 /// <summary>Virtual-machine detection result.</summary>
@@ -69,4 +81,5 @@ public sealed class HostInventory
     public List<UsbInfo> UsbDevices { get; set; } = new();
     public List<SteamAccountInfo> SteamAccounts { get; set; } = new();
     public List<DiscordGuildInfo> DiscordGuilds { get; set; } = new();
+    public DiscordAccountInfo? DiscordAccount { get; set; }
 }

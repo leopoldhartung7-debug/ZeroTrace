@@ -16,6 +16,7 @@ public sealed class UsbDeviceScanModule : IScanModule
 {
     public string Name => "USB-Geraete";
     public double Weight => 0.3;
+    public int ParallelGroup => 1; // registry-read only
 
     // Known VID prefixes for microcontroller / Arduino-ecosystem boards.
     // These appear in the sub-key name "VID_XXXX&PID_YYYY".

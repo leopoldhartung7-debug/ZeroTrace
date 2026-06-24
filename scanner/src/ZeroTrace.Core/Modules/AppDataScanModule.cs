@@ -13,6 +13,7 @@ public sealed class AppDataScanModule : IScanModule
 {
     public string Name => "AppData";
     public double Weight => 0.5;
+    public int ParallelGroup => 1; // read-only directory walk, safe to parallelise
 
     public Task RunAsync(ScanContext ctx, CancellationToken ct)
     {
