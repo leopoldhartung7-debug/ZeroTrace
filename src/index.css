@@ -282,3 +282,16 @@
 ::-webkit-scrollbar-thumb:hover {
   background: var(--muted);
 }
+
+/* Tap / click brightness feedback */
+button:active:not(:disabled),
+a:active,
+[role="button"]:active {
+  filter: brightness(1.25);
+  transition: filter 0.05s;
+}
+.hoverable:hover,
+.card-hover:hover {
+  filter: brightness(1.08);
+}
+
