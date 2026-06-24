@@ -145,7 +145,7 @@ export default function Sidebar() {
                             className={({ isActive }) =>
                               `relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 ${
                                 isActive
-                                  ? 'bg-white/[0.06] text-white ring-1 ring-inset ring-white/10'
+                                  ? 'bg-sky-500/14 text-sky-100 before:absolute before:left-0 before:top-1/2 before:h-4 before:w-[3px] before:-translate-y-1/2 before:rounded-r-full before:bg-sky-400'
                                   : 'hoverable hover:translate-x-0.5'
                               }`
                             }
@@ -168,9 +168,9 @@ export default function Sidebar() {
                   key={to}
                   to={to}
                   className={({ isActive }) =>
-                    `group relative mb-1 flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
+                    `group relative mb-1 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
                       isActive
-                        ? 'bg-white/[0.07] text-white ring-1 ring-inset ring-white/10 shadow-[var(--elev-1)]'
+                        ? 'bg-sky-500/14 text-sky-100 before:absolute before:left-0 before:top-1/2 before:h-5 before:w-[3px] before:-translate-y-1/2 before:rounded-r-full before:bg-sky-400'
                         : 'hoverable hover:translate-x-0.5'
                     }`
                   }

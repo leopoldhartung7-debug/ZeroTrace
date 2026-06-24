@@ -34,17 +34,17 @@ export default {
         sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
         mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
       },
-      /* Premium, generously rounded corners (detect.ac-style).
+      /* Medium-large rounding for the solid product look.
          `full` is kept for pills/avatars/dots. */
       borderRadius: {
         none: '0',
-        sm: '6px',
-        DEFAULT: '9px',
-        md: '11px',
-        lg: '13px',
-        xl: '16px',
-        '2xl': '20px',
-        '3xl': '26px',
+        sm: '5px',
+        DEFAULT: '7px',
+        md: '9px',
+        lg: '11px',
+        xl: '13px',
+        '2xl': '16px',
+        '3xl': '22px',
         full: '9999px',
       },
     },
