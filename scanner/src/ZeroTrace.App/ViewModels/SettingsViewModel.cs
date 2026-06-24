@@ -33,7 +33,7 @@ public sealed class SettingsViewModel : ViewModelBase
 
     public Array ScanProfileValues => Enum.GetValues(typeof(ScanProfile));
 
-    private ScanProfile _selectedProfile = ScanProfile.Standard;
+    private ScanProfile _selectedProfile = ScanProfile.Deep;
     public ScanProfile SelectedProfile
     {
         get => _selectedProfile;

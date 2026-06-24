@@ -17,6 +17,7 @@ public sealed class OverlayScanModule : IScanModule
 {
     public string Name => "Overlay / ESP";
     public double Weight => 0.3;
+    public int ParallelGroup => 2;
 
     private const int GWL_EXSTYLE = -20;
     private const long WS_EX_TRANSPARENT = 0x20;

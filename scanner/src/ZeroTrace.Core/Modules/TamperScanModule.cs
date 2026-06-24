@@ -21,6 +21,7 @@ public sealed class TamperScanModule : IScanModule
 {
     public string Name => "Scan-Manipulation";
     public double Weight => 0.4;
+    public int ParallelGroup => 5;
 
     // Anti-Cheat and game server domains that should NOT appear in the hosts file.
     private static readonly string[] AcDomains =

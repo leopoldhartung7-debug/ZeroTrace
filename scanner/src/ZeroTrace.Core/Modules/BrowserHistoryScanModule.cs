@@ -23,6 +23,7 @@ public sealed class BrowserHistoryScanModule : IScanModule
 {
     public string Name => "Browser-Verlauf";
     public double Weight => 1.0;
+    public int ParallelGroup => 4;
 
     private enum Engine { Chromium, Firefox }
 

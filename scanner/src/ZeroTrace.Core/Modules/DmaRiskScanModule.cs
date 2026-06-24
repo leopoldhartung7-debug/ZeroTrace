@@ -25,6 +25,7 @@ public sealed class DmaRiskScanModule : IScanModule
 {
     public string Name => "DMA / Hardware (Hinweis)";
     public double Weight => 0.4;
+    public int ParallelGroup => 2;
 
     // Name/vendor fragments over-represented in DMA-board builds or capture hardware.
     private static readonly string[] SuspectFragments =

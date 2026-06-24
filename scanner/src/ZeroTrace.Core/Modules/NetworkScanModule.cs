@@ -19,6 +19,7 @@ public sealed class NetworkScanModule : IScanModule
 {
     public string Name => "Netzwerk";
     public double Weight => 0.4;
+    public int ParallelGroup => 2;
 
     public Task RunAsync(ScanContext ctx, CancellationToken ct)
     {

@@ -17,6 +17,7 @@ public sealed class UsnJournalScanModule : IScanModule
 {
     public string Name => "NTFS-Aenderungsjournal";
     public double Weight => 0.6;
+    public int ParallelGroup => 5;
 
     private int _emitted;
     private const int MaxFindings = 80;

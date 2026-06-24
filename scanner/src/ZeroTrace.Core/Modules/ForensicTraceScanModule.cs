@@ -20,6 +20,7 @@ public sealed class ForensicTraceScanModule : IScanModule
 {
     public string Name => "Forensische Spuren";
     public double Weight => 0.5;
+    public int ParallelGroup => 5;
 
     private int _emitted;
     private const int MaxFindings = 60;

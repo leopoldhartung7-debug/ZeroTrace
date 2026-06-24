@@ -15,6 +15,7 @@ public sealed class RegistryScanModule : IScanModule
 {
     public string Name => "Registry";
     public double Weight => 0.5;
+    public int ParallelGroup => 3;
 
     public Task RunAsync(ScanContext ctx, CancellationToken ct)
     {

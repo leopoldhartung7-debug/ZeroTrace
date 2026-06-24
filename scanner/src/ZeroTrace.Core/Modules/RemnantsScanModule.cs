@@ -17,6 +17,7 @@ public sealed class RemnantsScanModule : IScanModule
 {
     public string Name => "Tarnung & Reste";
     public double Weight => 0.5;
+    public int ParallelGroup => 5;
 
     private static readonly string[] NullIps = { "0.0.0.0", "127.0.0.1", "::1", "0:0:0:0:0:0:0:1" };
     private static readonly string[] AntiCheatTokens =

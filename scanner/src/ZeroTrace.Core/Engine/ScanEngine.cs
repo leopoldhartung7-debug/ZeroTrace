@@ -265,42 +265,57 @@ public sealed class ScanEngine
     private static List<IScanModule> BuildModules(ScanOptions o)
     {
         var modules = new List<IScanModule>();
+
+        // ── Group 2: fast OS-state reads ─────────────────────────────────────
+        // Consecutive same-group entries are batched into one parallel burst.
         if (o.ScanProcesses) modules.Add(new ProcessScanModule());
         if (o.ScanAutostart) modules.Add(new AutostartScanModule());
-        if (o.ScanRegistry) modules.Add(new RegistryScanModule());
-        if (o.ScanFiveM) modules.Add(new FiveMScanModule());
-        if (o.ScanDownloads) modules.Add(new DownloadsScanModule());
-        if (o.ScanBrowserHistory) modules.Add(new BrowserHistoryScanModule());
-        if (o.ScanSecurityTimeline) modules.Add(new SecurityTimelineScanModule());
-        if (o.ScanPowerShell) modules.Add(new PowerShellScanModule());
-        if (o.ScanKernelDrivers) modules.Add(new DriverScanModule());
-        if (o.ScanExecutionHistory) modules.Add(new ExecutionHistoryScanModule());
-        if (o.ScanDmaRisk) modules.Add(new DmaRiskScanModule());
-        if (o.ScanRemnants) modules.Add(new RemnantsScanModule());
-        if (o.ScanForensicTraces) modules.Add(new ForensicTraceScanModule());
-        if (o.ScanUsnJournal) modules.Add(new UsnJournalScanModule());
-        if (o.ScanNetwork) modules.Add(new NetworkScanModule());
         if (o.ScanOverlay) modules.Add(new OverlayScanModule());
+        if (o.ScanVirtualMachine) modules.Add(new VirtualMachineScanModule());
+        if (o.ScanDmaRisk) modules.Add(new DmaRiskScanModule());
+        if (o.ScanNetwork) modules.Add(new NetworkScanModule());
+        if (o.ScanNamedResources) modules.Add(new NamedResourceScanModule());
+
+        // ── Group 3: registry / WMI / driver queries ──────────────────────────
+        if (o.ScanRegistry) modules.Add(new RegistryScanModule());
         if (o.ScanWmiPersistence) modules.Add(new WmiPersistenceScanModule());
         if (o.ScanScheduledTasks) modules.Add(new ScheduledTaskScanModule());
-        if (o.ScanUsbDevices) modules.Add(new UsbDeviceScanModule());
+        if (o.ScanKernelDrivers) modules.Add(new DriverScanModule());
+        if (o.ScanHiddenDrivers) modules.Add(new HiddenDriverScanModule());
+
+        // ── Group 4: user-data file reads ────────────────────────────────────
+        if (o.ScanBrowserHistory) modules.Add(new BrowserHistoryScanModule());
+        if (o.ScanFiveM) modules.Add(new FiveMScanModule());
+        if (o.ScanDownloads) modules.Add(new DownloadsScanModule());
+        if (o.ScanPowerShell) modules.Add(new PowerShellScanModule());
+        if (o.ScanSecurityTimeline) modules.Add(new SecurityTimelineScanModule());
+
+        // ── Group 5: forensic / trace artefacts ──────────────────────────────
+        if (o.ScanForensicTraces) modules.Add(new ForensicTraceScanModule());
+        if (o.ScanRemnants) modules.Add(new RemnantsScanModule());
+        if (o.ScanUsnJournal) modules.Add(new UsnJournalScanModule());
+        if (o.ScanTamper) modules.Add(new TamperScanModule());
         if (o.ScanDllHijack) modules.Add(new DllHijackScanModule());
+
+        // ── Group 1: independent fast checks (already assigned group 1) ──────
+        if (o.ScanExecutionHistory) modules.Add(new ExecutionHistoryScanModule());
+        if (o.ScanUsbDevices) modules.Add(new UsbDeviceScanModule());
         if (o.ScanBrowserExtensions) modules.Add(new BrowserExtensionScanModule());
         if (o.ScanRootCertificates) modules.Add(new RootCertificateScanModule());
-        if (o.ScanVirtualMachine) modules.Add(new VirtualMachineScanModule());
-        if (o.ScanHiddenDrivers) modules.Add(new HiddenDriverScanModule());
-        if (o.ScanMemory) modules.Add(new MemoryScanModule());
-        if (o.ScanTamper) modules.Add(new TamperScanModule());
-        if (o.ScanDrives) modules.Add(new DriveScanModule());
-        if (o.ScanCustomStrings) modules.Add(new CustomStringsScanModule());
-        if (o.ScanSteam) modules.Add(new SteamAccountScanModule());
-        if (o.ScanDiscordGuilds) modules.Add(new DiscordScanModule());
         if (o.ScanInstalledSoftware) modules.Add(new InstalledSoftwareScanModule());
         if (o.ScanPrefetch) modules.Add(new PrefetchScanModule());
-        if (o.ScanNamedResources) modules.Add(new NamedResourceScanModule());
         if (o.ScanClipboard) modules.Add(new ClipboardScanModule());
+        if (o.ScanSteam) modules.Add(new SteamAccountScanModule());
         if (o.ScanAppData) modules.Add(new AppDataScanModule());
+
+        // ── Sequential (group 0): order-sensitive or internally parallel ──────
         if (o.ScanSuspiciousExecutables) modules.Add(new SuspiciousExecutableScanModule());
+        if (o.ScanMemory) modules.Add(new MemoryScanModule());
+        if (o.ScanDrives) modules.Add(new DriveScanModule());
+        if (o.ScanCustomStrings) modules.Add(new CustomStringsScanModule());
+        // Discord last — cross-correlates findings from all preceding modules.
+        if (o.ScanDiscordGuilds) modules.Add(new DiscordScanModule());
+
         return modules;
     }
 }

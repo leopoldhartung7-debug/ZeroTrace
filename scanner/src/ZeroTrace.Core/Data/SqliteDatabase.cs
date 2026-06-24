@@ -71,7 +71,7 @@ public sealed class SqliteDatabase
     /// </summary>
     public void SeedDefaultsIfEmpty()
     {
-        const int CurrentVersion = 4;
+        const int CurrentVersion = 5;
         using var conn = OpenConnection();
 
         // Check stored seed version.
@@ -500,6 +500,85 @@ public sealed class SqliteDatabase
             (IndicatorType.ProcessName, "pcileech",             RiskLevel.High,    "DMA-Tool",        "PCILeech-Prozess."),
             (IndicatorType.ProcessName, "yimmenu",              RiskLevel.Critical,"GTA-Cheat",       "YimMenu-Prozess."),
             (IndicatorType.ProcessName, "stand",                RiskLevel.Critical,"GTA-Cheat",       "Stand-Menu-Prozess."),
+
+            // ── Version 5: extended detection — anti-detection, new cheats ───────
+            // More FiveM / GTA menus
+            (IndicatorType.FileNameKeyword, "olympus menu",     RiskLevel.High,    "FiveM-Cheat",     "FiveM-Cheat 'Olympus'."),
+            (IndicatorType.FileNameKeyword, "baddie menu",      RiskLevel.High,    "FiveM-Cheat",     "FiveM-Cheat 'Baddie'."),
+            (IndicatorType.FileNameKeyword, "sentinel",         RiskLevel.High,    "Cheat",           "Cheat 'Sentinel'."),
+            (IndicatorType.FileNameKeyword, "horizon menu",     RiskLevel.High,    "FiveM-Cheat",     "FiveM-Cheat 'Horizon'."),
+            (IndicatorType.FileNameKeyword, "nova menu",        RiskLevel.High,    "FiveM-Cheat",     "FiveM-Cheat 'Nova'."),
+            (IndicatorType.FileNameKeyword, "devious",          RiskLevel.High,    "FiveM-Cheat",     "FiveM-Cheat 'Devious'."),
+            (IndicatorType.FileNameKeyword, "goofymenu",        RiskLevel.High,    "GTA-Cheat",       "GTA-Cheat 'GoofyMenu'."),
+            (IndicatorType.FileNameKeyword, "paragon menu",     RiskLevel.High,    "GTA-Cheat",       "GTA-Mod-Menu 'Paragon'."),
+            (IndicatorType.FileNameKeyword, "flax menu",        RiskLevel.High,    "FiveM-Cheat",     "FiveM-Cheat 'Flax'."),
+            (IndicatorType.FileNameKeyword, "zync menu",        RiskLevel.High,    "FiveM-Cheat",     "FiveM-Cheat 'Zync'."),
+            (IndicatorType.FileNameKeyword, "crxss",            RiskLevel.High,    "FiveM-Cheat",     "FiveM-Cheat 'Crxss'."),
+            // Anti-detection / streamproof / screen-capture bypass
+            (IndicatorType.FileNameKeyword, "streamproof",      RiskLevel.High,    "Anti-Detection",  "Streamproof-Tool (versteckt Fenster vor OBS/Streamlabs)."),
+            (IndicatorType.FileNameKeyword, "antiscreen",       RiskLevel.High,    "Anti-Detection",  "Anti-Screen-Capture-Tool."),
+            (IndicatorType.FileNameKeyword, "dxgi bypass",      RiskLevel.High,    "Anti-Detection",  "DXGI-Bypass (Screenshot-Schutz umgehen)."),
+            (IndicatorType.FileNameKeyword, "obs bypass",       RiskLevel.High,    "Anti-Detection",  "OBS-Bypass-Tool."),
+            (IndicatorType.FileNameKeyword, "screenshare bypass",RiskLevel.High,   "Anti-Detection",  "Screenshare-Bypass-Tool."),
+            (IndicatorType.FileNameKeyword, "hidewindow",       RiskLevel.High,    "Anti-Detection",  "Fenster-Versteck-Tool."),
+            // More HWID spoofer brands
+            (IndicatorType.FileNameKeyword, "iospoofer",        RiskLevel.High,    "Spoofer",         "IOSpoofer-HWID-Tool."),
+            (IndicatorType.FileNameKeyword, "ghostspoofer",     RiskLevel.High,    "Spoofer",         "GhostSpoofer-HWID-Tool."),
+            (IndicatorType.FileNameKeyword, "spoofer elite",    RiskLevel.High,    "Spoofer",         "Elite-Spoofer-Tool."),
+            (IndicatorType.FileNameKeyword, "kernel spoofer",   RiskLevel.High,    "Spoofer",         "Kernel-Level-Spoofer."),
+            (IndicatorType.FileNameKeyword, "easyspoofhwid",    RiskLevel.High,    "Spoofer",         "EasySpoof-HWID-Tool."),
+            // Warzone / CoD cheats
+            (IndicatorType.FileNameKeyword, "unlock all",       RiskLevel.High,    "Warzone-Cheat",   "CoD/Warzone Unlock-All-Tool."),
+            (IndicatorType.FileNameKeyword, "cod cheat",        RiskLevel.High,    "Warzone-Cheat",   "CoD-Cheat-Datei."),
+            (IndicatorType.FileNameKeyword, "godmode",          RiskLevel.Medium,  "Cheat",           "Godmode-Cheat im Dateinamen."),
+            // More injector names
+            (IndicatorType.FileNameKeyword, "sxinject",         RiskLevel.High,    "Injector",        "SX Injector."),
+            (IndicatorType.FileNameKeyword, "process inject",   RiskLevel.High,    "Injector",        "'process inject' im Dateinamen."),
+            (IndicatorType.FileNameKeyword, "ghostinject",      RiskLevel.High,    "Injector",        "Ghost Injector."),
+            // Exact file names
+            (IndicatorType.FileName, "valorhack.exe",           RiskLevel.Critical,"Valorant-Cheat",  "ValorHack-Prozess."),
+            (IndicatorType.FileName, "ringone.exe",             RiskLevel.Critical,"Apex-Cheat",      "Ringone-Apex-Cheat."),
+            (IndicatorType.FileName, "memprocfs.exe",           RiskLevel.High,    "DMA-Tool",        "MemProcFS-Tool."),
+            (IndicatorType.FileName, "pcileech.exe",            RiskLevel.High,    "DMA-Tool",        "PCILeech-Tool."),
+            // Content strings
+            (IndicatorType.ContentString, "streamproof",        RiskLevel.High,    "Anti-Detection",  "Streamproof-Modus im Datei-Inhalt."),
+            (IndicatorType.ContentString, "obs bypass",         RiskLevel.High,    "Anti-Detection",  "OBS-Bypass im Datei-Inhalt."),
+            (IndicatorType.ContentString, "hwid spoofer",       RiskLevel.High,    "Spoofer",         "HWID-Spoofer im Datei-Inhalt."),
+            (IndicatorType.ContentString, "kernel spoof",       RiskLevel.High,    "Spoofer",         "Kernel-Spoofing im Datei-Inhalt."),
+            (IndicatorType.ContentString, "shadow ban bypass",  RiskLevel.High,    "AC-Bypass",       "Shadow-Ban-Bypass im Datei-Inhalt."),
+            (IndicatorType.ContentString, "ip ban bypass",      RiskLevel.High,    "AC-Bypass",       "IP-Ban-Bypass im Datei-Inhalt."),
+            (IndicatorType.ContentString, "ring0",              RiskLevel.Critical,"Kernel-Exploit",  "Ring-0 / Kernel-Exploit im Datei-Inhalt."),
+            (IndicatorType.ContentString, "kernel exploit",     RiskLevel.Critical,"Kernel-Exploit",  "Kernel-Exploit im Datei-Inhalt."),
+            (IndicatorType.ContentString, "driver exploit",     RiskLevel.Critical,"BYOVD",           "Treiber-Exploit im Datei-Inhalt."),
+            (IndicatorType.ContentString, "dll injection",      RiskLevel.High,    "Injector",        "DLL-Injection im Datei-Inhalt."),
+            (IndicatorType.ContentString, "hide window",        RiskLevel.High,    "Anti-Detection",  "Fenster-Versteck-Technik im Datei-Inhalt."),
+            (IndicatorType.ContentString, "dxgi capture",       RiskLevel.High,    "Anti-Detection",  "DXGI-Capture-Bypass im Datei-Inhalt."),
+            (IndicatorType.ContentString, "exempt from capture",RiskLevel.High,    "Anti-Detection",  "SetWindowDisplayAffinity-Bypass im Datei-Inhalt."),
+            (IndicatorType.ContentString, "battleye undetected",RiskLevel.Critical,"AC-Bypass",       "BattlEye-Undetected-Behauptung im Datei-Inhalt."),
+            (IndicatorType.ContentString, "eac undetected",     RiskLevel.Critical,"AC-Bypass",       "EAC-Undetected im Datei-Inhalt."),
+            (IndicatorType.ContentString, "fully undetected",   RiskLevel.High,    "AC-Bypass",       "Fully-Undetected-Behauptung im Datei-Inhalt."),
+            (IndicatorType.ContentString, "fud cheat",          RiskLevel.High,    "AC-Bypass",       "FUD-Cheat-Behauptung im Datei-Inhalt."),
+            // URL domains
+            (IndicatorType.UrlDomainKeyword, "olympuscheats",   RiskLevel.High,    "Cheat-Shop",      "Olympus-Cheats-Domain."),
+            (IndicatorType.UrlDomainKeyword, "horizoncheats",   RiskLevel.High,    "Cheat-Shop",      "Horizon-Cheats-Domain."),
+            (IndicatorType.UrlDomainKeyword, "paragonmenu",     RiskLevel.High,    "Cheat-Shop",      "Paragon-Menu-Domain."),
+            (IndicatorType.UrlDomainKeyword, "cheatsquad",      RiskLevel.High,    "Cheat-Shop",      "CheatSquad-Domain."),
+            (IndicatorType.UrlDomainKeyword, "predatorcheats",  RiskLevel.High,    "Cheat-Shop",      "Predator-Cheats-Domain."),
+            (IndicatorType.UrlDomainKeyword, "streamproof",     RiskLevel.High,    "Anti-Detection",  "Streamproof-Domain."),
+            (IndicatorType.UrlDomainKeyword, "ozarkgta",        RiskLevel.High,    "Cheat-Shop",      "Ozark-GTA-Domain."),
+            (IndicatorType.UrlDomainKeyword, "undetectedcheats",RiskLevel.High,    "Cheat-Shop",      "UndetectedCheats-Domain."),
+            (IndicatorType.UrlDomainKeyword, "nocheats",        RiskLevel.High,    "Cheat-Shop",      "NoCheats/NoMercyCheats-Domain."),
+            (IndicatorType.UrlDomainKeyword, "skycheats",       RiskLevel.High,    "Cheat-Shop",      "SkyCheats-Domain."),
+            (IndicatorType.UrlDomainKeyword, "rewas",           RiskLevel.High,    "Cheat-Shop",      "Rewas-Cheat-Shop-Domain."),
+            (IndicatorType.UrlDomainKeyword, "susano",          RiskLevel.High,    "Cheat-Shop",      "Susano-FiveM-Domain."),
+            (IndicatorType.UrlDomainKeyword, "celestial",       RiskLevel.High,    "Cheat-Shop",      "Celestial-FiveM-Domain."),
+            // Process names
+            (IndicatorType.ProcessName, "valorhack",            RiskLevel.Critical,"Valorant-Cheat",  "ValorHack-Prozess."),
+            (IndicatorType.ProcessName, "ringone",              RiskLevel.Critical,"Apex-Cheat",      "Ringone-Prozess."),
+            (IndicatorType.ProcessName, "systeminformer",       RiskLevel.Medium,  "Tool",            "System Informer (Process Hacker Nachfolger)."),
+            (IndicatorType.ProcessName, "processhacker3",       RiskLevel.Medium,  "Tool",            "Process Hacker 3."),
+            (IndicatorType.ProcessName, "cheatengine",          RiskLevel.High,    "Debugger",        "Cheat Engine."),
+            (IndicatorType.ProcessName, "streamproof",          RiskLevel.High,    "Anti-Detection",  "Streamproof-Prozess."),
         };
 
         using var tx = conn.BeginTransaction();

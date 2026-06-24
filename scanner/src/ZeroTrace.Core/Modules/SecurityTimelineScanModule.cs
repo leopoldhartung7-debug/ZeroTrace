@@ -20,6 +20,7 @@ public sealed class SecurityTimelineScanModule : IScanModule
 {
     public string Name => "System & Schutz";
     public double Weight => 0.5;
+    public int ParallelGroup => 4;
 
     private const string DefenderLog = "Microsoft-Windows-Windows Defender/Operational";
     private const string SystemLog = "System";

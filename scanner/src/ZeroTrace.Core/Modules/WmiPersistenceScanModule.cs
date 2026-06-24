@@ -17,6 +17,7 @@ public sealed class WmiPersistenceScanModule : IScanModule
 {
     public string Name => "WMI-Persistenz";
     public double Weight => 0.3;
+    public int ParallelGroup => 3;
 
     public Task RunAsync(ScanContext ctx, CancellationToken ct)
     {

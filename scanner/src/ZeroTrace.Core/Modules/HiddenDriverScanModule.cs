@@ -21,6 +21,7 @@ public sealed class HiddenDriverScanModule : IScanModule
 {
     public string Name => "Versteckte Treiber";
     public double Weight => 0.5;
+    public int ParallelGroup => 3;
 
     [DllImport("ntdll.dll")]
     private static extern int NtQuerySystemInformation(

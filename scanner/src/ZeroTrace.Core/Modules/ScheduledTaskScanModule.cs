@@ -15,6 +15,7 @@ public sealed class ScheduledTaskScanModule : IScanModule
 {
     public string Name => "Geplante Aufgaben";
     public double Weight => 0.4;
+    public int ParallelGroup => 3;
 
     public Task RunAsync(ScanContext ctx, CancellationToken ct)
     {
@@ -54,6 +55,28 @@ public sealed class ScheduledTaskScanModule : IScanModule
         XDocument doc;
         try { doc = XDocument.Parse(xml); }
         catch { return; }
+
+        // Check the task's own registered name / URI against cheat indicators.
+        var taskUri = doc.Descendants()
+            .FirstOrDefault(e => e.Name.LocalName == "URI")?.Value.Trim() ?? "";
+        if (!string.IsNullOrEmpty(taskUri))
+        {
+            var uriInd = ctx.Matcher.MatchFileNameKeyword(taskUri)
+                         ?? ctx.Matcher.MatchPathKeyword(taskUri);
+            if (uriInd is not null)
+            {
+                ctx.AddFinding(new Finding
+                {
+                    Module   = Name,
+                    Title    = $"Geplante Aufgabe – Verdaechtiger Name ({uriInd.Category}): {taskUri}",
+                    Risk     = uriInd.Risk,
+                    Location = taskFile,
+                    FileName = Path.GetFileName(taskFile),
+                    Reason   = $"Name der geplanten Aufgabe '{taskUri}' entspricht Indikator " +
+                               $"'{uriInd.Pattern}'. {uriInd.Description}",
+                });
+            }
+        }
 
         // Use LocalName to handle both namespaced and non-namespaced task XMLs
         var commands = doc.Descendants()

@@ -18,6 +18,7 @@ public sealed class VirtualMachineScanModule : IScanModule
 {
     public string Name => "Virtuelle Maschine";
     public double Weight => 0.3;
+    public int ParallelGroup => 2;
 
     // Strings that appear in hardware/model/manufacturer fields of VMs.
     private static readonly (string token, string platform)[] VmTokens =

@@ -17,6 +17,7 @@ public sealed class DownloadsScanModule : IScanModule
 {
     public string Name => "Downloads";
     public double Weight => 1.0;
+    public int ParallelGroup => 4;
 
     private static readonly string[] ArchiveExtensions =
         { ".zip", ".rar", ".7z", ".gz", ".cab", ".tar", ".iso" };

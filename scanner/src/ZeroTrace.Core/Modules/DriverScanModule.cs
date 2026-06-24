@@ -18,6 +18,7 @@ public sealed class DriverScanModule : IScanModule
 {
     public string Name => "Kernel-Treiber";
     public double Weight => 0.8;
+    public int ParallelGroup => 3;
 
     private static readonly string WinDir =
         Environment.GetFolderPath(Environment.SpecialFolder.Windows);

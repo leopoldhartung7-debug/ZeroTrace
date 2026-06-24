@@ -17,6 +17,7 @@ public sealed class AutostartScanModule : IScanModule
 {
     public string Name => "Autostart";
     public double Weight => 1.0;
+    public int ParallelGroup => 2;
 
     public Task RunAsync(ScanContext ctx, CancellationToken ct)
     {

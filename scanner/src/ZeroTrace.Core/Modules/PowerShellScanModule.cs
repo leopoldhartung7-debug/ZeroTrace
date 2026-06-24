@@ -20,6 +20,7 @@ public sealed class PowerShellScanModule : IScanModule
 {
     public string Name => "PowerShell / Befehle";
     public double Weight => 0.6;
+    public int ParallelGroup => 4;
 
     // token (lower-case) -> risk + short category. Matched as a substring.
     private static readonly (string token, RiskLevel risk, string cat)[] Rules =

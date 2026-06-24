@@ -36,7 +36,7 @@ public partial class MainWindow : Window
     private bool _pinLocked;
     private string _enteredPin = "";
     private string _game = "FiveM";
-    private ScanProfile _selectedProfile = ScanProfile.Standard;
+    private ScanProfile _selectedProfile = ScanProfile.Deep;
     private DispatcherTimer? _closeTimer;
     private int _closeSecs;
 
@@ -242,7 +242,10 @@ public partial class MainWindow : Window
         // ModuleTimeoutSeconds = 0 disables the per-module time cap so a large drive
         // can be fully scanned without being cut short.
         // Quick profile skips the deep drive scan entirely.
-        if (_selectedProfile == ScanProfile.Quick)
+        // Skip Phase 2 if Quick (no deep drive scan wanted) or if Phase 1 already
+        // did a full deep drive scan (Deep profile) — no need to scan drives twice.
+        bool phase1DeepDrives = options.DeepDriveScan && options.ScanDrives;
+        if (_selectedProfile == ScanProfile.Quick || phase1DeepDrives)
         {
             OnProgress(new ScanProgress { Phase = ScanPhase.Completed, Percent = 100, Message = "Scan abgeschlossen" });
             report.Pin = _enteredPin;

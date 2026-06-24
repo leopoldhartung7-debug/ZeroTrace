@@ -17,6 +17,7 @@ public sealed class NamedResourceScanModule : IScanModule
 {
     public string Name => "Kernel-Objekte";
     public double Weight => 0.5;
+    public int ParallelGroup => 2;
 
     private static readonly string[] KnownCheatMutexes =
     {

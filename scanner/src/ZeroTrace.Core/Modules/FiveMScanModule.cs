@@ -24,6 +24,7 @@ public sealed class FiveMScanModule : IScanModule
 {
     public string Name => "GTA-MP";
     public double Weight => 1.0;
+    public int ParallelGroup => 4;
 
     private static readonly string[] InterestingSubfolders =
     {

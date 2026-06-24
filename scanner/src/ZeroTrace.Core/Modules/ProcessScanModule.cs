@@ -20,6 +20,7 @@ public sealed class ProcessScanModule : IScanModule
 {
     public string Name => "Prozesse";
     public double Weight => 2.0;
+    public int ParallelGroup => 2;
 
     private sealed record ProcRecord(
         uint Pid, uint ParentPid, string Name, string? Path, ulong WorkingSet);

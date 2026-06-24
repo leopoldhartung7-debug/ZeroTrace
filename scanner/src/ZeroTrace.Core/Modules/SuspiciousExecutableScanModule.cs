@@ -1,5 +1,5 @@
 using System.Diagnostics;
-using System.Security.Cryptography.X509Certificates;
+using ZeroTrace.Core.Detection;
 using ZeroTrace.Core.Engine;
 using ZeroTrace.Core.Models;
 
@@ -143,13 +143,6 @@ public sealed class SuspiciousExecutableScanModule : IScanModule
         return false;
     }
 
-    private static bool HasAuthenticode(string path)
-    {
-        try
-        {
-            using var cert = new X509Certificate2(X509Certificate.CreateFromSignedFile(path));
-            return cert != null;
-        }
-        catch { return false; }
-    }
+    private static bool HasAuthenticode(string path) =>
+        SignatureChecker.CheckDetailed(path).HasSignature;
 }

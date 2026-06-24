@@ -18,6 +18,7 @@ public sealed class DllHijackScanModule : IScanModule
 {
     public string Name => "DLL-Hijacking";
     public double Weight => 0.4;
+    public int ParallelGroup => 5;
 
     // System DLLs that are high-value hijacking targets in game directories.
     private static readonly HashSet<string> TargetDlls = new(StringComparer.OrdinalIgnoreCase)
