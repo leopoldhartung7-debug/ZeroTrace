@@ -448,9 +448,9 @@ export default function Login() {
     <div className="force-dark app-bg flex min-h-screen items-center justify-center px-4 py-10 text-white">
       <div
         className="pointer-events-none fixed inset-0"
-        style={{ background: 'radial-gradient(60% 50% at 50% 0%, rgba(56,189,248,0.15), transparent 70%)' }}
+        style={{ background: 'radial-gradient(60% 50% at 50% 0%, rgba(139,110,245,0.18), transparent 70%)' }}
       />
-      <div className="relative w-full max-w-md rounded-2xl border border-white/10 bg-white/[0.02] p-8 md:p-10">
+      <div className="relative w-full max-w-md rounded-2xl p-8 md:p-10" style={{ background: 'var(--panel)', border: '1px solid var(--border)', boxShadow: '0 0 60px rgba(139,110,245,0.08), var(--elev-2)' }}>
         <div className="flex flex-col items-center">
           <Logo size="lg" sub />
           <h1 className="mt-6 text-3xl font-bold">Login</h1>
@@ -499,7 +499,8 @@ export default function Login() {
 
           <button
             type="submit"
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-white py-3.5 text-sm font-semibold text-black transition-opacity hover:opacity-90"
+            className="flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-semibold text-white transition-all hover:opacity-90"
+            style={{ background: 'linear-gradient(135deg, #8b6ef5 0%, #6d28d9 100%)', boxShadow: '0 0 20px rgba(139,110,245,0.35)' }}
           >
             <LogIn size={17} /> Login
           </button>

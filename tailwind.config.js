@@ -14,28 +14,26 @@ export default {
           DEFAULT: '#1f1f1f',
           light: '#262626',
         },
-        /* Override every sky-* class with steel-silver so the whole app
-           follows the ZT logo's monochrome palette automatically */
+        /* Override sky-* with vivid violet so the whole app uses the
+           new Void Neon palette automatically. */
         sky: {
-          50:  '#f6f6fa',
-          100: '#ececf2',
-          200: '#d7dae4',
-          300: '#bcc1d4',
-          400: '#aab3cd',
-          500: '#939dbd',  // main accent — refined steel-silver
-          600: '#727b9c',  // button bg / strong accent
-          700: '#565d78',
-          800: '#3a3f56',
-          900: '#252a3c',
-          950: '#161823',
+          50:  '#f5f3ff',
+          100: '#ede9fe',
+          200: '#ddd6fe',
+          300: '#c4b5fd',
+          400: '#a78bfa',
+          500: '#8b6ef5',  // main accent — vivid violet
+          600: '#7c3aed',  // button / strong accent
+          700: '#6d28d9',
+          800: '#5b21b6',
+          900: '#4c1d95',
+          950: '#2e1065',
         },
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
         mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
       },
-      /* Medium-large rounding for the solid product look.
-         `full` is kept for pills/avatars/dots. */
       borderRadius: {
         none: '0',
         sm: '5px',
