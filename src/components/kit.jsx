@@ -7,10 +7,10 @@ export function PageHeader({ kicker, title, subtitle, actions, icon: Icon }) {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           {kicker && <p className="caps-label mb-2">{kicker}</p>}
-          <h1 className="txt flex items-center gap-3 text-2xl font-semibold tracking-tight md:text-3xl">
+          <h1 className="txt flex items-center gap-3 text-[28px] font-bold tracking-[-0.03em] md:text-4xl">
             {Icon && (
-              <span className="tile flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border shadow-[var(--elev-1)]">
-                <Icon size={18} className="text-sky-400" />
+              <span className="tile flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border shadow-[var(--elev-1)]">
+                <Icon size={19} className="text-sky-300" />
               </span>
             )}
             {title}
