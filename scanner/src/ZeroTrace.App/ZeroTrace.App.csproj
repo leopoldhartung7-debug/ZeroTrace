@@ -26,6 +26,7 @@
 
   <ItemGroup>
     <Resource Include="Resources\intro.mp4" />
+    <Resource Include="Resources\zt-logo.png" />
   </ItemGroup>
 
 </Project>

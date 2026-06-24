@@ -179,11 +179,9 @@
                     <!-- LEFT: branding -->
                     <StackPanel Grid.Column="0" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="20,0">
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                            <Grid Width="40" Height="40" Margin="0,0,12,0">
-                                <Ellipse Width="38" Height="38" Stroke="{DynamicResource ScannerAccentBrush}" StrokeThickness="2.4" />
-                                <Ellipse Width="12" Height="12" Stroke="{DynamicResource ScannerAccentBrush}" StrokeThickness="2" />
-                                <Ellipse Width="4" Height="4" Fill="{DynamicResource ScannerAccentBrush}" />
-                            </Grid>
+                            <Image Source="pack://application:,,,/Resources/zt-logo.png"
+                                   Height="40" Width="52" Margin="0,0,12,0"
+                                   Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality" />
                             <TextBlock VerticalAlignment="Center" FontSize="26" FontWeight="Bold">
                                 <Run Text="Zero" Foreground="{DynamicResource ScannerAccentBrush}" /><Run Text="Trace" Foreground="#8A9AAA" />
                             </TextBlock>
