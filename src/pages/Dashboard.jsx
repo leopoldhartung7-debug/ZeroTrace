@@ -89,23 +89,26 @@ const STAT_COLORS = {
   blue:    '#60a5fa',
 }
 
+function hexToRgba(hex, a) {
+  const r = parseInt(hex.slice(1, 3), 16)
+  const g = parseInt(hex.slice(3, 5), 16)
+  const b = parseInt(hex.slice(5, 7), 16)
+  return `rgba(${r},${g},${b},${a})`
+}
+
 function StatCard({ label, value, accent = 'neutral', icon: Icon }) {
   const c = STAT_COLORS[accent] || STAT_COLORS.neutral
   return (
     <div
-      className="relative overflow-hidden rounded-2xl border px-5 py-5 transition-all duration-200 hover:-translate-y-0.5"
+      className="relative rounded-2xl border px-5 py-5 transition-all duration-200 hover:-translate-y-0.5"
       style={{
-        background: 'var(--panel)',
+        background: `linear-gradient(145deg, ${hexToRgba(c, 0.1)} 0%, var(--panel) 45%)`,
         borderColor: 'var(--border)',
         borderTopColor: c,
         borderTopWidth: '2px',
         boxShadow: 'var(--elev-1)',
       }}
     >
-      <div
-        className="pointer-events-none absolute -right-5 -top-5 h-20 w-20 rounded-full"
-        style={{ background: c, opacity: 0.12, filter: 'blur(18px)' }}
-      />
       <div className="mb-3 flex items-center gap-2">
         {Icon && <Icon size={13} style={{ color: c }} />}
         <p className="caps-label">{label}</p>

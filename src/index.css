@@ -104,7 +104,6 @@
       radial-gradient(55% 38% at 50% 0%, rgba(139, 110, 245, 0.1), transparent 60%),
       radial-gradient(circle, rgba(139, 110, 245, 0.055) 1px, transparent 1px);
     background-size: auto, 28px 28px;
-    background-attachment: fixed;
   }
 
   .panel {
