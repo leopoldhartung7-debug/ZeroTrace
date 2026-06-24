@@ -34,6 +34,13 @@ public sealed class ScanContext
     public IndicatorMatcher Matcher { get; }
     public List<Finding> Findings { get; } = new();
 
+    /// <summary>
+    /// Shared host inventory the engine attaches to the report. Modules may
+    /// append to its collections (e.g. <c>DiscordGuilds</c>) to surface
+    /// per-account context that isn't a finding by itself.
+    /// </summary>
+    public HostInventory Inventory { get; set; } = new();
+
     private readonly IProgress<ScanProgress>? _progress;
 
     /// <summary>Raised on every added finding so the live view can stream results.</summary>

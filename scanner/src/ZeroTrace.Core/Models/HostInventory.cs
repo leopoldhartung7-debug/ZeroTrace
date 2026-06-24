@@ -36,6 +36,16 @@ public sealed class SteamAccountInfo
     public bool MostRecent { get; set; }
 }
 
+/// <summary>One Discord guild (server) the local user is a member of,
+/// recovered from the Discord client's local cache.</summary>
+public sealed class DiscordGuildInfo
+{
+    public string Name { get; set; } = "";
+    public string Id { get; set; } = "";
+    /// <summary>"clean" | "reselling" | "cheat" — set by DiscordScanModule.</summary>
+    public string Flag { get; set; } = "clean";
+}
+
 /// <summary>Virtual-machine detection result.</summary>
 public sealed class VmInfo
 {
@@ -58,4 +68,5 @@ public sealed class HostInventory
     public VmInfo Vm { get; set; } = new();
     public List<UsbInfo> UsbDevices { get; set; } = new();
     public List<SteamAccountInfo> SteamAccounts { get; set; } = new();
+    public List<DiscordGuildInfo> DiscordGuilds { get; set; } = new();
 }

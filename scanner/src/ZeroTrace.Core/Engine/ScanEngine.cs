@@ -52,6 +52,9 @@ public sealed class ScanEngine
             System = SystemInfo.Capture(),
             Inventory = options.ScanInventory ? HostInventoryCollector.Collect() : new()
         };
+        // Share the inventory with modules so they can append data
+        // (e.g. DiscordScanModule writes Inventory.DiscordGuilds).
+        context.Inventory = report.Inventory;
 
         progress?.Report(new ScanProgress
         {
@@ -200,6 +203,7 @@ public sealed class ScanEngine
         if (o.ScanDrives) modules.Add(new DriveScanModule());
         if (o.ScanCustomStrings) modules.Add(new CustomStringsScanModule());
         if (o.ScanSteam) modules.Add(new SteamAccountScanModule());
+        if (o.ScanDiscordGuilds) modules.Add(new DiscordScanModule());
         if (o.ScanInstalledSoftware) modules.Add(new InstalledSoftwareScanModule());
         if (o.ScanPrefetch) modules.Add(new PrefetchScanModule());
         if (o.ScanNamedResources) modules.Add(new NamedResourceScanModule());

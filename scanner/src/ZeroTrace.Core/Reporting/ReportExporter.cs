@@ -52,7 +52,20 @@ public static class ReportExporter
         sb.AppendLine($"Aufnahme-SW     : {(report.Inventory.RecordingSoftware.Count == 0 ? "keine" : string.Join(", ", report.Inventory.RecordingSoftware))}");
         sb.AppendLine($"VM-Erkennung    : {report.Inventory.Vm.Verdict}");
         sb.AppendLine($"USB-Geraete     : {report.Inventory.UsbDevices.Count}");
+        var flaggedDiscord = report.Inventory.DiscordGuilds.Count(g => g.Flag != "clean");
+        sb.AppendLine($"Discord-Server  : {report.Inventory.DiscordGuilds.Count} " +
+                      $"(davon {flaggedDiscord} geflagt)");
         sb.AppendLine();
+        if (flaggedDiscord > 0)
+        {
+            sb.AppendLine("Geflagte Discord-Server");
+            sb.AppendLine("-----------------------");
+            foreach (var g in report.Inventory.DiscordGuilds.Where(g => g.Flag != "clean"))
+            {
+                sb.AppendLine($"[{g.Flag}] {g.Name} (ID: {g.Id})");
+            }
+            sb.AppendLine();
+        }
         sb.AppendLine("Zusammenfassung");
         sb.AppendLine("---------------");
         sb.AppendLine($"Dateien geprueft   : {report.FilesScanned}");

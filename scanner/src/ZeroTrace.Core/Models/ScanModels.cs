@@ -55,6 +55,12 @@ public sealed class ScanOptions
     /// loginusers.vdf and checked for alt-account patterns and cheat indicators.</summary>
     public bool ScanSteam { get; set; } = true;
 
+    /// <summary>When true, the Discord client's local cache is parsed for guild
+    /// (server) memberships. Guild names are classified against cheat- and
+    /// reseller-keyword lists; matches are reported as findings and the flagged
+    /// guilds appear in the dashboard "Discord Server" panel.</summary>
+    public bool ScanDiscordGuilds { get; set; } = true;
+
     /// <summary>Scan Add/Remove Programs registry hives for known cheat tool names.</summary>
     public bool ScanInstalledSoftware { get; set; } = true;
 
@@ -171,6 +177,7 @@ public static class ScanProfiles
         ScanExecutionHistory = false,
         ScanCustomStrings = false,
         ScanSteam = false,
+        ScanDiscordGuilds = true,
         ScanKernelDrivers = false,
         ScanNamedResources = false,
         ScanClipboard = false,
