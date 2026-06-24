@@ -1,0 +1,49 @@
+; ZeroTrace Kernel Driver — Installation INF
+; Sign with: signtool sign /fd sha256 /t http://timestamp.digicert.com /f cert.pfx ZeroTraceDriver.sys
+
+[Version]
+Signature   = "$WINDOWS NT$"
+Class       = System
+ClassGUID   = {4D36E97D-E325-11CE-BFC1-08002BE10318}
+Provider    = %ManufacturerName%
+CatalogFile = ZeroTraceDriver.cat
+DriverVer   = 06/01/2025,1.0.0.0
+PnpLockDown = 1
+
+[DestinationDirs]
+DefaultDestDir = 12   ; %windir%\System32\drivers
+
+[SourceDisksNames]
+1 = %DiskId1%,,,""
+
+[SourceDisksFiles]
+ZeroTraceDriver.sys = 1,,
+
+[Manufacturer]
+%ManufacturerName% = Standard,NTamd64
+
+[Standard.NTamd64]
+%ZeroTraceDriver.DeviceDesc% = ZeroTraceDriver_Device, Root\ZeroTraceDriver
+
+[ZeroTraceDriver_Device.NT]
+CopyFiles = ZeroTraceDriver_Device.NT.Copy
+
+[ZeroTraceDriver_Device.NT.Copy]
+ZeroTraceDriver.sys
+
+[ZeroTraceDriver_Device.NT.Services]
+AddService = ZeroTrace, %SPSVCINST_ASSOCSERVICE%, ZeroTraceDriver_Service_Inst
+
+[ZeroTraceDriver_Service_Inst]
+DisplayName    = %ZeroTrace.SVCDESC%
+ServiceType    = 1               ; SERVICE_KERNEL_DRIVER
+StartType      = 3               ; SERVICE_DEMAND_START
+ErrorControl   = 1               ; SERVICE_ERROR_NORMAL
+ServiceBinary  = %12%\ZeroTraceDriver.sys
+
+[Strings]
+SPSVCINST_ASSOCSERVICE        = 0x00000002
+ManufacturerName              = "ZeroTrace"
+DiskId1                       = "ZeroTrace Driver Installation Disk"
+ZeroTraceDriver.DeviceDesc    = "ZeroTrace Anti-Cheat Kernel Driver"
+ZeroTrace.SVCDESC             = "ZeroTrace Kernel Analysis Service"

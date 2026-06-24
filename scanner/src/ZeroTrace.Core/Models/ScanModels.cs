@@ -84,6 +84,26 @@ public sealed class ScanOptions
     public bool ScanSuspiciousExecutables { get; set; } = true;
 
     /// <summary>
+    /// Compare NtQuerySystemInformation (NT kernel) vs Toolhelp32 vs WMI process lists.
+    /// Discrepancies indicate DKOM-hidden processes (rootkit / cheat loader).
+    /// </summary>
+    public bool ScanDkom { get; set; } = true;
+
+    /// <summary>
+    /// Enumerate all system-wide process handles and flag external processes with
+    /// PROCESS_VM_READ access to active game processes (external cheat pattern).
+    /// Requires elevation; skipped silently if not elevated.
+    /// </summary>
+    public bool ScanHandles { get; set; } = true;
+
+    /// <summary>
+    /// Inspect first bytes of critical ntdll.dll / win32u.dll syscall stubs.
+    /// A JMP, INT3, or other non-standard prologue indicates a syscall hook
+    /// (rootkit / anti-detection layer redirecting kernel calls).
+    /// </summary>
+    public bool ScanSyscallHooks { get; set; } = true;
+
+    /// <summary>
     /// When false (default) the drive module only walks targeted, high-signal
     /// directories (profile, temp, downloads, appdata). When true it walks the
     /// whole drive root for the configured extensions. Far slower.
@@ -183,6 +203,9 @@ public static class ScanProfiles
         ScanClipboard = false,
         ScanAppData = false,
         ScanSuspiciousExecutables = true,
+        ScanDkom = false,
+        ScanHandles = false,
+        ScanSyscallHooks = true,
         DeepDriveScan = false,
         ModuleTimeoutSeconds = 60,
     };

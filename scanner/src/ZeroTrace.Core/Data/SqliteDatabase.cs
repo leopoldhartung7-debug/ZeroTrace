@@ -71,7 +71,7 @@ public sealed class SqliteDatabase
     /// </summary>
     public void SeedDefaultsIfEmpty()
     {
-        const int CurrentVersion = 5;
+        const int CurrentVersion = 6;
         using var conn = OpenConnection();
 
         // Check stored seed version.
@@ -579,6 +579,163 @@ public sealed class SqliteDatabase
             (IndicatorType.ProcessName, "processhacker3",       RiskLevel.Medium,  "Tool",            "Process Hacker 3."),
             (IndicatorType.ProcessName, "cheatengine",          RiskLevel.High,    "Debugger",        "Cheat Engine."),
             (IndicatorType.ProcessName, "streamproof",          RiskLevel.High,    "Anti-Detection",  "Streamproof-Prozess."),
+
+            // ── Version 6: Cross-game expansion, kernel tools, EFT/Rust/R6/Apex ─
+            // ── Escape from Tarkov cheats ────────────────────────────────────────
+            (IndicatorType.FileNameKeyword, "tarkovcheat",      RiskLevel.Critical,"EFT-Cheat",       "Escape-from-Tarkov-Cheat."),
+            (IndicatorType.FileNameKeyword, "eft cheat",        RiskLevel.Critical,"EFT-Cheat",       "EFT-Cheat im Dateinamen."),
+            (IndicatorType.FileNameKeyword, "tarkov esp",       RiskLevel.Critical,"EFT-Cheat",       "EFT-ESP im Dateinamen."),
+            (IndicatorType.FileNameKeyword, "tarkov aimbot",    RiskLevel.Critical,"EFT-Cheat",       "EFT-Aimbot im Dateinamen."),
+            (IndicatorType.FileNameKeyword, "evilcheats",       RiskLevel.Critical,"EFT-Cheat",       "EvilCheats-EFT-Produkt."),
+            (IndicatorType.FileNameKeyword, "ohwow",            RiskLevel.Critical,"EFT-Cheat",       "OhWow-EFT-Cheat."),
+            (IndicatorType.FileNameKeyword, "gamerpride",       RiskLevel.High,    "EFT-Cheat",       "GamerPride-EFT-Cheat."),
+            (IndicatorType.FileNameKeyword, "exvalid",          RiskLevel.High,    "EFT-Cheat",       "ExValid-EFT-Cheat."),
+            (IndicatorType.FileNameKeyword, "escape hack",      RiskLevel.High,    "EFT-Cheat",       "Escape-Hack im Dateinamen."),
+
+            // ── Rust cheats ──────────────────────────────────────────────────────
+            (IndicatorType.FileNameKeyword, "rust hack",        RiskLevel.Critical,"Rust-Cheat",      "Rust-Cheat im Dateinamen."),
+            (IndicatorType.FileNameKeyword, "rust esp",         RiskLevel.Critical,"Rust-Cheat",      "Rust-ESP-Cheat."),
+            (IndicatorType.FileNameKeyword, "rust aimbot",      RiskLevel.Critical,"Rust-Cheat",      "Rust-Aimbot."),
+            (IndicatorType.FileNameKeyword, "rustez",           RiskLevel.High,    "Rust-Cheat",      "RustEZ-Cheat."),
+            (IndicatorType.FileNameKeyword, "rustcheats",       RiskLevel.High,    "Rust-Cheat",      "RustCheats-Dateiname."),
+            (IndicatorType.FileNameKeyword, "rustclient",       RiskLevel.Medium,  "Rust-Cheat",      "'rustclient' im Dateinamen."),
+
+            // ── Rainbow Six Siege cheats ─────────────────────────────────────────
+            (IndicatorType.FileNameKeyword, "r6 cheat",         RiskLevel.Critical,"R6-Cheat",        "R6-Siege-Cheat im Dateinamen."),
+            (IndicatorType.FileNameKeyword, "siege hack",       RiskLevel.Critical,"R6-Cheat",        "Siege-Hack im Dateinamen."),
+            (IndicatorType.FileNameKeyword, "r6 esp",           RiskLevel.High,    "R6-Cheat",        "R6-ESP-Cheat."),
+            (IndicatorType.FileNameKeyword, "r6hacks",          RiskLevel.High,    "R6-Cheat",        "R6Hacks-Dateiname."),
+            (IndicatorType.FileNameKeyword, "strike.gg",        RiskLevel.High,    "R6-Cheat",        "Strike.gg R6-Cheat."),
+
+            // ── Apex Legends cheats ───────────────────────────────────────────────
+            (IndicatorType.FileNameKeyword, "apex esp",         RiskLevel.Critical,"Apex-Cheat",      "Apex-ESP im Dateinamen."),
+            (IndicatorType.FileNameKeyword, "apex aimbot",      RiskLevel.Critical,"Apex-Cheat",      "Apex-Aimbot im Dateinamen."),
+            (IndicatorType.FileNameKeyword, "apexhacks",        RiskLevel.High,    "Apex-Cheat",      "ApexHacks-Dateiname."),
+            (IndicatorType.FileNameKeyword, "predatorlegends",  RiskLevel.High,    "Apex-Cheat",      "PredatorLegends-Apex-Cheat."),
+            (IndicatorType.FileNameKeyword, "apex cheat",       RiskLevel.Critical,"Apex-Cheat",      "Apex-Cheat im Dateinamen."),
+
+            // ── Fortnite cheats ───────────────────────────────────────────────────
+            (IndicatorType.FileNameKeyword, "fn cheat",         RiskLevel.High,    "Fortnite-Cheat",  "Fortnite-Cheat im Dateinamen."),
+            (IndicatorType.FileNameKeyword, "fortnite esp",     RiskLevel.High,    "Fortnite-Cheat",  "Fortnite-ESP im Dateinamen."),
+            (IndicatorType.FileNameKeyword, "fn aimbot",        RiskLevel.High,    "Fortnite-Cheat",  "Fortnite-Aimbot im Dateinamen."),
+            (IndicatorType.FileNameKeyword, "hydranx",          RiskLevel.High,    "Fortnite-Cheat",  "Hydranx-Fortnite-Cheat."),
+            (IndicatorType.FileNameKeyword, "fn hack",          RiskLevel.High,    "Fortnite-Cheat",  "Fortnite-Hack im Dateinamen."),
+
+            // ── DayZ cheats ───────────────────────────────────────────────────────
+            (IndicatorType.FileNameKeyword, "dayz cheat",       RiskLevel.High,    "DayZ-Cheat",      "DayZ-Cheat im Dateinamen."),
+            (IndicatorType.FileNameKeyword, "dayz esp",         RiskLevel.High,    "DayZ-Cheat",      "DayZ-ESP im Dateinamen."),
+            (IndicatorType.FileNameKeyword, "dayz hack",        RiskLevel.High,    "DayZ-Cheat",      "DayZ-Hack im Dateinamen."),
+
+            // ── Battlefield cheats ────────────────────────────────────────────────
+            (IndicatorType.FileNameKeyword, "bf2042 cheat",     RiskLevel.High,    "BF-Cheat",        "Battlefield 2042 Cheat."),
+            (IndicatorType.FileNameKeyword, "bf esp",           RiskLevel.High,    "BF-Cheat",        "Battlefield-ESP im Dateinamen."),
+
+            // ── More BYOVD vulnerable drivers ─────────────────────────────────────
+            (IndicatorType.FileName, "AsrDrv104.sys",           RiskLevel.Critical,"BYOVD-Treiber",   "ASRock-Treiber – BYOVD-Exploit."),
+            (IndicatorType.FileName, "AsrDrv106.sys",           RiskLevel.Critical,"BYOVD-Treiber",   "ASRock-Treiber v106 – BYOVD."),
+            (IndicatorType.FileName, "nvflash64.sys",           RiskLevel.Critical,"BYOVD-Treiber",   "NVIDIA-Flash-Treiber – BYOVD."),
+            (IndicatorType.FileName, "ProcExp152.sys",          RiskLevel.High,    "Tool",            "Process-Explorer-Treiber."),
+            (IndicatorType.FileName, "ene.sys",                 RiskLevel.High,    "BYOVD-Treiber",   "ENE-Treiber – BYOVD."),
+            (IndicatorType.FileName, "inpoutx64.sys",           RiskLevel.High,    "BYOVD-Treiber",   "InpOut x64-Treiber – BYOVD."),
+            (IndicatorType.FileName, "hwinfo64a.sys",           RiskLevel.High,    "BYOVD-Treiber",   "HWiNFO64-Treiber – potenziell BYOVD."),
+            (IndicatorType.FileName, "amdppm.sys",              RiskLevel.High,    "BYOVD-Treiber",   "AMD-PPM-Treiber – BYOVD."),
+            (IndicatorType.FileName, "WinIo64.sys",             RiskLevel.Critical,"BYOVD-Treiber",   "WinIO64-Treiber – BYOVD."),
+            (IndicatorType.FileName, "IObitUnlocker.sys",       RiskLevel.High,    "BYOVD-Treiber",   "IOBit-Unlocker-Treiber – missbraucht."),
+            (IndicatorType.FileName, "cpuz141.sys",             RiskLevel.Critical,"BYOVD-Treiber",   "CPU-Z-Treiber – BYOVD (sehr haeufig)."),
+            (IndicatorType.FileName, "cpuz_x64.sys",            RiskLevel.Critical,"BYOVD-Treiber",   "CPU-Z x64-Treiber – BYOVD."),
+            (IndicatorType.FileName, "ZemanaAM.sys",            RiskLevel.High,    "BYOVD-Treiber",   "Zemana-AM-Treiber – BYOVD-missbraucht."),
+            (IndicatorType.FileName, "MTi4Win64.sys",           RiskLevel.High,    "BYOVD-Treiber",   "MSI-Treiber – BYOVD."),
+
+            // ── Kernel tool keywords ───────────────────────────────────────────────
+            (IndicatorType.FileNameKeyword, "cpuz",             RiskLevel.High,    "BYOVD-Treiber",   "CPU-Z-Treiber-Datei (haeufig fuer BYOVD verwendet)."),
+            (IndicatorType.FileNameKeyword, "asrdrv",           RiskLevel.High,    "BYOVD-Treiber",   "ASRock-Treiber-Datei – BYOVD."),
+            (IndicatorType.FileNameKeyword, "drvsys",           RiskLevel.Medium,  "Kernel-Tool",     "'drvsys' im Dateinamen – verdaechtige Treiberdatei."),
+            (IndicatorType.FileNameKeyword, "cheatdrv",         RiskLevel.Critical,"Cheat-Treiber",   "'cheatdrv' Cheat-Kernel-Treiber."),
+            (IndicatorType.FileNameKeyword, "hackdrv",          RiskLevel.Critical,"Cheat-Treiber",   "'hackdrv' Hack-Kernel-Treiber."),
+
+            // ── DMA / Hardware cheat tools ────────────────────────────────────────
+            (IndicatorType.FileNameKeyword, "fpga cheat",       RiskLevel.Critical,"DMA-Cheat",       "FPGA-DMA-Cheat im Dateinamen."),
+            (IndicatorType.FileNameKeyword, "dma memory",       RiskLevel.High,    "DMA-Cheat",       "DMA-Memory-Tool im Dateinamen."),
+            (IndicatorType.FileNameKeyword, "pciedma",          RiskLevel.High,    "DMA-Cheat",       "PCIe-DMA-Cheat-Tool."),
+            (IndicatorType.FileNameKeyword, "screamer",         RiskLevel.High,    "DMA-Tool",        "Screamer-PCIe-DMA-Tool (von externen Cheats genutzt)."),
+            (IndicatorType.FileNameKeyword, "dmaspy",           RiskLevel.High,    "DMA-Tool",        "DMA-Spy-Tool."),
+
+            // ── More cheat content strings ────────────────────────────────────────
+            (IndicatorType.ContentString, "tarkov cheat",       RiskLevel.Critical,"EFT-Cheat",       "Tarkov-Cheat im Datei-Inhalt."),
+            (IndicatorType.ContentString, "eft esp",            RiskLevel.Critical,"EFT-Cheat",       "EFT-ESP im Datei-Inhalt."),
+            (IndicatorType.ContentString, "loot esp",           RiskLevel.High,    "EFT-Cheat",       "Loot-ESP (EFT-typisch) im Datei-Inhalt."),
+            (IndicatorType.ContentString, "pmclist",            RiskLevel.High,    "EFT-Cheat",       "'pmclist' (EFT-Spieler-Liste) im Datei-Inhalt."),
+            (IndicatorType.ContentString, "rust aimbot",        RiskLevel.Critical,"Rust-Cheat",      "Rust-Aimbot im Datei-Inhalt."),
+            (IndicatorType.ContentString, "rust esp",           RiskLevel.High,    "Rust-Cheat",      "Rust-ESP im Datei-Inhalt."),
+            (IndicatorType.ContentString, "harvest nodes",      RiskLevel.High,    "Rust-Cheat",      "'harvest nodes' – Rust-Node-ESP im Datei-Inhalt."),
+            (IndicatorType.ContentString, "r6 esp",             RiskLevel.High,    "R6-Cheat",        "R6-ESP im Datei-Inhalt."),
+            (IndicatorType.ContentString, "apex aimbot",        RiskLevel.Critical,"Apex-Cheat",      "Apex-Aimbot im Datei-Inhalt."),
+            (IndicatorType.ContentString, "apex esp",           RiskLevel.High,    "Apex-Cheat",      "Apex-ESP im Datei-Inhalt."),
+            (IndicatorType.ContentString, "fortnite aimbot",    RiskLevel.High,    "Fortnite-Cheat",  "Fortnite-Aimbot im Datei-Inhalt."),
+            (IndicatorType.ContentString, "epicgames bypass",   RiskLevel.Critical,"AC-Bypass",       "Epic-Games-Anti-Cheat-Bypass im Datei-Inhalt."),
+            (IndicatorType.ContentString, "dma read",           RiskLevel.High,    "DMA-Cheat",       "'dma read' im Datei-Inhalt (DMA-Cheat-API)."),
+            (IndicatorType.ContentString, "fpga mem",           RiskLevel.High,    "DMA-Cheat",       "FPGA-Speicher-Zugriff im Datei-Inhalt."),
+            (IndicatorType.ContentString, "pci device read",    RiskLevel.High,    "DMA-Cheat",       "PCI-Device-Read (DMA) im Datei-Inhalt."),
+            (IndicatorType.ContentString, "scatter read",       RiskLevel.High,    "DMA-Cheat",       "'scatter read' – DMA-Cheat-Technik im Datei-Inhalt."),
+            (IndicatorType.ContentString, "byovd",              RiskLevel.Critical,"BYOVD",           "BYOVD-Token im Datei-Inhalt."),
+
+            // ── More anti-detection & hooking strings ─────────────────────────────
+            (IndicatorType.ContentString, "ssdt hook",          RiskLevel.Critical,"Rootkit",         "SSDT-Hook im Datei-Inhalt (Kernel-Rootkit)."),
+            (IndicatorType.ContentString, "dkom",               RiskLevel.Critical,"Rootkit",         "DKOM-Technik im Datei-Inhalt (Prozess verstecken)."),
+            (IndicatorType.ContentString, "eprocess",           RiskLevel.High,    "Kernel-Exploit",  "EPROCESS-Zugriff im Datei-Inhalt (Kernel-Manipulation)."),
+            (IndicatorType.ContentString, "nt!_eprocess",       RiskLevel.Critical,"Kernel-Exploit",  "EPROCESS-Kernel-Struktur-Zugriff im Datei-Inhalt."),
+            (IndicatorType.ContentString, "ActiveProcessLinks", RiskLevel.Critical,"Rootkit",         "Direkter Kernel-Listenzeiger-Zugriff – DKOM-Technik."),
+            (IndicatorType.ContentString, "PsLoadedModuleList", RiskLevel.Critical,"Rootkit",         "Kernel-Modullisten-Zugriff (Treiber verstecken)."),
+            (IndicatorType.ContentString, "KeServiceDescriptorTable",RiskLevel.Critical,"Rootkit",    "SSDT-Tabellen-Zugriff im Datei-Inhalt."),
+            (IndicatorType.ContentString, "ntcreatethread",     RiskLevel.High,    "Injector",        "NtCreateThread-Injektionstechnik im Datei-Inhalt."),
+            (IndicatorType.ContentString, "readprocessmemory",  RiskLevel.High,    "Externer-Cheat",  "ReadProcessMemory im Datei-Inhalt (externer Cheat)."),
+            (IndicatorType.ContentString, "openprocess vm_read",RiskLevel.High,    "Externer-Cheat",  "OpenProcess+VM_READ im Datei-Inhalt."),
+            (IndicatorType.ContentString, "virtualprotect ex",  RiskLevel.High,    "Injector",        "VirtualProtectEx – Remote-Memory-Manipulation."),
+            (IndicatorType.ContentString, "disable page protection",RiskLevel.Critical,"Kernel-Exploit","Page-Schutz deaktivieren im Datei-Inhalt."),
+            (IndicatorType.ContentString, "patchguard bypass",  RiskLevel.Critical,"Kernel-Exploit",  "PatchGuard-Bypass im Datei-Inhalt."),
+            (IndicatorType.ContentString, "kpp bypass",         RiskLevel.Critical,"Kernel-Exploit",  "Kernel-Patch-Protection-Bypass im Datei-Inhalt."),
+
+            // ── More known exact cheat / tool file names ──────────────────────────
+            (IndicatorType.FileName, "evilcheats.dll",          RiskLevel.Critical,"EFT-Cheat",       "EvilCheats-EFT-DLL."),
+            (IndicatorType.FileName, "ohwow.dll",               RiskLevel.Critical,"EFT-Cheat",       "OhWow-EFT-DLL."),
+            (IndicatorType.FileName, "gamerpride.exe",          RiskLevel.Critical,"EFT-Cheat",       "GamerPride-EFT-Launcher."),
+            (IndicatorType.FileName, "striker.exe",             RiskLevel.High,    "R6-Cheat",        "Striker-R6-Cheat."),
+            (IndicatorType.FileName, "predatorlegends.exe",     RiskLevel.Critical,"Apex-Cheat",      "PredatorLegends-Apex-Cheat."),
+            (IndicatorType.FileName, "rustez.exe",              RiskLevel.Critical,"Rust-Cheat",      "RustEZ-Cheat-Launcher."),
+            (IndicatorType.FileName, "cpuz141_x64.sys",         RiskLevel.Critical,"BYOVD-Treiber",   "CPU-Z 1.41 Treiber – haeufig bei BYOVD-Angriffen."),
+            (IndicatorType.FileName, "winio64.sys",             RiskLevel.Critical,"BYOVD-Treiber",   "WinIO64 – BYOVD-Exploit."),
+
+            // ── Additional process names ───────────────────────────────────────────
+            (IndicatorType.ProcessName, "evilcheats",           RiskLevel.Critical,"EFT-Cheat",       "EvilCheats-Prozess."),
+            (IndicatorType.ProcessName, "ohwow",                RiskLevel.Critical,"EFT-Cheat",       "OhWow-EFT-Prozess."),
+            (IndicatorType.ProcessName, "gamerpride",           RiskLevel.Critical,"EFT-Cheat",       "GamerPride-Prozess."),
+            (IndicatorType.ProcessName, "predatorlegends",      RiskLevel.Critical,"Apex-Cheat",      "PredatorLegends-Prozess."),
+            (IndicatorType.ProcessName, "rustez",               RiskLevel.Critical,"Rust-Cheat",      "RustEZ-Prozess."),
+            (IndicatorType.ProcessName, "r5apex",               RiskLevel.Low,     "Game",            "Apex-Legends-Spielprozess (Zielerfassung)."),
+            (IndicatorType.ProcessName, "KDU",                  RiskLevel.Critical,"Kernel-Tool",     "Kernel-Driver-Utility (KDU) – BYOVD-Tool."),
+            (IndicatorType.ProcessName, "kdmapper",             RiskLevel.Critical,"Manual-Mapper",   "KDMapper-Prozess."),
+            (IndicatorType.ProcessName, "TitanHide",            RiskLevel.Critical,"Anti-Debug",      "TitanHide-Rootkit-Debugger-Hide."),
+            (IndicatorType.ProcessName, "ScyllaHide",           RiskLevel.High,    "Anti-Debug",      "ScyllaHide-Plugin (anti-debugger)."),
+            (IndicatorType.ProcessName, "dmaspy",               RiskLevel.High,    "DMA-Tool",        "DMASpy-Prozess."),
+
+            // ── More URL domains ──────────────────────────────────────────────────
+            (IndicatorType.UrlDomainKeyword, "evilcheats",      RiskLevel.Critical,"EFT-Cheat-Shop",  "EvilCheats-Domain (EFT)."),
+            (IndicatorType.UrlDomainKeyword, "ohwow",           RiskLevel.Critical,"EFT-Cheat-Shop",  "OhWow-Domain (EFT)."),
+            (IndicatorType.UrlDomainKeyword, "gamerpride",      RiskLevel.Critical,"EFT-Cheat-Shop",  "GamerPride-Domain."),
+            (IndicatorType.UrlDomainKeyword, "rustez",          RiskLevel.Critical,"Rust-Cheat-Shop", "RustEZ-Domain."),
+            (IndicatorType.UrlDomainKeyword, "apexhacks",       RiskLevel.High,    "Apex-Cheat-Shop", "ApexHacks-Domain."),
+            (IndicatorType.UrlDomainKeyword, "r6hacks",         RiskLevel.High,    "R6-Cheat-Shop",   "R6Hacks-Domain."),
+            (IndicatorType.UrlDomainKeyword, "hydranx",         RiskLevel.High,    "Fortnite-Cheat",  "Hydranx-Domain."),
+            (IndicatorType.UrlDomainKeyword, "predatorlegends", RiskLevel.High,    "Apex-Cheat-Shop", "PredatorLegends-Domain."),
+            (IndicatorType.UrlDomainKeyword, "exvalid",         RiskLevel.High,    "EFT-Cheat-Shop",  "ExValid-Domain (EFT)."),
+            (IndicatorType.UrlDomainKeyword, "strike.gg",       RiskLevel.High,    "R6-Cheat-Shop",   "Strike.gg (R6 Siege)."),
+            (IndicatorType.UrlDomainKeyword, "gamerspride",     RiskLevel.High,    "EFT-Cheat-Shop",  "GamersPride-Domain."),
+            (IndicatorType.UrlDomainKeyword, "pcileech",        RiskLevel.High,    "DMA-Tool",        "PCILeech-Domain (DMA-Tool)."),
+            (IndicatorType.UrlDomainKeyword, "memprocfs",       RiskLevel.High,    "DMA-Tool",        "MemProcFS-Domain."),
+            (IndicatorType.UrlDomainKeyword, "ddlcheats",       RiskLevel.High,    "Cheat-Shop",      "DDLCheats-Domain."),
+            (IndicatorType.UrlDomainKeyword, "sxcheats",        RiskLevel.High,    "Cheat-Shop",      "SxCheats-Domain."),
+            (IndicatorType.UrlDomainKeyword, "zerobypass",      RiskLevel.High,    "AC-Bypass",       "ZeroBypass-Domain."),
+            (IndicatorType.UrlDomainKeyword, "skycheats",       RiskLevel.High,    "Cheat-Shop",      "SkyCheats-Domain."),
         };
 
         using var tx = conn.BeginTransaction();

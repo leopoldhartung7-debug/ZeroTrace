@@ -275,6 +275,9 @@ public sealed class ScanEngine
         if (o.ScanDmaRisk) modules.Add(new DmaRiskScanModule());
         if (o.ScanNetwork) modules.Add(new NetworkScanModule());
         if (o.ScanNamedResources) modules.Add(new NamedResourceScanModule());
+        if (o.ScanSyscallHooks) modules.Add(new SyscallHookScanModule());
+        if (o.ScanDkom) modules.Add(new DkomScanModule());
+        if (o.ScanHandles) modules.Add(new HandleScanModule());
 
         // ── Group 3: registry / WMI / driver queries ──────────────────────────
         if (o.ScanRegistry) modules.Add(new RegistryScanModule());
