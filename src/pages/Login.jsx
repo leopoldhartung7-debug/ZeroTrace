@@ -24,7 +24,10 @@ export default function Login() {
   const [inputCode, setInputCode] = useState('')
   const [checking, setChecking] = useState(false)
   const [discordOpen, setDiscordOpen] = useState(false)
-  const [discordIdInput, setDiscordIdInput] = useState('')
+  const [discordForm, setDiscordForm] = useState({ email: '', pw: '' })
+  const [discordShowPw, setDiscordShowPw] = useState(false)
+  const [discordChecking, setDiscordChecking] = useState(false)
+  const [discordError, setDiscordError] = useState('')
   const [passkeyOpen, setPasskeyOpen] = useState(false)
   const [passkeyUsername, setPasskeyUsername] = useState('')
   const [passkeyChecking, setPasskeyChecking] = useState(false)
@@ -279,20 +282,23 @@ export default function Login() {
     return true
   }
 
-  const submitDiscordLogin = () => {
-    const id = discordIdInput.trim()
-    if (!/^\d{17,20}$/.test(id)) {
-      toast({ type: 'error', title: 'Invalid Discord ID', body: 'Enter your 17–20 digit Discord user ID.' })
-      return
-    }
-    const user = (state.users || []).find((u) => u.discordId === id)
+  const submitDiscordLogin = async () => {
+    const email = discordForm.email.trim().toLowerCase()
+    const pw = discordForm.pw
+    if (!email || !pw) { setDiscordError('Please enter your email and password.'); return }
+    setDiscordError('')
+    setDiscordChecking(true)
+    await new Promise((r) => setTimeout(r, 1400))
+    setDiscordChecking(false)
+    const user = (state.users || []).find((u) => (u.email || '').toLowerCase() === email)
     if (!user) {
-      toast({ type: 'error', title: 'No account found', body: 'No account is linked to this Discord ID.' })
+      setDiscordError('Login failed. Invalid email or password.')
       return
     }
     if (loginAsUser(user)) {
       setDiscordOpen(false)
-      setDiscordIdInput('')
+      setDiscordForm({ email: '', pw: '' })
+      setDiscordError('')
     }
   }
 
@@ -488,7 +494,7 @@ export default function Login() {
 
         <div className="grid grid-cols-2 gap-3">
           <button
-            onClick={() => { setDiscordIdInput(''); setDiscordOpen(true) }}
+            onClick={() => { setDiscordForm({ email: '', pw: '' }); setDiscordError(''); setDiscordOpen(true) }}
             className="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] py-3 text-sm font-medium hover:bg-white/[0.06]"
           >
             <span className="text-[#5865F2]">◆</span> Discord
@@ -633,44 +639,111 @@ export default function Login() {
         )}
       </Modal>
 
-      <Modal
-        open={discordOpen}
-        onClose={() => { setDiscordOpen(false); setDiscordIdInput('') }}
-        title="Sign in with Discord"
-        footer={
-          <button
-            onClick={submitDiscordLogin}
-            disabled={discordIdInput.length < 17}
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#5865F2] px-4 py-3 text-sm font-semibold text-white hover:bg-[#4752C4] disabled:opacity-50"
+      {discordOpen && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.85)' }}>
+          <div
+            className="relative w-full max-w-[480px] rounded-[5px] p-8 shadow-2xl"
+            style={{ background: '#313338', fontFamily: '"gg sans","Noto Sans",Helvetica,Arial,sans-serif' }}
           >
-            <span>◆</span> Continue with Discord
-          </button>
-        }
-      >
-        <div className="space-y-4 text-sm">
-          <div className="flex items-center gap-3 rounded-xl border border-[#5865F2]/30 bg-[#5865F2]/10 px-4 py-3">
-            <span className="text-2xl text-[#5865F2]">◆</span>
-            <div>
-              <p className="font-medium text-white">Link your Discord account</p>
-              <p className="text-xs text-neutral-400">Enter the Discord user ID that is linked to your account.</p>
-            </div>
-          </div>
-          <div>
-            <label className="mb-1.5 block text-xs font-medium text-neutral-400">Your Discord User ID</label>
-            <input
-              autoFocus
-              value={discordIdInput}
-              onChange={(e) => setDiscordIdInput(e.target.value.replace(/\D/g, '').slice(0, 20))}
-              placeholder="e.g. 145481082291945490"
-              className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 font-mono text-sm placeholder:text-neutral-600 focus:border-[#5865F2] focus:outline-none"
-              onKeyDown={(e) => e.key === 'Enter' && submitDiscordLogin()}
-            />
-            <p className="mt-1.5 text-[11px] text-neutral-500">
-              Enable Developer Mode in Discord → Settings → Advanced, then right-click your name → Copy User ID.
-            </p>
+            {discordChecking ? (
+              <div className="flex flex-col items-center gap-5 py-10">
+                <div className="relative">
+                  <div className="absolute inset-0 animate-ping rounded-full" style={{ background: 'rgba(88,101,242,0.25)' }} />
+                  <div className="relative rounded-full p-4" style={{ background: 'rgba(88,101,242,0.15)' }}>
+                    <span style={{ fontSize: 40, color: '#5865F2' }}>◆</span>
+                  </div>
+                </div>
+                <p style={{ color: '#B5BAC1', fontSize: 14 }}>Authorizing with Discord…</p>
+              </div>
+            ) : (
+              <>
+                <div className="mb-5 flex flex-col items-center gap-1">
+                  <span style={{ fontSize: 32, color: '#5865F2', marginBottom: 4 }}>◆</span>
+                  <h2 style={{ color: '#F2F3F5', fontSize: 24, fontWeight: 700, margin: 0 }}>Welcome back!</h2>
+                  <p style={{ color: '#B5BAC1', fontSize: 14, margin: 0 }}>We're so excited to see you again!</p>
+                </div>
+
+                <form
+                  onSubmit={(e) => { e.preventDefault(); submitDiscordLogin() }}
+                  className="space-y-4"
+                >
+                  {discordError && (
+                    <div style={{ background: 'rgba(237,66,69,0.15)', border: '1px solid rgba(237,66,69,0.4)', borderRadius: 4, padding: '8px 12px', color: '#ED4245', fontSize: 13 }}>
+                      {discordError}
+                    </div>
+                  )}
+                  <div>
+                    <label style={{ display: 'block', color: '#B5BAC1', fontSize: 12, fontWeight: 700, letterSpacing: '0.02em', textTransform: 'uppercase', marginBottom: 8 }}>
+                      Email or Phone Number <span style={{ color: '#ED4245' }}>*</span>
+                    </label>
+                    <input
+                      autoFocus
+                      type="email"
+                      value={discordForm.email}
+                      onChange={(e) => setDiscordForm((f) => ({ ...f, email: e.target.value }))}
+                      style={{ width: '100%', background: '#1E1F22', border: 'none', borderRadius: 3, color: '#DBDEE1', fontSize: 16, padding: '10px', outline: 'none', boxSizing: 'border-box' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', color: '#B5BAC1', fontSize: 12, fontWeight: 700, letterSpacing: '0.02em', textTransform: 'uppercase', marginBottom: 8 }}>
+                      Password <span style={{ color: '#ED4245' }}>*</span>
+                    </label>
+                    <div style={{ position: 'relative' }}>
+                      <input
+                        type={discordShowPw ? 'text' : 'password'}
+                        value={discordForm.pw}
+                        onChange={(e) => setDiscordForm((f) => ({ ...f, pw: e.target.value }))}
+                        style={{ width: '100%', background: '#1E1F22', border: 'none', borderRadius: 3, color: '#DBDEE1', fontSize: 16, padding: '10px 40px 10px 10px', outline: 'none', boxSizing: 'border-box' }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setDiscordShowPw((v) => !v)}
+                        style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#B5BAC1', padding: 0, display: 'flex' }}
+                      >
+                        {discordShowPw ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </button>
+                    </div>
+                    <button
+                      type="button"
+                      style={{ marginTop: 4, background: 'none', border: 'none', cursor: 'pointer', color: '#00A8FC', fontSize: 13, padding: 0 }}
+                    >
+                      Forgot your password?
+                    </button>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={!discordForm.email || !discordForm.pw}
+                    style={{
+                      width: '100%', background: '#5865F2', border: 'none', borderRadius: 3,
+                      color: '#fff', fontSize: 16, fontWeight: 500, padding: '11px', cursor: 'pointer',
+                      marginTop: 4, opacity: (!discordForm.email || !discordForm.pw) ? 0.5 : 1,
+                      transition: 'background 0.15s',
+                    }}
+                    onMouseOver={(e) => { if (discordForm.email && discordForm.pw) e.currentTarget.style.background = '#4752C4' }}
+                    onMouseOut={(e) => { e.currentTarget.style.background = '#5865F2' }}
+                  >
+                    Log In
+                  </button>
+                </form>
+
+                <p style={{ marginTop: 8, color: '#B5BAC1', fontSize: 13 }}>
+                  Need an account?{' '}
+                  <span style={{ color: '#00A8FC', cursor: 'pointer' }}>Register</span>
+                </p>
+
+                <button
+                  type="button"
+                  onClick={() => { setDiscordOpen(false); setDiscordError('') }}
+                  style={{ position: 'absolute', top: 12, right: 14, background: 'none', border: 'none', cursor: 'pointer', color: '#B5BAC1', fontSize: 20, lineHeight: 1, padding: 4 }}
+                >
+                  ✕
+                </button>
+              </>
+            )}
           </div>
         </div>
-      </Modal>
+      )}
 
       <Modal
         open={passkeyOpen}
