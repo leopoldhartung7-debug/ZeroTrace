@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using ZeroTrace.Core.Detection;
 using ZeroTrace.Core.Engine;
 using ZeroTrace.Core.Models;
@@ -65,11 +66,51 @@ public sealed class ScanContext
     public long ProcessesScanned => Interlocked.Read(ref _processes);
     public long RegistryKeysScanned => Interlocked.Read(ref _registryKeys);
 
+    // Cached process snapshot for the duration of one scan: modules calling
+    // GetProcessSnapshot() share the same enumeration result instead of
+    // re-querying the kernel. Process.GetProcesses() takes 50–200ms each
+    // call on a typical machine — 30+ modules sharing one snapshot saves
+    // 1.5–6 seconds of pure enumeration time. Ocean/detect.ac use the same
+    // pattern (single SystemProcessInformation snapshot per scan).
+    private Process[]? _processSnapshot;
+    private readonly object _processSnapshotLock = new();
+
     public ScanContext(ScanOptions options, IndicatorMatcher matcher, IProgress<ScanProgress>? progress)
     {
         Options = options;
         Matcher = matcher;
         _progress = progress;
+    }
+
+    /// <summary>
+    /// Returns the cached process snapshot for this scan. The first caller
+    /// triggers enumeration; subsequent callers reuse the result. Safe to
+    /// call from parallel modules.
+    /// </summary>
+    public Process[] GetProcessSnapshot()
+    {
+        if (_processSnapshot is not null) return _processSnapshot;
+        lock (_processSnapshotLock)
+        {
+            return _processSnapshot ??= Process.GetProcesses();
+        }
+    }
+
+    /// <summary>
+    /// Disposes the cached process snapshot. Called by the engine at scan
+    /// completion so process handles don't leak between scans.
+    /// </summary>
+    internal void DisposeProcessSnapshot()
+    {
+        lock (_processSnapshotLock)
+        {
+            if (_processSnapshot is null) return;
+            foreach (var p in _processSnapshot)
+            {
+                try { p.Dispose(); } catch { }
+            }
+            _processSnapshot = null;
+        }
     }
 
     public void IncrementFiles(long by = 1) => Interlocked.Add(ref _files, by);

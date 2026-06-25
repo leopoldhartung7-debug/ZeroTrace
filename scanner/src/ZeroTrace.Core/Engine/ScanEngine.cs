@@ -66,6 +66,25 @@ public sealed class ScanEngine
         HashUtil.ClearCache();
         SignatureChecker.ClearCache();
 
+        // Boost the scanner process to High priority for the duration of the
+        // scan: lets I/O-bound modules get CPU time when the system is busy
+        // (game running in background, AC services contesting). This is the
+        // same trick Ocean/detect.ac use to keep scans fast without throttling.
+        // We restore the original priority in finally so we never leave the
+        // scanner running at High when the user exits.
+        System.Diagnostics.ProcessPriorityClass? originalPriority = null;
+        try
+        {
+            using var self = System.Diagnostics.Process.GetCurrentProcess();
+            originalPriority = self.PriorityClass;
+            if (originalPriority != System.Diagnostics.ProcessPriorityClass.High &&
+                originalPriority != System.Diagnostics.ProcessPriorityClass.RealTime)
+            {
+                self.PriorityClass = System.Diagnostics.ProcessPriorityClass.High;
+            }
+        }
+        catch { /* priority set may fail without elevation — ignore */ }
+
         double totalWeight = modules.Sum(m => m.Weight);
         double consumed = 0;
 
@@ -99,9 +118,11 @@ public sealed class ScanEngine
                     context.Report(0, $"Parallel: {string.Join(", ", phase.Select(m => m.Name))}");
 
                     // Most modules are I/O-bound (registry, file reads, P/Invoke into kernel
-                    // queries). 2× ProcessorCount keeps CPUs fed during I/O waits — matches
-                    // the parallelism Ocean/detect.ac use for fast scan completion.
-                    var concurrency = Math.Min(phase.Count, Environment.ProcessorCount * 2);
+                    // queries). 3× ProcessorCount keeps CPUs fed during I/O waits — matches
+                    // the parallelism Ocean/detect.ac use for fast scan completion. The cap
+                    // ensures even an 8-module phase on a 4-core machine runs all 8 at once
+                    // (no queueing), since most are blocked on registry/file I/O anyway.
+                    var concurrency = Math.Min(phase.Count, Environment.ProcessorCount * 3);
                     using var sem = new SemaphoreSlim(concurrency);
                     var tasks = phase.Select(m => RunOneInParallelAsync(
                         m, context, options, sem, ct)).ToArray();
@@ -128,6 +149,22 @@ public sealed class ScanEngine
                 Reason = "Unerwarteter Fehler in der Scan-Engine: " + ex.Message
             });
         }
+
+        // Restore the original process priority so the host doesn't stay at High.
+        if (originalPriority.HasValue)
+        {
+            try
+            {
+                using var self = System.Diagnostics.Process.GetCurrentProcess();
+                if (self.PriorityClass != originalPriority.Value)
+                    self.PriorityClass = originalPriority.Value;
+            }
+            catch { }
+        }
+
+        // Release cached process handles held in the snapshot for the duration
+        // of the scan. Prevents handle exhaustion across many back-to-back scans.
+        context.DisposeProcessSnapshot();
 
         report.FinishedUtc = DateTime.UtcNow;
         report.FilesScanned = context.FilesScanned;

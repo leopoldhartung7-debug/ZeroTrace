@@ -1299,7 +1299,11 @@ public static class ScanProfiles
         // No per-module timeout — every module runs to completion. Slow memory
         // walks, full drive scans, and hash baselines are never cut off mid-scan.
         ModuleTimeoutSeconds = 0,
-        MaxDepth = 20,
+        // Practical recursion ceiling: real-world cheat installs never nest
+        // deeper than ~5–7 levels. 14 covers every observed cheat layout with
+        // huge margin and skips the long tail of node_modules / package-cache
+        // trees that 20 would walk for nothing.
+        MaxDepth = 14,
     };
 
     public static ScanOptions FromProfile(ScanProfile profile) => profile switch
