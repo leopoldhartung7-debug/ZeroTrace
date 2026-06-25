@@ -846,6 +846,24 @@ public sealed class ScanOptions
     /// the originals. Uses DeviceIoControl(FSCTL_GET_REPARSE_POINT) to read targets.</summary>
     public bool ScanNtfsReparsePoints { get; set; } = true;
 
+    /// <summary>Detect misuse of Windows Subsystem for Linux (WSL) for cheat execution.
+    /// Checks installed WSL distributions for suspicious names, scans WSL rootfs paths
+    /// for known cheat binary names, and detects running WSL processes with suspicious
+    /// command lines. WSL-based cheats evade Windows AC by running in the Linux kernel.</summary>
+    public bool ScanWslAbuse { get; set; } = true;
+
+    /// <summary>Scan game configuration files (CS2 autoexec.cfg, Apex Legends local.cfg,
+    /// Battlefield PROF_SAVE_profile, etc.) for cheat-enabling CVars like r_drawothermodels,
+    /// mat_wireframe, enable_skeleton_draw, and universal cheat keywords. Also scans
+    /// Steam userdata per-game cfg directories.</summary>
+    public bool ScanGameConfigCheats { get; set; } = true;
+
+    /// <summary>Detect layered+transparent overlay windows from non-legitimate processes
+    /// (classic ESP/radar overlay pattern) and processes with hook-related characteristics
+    /// that could install WH_KEYBOARD_LL/WH_MOUSE_LL hooks for triggerbot/no-recoil.
+    /// Uses EnumWindows + GetWindowLongPtr(GWL_EXSTYLE) for overlay detection.</summary>
+    public bool ScanGlobalInputHooks { get; set; } = true;
+
     /// <summary>
     /// When false (default) the drive module only walks targeted, high-signal
     /// directories (profile, temp, downloads, appdata). When true it walks the
@@ -1099,6 +1117,9 @@ public static class ScanProfiles
         ScanKnownCheatMutexExt = true,        // NtQueryDirectoryObject — fast
         ScanCheatToolRegistryArtifacts = true, // registry artifact scan — fast
         ScanNtfsReparsePoints = false,         // filesystem walk — slow
+        ScanWslAbuse = true,                   // registry + process check — fast
+        ScanGameConfigCheats = false,          // game cfg file walk — slow
+        ScanGlobalInputHooks = true,           // EnumWindows + process enum — fast
         DeepDriveScan = false,
         ModuleTimeoutSeconds = 60,
     };

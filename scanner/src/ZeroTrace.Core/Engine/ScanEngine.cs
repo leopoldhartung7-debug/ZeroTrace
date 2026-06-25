@@ -308,6 +308,7 @@ public sealed class ScanEngine
         if (o.ScanSeDebugPrivilege) modules.Add(new SeDebugPrivilegeActiveScanModule());
         if (o.ScanProcessMitigations) modules.Add(new ProcessMitigationAnomalyScanModule());
         if (o.ScanKnownCheatMutexExt) modules.Add(new KnownCheatMutexExtScanModule());
+        if (o.ScanGlobalInputHooks) modules.Add(new GlobalKeyboardMouseHookScanModule());
 
         // ── Group 3: registry / WMI / driver queries ──────────────────────────
         if (o.ScanRegistry) modules.Add(new RegistryScanModule());
@@ -362,6 +363,7 @@ public sealed class ScanEngine
         if (o.ScanHkcuAppInitDlls) modules.Add(new HkcuAppInitDllsScanModule());
         if (o.ScanCompatibilityLayerBypass) modules.Add(new CompatibilityLayerBypassScanModule());
         if (o.ScanCheatToolRegistryArtifacts) modules.Add(new CheatToolRegistryArtifactsScanModule());
+        if (o.ScanWslAbuse) modules.Add(new WindowsSubsystemLinuxAbuseScanModule());
         if (o.ScanWmiPersistence) modules.Add(new WmiPersistenceScanModule());
         if (o.ScanScheduledTasks) modules.Add(new ScheduledTaskScanModule());
         if (o.ScanKernelDrivers) modules.Add(new DriverScanModule());
@@ -402,6 +404,7 @@ public sealed class ScanEngine
         if (o.ScanBepInExDoorstop) modules.Add(new BepInExDoorstopScanModule());
         if (o.ScanSteamEmulators) modules.Add(new SteamEmulatorDetectionScanModule());
         if (o.ScanNtfsReparsePoints) modules.Add(new NtfsReparsePointScanModule());
+        if (o.ScanGameConfigCheats) modules.Add(new GameConfigCheatCommandScanModule());
         if (o.ScanSteam) modules.Add(new SteamAccountScanModule());
         if (o.ScanAppData) modules.Add(new AppDataScanModule());
         if (o.ScanShellbags) modules.Add(new ShellbagScanModule());
