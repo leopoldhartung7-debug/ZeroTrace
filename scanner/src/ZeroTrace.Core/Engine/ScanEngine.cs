@@ -302,6 +302,8 @@ public sealed class ScanEngine
         if (o.ScanScreenCaptureBlocking) modules.Add(new ScreenCaptureBlockingScanModule());
         if (o.ScanKernelPoolTags) modules.Add(new KernelPoolTagForensicScanModule());
         if (o.ScanJobObjectRestrictions) modules.Add(new ProcessJobObjectScanModule());
+        if (o.ScanDeletedProcessBinary) modules.Add(new DeletedProcessBinaryScanModule());
+        if (o.ScanNetworkGameServerSnoop) modules.Add(new NetworkGameServerSnoopScanModule());
 
         // ── Group 3: registry / WMI / driver queries ──────────────────────────
         if (o.ScanRegistry) modules.Add(new RegistryScanModule());
@@ -344,6 +346,7 @@ public sealed class ScanEngine
         if (o.ScanRegistryTimestamps) modules.Add(new RegistryKeyTimestampScanModule());
         if (o.ScanLspProviders) modules.Add(new LspProviderScanModule());
         if (o.ScanCorProfilerInjection) modules.Add(new CorProfilerInjectionScanModule());
+        if (o.ScanInputDeviceFilter) modules.Add(new InputDeviceFilterScanModule());
         if (o.ScanWmiPersistence) modules.Add(new WmiPersistenceScanModule());
         if (o.ScanScheduledTasks) modules.Add(new ScheduledTaskScanModule());
         if (o.ScanKernelDrivers) modules.Add(new DriverScanModule());

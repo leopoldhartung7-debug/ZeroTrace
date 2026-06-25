@@ -681,6 +681,27 @@ public sealed class ScanOptions
     /// modifying function bytes.</summary>
     public bool ScanExportAddressTableHooks { get; set; } = true;
 
+    /// <summary>Detect running processes whose executable file on disk has been deleted:
+    /// a self-deleting cheat loader that launches, maps itself, then deletes its disk copy
+    /// to prevent forensic analysis. Queries the image path of every process and verifies
+    /// the file still exists on disk. Also flags processes running with suspicious file
+    /// extensions (.tmp, .dat) indicating file-extension camouflage.</summary>
+    public bool ScanDeletedProcessBinary { get; set; } = true;
+
+    /// <summary>Detect suspicious input device filter drivers and virtual HID devices used
+    /// for aimbot/no-recoil automation: inspects HKLM\Services for Interception, vJoy, ViGEm,
+    /// Logitech filter abuse; HID class filters (UpperFilters/LowerFilters) for kernel-level
+    /// input interception drivers; and HID device enumeration for virtual mouse/keyboard devices
+    /// that inject hardware-level synthetic input events bypassing software AC hooks.</summary>
+    public bool ScanInputDeviceFilter { get; set; } = true;
+
+    /// <summary>Detect network-based ESP/radar cheats: enumerate all TCP connections and
+    /// identify non-game, non-system processes connecting to the same remote IP addresses
+    /// as the active game process. External radar cheats duplicate game server connections
+    /// to receive game state packets — any unexpected process sharing a game server IP is
+    /// highly suspicious. Also detects suspicious UDP socket ownership patterns.</summary>
+    public bool ScanNetworkGameServerSnoop { get; set; } = true;
+
     /// <summary>
     /// When false (default) the drive module only walks targeted, high-signal
     /// directories (profile, temp, downloads, appdata). When true it walks the
@@ -912,6 +933,9 @@ public static class ScanProfiles
         ScanKernelPoolTags = true,          // NtQuerySystemInformation class 5 — fast
         ScanJobObjectRestrictions = true,   // IsProcessInJob + job query — fast
         ScanExportAddressTableHooks = false, // process EAT read — slow
+        ScanDeletedProcessBinary = true,    // process + file stat — fast
+        ScanInputDeviceFilter = true,       // registry — fast
+        ScanNetworkGameServerSnoop = true,  // IP helper API — fast
         DeepDriveScan = false,
         ModuleTimeoutSeconds = 60,
     };
