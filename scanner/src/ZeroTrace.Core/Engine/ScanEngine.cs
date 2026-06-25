@@ -521,6 +521,10 @@ public sealed class ScanEngine
         if (o.ScanScreenCaptureCheat) modules.Add(new ScreenCaptureCheatScanModule());
         if (o.ScanCheatDebugAnalysis) modules.Add(new CheatDebugAnalysisToolScanModule());
         if (o.ScanVirtualMachineCheat) modules.Add(new VirtualMachineCheatScanModule());
+        if (o.ScanFortniteWarzoneCheat) modules.Add(new FortniteWarzoneCheatScanModule());
+        if (o.ScanRobloxExploit) modules.Add(new RobloxExploitScanModule());
+        if (o.ScanCheatTrainerKeygen) modules.Add(new CheatTrainerKeygenScanModule());
+        if (o.ScanWindowsEventLogTamper) modules.Add(new WindowsEventLogTamperScanModule());
 
         // ── Group 5: forensic / trace artefacts ──────────────────────────────
         if (o.ScanForensicTraces) modules.Add(new ForensicTraceScanModule());

@@ -1135,6 +1135,22 @@ public sealed class ScanOptions
     /// (sandbox cheat isolation); RDP enabled + game running; DMA cheat tools (pcileech/dma_cheat);
     /// Python network+memory relay scripts (DMA-over-network pattern).</summary>
     public bool ScanVirtualMachineCheat { get; set; } = true;
+    /// <summary>Scan Fortnite and Warzone (CoD) installation directories, AppData paths, and process
+    /// signatures for cheat executables, aimbot DLLs, ESP overlays, memory editor remnants, radar
+    /// hack configs, and kernel-driver cheat artifacts specific to both titles.</summary>
+    public bool ScanFortniteWarzoneCheat { get; set; } = true;
+    /// <summary>Scan Roblox for exploit injectors (Synapse X, Krnl, Fluxus, Script-Ware, etc.),
+    /// Lua executor traces, DLL injection artifacts, executor AppData folders, and keybind scripts
+    /// used to trigger speed/fly/noclip exploits in Roblox's sandbox environment.</summary>
+    public bool ScanRobloxExploit { get; set; } = true;
+    /// <summary>Scan for standalone cheat trainers and keygen/crack utilities bundled with cheats:
+    /// trainer process names, trainer window titles, keygen directories, serial-generating payloads,
+    /// hardware-ID bypass keygen artifacts, license patcher remnants, and trainer GUI frameworks.</summary>
+    public bool ScanCheatTrainerKeygen { get; set; } = true;
+    /// <summary>Scan Windows Event Log infrastructure for evidence of tampering: cleared Security/System
+    /// logs, disabled audit policies, event-log service manipulation, wevtutil-based clearing commands
+    /// in PowerShell history, and log-size rollover abuse used to hide cheat activity.</summary>
+    public bool ScanWindowsEventLogTamper { get; set; } = true;
 
     /// <summary>Scan game directories (Steam, Epic, user-specified) for BepInEx, Unity Doorstop,
     /// and MelonLoader code injection frameworks. Detects: doorstop_config.ini (enabled=true),
@@ -1863,6 +1879,10 @@ public static class ScanProfiles
         ScanScreenCaptureCheat = true,        // AI aimbot Python/ONNX/triggerbot scan — fast
         ScanCheatDebugAnalysis = true,        // IDA/x64dbg/ReClass/cheat src/RE artifacts — fast
         ScanVirtualMachineCheat = true,       // VM software + game + DMA cheat tool scan — fast
+        ScanFortniteWarzoneCheat = true,      // Fortnite/Warzone cheat EXE/DLL/AppData scan — fast
+        ScanRobloxExploit = true,             // Roblox exploit injector/executor artifact scan — fast
+        ScanCheatTrainerKeygen = true,        // standalone trainer + keygen/crack artifact scan — fast
+        ScanWindowsEventLogTamper = true,     // event log clearing/audit policy tamper scan — fast
         DeepDriveScan = false,
         // No per-module timeout — every Quick module runs to completion. Quick stays
         // fast because slow modules are individually disabled above, not because they
