@@ -557,6 +557,18 @@ public sealed class ScanEngine
         if (o.ScanRainbowSixSiegeCheat) modules.Add(new RainbowSixSiegeCheatScanModule());
         if (o.ScanMinecraftCheatDeep) modules.Add(new MinecraftCheatDeepScanModule());
         if (o.ScanAimbotMouseSignature) modules.Add(new AimbotMouseSignatureScanModule());
+        if (o.ScanBattlefieldCheat) modules.Add(new BattlefieldCheatScanModule());
+        if (o.ScanOverwatchCheat) modules.Add(new OverwatchCheatScanModule());
+        if (o.ScanWarzoneCheatDeep) modules.Add(new WarzoneCheatDeepScanModule());
+        if (o.ScanCounterStrike2Cheat) modules.Add(new CounterStrike2CheatScanModule());
+        if (o.ScanApexLegendsCheat) modules.Add(new ApexLegendsCheatScanModule());
+        if (o.ScanValorantCheat) modules.Add(new ValorantCheatScanModule());
+        if (o.ScanDota2Cheat) modules.Add(new Dota2CheatScanModule());
+        if (o.ScanLeagueOfLegendsCheat) modules.Add(new LeagueOfLegendsCheatScanModule());
+        if (o.ScanPubgCheat) modules.Add(new PubgCheatScanModule());
+        if (o.ScanKernelRootkitDetection) modules.Add(new KernelRootkitDetectionScanModule());
+        if (o.ScanUefiSecureBootBypass) modules.Add(new UefiSecureBootBypassScanModule());
+        if (o.ScanAntiVirusEvasionArtifact) modules.Add(new AntiVirusEvasionArtifactScanModule());
         if (o.ScanCheatSourceCodeRepo) modules.Add(new CheatSourceCodeRepoScanModule());
 
         // ── Group 5: forensic / trace artefacts ──────────────────────────────

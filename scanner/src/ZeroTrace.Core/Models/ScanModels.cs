@@ -1300,6 +1300,18 @@ public sealed class ScanOptions
     /// AHK/AutoIt recoil scripts, Logitech G-Hub/Razer Synapse macro scripts, Arduino/Raspberry Pi
     /// HID aimbot sketches, Cronus Zen .gpc scripts, and Xim Apex adapter configs.</summary>
     public bool ScanAimbotMouseSignature { get; set; } = true;
+    public bool ScanBattlefieldCheat { get; set; } = true;
+    public bool ScanOverwatchCheat { get; set; } = true;
+    public bool ScanWarzoneCheatDeep { get; set; } = true;
+    public bool ScanCounterStrike2Cheat { get; set; } = true;
+    public bool ScanApexLegendsCheat { get; set; } = true;
+    public bool ScanValorantCheat { get; set; } = true;
+    public bool ScanDota2Cheat { get; set; } = true;
+    public bool ScanLeagueOfLegendsCheat { get; set; } = true;
+    public bool ScanPubgCheat { get; set; } = true;
+    public bool ScanKernelRootkitDetection { get; set; } = true;
+    public bool ScanUefiSecureBootBypass { get; set; } = true;
+    public bool ScanAntiVirusEvasionArtifact { get; set; } = true;
     /// <summary>Detect cheat source code and development artifacts: .git repos with cheat remote
     /// URLs, Visual Studio cheat projects (.sln/.vcxproj with cheat keywords), compiled build
     /// artifacts (cheat.pdb, x64/Release DLLs), game SDK directories, offset header files,
@@ -2069,6 +2081,18 @@ public static class ScanProfiles
         ScanRainbowSixSiegeCheat = true,        // R6 Siege cheat/Vulkan layer/IFEO scan — fast
         ScanMinecraftCheatDeep = true,          // Minecraft hacked client/mod/log scan — fast
         ScanAimbotMouseSignature = true,        // aimbot EXE/config/AHK/Arduino/Cronus scan — fast
+        ScanBattlefieldCheat = true,            // Battlefield 2042/BF1/BFV/BF4 cheat scan
+        ScanOverwatchCheat = true,              // Overwatch 2 / Warden bypass scan
+        ScanWarzoneCheatDeep = true,            // Warzone/MW2/MW3 / RICOCHET bypass scan
+        ScanCounterStrike2Cheat = true,         // CS2/CSGO cheat / VAC bypass scan
+        ScanApexLegendsCheat = true,            // Apex Legends / EAC bypass scan
+        ScanValorantCheat = true,               // Valorant / Vanguard bypass scan
+        ScanDota2Cheat = true,                  // Dota 2 cheat / maphack scan
+        ScanLeagueOfLegendsCheat = true,        // League of Legends / Vanguard bypass scan
+        ScanPubgCheat = true,                   // PUBG / BattlEye bypass scan
+        ScanKernelRootkitDetection = true,      // kernel rootkit artifact scan
+        ScanUefiSecureBootBypass = true,        // UEFI bootkit / secure boot bypass scan
+        ScanAntiVirusEvasionArtifact = true,    // AV/EDR evasion artifact scan
         ScanCheatSourceCodeRepo = true,        // cheat git repo/VS project/SDK/PDB artifact scan — fast
         DeepDriveScan = false,
         // No per-module timeout — every Quick module runs to completion. Quick stays
