@@ -1160,6 +1160,10 @@ public sealed class ScanOptions
     /// SHA-256/MD5 hash signatures for confirmed cheat tools, injectors, trainers, and bypass DLLs.
     /// Flags files whose hashes match known-bad signatures regardless of filename obfuscation.</summary>
     public bool ScanCheatHashSignature { get; set; } = true;
+    /// <summary>Scan running processes, AppData, and common install directories for crypto miners
+    /// (XMRig, PhoenixMiner, T-Rex, lolMiner) bundled with cheat software, plus miner persistence
+    /// entries, pool config files, and disguised miner EXEs dropped by cheat installers.</summary>
+    public bool ScanCryptoMiner { get; set; } = true;
 
     /// <summary>Scan game directories (Steam, Epic, user-specified) for BepInEx, Unity Doorstop,
     /// and MelonLoader code injection frameworks. Detects: doorstop_config.ini (enabled=true),
@@ -1894,6 +1898,7 @@ public static class ScanProfiles
         ScanWindowsEventLogTamper = true,     // event log clearing/audit policy tamper scan — fast
         ScanAmsiBypassArtifact = true,        // AMSI patch/registry bypass + reflective DLL scan — fast
         ScanCheatHashSignature = true,        // SHA-256/MD5 hash database match scan — fast
+        ScanCryptoMiner = true,               // bundled miner EXE/config/persistence scan — fast
         DeepDriveScan = false,
         // No per-module timeout — every Quick module runs to completion. Quick stays
         // fast because slow modules are individually disabled above, not because they
