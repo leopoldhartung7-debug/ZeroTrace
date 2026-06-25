@@ -1240,6 +1240,14 @@ public sealed class ScanOptions
     /// x64dbg anti-detect plugins, ReClass.NET projects, Frida instrumentation, Cheat Engine
     /// DBKernel.sys, heap flag (NtGlobalFlag) patch configs, and exception handler abuse.</summary>
     public bool ScanAntiDebugBypassArtifact { get; set; } = true;
+    /// <summary>Detect GTA Online mod menus (70+ names: 2Take1, Stand, Cherax, Orbital, Kiddion,
+    /// Menyoo, Lynx, Hamster etc.), money recovery/drop tools, stat editors, recovery service
+    /// configs, Social Club bypass DLLs, GTAV scripts folder cheats, and modded GTAV builds.</summary>
+    public bool ScanGtaOnlineModder { get; set; } = true;
+    /// <summary>Deep HWID spoofer detection: 60+ spoofer EXE names, spoofer driver files outside
+    /// System32, MachineGuid/SMBIOS/disk serial/NIC MAC spoofing registry artifacts, VolumeID tool,
+    /// SMAC/Technitium MAC changer, EFI SMBIOS editors (AmideWin64), and spoofer GitHub repos.</summary>
+    public bool ScanHwidSpoofDeep { get; set; } = true;
     /// <summary>Detect cheat source code and development artifacts: .git repos with cheat remote
     /// URLs, Visual Studio cheat projects (.sln/.vcxproj with cheat keywords), compiled build
     /// artifacts (cheat.pdb, x64/Release DLLs), game SDK directories, offset header files,
@@ -1996,6 +2004,8 @@ public static class ScanProfiles
         ScanHypervisorCheatDetection = true,   // PCILeech/DMA/FPGA/Qemu hypervisor cheat scan — fast
         ScanVanguardBypass = true,             // vgk/vgc service/BYOVD/DSE bypass scan — fast
         ScanAntiDebugBypassArtifact = true,    // ScyllaHide/TitanHide/Frida/CE anti-debug scan — fast
+        ScanGtaOnlineModder = true,            // GTA Online mod menu/recovery/stat editor scan — fast
+        ScanHwidSpoofDeep = true,              // 60+ spoofer EXE/driver/registry artifact scan — fast
         ScanCheatSourceCodeRepo = true,        // cheat git repo/VS project/SDK/PDB artifact scan — fast
         DeepDriveScan = false,
         // No per-module timeout — every Quick module runs to completion. Quick stays
