@@ -888,6 +888,27 @@ public sealed class ScanOptions
     /// was activated for a cheat subscription. Primary forensic evidence used by Ocean/detect.ac.</summary>
     public bool ScanCheatLicenseArtifacts { get; set; } = true;
 
+    /// <summary>Scan browser Cookies SQLite databases for cheat forum/marketplace session cookies
+    /// (unknowncheats.me, mpgh.net, hackforums.net, gamesense.pub, onetap.com, aimware.net, etc.);
+    /// browser Local Storage LevelDB for cheat shop auth tokens; Downloads/Desktop for archives with
+    /// cheat forum naming patterns (UC_, MPGH_, cheat_release, esp_release, _leaked). Cookies persist
+    /// after history deletion and are a primary Ocean/detect.ac forensic source.</summary>
+    public bool ScanCheatForumArtifacts { get; set; } = true;
+
+    /// <summary>Detect mouse/keyboard firmware anomalies and hardware cheat devices: Arduino/Teensy/
+    /// Raspberry Pi Pico (RP2040) registered as USB HID devices (no-recoil MCU controllers); XIM Apex/
+    /// Matrix/Nexus (controller-to-mouse converters with aim assist bypass); Titan One/Two (GPC script
+    /// controllers for rapid-fire/anti-recoil); ReaSnow S1 and Brook UFB adapters. VID:PID matches in
+    /// USB/HID registry persist after device is unplugged — primary forensic source.</summary>
+    public bool ScanMouseFirmwareAnomaly { get; set; } = true;
+
+    /// <summary>Deep HWID spoofer artifact scan beyond basic HwidSpoofer: known spoofer EXE files
+    /// (HWID_Spoofer.exe, Boreal.exe, AbyssRipper.exe, MAC_Spoofer.exe, TMAC.exe); NIC registry
+    /// NetworkAddress override entries (MAC address manually set = MAC spoofer active); duplicate
+    /// MAC addresses across adapters (cloning); spoofer-named directories in AppData; spoofer
+    /// registry artifacts (Technitium MAC Changer, Boreal keys); spoofers in Add/Remove Programs.</summary>
+    public bool ScanSpooferArtifacts { get; set; } = true;
+
     /// <summary>Scan game directories (Steam, Epic, user-specified) for BepInEx, Unity Doorstop,
     /// and MelonLoader code injection frameworks. Detects: doorstop_config.ini (enabled=true),
     /// winhttp.dll Doorstop proxy in game root, BepInEx/plugins/ DLLs with cheat keywords,
@@ -1583,6 +1604,9 @@ public static class ScanProfiles
         ScanKernelCodesignBypass = true,      // NtQuerySysInfo + registry — fast
         ScanDmaCheatInfrastructure = true,    // PCI registry + process + file stat — fast
         ScanCheatLicenseArtifacts = false,    // recursive file walk — slow
+        ScanCheatForumArtifacts = true,       // cookie DB byte-grep + Downloads stat — bounded
+        ScanMouseFirmwareAnomaly = true,      // USB/HID registry scan — fast
+        ScanSpooferArtifacts = true,          // file stat + NIC registry + installed software — fast
         DeepDriveScan = false,
         // No per-module timeout — every Quick module runs to completion. Quick stays
         // fast because slow modules are individually disabled above, not because they

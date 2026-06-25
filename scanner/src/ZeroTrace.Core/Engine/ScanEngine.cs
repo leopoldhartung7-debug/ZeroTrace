@@ -440,6 +440,8 @@ public sealed class ScanEngine
         if (o.ScanAntiCheatTelemetryBlock) modules.Add(new AntiCheatTelemetryBlockScanModule());
         if (o.ScanKernelCodesignBypass) modules.Add(new KernelDriverCodesignBypassScanModule());
         if (o.ScanDmaCheatInfrastructure) modules.Add(new DmaCheatInfrastructureScanModule());
+        if (o.ScanMouseFirmwareAnomaly) modules.Add(new MouseFirmwareAnomalyScanModule());
+        if (o.ScanSpooferArtifacts) modules.Add(new SpooferArtifactScanModule());
         if (o.ScanWslAbuse) modules.Add(new WindowsSubsystemLinuxAbuseScanModule());
         if (o.ScanEfiVariables) modules.Add(new EfiVariableAnomalyScanModule());
         if (o.ScanSuspiciousNetworkAdapters) modules.Add(new SuspiciousNetworkAdapterScanModule());
@@ -489,6 +491,7 @@ public sealed class ScanEngine
         if (o.ScanGameSaveCheatMods) modules.Add(new GameSaveCheatModScanModule());
         if (o.ScanScreenRecordingArtifacts) modules.Add(new ScreenRecordingCheatArtifactScanModule());
         if (o.ScanCheatLicenseArtifacts) modules.Add(new CheatLicenseKeygenScanModule());
+        if (o.ScanCheatForumArtifacts) modules.Add(new CheatCommunityForumScanModule());
 
         // ── Group 5: forensic / trace artefacts ──────────────────────────────
         if (o.ScanForensicTraces) modules.Add(new ForensicTraceScanModule());
