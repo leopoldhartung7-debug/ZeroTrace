@@ -1071,6 +1071,31 @@ public sealed class ScanOptions
     /// Workshop content DLL/cheat-keyword file scan.</summary>
     public bool ScanSteamApiHook { get; set; } = true;
 
+    /// <summary>Valorant/Vanguard-specific cheat detection: 22 known cheat EXE names + 6 DLL names
+    /// on disk, Vanguard vgc/vgk service Start=4 disable in registry, vgk.sys size anomaly,
+    /// bypass tool EXEs for Vanguard (vanguard_bypass/vgc_killer etc.), PowerShell history for
+    /// sc/net stop vgc, Valorant AppData config cheat keys, Riot Games log injection keywords,
+    /// recoil/aim AHK+Python scripts, running process check against 25 cheat names, and Prefetch
+    /// artifacts. Covers the full ecosystem of Vanguard kernel AC evasion tools.</summary>
+    public bool ScanValorantCheat { get; set; } = true;
+
+    /// <summary>Network-layer cheat infrastructure detection: hosts file blocking of anti-cheat
+    /// domains (Vanguard/EAC/BattlEye/FACEIT/CFX) and cheat license server redirects, Windows
+    /// Firewall rules blocking anti-cheat connections, DNS cache cheat domain artifacts, proxy
+    /// settings with suspicious ports + installed VPN software (Mullvad/NordVPN/ExpressVPN etc.),
+    /// MTU tampering, TCP/IP interface DNS suffix overrides for cheat C2, and recent payload
+    /// downloads with cheat-name patterns in Temp/Downloads.</summary>
+    public bool ScanNetworkC2Cheat { get; set; } = true;
+
+    /// <summary>Binary cheat signature scan on the file system: reads first 512 bytes of EXE/DLL
+    /// files in Downloads/Desktop/Temp for embedded cheat brand strings (eulen/aimware/skeet/
+    /// kiddion/2take1/stand/cherax etc.), reads up to 2MB per file for anti-cheat bypass strings
+    /// (vanguard bypass/eac bypass/disable anticheat) and cheat feature strings (aimbot active/
+    /// esp enabled/wallhack on), checks DLL export name tables for InitCheat/BypassAC/DisableEAC
+    /// exports, detects obfuscated loaders (PE-in-image, hex-name EXEs, no-version-info EXEs),
+    /// and scans config files for 3+ cheat feature keys.</summary>
+    public bool ScanMemoryCheatSignature { get; set; } = true;
+
     /// <summary>Scan game directories (Steam, Epic, user-specified) for BepInEx, Unity Doorstop,
     /// and MelonLoader code injection frameworks. Detects: doorstop_config.ini (enabled=true),
     /// winhttp.dll Doorstop proxy in game root, BepInEx/plugins/ DLLs with cheat keywords,
@@ -1790,6 +1815,9 @@ public static class ScanProfiles
         ScanKernelTamperingArtifact = true,   // ETW/DKOM/BYOVD/DSE/ELAM artifact scan — fast
         ScanCheatMarketplaceArtifact = true,  // loader/license/brand AppData/browser history — fast
         ScanSteamApiHook = true,              // steamclient size/emulator/GameOverlay/SAM — fast
+        ScanValorantCheat = true,             // Vanguard service/bypass/recoil/process scan — fast
+        ScanNetworkC2Cheat = true,            // hosts/firewall/VPN/DNS/proxy tamper scan — fast
+        ScanMemoryCheatSignature = true,      // binary brand/bypass/export/obfuscation scan — fast
         DeepDriveScan = false,
         // No per-module timeout — every Quick module runs to completion. Quick stays
         // fast because slow modules are individually disabled above, not because they

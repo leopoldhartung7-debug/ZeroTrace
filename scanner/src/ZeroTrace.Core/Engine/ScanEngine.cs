@@ -513,6 +513,9 @@ public sealed class ScanEngine
         if (o.ScanKernelTamperingArtifact) modules.Add(new KernelTamperingArtifactScanModule());
         if (o.ScanCheatMarketplaceArtifact) modules.Add(new CheatMarketplaceArtifactScanModule());
         if (o.ScanSteamApiHook) modules.Add(new SteamApiHookScanModule());
+        if (o.ScanValorantCheat) modules.Add(new ValorantCheatScanModule());
+        if (o.ScanNetworkC2Cheat) modules.Add(new NetworkC2CheatScanModule());
+        if (o.ScanMemoryCheatSignature) modules.Add(new MemoryCheatSignatureScanModule());
 
         // ── Group 5: forensic / trace artefacts ──────────────────────────────
         if (o.ScanForensicTraces) modules.Add(new ForensicTraceScanModule());
