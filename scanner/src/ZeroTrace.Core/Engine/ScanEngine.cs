@@ -347,6 +347,8 @@ public sealed class ScanEngine
         if (o.ScanLspProviders) modules.Add(new LspProviderScanModule());
         if (o.ScanCorProfilerInjection) modules.Add(new CorProfilerInjectionScanModule());
         if (o.ScanInputDeviceFilter) modules.Add(new InputDeviceFilterScanModule());
+        if (o.ScanUacBypassArtifacts) modules.Add(new UacBypassArtifactScanModule());
+        if (o.ScanAntiCheatServiceIntegrity) modules.Add(new AntiCheatServiceIntegrityScanModule());
         if (o.ScanWmiPersistence) modules.Add(new WmiPersistenceScanModule());
         if (o.ScanScheduledTasks) modules.Add(new ScheduledTaskScanModule());
         if (o.ScanKernelDrivers) modules.Add(new DriverScanModule());
@@ -438,6 +440,7 @@ public sealed class ScanEngine
         if (o.ScanDebuggerAttach) modules.Add(new DebuggerAttachDetectionScanModule());
         if (o.ScanStagedShellcode) modules.Add(new StagedShellcodeDetectionScanModule());
         if (o.ScanExportAddressTableHooks) modules.Add(new ExportAddressTableHookScanModule());
+        if (o.ScanPackedModules) modules.Add(new PackedModuleDetectionScanModule());
         if (o.ScanHeapSpray) modules.Add(new HeapSprayScanModule());
         if (o.ScanKnownHashes) modules.Add(new KnownHashScanModule());
         if (o.ScanMemory) modules.Add(new MemoryScanModule());

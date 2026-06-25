@@ -702,6 +702,27 @@ public sealed class ScanOptions
     /// highly suspicious. Also detects suspicious UDP socket ownership patterns.</summary>
     public bool ScanNetworkGameServerSnoop { get; set; } = true;
 
+    /// <summary>Detect packed, virtualized, or obfuscated DLLs loaded in game processes:
+    /// inspects PE section names for known packer signatures (VMProtect .vmp0/.vmp1, UPX,
+    /// Themida .themida/.wl, Enigma .enigma, Obsidium .obsidium, ASPack, PECompact, MPRESS).
+    /// Cheat tools use commercial protectors to impede reverse engineering and evade AV —
+    /// packed non-system modules in game processes are strong indicators of cheat presence.</summary>
+    public bool ScanPackedModules { get; set; } = true;
+
+    /// <summary>Detect Windows UAC bypass artifacts in HKCU registry: fodhelper (ms-settings),
+    /// EventViewer (mscfile), sdclt, WSReset, and other auto-elevate hijacking techniques that
+    /// cheat loaders use to gain elevated privileges without triggering a UAC prompt. Any HKCU
+    /// shell command override for trusted elevated processes pointing to a non-system path
+    /// indicates an active or recently-used UAC bypass cheat loader.</summary>
+    public bool ScanUacBypassArtifacts { get; set; } = true;
+
+    /// <summary>Verify anti-cheat service registrations for tampering: EasyAntiCheat, BattlEye,
+    /// Vanguard (VGC/VGK), FACEIT, ESEA, XIGNCODE3 — check ImagePath points to the expected
+    /// directory, service is not set to Disabled, and the binary file exists on disk. Cheat
+    /// tools redirect AC service ImagePath to fake/missing binaries or set StartType=Disabled
+    /// to prevent the AC from loading at game startup.</summary>
+    public bool ScanAntiCheatServiceIntegrity { get; set; } = true;
+
     /// <summary>
     /// When false (default) the drive module only walks targeted, high-signal
     /// directories (profile, temp, downloads, appdata). When true it walks the
@@ -936,6 +957,9 @@ public static class ScanProfiles
         ScanDeletedProcessBinary = true,    // process + file stat — fast
         ScanInputDeviceFilter = true,       // registry — fast
         ScanNetworkGameServerSnoop = true,  // IP helper API — fast
+        ScanPackedModules = false,          // process module walk — slow
+        ScanUacBypassArtifacts = true,      // HKCU registry — fast
+        ScanAntiCheatServiceIntegrity = true, // registry — fast
         DeepDriveScan = false,
         ModuleTimeoutSeconds = 60,
     };
