@@ -414,6 +414,10 @@ public sealed class ScanEngine
         if (o.ScanMmapCodeInjection) modules.Add(new MmapCodeInjectionScanModule());
         if (o.ScanHiddenThreads) modules.Add(new HiddenThreadDetectionScanModule());
         if (o.ScanApiHashing) modules.Add(new WinApiHashingScanModule());
+        if (o.ScanNtdllDoubleLoad) modules.Add(new NtdllDoubleLoadScanModule());
+        if (o.ScanAntiDumpProtection) modules.Add(new AntiDumpProtectionScanModule());
+        if (o.ScanPebAnomalies) modules.Add(new ProcessEnvironmentBlockScanModule());
+        if (o.ScanModuleStomping) modules.Add(new ProcessModuleStompingScanModule());
         if (o.ScanHeapSpray) modules.Add(new HeapSprayScanModule());
         if (o.ScanKnownHashes) modules.Add(new KnownHashScanModule());
         if (o.ScanMemory) modules.Add(new MemoryScanModule());

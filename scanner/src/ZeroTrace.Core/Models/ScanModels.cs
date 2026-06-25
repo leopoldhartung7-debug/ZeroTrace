@@ -557,6 +557,26 @@ public sealed class ScanOptions
     /// indicating cheat tool installation or anti-cheat tampering within the last 72 hours.</summary>
     public bool ScanRegistryTimestamps { get; set; } = true;
 
+    /// <summary>Detect ntdll.dll and other critical system DLLs loaded more than once in game
+    /// processes — a hook bypass technique where the second copy is loaded directly from disk
+    /// with no anti-cheat hook patches applied. Also flags system DLLs from non-system paths.</summary>
+    public bool ScanNtdllDoubleLoad { get; set; } = true;
+
+    /// <summary>Detect anti-dump protections on loaded modules in game processes: erased MZ/PE
+    /// headers (zeroed to hinder memory dumping), invalid SizeOfImage, PE signature deletion,
+    /// and NATIVE subsystem in non-driver DLLs indicating packed or manually mapped payloads.</summary>
+    public bool ScanAntiDumpProtection { get; set; } = true;
+
+    /// <summary>Read the PEB of game processes for debug-mode indicators: BeingDebugged flag,
+    /// NtGlobalFlag debug heap bits (0x70), page-heap enabled flag — cheats and their loaders
+    /// set or exploit these to detect and evade analysis tools and anti-cheat hooks.</summary>
+    public bool ScanPebAnomalies { get; set; } = true;
+
+    /// <summary>Detect module stomping in game processes: compare the first 256 bytes of each
+    /// loaded module's .text section in memory against the on-disk PE file — >60% mismatch
+    /// indicates a different PE payload was written over a legitimate loaded module.</summary>
+    public bool ScanModuleStomping { get; set; } = true;
+
     /// <summary>
     /// When false (default) the drive module only walks targeted, high-signal
     /// directories (profile, temp, downloads, appdata). When true it walks the
@@ -767,6 +787,10 @@ public static class ScanProfiles
         ScanHiddenThreads = false,          // thread enumeration + suspend — slow
         ScanApiHashing = false,             // process memory walk — slow
         ScanRegistryTimestamps = true,      // registry timestamp read — fast
+        ScanNtdllDoubleLoad = false,        // module enumeration — slow
+        ScanAntiDumpProtection = false,     // process memory read — slow
+        ScanPebAnomalies = false,           // NtQueryInformationProcess + ReadProcessMemory — slow
+        ScanModuleStomping = false,         // process+disk compare — very slow
         DeepDriveScan = false,
         ModuleTimeoutSeconds = 60,
     };
