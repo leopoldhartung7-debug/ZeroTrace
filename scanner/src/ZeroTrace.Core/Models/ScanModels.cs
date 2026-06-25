@@ -241,6 +241,26 @@ public sealed class ScanOptions
     /// (user-writable directory before System32 enabling DLL search order abuse).</summary>
     public bool ScanEnvironmentVariables { get; set; } = true;
 
+    /// <summary>Deep-scan all Run/RunOnce/RunServices persistence keys, Winlogon Shell/Userinit,
+    /// and Active Setup for cheat persistence, LOLBIN abuse, and obfuscated commands.</summary>
+    public bool ScanRegistryRunHistory { get; set; } = true;
+
+    /// <summary>Verify Authenticode signatures of DLLs loaded in game processes —
+    /// detect unsigned, self-signed, or expired certificates (cheat injection artifacts).</summary>
+    public bool ScanSignatureVerification { get; set; } = true;
+
+    /// <summary>Detect disabled kernel security features: Test Signing Mode, NoIntegrityChecks,
+    /// HVCI off, Secure Boot off, vulnerable driver blocklist disabled.</summary>
+    public bool ScanBootConfig { get; set; } = true;
+
+    /// <summary>Scan threads in game processes for start addresses in private RWX memory
+    /// (shellcode injection via CreateRemoteThread pattern).</summary>
+    public bool ScanThreadStartAddress { get; set; } = true;
+
+    /// <summary>Deep-scan Windows services for cheat keywords, BYOVD driver registrations,
+    /// missing binaries (tombstones), and suspicious service binary paths.</summary>
+    public bool ScanSuspiciousServices { get; set; } = true;
+
     /// <summary>
     /// When false (default) the drive module only walks targeted, high-signal
     /// directories (profile, temp, downloads, appdata). When true it walks the
@@ -375,6 +395,11 @@ public static class ScanProfiles
         ScanAntiDebugEvasion = true, // NT syscall — fast
         ScanDnsHistory = true,      // DNS cache API — fast
         ScanEnvironmentVariables = true, // registry — fast
+        ScanRegistryRunHistory = true,   // registry — fast
+        ScanSignatureVerification = false, // process module walk — slow
+        ScanBootConfig = true,           // registry — fast
+        ScanThreadStartAddress = false,  // NT thread query — slow
+        ScanSuspiciousServices = true,   // registry + WMI — fast
         DeepDriveScan = false,
         ModuleTimeoutSeconds = 60,
     };

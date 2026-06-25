@@ -296,6 +296,9 @@ public sealed class ScanEngine
         if (o.ScanComHijack) modules.Add(new ComHijackScanModule());
         if (o.ScanDnsHistory) modules.Add(new DnsHistoryScanModule());
         if (o.ScanEnvironmentVariables) modules.Add(new EnvironmentVariableScanModule());
+        if (o.ScanRegistryRunHistory) modules.Add(new RegistryRunHistoryScanModule());
+        if (o.ScanBootConfig) modules.Add(new BootConfigScanModule());
+        if (o.ScanSuspiciousServices) modules.Add(new SuspiciousServiceScanModule());
         if (o.ScanWmiPersistence) modules.Add(new WmiPersistenceScanModule());
         if (o.ScanScheduledTasks) modules.Add(new ScheduledTaskScanModule());
         if (o.ScanKernelDrivers) modules.Add(new DriverScanModule());
@@ -340,6 +343,8 @@ public sealed class ScanEngine
         if (o.ScanMacroSoftware) modules.Add(new MacroSoftwareScanModule());
         if (o.ScanSuspiciousExecutables) modules.Add(new SuspiciousExecutableScanModule());
         if (o.ScanProcessInjection) modules.Add(new ProcessInjectionScanModule());
+        if (o.ScanSignatureVerification) modules.Add(new SignatureVerificationScanModule());
+        if (o.ScanThreadStartAddress) modules.Add(new ThreadStartAddressScanModule());
         if (o.ScanMemory) modules.Add(new MemoryScanModule());
         if (o.ScanDrives) modules.Add(new DriveScanModule());
         if (o.ScanNtfsAds) modules.Add(new NtfsAdsScanModule());
