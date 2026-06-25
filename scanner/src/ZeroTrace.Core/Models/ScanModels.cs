@@ -475,6 +475,22 @@ public sealed class ScanOptions
     /// Win32 processes point to mapped image memory, not private/anonymous shellcode regions.</summary>
     public bool ScanKernelCallbackTable { get; set; } = true;
 
+    /// <summary>Detect VEH/SEH exception handler chain manipulation: scan ntdll .data section
+    /// for exception handler structures pointing to private executable memory (persistent backdoor).</summary>
+    public bool ScanExceptionHandlerChain { get; set; } = true;
+
+    /// <summary>Detect APC injection and Early-Bird APC: game process threads with Win32 start
+    /// addresses in private executable memory (shellcode via QueueUserAPC / NtQueueApcThread).</summary>
+    public bool ScanApcInjection { get; set; } = true;
+
+    /// <summary>Detect TLS callback abuse: PE module TLS directory entries in game processes
+    /// pointing to private/anonymous memory (loader-level shellcode before OEP/DllMain).</summary>
+    public bool ScanTlsCallbacks { get; set; } = true;
+
+    /// <summary>Detect AtomBombing injection: scan global atom table for shellcode patterns,
+    /// binary-dense entries, and abnormal atom counts indicative of payload staging.</summary>
+    public bool ScanAtomBombing { get; set; } = true;
+
     /// <summary>
     /// When false (default) the drive module only walks targeted, high-signal
     /// directories (profile, temp, downloads, appdata). When true it walks the
@@ -667,6 +683,10 @@ public static class ScanProfiles
         ScanLoadedModuleIntegrity = false, // process memory compare — slow
         ScanRpcEndpoints = true,         // RPC API — fast
         ScanKernelCallbackTable = false, // process memory scan — slow
+        ScanExceptionHandlerChain = false, // process memory scan — slow
+        ScanApcInjection = false,          // thread handle + memory scan — slow
+        ScanTlsCallbacks = false,          // process module memory scan — slow
+        ScanAtomBombing = true,            // atom table enumeration — fast
         DeepDriveScan = false,
         ModuleTimeoutSeconds = 60,
     };
