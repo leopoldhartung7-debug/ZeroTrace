@@ -1002,6 +1002,44 @@ public sealed class ScanOptions
     /// interest in cheat tools used by Ocean/detect.ac.</summary>
     public bool ScanBrowserBookmarks { get; set; } = true;
 
+    /// <summary>Scan Discord LevelDB / HTTP cache for cheat-community server artifacts,
+    /// cheat vendor names, and invite fragments. Discord is the primary distribution
+    /// channel for cheat licenses and support — artifacts persist in local storage.
+    /// Used by Ocean / detect.ac.</summary>
+    public bool ScanDiscordCheatArtifacts { get; set; } = true;
+
+    /// <summary>Scan Telegram Desktop tdata / downloads for cheat-vendor keywords.
+    /// Telegram is increasingly used for anonymous cheat key distribution and DMA
+    /// firmware delivery. Cached message data persists after UI deletion.</summary>
+    public bool ScanTelegramArtifacts { get; set; } = true;
+
+    /// <summary>Scan Razer Synapse, Logitech G Hub, SteelSeries GG, Corsair iCUE and
+    /// AutoHotKey script files for no-recoil / triggerbot macro patterns. Macro-based
+    /// cheats operate at HID level, invisible to in-game AC. Ocean / detect.ac scan
+    /// macro profiles as a standard forensic source.</summary>
+    public bool ScanMacroSoftware { get; set; } = true;
+
+    /// <summary>Scan Steam localconfig.vdf for suspicious launch parameters (-insecure,
+    /// +sv_cheats), cheat-keyword app names in Steam library manifests, and
+    /// loginusers.vdf for cheat-keyword account names.</summary>
+    public bool ScanSteamCheatCorrelation { get; set; } = true;
+
+    /// <summary>Scan Nvidia GeForce Experience / Shadowplay clip file names for cheat
+    /// keywords (aimbot_clip, wallhack_clip) and GFE config/log files for cheat
+    /// references. Clip names with cheat keywords are direct evidence.</summary>
+    public bool ScanShadowplayArtifacts { get; set; } = true;
+
+    /// <summary>Detect virtual audio devices (VB-Audio Virtual Cable, VAC2, Voicemeeter)
+    /// used to route audio signals in DMA cheat setups. Virtual audio cables route radar
+    /// beep signals from an external cheat PC to trigger actions on the gaming PC.</summary>
+    public bool ScanVirtualAudioDevices { get; set; } = true;
+
+    /// <summary>Detect GPU compute / AI aimbot indicators: Python processes with YOLO/
+    /// OnnxRuntime libraries, AI aimbot project directories (trigon, vision-aim, etc.),
+    /// pip-installed packages (ultralytics, bettercam, dxcam, mss) that are exclusively
+    /// used in AI-based aimbot setups.</summary>
+    public bool ScanGpuComputeCheat { get; set; } = true;
+
     /// <summary>
     /// When false (default) the drive module only walks targeted, high-signal
     /// directories (profile, temp, downloads, appdata). When true it walks the
@@ -1282,6 +1320,13 @@ public static class ScanProfiles
         ScanDseBypass = true,                 // registry + bcdedit + Prefetch stat — fast
         ScanWifiHistory = true,               // netsh wlan show profiles — fast
         ScanBrowserBookmarks = true,          // bookmark JSON parse — fast
+        ScanDiscordCheatArtifacts = true,     // LevelDB byte-grep — bounded
+        ScanTelegramArtifacts = true,         // tdata byte-grep — bounded
+        ScanMacroSoftware = true,             // JSON profile + AHK scan — fast
+        ScanSteamCheatCorrelation = true,     // localconfig.vdf + ACF — fast
+        ScanShadowplayArtifacts = true,       // clip file names — fast
+        ScanVirtualAudioDevices = true,       // registry enum — fast
+        ScanGpuComputeCheat = true,           // process + pip packages + dirs — fast
         DeepDriveScan = false,
         // No per-module timeout — every Quick module runs to completion. Quick stays
         // fast because slow modules are individually disabled above, not because they

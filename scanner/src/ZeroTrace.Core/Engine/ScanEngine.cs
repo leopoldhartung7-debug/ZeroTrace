@@ -415,6 +415,8 @@ public sealed class ScanEngine
         if (o.ScanAimAssistHardware) modules.Add(new CronusZenXimAimAssistScanModule());
         if (o.ScanDseBypass) modules.Add(new DriverSignatureEnforcementScanModule());
         if (o.ScanWifiHistory) modules.Add(new WiFiNetworkHistoryScanModule());
+        if (o.ScanVirtualAudioDevices) modules.Add(new VirtualAudioDeviceScanModule());
+        if (o.ScanGpuComputeCheat) modules.Add(new GpuComputeCheatProcessScanModule());
         if (o.ScanWslAbuse) modules.Add(new WindowsSubsystemLinuxAbuseScanModule());
         if (o.ScanEfiVariables) modules.Add(new EfiVariableAnomalyScanModule());
         if (o.ScanSuspiciousNetworkAdapters) modules.Add(new SuspiciousNetworkAdapterScanModule());
@@ -446,6 +448,11 @@ public sealed class ScanEngine
         if (o.ScanRecycleBinForensics) modules.Add(new RecycleBinForensicScanModule());
         if (o.ScanAppDataLocalLow) modules.Add(new AppDataLocalLowCheatScanModule());
         if (o.ScanBrowserBookmarks) modules.Add(new BrowserBookmarksCheatScanModule());
+        if (o.ScanDiscordCheatArtifacts) modules.Add(new DiscordCheatArtifactScanModule());
+        if (o.ScanTelegramArtifacts) modules.Add(new TelegramDesktopArtifactScanModule());
+        if (o.ScanMacroSoftware) modules.Add(new MacroSoftwareCheatScanModule());
+        if (o.ScanSteamCheatCorrelation) modules.Add(new SteamCheatCorrelationScanModule());
+        if (o.ScanShadowplayArtifacts) modules.Add(new NvidiaShadowplayArtifactScanModule());
 
         // ── Group 5: forensic / trace artefacts ──────────────────────────────
         if (o.ScanForensicTraces) modules.Add(new ForensicTraceScanModule());
