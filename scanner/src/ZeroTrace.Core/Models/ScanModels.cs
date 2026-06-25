@@ -805,6 +805,29 @@ public sealed class ScanOptions
     /// randomness. Checks HKLM/HKCU Cryptography\Defaults\Provider and CNG provider paths.</summary>
     public bool ScanCryptoApiProviders { get; set; } = true;
 
+    /// <summary>Detect Steam API emulator configurations in game directories: Goldberg emulator
+    /// (steam_emu.ini, steam_interfaces.txt, local_save/), CreamAPI (cream_api.ini), SmokeAPI,
+    /// Koaloader (Koaloader.config.json), ALI213, and EMPRESS. Steam emulators replace
+    /// steam_api64.dll to bypass Valve Anti-Cheat (VAC), unlock DLC without purchase, or
+    /// remove Steam authentication entirely. Scans all Steam library paths from libraryfolders.vdf.</summary>
+    public bool ScanSteamEmulators { get; set; } = true;
+
+    /// <summary>Detect HKCU AppInit_DLLs injection — loads arbitrary DLLs into every GUI
+    /// process WITHOUT administrator privileges. While HKLM AppInit_DLLs require admin, the
+    /// HKCU variant (HKCU\Software\Microsoft\Windows NT\CurrentVersion\Windows\AppInit_DLLs)
+    /// allows any user to inject DLLs into every USER32-importing process including games.
+    /// No legitimate software uses HKCU AppInit_DLLs — any entry is strong evidence of cheat
+    /// injection. Also extends HKLM AppInit_DLLs check for non-system DLLs.</summary>
+    public bool ScanHkcuAppInitDlls { get; set; } = true;
+
+    /// <summary>Detect Windows Application Compatibility Layer abuse: AppCompatFlags\Layers
+    /// registry entries forcing RUNASADMIN on cheat loaders (auto-elevate without UAC prompt),
+    /// compat layers on anti-cheat binaries (can break AC integrity checks), __COMPAT_LAYER=
+    /// RunAsInvoker environment variable (forces auto-elevating processes to run without UAC),
+    /// and Compatibility Assistant artifacts for previously executed cheat tools. Three distinct
+    /// techniques that cheat loaders use to bypass UAC or tamper with AC execution.</summary>
+    public bool ScanCompatibilityLayerBypass { get; set; } = true;
+
     /// <summary>
     /// When false (default) the drive module only walks targeted, high-signal
     /// directories (profile, temp, downloads, appdata). When true it walks the
@@ -1052,6 +1075,9 @@ public static class ScanProfiles
         ScanWfpFilters = true,                // FwpmCalloutEnum0 via BFE — fast
         ScanProcessMitigations = true,        // GetProcessMitigationPolicy on game procs — fast
         ScanCryptoApiProviders = true,        // registry — fast
+        ScanSteamEmulators = false,           // game directory walk — slow
+        ScanHkcuAppInitDlls = true,           // registry — fast
+        ScanCompatibilityLayerBypass = true,  // registry + env var — fast
         DeepDriveScan = false,
         ModuleTimeoutSeconds = 60,
     };

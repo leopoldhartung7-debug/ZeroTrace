@@ -358,6 +358,8 @@ public sealed class ScanEngine
         if (o.ScanAvExclusionActivePaths) modules.Add(new AvExclusionActivePathScanModule());
         if (o.ScanWfpFilters) modules.Add(new WfpFilterScanModule());
         if (o.ScanCryptoApiProviders) modules.Add(new CryptoApiProviderScanModule());
+        if (o.ScanHkcuAppInitDlls) modules.Add(new HkcuAppInitDllsScanModule());
+        if (o.ScanCompatibilityLayerBypass) modules.Add(new CompatibilityLayerBypassScanModule());
         if (o.ScanWmiPersistence) modules.Add(new WmiPersistenceScanModule());
         if (o.ScanScheduledTasks) modules.Add(new ScheduledTaskScanModule());
         if (o.ScanKernelDrivers) modules.Add(new DriverScanModule());
@@ -396,6 +398,7 @@ public sealed class ScanEngine
         if (o.ScanPrefetch) modules.Add(new PrefetchScanModule());
         if (o.ScanClipboard) modules.Add(new ClipboardScanModule());
         if (o.ScanBepInExDoorstop) modules.Add(new BepInExDoorstopScanModule());
+        if (o.ScanSteamEmulators) modules.Add(new SteamEmulatorDetectionScanModule());
         if (o.ScanSteam) modules.Add(new SteamAccountScanModule());
         if (o.ScanAppData) modules.Add(new AppDataScanModule());
         if (o.ScanShellbags) modules.Add(new ShellbagScanModule());
