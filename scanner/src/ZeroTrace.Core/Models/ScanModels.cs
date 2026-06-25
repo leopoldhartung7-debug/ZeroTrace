@@ -952,6 +952,27 @@ public sealed class ScanOptions
     /// survive after the main cheat binary is deleted — primary Ocean/detect.ac signal.</summary>
     public bool ScanCheatLaunchScripts { get; set; } = true;
 
+    /// <summary>Deep FiveM cheat detection: scans CitizenFX app data for known cheat executables,
+    /// DLLs, and directories (Eulen, Lynx, Hamster, Impulse, Infinity, Desudo, Baddie); checks
+    /// running processes; inspects Lua resource cache for godmode/teleport/noclip/vehicle-speed
+    /// patterns; scans FiveM log files for cheat keywords; and reads HKCU registry artifacts left
+    /// by FiveM cheat loaders. Covers the dominant CFX.re cheat ecosystem used against FiveM servers.</summary>
+    public bool ScanFiveMDeep { get; set; } = true;
+
+    /// <summary>RageMP-targeted cheat detection: scans %AppData%\RAGEMP for known cheat directories
+    /// and packages (Evolution, HamsterRageMP, Nighthawk, Epsilon, Phantom); audits the
+    /// dotnet/assemblies folder for cheat-keyword .NET DLLs; inspects client-side JS for suspicious
+    /// mp.game.invoke/setplayerinvincible/noclip patterns; checks running processes and registry
+    /// artifacts left by RAGEMP cheat loaders. Detects the most-used GTA V RAGEMP cheat tools.</summary>
+    public bool ScanRageMp { get; set; } = true;
+
+    /// <summary>alt:V Multiplayer cheat detection: scans %AppData%\altv for known cheat executables,
+    /// DLLs, and resource directories (AltV-Cheat, Phantom-AltV, Spectre-AltV); reads JS resource
+    /// scripts for alt.natives abuse patterns (setplayerinvincible, noclip, godmode, exploit);
+    /// checks resource manifests (resource.cfg / resource.toml) for cheat keywords; audits running
+    /// processes and HKCU registry artifacts. Covers the primary alt:V bypass/cheat ecosystem.</summary>
+    public bool ScanAltV { get; set; } = true;
+
     /// <summary>Scan game directories (Steam, Epic, user-specified) for BepInEx, Unity Doorstop,
     /// and MelonLoader code injection frameworks. Detects: doorstop_config.ini (enabled=true),
     /// winhttp.dll Doorstop proxy in game root, BepInEx/plugins/ DLLs with cheat keywords,
@@ -1656,6 +1677,9 @@ public static class ScanProfiles
         ScanAntiForensicCleanerTools = true,  // CCleaner registry + Prefetch stat — fast
         ScanWindowsStoreGameCheats = true,    // XboxGames dir stat + Game Bar registry — fast
         ScanCheatLaunchScripts = true,        // Desktop/Downloads script scan — bounded
+        ScanFiveMDeep = true,                 // CitizenFX dir/process/log/registry scan — fast
+        ScanRageMp = true,                    // RAGEMP dir/process/assembly/registry scan — fast
+        ScanAltV = true,                      // altv dir/process/JS manifest/registry scan — fast
         DeepDriveScan = false,
         // No per-module timeout — every Quick module runs to completion. Quick stays
         // fast because slow modules are individually disabled above, not because they
