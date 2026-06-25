@@ -756,6 +756,32 @@ public sealed class ScanOptions
     /// outside of SDK paths.</summary>
     public bool ScanDirectXDebugLayer { get; set; } = true;
 
+    /// <summary>Detect non-system processes with SeDebugPrivilege actively enabled (not just
+    /// present but SE_PRIVILEGE_ENABLED via AdjustTokenPrivileges). SeDebugPrivilege grants
+    /// PROCESS_ALL_ACCESS to any process, bypassing security checks — it is the single most
+    /// powerful prerequisite for external cheats (memory readers, aimbot, ESP). Legitimate
+    /// holders are fewer than 5 system processes; any unexpected enabled SeDebug indicates
+    /// a cheat tool, DMA reader, or debugger-based cheat actively prepared to access game memory.
+    /// Uses OpenProcessToken + GetTokenInformation(TokenPrivileges) on all running processes.</summary>
+    public bool ScanSeDebugPrivilege { get; set; } = true;
+
+    /// <summary>Scan game directories (Steam, Epic, user-specified) for BepInEx, Unity Doorstop,
+    /// and MelonLoader code injection frameworks. Detects: doorstop_config.ini (enabled=true),
+    /// winhttp.dll Doorstop proxy in game root, BepInEx/plugins/ DLLs with cheat keywords,
+    /// and MelonLoader Mods/ directory with suspicious DLLs. These mod frameworks are the
+    /// dominant cheat injection vector in Unity games — they load arbitrary code at game startup
+    /// with full access to game logic, networking, and player data without process injection.</summary>
+    public bool ScanBepInExDoorstop { get; set; } = true;
+
+    /// <summary>Audit Windows Defender exclusion paths for actual suspicious content: walks
+    /// each excluded directory and checks for cheat-keyword files, known BYOVD driver files
+    /// (mhyprot2.sys, RTCore64.sys, WinRing0.sys, etc.), and unsigned executables in high-risk
+    /// paths (Temp, Downloads, AppData). A cheat tool that added an AV exclusion for its own
+    /// directory leaves a double artifact — the exclusion registry entry plus the cheat files
+    /// are still on disk, AV-protected from removal. Extends the base AV exclusion scan with
+    /// active filesystem verification of the excluded locations.</summary>
+    public bool ScanAvExclusionActivePaths { get; set; } = true;
+
     /// <summary>
     /// When false (default) the drive module only walks targeted, high-signal
     /// directories (profile, temp, downloads, appdata). When true it walks the
@@ -997,6 +1023,9 @@ public static class ScanProfiles
         ScanLoopbackListeners = true,         // GetExtendedTcpTable/UdpTable — fast
         ScanProcessCommandLines = false,      // WMI Win32_Process query — slow
         ScanDirectXDebugLayer = true,         // registry — fast
+        ScanSeDebugPrivilege = true,          // OpenProcessToken on all procs — medium
+        ScanBepInExDoorstop = false,          // game directory walk — slow
+        ScanAvExclusionActivePaths = true,    // registry + targeted dir scan — medium
         DeepDriveScan = false,
         ModuleTimeoutSeconds = 60,
     };
