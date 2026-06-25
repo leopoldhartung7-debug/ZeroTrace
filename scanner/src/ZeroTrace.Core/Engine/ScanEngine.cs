@@ -287,6 +287,8 @@ public sealed class ScanEngine
         if (o.ScanNamedPipes) modules.Add(new NamedPipeScanModule());
         if (o.ScanMemoryMappedFiles) modules.Add(new MemoryMappedFileScanModule());
         if (o.ScanAntiCheatStatus) modules.Add(new AntiCheatStatusScanModule());
+        if (o.ScanCryptoMiner) modules.Add(new CryptoMinerScanModule());
+        if (o.ScanRemoteAccessTools) modules.Add(new RemoteAccessToolScanModule());
 
         // ── Group 3: registry / WMI / driver queries ──────────────────────────
         if (o.ScanRegistry) modules.Add(new RegistryScanModule());
@@ -316,6 +318,7 @@ public sealed class ScanEngine
         if (o.ScanFileAssociationHijack) modules.Add(new FileAssociationHijackScanModule());
         if (o.ScanUdpSockets) modules.Add(new UdpSocketScanModule());
         if (o.ScanRegistryHijack) modules.Add(new RegistryHijackScanModule());
+        if (o.ScanElamDriver) modules.Add(new ElamDriverScanModule());
         if (o.ScanWmiPersistence) modules.Add(new WmiPersistenceScanModule());
         if (o.ScanScheduledTasks) modules.Add(new ScheduledTaskScanModule());
         if (o.ScanKernelDrivers) modules.Add(new DriverScanModule());
@@ -372,6 +375,7 @@ public sealed class ScanEngine
         if (o.ScanBootSector) modules.Add(new BootSectorScanModule());
         if (o.ScanPEHeaderAnomalies) modules.Add(new PEHeaderAnomalyScanModule());
         if (o.ScanThreadStartAddress) modules.Add(new ThreadStartAddressScanModule());
+        if (o.ScanGameDirectoryInjection) modules.Add(new GameDirectoryInjectionScanModule());
         if (o.ScanHeapSpray) modules.Add(new HeapSprayScanModule());
         if (o.ScanKnownHashes) modules.Add(new KnownHashScanModule());
         if (o.ScanMemory) modules.Add(new MemoryScanModule());

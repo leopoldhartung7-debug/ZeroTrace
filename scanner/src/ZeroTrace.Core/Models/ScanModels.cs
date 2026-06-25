@@ -379,6 +379,22 @@ public sealed class ScanOptions
     /// desktop namespace extensions, and Session Manager SubSystems outside System32.</summary>
     public bool ScanRegistryHijack { get; set; } = true;
 
+    /// <summary>Scan Steam/Epic game installation directories for proxy DLL injection files
+    /// (version.dll, dinput8.dll, dxgi.dll, etc.) placed to intercept DLL load order.</summary>
+    public bool ScanGameDirectoryInjection { get; set; } = true;
+
+    /// <summary>Detect crypto-miner processes, persistence registry keys, and miner executable
+    /// files/config.json with pool/wallet indicators on disk.</summary>
+    public bool ScanCryptoMiner { get; set; } = true;
+
+    /// <summary>Check Early Launch Anti-Malware (ELAM) driver load policy, wdboot.sys service
+    /// start type, and LSA BootDriverFlags for signs of ELAM bypass.</summary>
+    public bool ScanElamDriver { get; set; } = true;
+
+    /// <summary>Detect known Remote Access Tools (TeamViewer, AnyDesk, RustDesk, VNC, reverse
+    /// shells), RDP enabled with NLA disabled, and unauthorized RDP group members.</summary>
+    public bool ScanRemoteAccessTools { get; set; } = true;
+
     /// <summary>
     /// When false (default) the drive module only walks targeted, high-signal
     /// directories (profile, temp, downloads, appdata). When true it walks the
@@ -547,6 +563,10 @@ public static class ScanProfiles
         ScanSensitiveDataAccess = false,  // file walk — slow
         ScanUdpSockets = true,            // IP helper API — fast
         ScanRegistryHijack = true,        // registry — fast
+        ScanGameDirectoryInjection = false, // game dir walk — slow
+        ScanCryptoMiner = true,           // process + registry — fast
+        ScanElamDriver = true,            // registry — fast
+        ScanRemoteAccessTools = true,     // process + registry — fast
         DeepDriveScan = false,
         ModuleTimeoutSeconds = 60,
     };
