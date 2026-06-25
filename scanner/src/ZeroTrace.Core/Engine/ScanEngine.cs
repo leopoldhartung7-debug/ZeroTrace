@@ -284,6 +284,7 @@ public sealed class ScanEngine
         if (o.ScanTokenPrivileges) modules.Add(new TokenPrivilegeScanModule());
         if (o.ScanAntiDebugEvasion) modules.Add(new AntiDebugEvasionScanModule());
         if (o.ScanLoadedKernelModules) modules.Add(new LoadedKernelModuleScanModule());
+        if (o.ScanNamedPipes) modules.Add(new NamedPipeScanModule());
 
         // ── Group 3: registry / WMI / driver queries ──────────────────────────
         if (o.ScanRegistry) modules.Add(new RegistryScanModule());
@@ -315,6 +316,7 @@ public sealed class ScanEngine
         if (o.ScanCredentialTheft) modules.Add(new CredentialTheftScanModule());
         if (o.ScanLuaScripts) modules.Add(new LuaScriptScanModule());
         if (o.ScanPowerShellHistoryDeep) modules.Add(new PowerShellHistoryDeepScanModule());
+        if (o.ScanEventLogDeep) modules.Add(new WindowsEventLogDeepScanModule());
 
         // ── Group 5: forensic / trace artefacts ──────────────────────────────
         if (o.ScanForensicTraces) modules.Add(new ForensicTraceScanModule());
@@ -340,6 +342,8 @@ public sealed class ScanEngine
         if (o.ScanRecentDocs) modules.Add(new RecentDocsScanModule());
         if (o.ScanWerArtifacts) modules.Add(new WerArtifactScanModule());
         if (o.ScanAmcache) modules.Add(new AmcacheScanModule());
+        if (o.ScanCertificateTrust) modules.Add(new CertificateTrustScanModule());
+        if (o.ScanInstalledFonts) modules.Add(new InstalledFontScanModule());
 
         // ── Sequential (group 0): order-sensitive or internally parallel ──────
         if (o.ScanMacroSoftware) modules.Add(new MacroSoftwareScanModule());

@@ -277,6 +277,22 @@ public sealed class ScanOptions
     /// indicative of shellcode injection, cheat overlays, or ESP buffer allocation.</summary>
     public bool ScanHeapSpray { get; set; } = true;
 
+    /// <summary>Scan Windows certificate trust stores for unauthorized root CAs, self-signed
+    /// certificates, and certificates with cheat-keyword subjects added by cheat tools.</summary>
+    public bool ScanCertificateTrust { get; set; } = true;
+
+    /// <summary>Detect malicious font drivers (ring-0 persistence), PE files disguised as fonts
+    /// in per-user font directory, and font registry entries pointing to suspicious paths.</summary>
+    public bool ScanInstalledFonts { get; set; } = true;
+
+    /// <summary>Enumerate all named pipes and flag those matching cheat tool IPC communication
+    /// channel naming patterns (loader↔DLL bridge, radar socket, DMA data pipe).</summary>
+    public bool ScanNamedPipes { get; set; } = true;
+
+    /// <summary>Deep-scan Security/System/PowerShell event logs for process creation of cheat
+    /// tools (4688), service install (4697/7045), AC service stopped (7036), PS scripts (4104).</summary>
+    public bool ScanEventLogDeep { get; set; } = true;
+
     /// <summary>
     /// When false (default) the drive module only walks targeted, high-signal
     /// directories (profile, temp, downloads, appdata). When true it walks the
@@ -420,6 +436,10 @@ public static class ScanProfiles
         ScanKnownHashes = false,         // file hashing — slow
         ScanPowerShellHistoryDeep = true, // text file read — fast
         ScanHeapSpray = false,           // memory walk — slow
+        ScanCertificateTrust = true,    // cert store — fast
+        ScanInstalledFonts = true,      // registry + files — fast
+        ScanNamedPipes = true,          // pipe enum — fast
+        ScanEventLogDeep = false,       // event log read — slow
         DeepDriveScan = false,
         ModuleTimeoutSeconds = 60,
     };
