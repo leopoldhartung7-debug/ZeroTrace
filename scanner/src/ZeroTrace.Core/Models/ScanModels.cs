@@ -1164,6 +1164,11 @@ public sealed class ScanOptions
     /// (XMRig, PhoenixMiner, T-Rex, lolMiner) bundled with cheat software, plus miner persistence
     /// entries, pool config files, and disguised miner EXEs dropped by cheat installers.</summary>
     public bool ScanCryptoMiner { get; set; } = true;
+    /// <summary>Scan FiveM-specific exploit injection techniques: CitizenFX NUI exploit scripts,
+    /// Lua injection via resource manifests, socket proxy DLLs hooking the CitizenFX network stack,
+    /// modified FiveM.exe/FiveM_GTAProcess.exe, ESX/QBCore exploit scripts, known FiveM cheat menu
+    /// directories (Eulen, Phantom-X, Lynx, Impulse), and native call spoofing artifacts.</summary>
+    public bool ScanFiveMExploitInjection { get; set; } = true;
 
     /// <summary>Scan game directories (Steam, Epic, user-specified) for BepInEx, Unity Doorstop,
     /// and MelonLoader code injection frameworks. Detects: doorstop_config.ini (enabled=true),
@@ -1899,6 +1904,7 @@ public static class ScanProfiles
         ScanAmsiBypassArtifact = true,        // AMSI patch/registry bypass + reflective DLL scan — fast
         ScanCheatHashSignature = true,        // SHA-256/MD5 hash database match scan — fast
         ScanCryptoMiner = true,               // bundled miner EXE/config/persistence scan — fast
+        ScanFiveMExploitInjection = true,     // FiveM NUI/Lua/socket/manifest exploit scan — fast
         DeepDriveScan = false,
         // No per-module timeout — every Quick module runs to completion. Quick stays
         // fast because slow modules are individually disabled above, not because they
