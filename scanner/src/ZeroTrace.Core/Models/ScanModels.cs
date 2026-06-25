@@ -1096,6 +1096,29 @@ public sealed class ScanOptions
     /// and scans config files for 3+ cheat feature keys.</summary>
     public bool ScanMemoryCheatSignature { get; set; } = true;
 
+    /// <summary>CS2/CSGO-specific cheat detection: 30 known cheat EXEs (aimware/skeet/onetap/fatality/
+    /// nixware/neverlose/hvh/spinbot etc.) and 8 DLLs; CS2 Steam launch option abuse (-insecure/
+    /// -novac/+sv_cheats); CS2 cfg file scan for wallhack/speedhack/noclip commands; 11 premium cheat
+    /// AppData directories with config keyword scan; external cheat indicators (offset files, Python
+    /// ReadProcessMemory + CS2); workshop content DLL scan; running process check; Prefetch for 10
+    /// cheat patterns. Covers both internal and external CS2 cheat categories.</summary>
+    public bool ScanCs2Cheat { get; set; } = true;
+
+    /// <summary>Rust and Apex Legends cheat detection: 23 Rust cheat EXEs (silent_aim/magicbullet/
+    /// nospread/speedhack etc.) + 6 DLLs, 18 Apex cheat EXEs (apex_glow/r5_cheat etc.) + 6 DLLs;
+    /// Rust/Apex AppData artifact directories; Rust recoil script detection in AHK/Python files and
+    /// Logitech GHUB/Razer Synapse spray pattern macros; EAC game-specific bypass tools and launcher
+    /// size check; running process detection; Prefetch for 7 patterns.</summary>
+    public bool ScanRustApexCheat { get; set; } = true;
+
+    /// <summary>Screen-capture-based aimbot and triggerbot detection: 21 known AI aimbot EXE names;
+    /// Python file tri-group analysis (screen capture + AI inference + mouse control = Critical AI
+    /// aimbot confirmed); .onnx model files in aimbot-named or Downloads directories; DXcam/BetterCam
+    /// pip package detection alongside onnxruntime/ultralytics; pixel triggerbot config files
+    /// (triggerColor/reaction_time/fov keys); DirectX Desktop Duplication API abuse tools; running
+    /// process detection. Covers the dominant AI aimbot delivery mechanism.</summary>
+    public bool ScanScreenCaptureCheat { get; set; } = true;
+
     /// <summary>Scan game directories (Steam, Epic, user-specified) for BepInEx, Unity Doorstop,
     /// and MelonLoader code injection frameworks. Detects: doorstop_config.ini (enabled=true),
     /// winhttp.dll Doorstop proxy in game root, BepInEx/plugins/ DLLs with cheat keywords,
@@ -1818,6 +1841,9 @@ public static class ScanProfiles
         ScanValorantCheat = true,             // Vanguard service/bypass/recoil/process scan — fast
         ScanNetworkC2Cheat = true,            // hosts/firewall/VPN/DNS/proxy tamper scan — fast
         ScanMemoryCheatSignature = true,      // binary brand/bypass/export/obfuscation scan — fast
+        ScanCs2Cheat = true,                  // CS2 EXE/cfg/AppData/offset/process scan — fast
+        ScanRustApexCheat = true,             // Rust/Apex EXE/recoil script/AppData scan — fast
+        ScanScreenCaptureCheat = true,        // AI aimbot Python/ONNX/triggerbot scan — fast
         DeepDriveScan = false,
         // No per-module timeout — every Quick module runs to completion. Quick stays
         // fast because slow modules are individually disabled above, not because they
