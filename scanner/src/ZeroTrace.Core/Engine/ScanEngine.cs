@@ -504,6 +504,9 @@ public sealed class ScanEngine
         if (o.ScanFiveMResourceCacheDeep) modules.Add(new FiveMResourceCacheDeepScanModule());
         if (o.ScanRageMpNetworkPacket) modules.Add(new RageMpNetworkPacketScanModule());
         if (o.ScanAltVDeepResource) modules.Add(new AltVDeepResourceScanModule());
+        if (o.ScanHwidSpoofingDeep) modules.Add(new HwidSpoofingDeepScanModule());
+        if (o.ScanMouseKeyboardEmulator) modules.Add(new MouseKeyboardEmulatorScanModule());
+        if (o.ScanDllInjectionArtifact) modules.Add(new DllInjectionArtifactScanModule());
 
         // ── Group 5: forensic / trace artefacts ──────────────────────────────
         if (o.ScanForensicTraces) modules.Add(new ForensicTraceScanModule());

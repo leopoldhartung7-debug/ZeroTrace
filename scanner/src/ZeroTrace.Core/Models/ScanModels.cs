@@ -996,6 +996,31 @@ public sealed class ScanOptions
     /// libcef.dll size anomaly. Covers resource injection vectors unique to alt:V's V8 runtime.</summary>
     public bool ScanAltVDeepResource { get; set; } = true;
 
+    /// <summary>Comprehensive HWID spoofer detection: scans for 27 known spoofer EXEs/DLLs, kernel
+    /// driver .sys files (spoofer.sys, hwid.sys, smbios_spoofer.sys), HKLM service entries for those
+    /// drivers, HKCU registry keys for known spoofer brands (PhantomSpoofer, CrowSpoofer, KSpoofer),
+    /// BIOS serial placeholder values and zeroed serials, manually-overridden NIC MAC addresses with
+    /// local bit set, .spoof/.hwid/.unban config files, and Prefetch artifacts. HWID spoofers are
+    /// used exclusively to evade hardware bans — their presence alone is high-confidence evidence.</summary>
+    public bool ScanHwidSpoofingDeep { get; set; } = true;
+
+    /// <summary>Detects hardware-level input emulators and software aimbot tools: Interception
+    /// kernel driver (keyboard_filter.sys / mouse_filter.sys) used by most kernel aimbots,
+    /// Logitech GHUB / Razer Synapse macro script abuse (recoil/triggerbot patterns in Lua/JSON),
+    /// Arduino/KMBOX/reWASD hardware emulator artifacts, AI aimbot files (.onnx models in
+    /// suspicious dirs, bettercam/dxcam/ultralytics Python scripts), and AHK aimbot scripts with
+    /// combined PixelSearch/ImageSearch + recoil/triggerbot patterns. Covers both kernel-mode and
+    /// user-mode aimbot input injection vectors.</summary>
+    public bool ScanMouseKeyboardEmulator { get; set; } = true;
+
+    /// <summary>Detects DLL injection tool artifacts: 24 known injector EXEs (Xenos, GH Injector,
+    /// Extreme Injector, manual mappers, kdmapper), Cheat Engine installation and .CT table files,
+    /// AppInit_DLLs persistence (non-empty = critical), IFEO Debugger hijack on game EXEs (GTA5,
+    /// FiveM, CS2, Valorant etc.), shellcode payloads (.bin files with MZ header in Temp), freshly-
+    /// staged DLLs in Temp, WER crash dumps referencing cheat modules, and Prefetch artifacts.
+    /// Manual mapping and IFEO hijacking are advanced techniques that bypass most anti-cheats.</summary>
+    public bool ScanDllInjectionArtifact { get; set; } = true;
+
     /// <summary>Scan game directories (Steam, Epic, user-specified) for BepInEx, Unity Doorstop,
     /// and MelonLoader code injection frameworks. Detects: doorstop_config.ini (enabled=true),
     /// winhttp.dll Doorstop proxy in game root, BepInEx/plugins/ DLLs with cheat keywords,
@@ -1706,6 +1731,9 @@ public static class ScanProfiles
         ScanFiveMResourceCacheDeep = true,    // CitizenFX cache/NUI/trainer/CEF scan — fast
         ScanRageMpNetworkPacket = true,       // RAGEMP package FFI/inject/config/log scan — fast
         ScanAltVDeepResource = true,          // altV resource manifest/JS/CEF deep scan — fast
+        ScanHwidSpoofingDeep = true,          // spoofer EXE/driver/BIOS/MAC/registry scan — fast
+        ScanMouseKeyboardEmulator = true,     // Interception driver/GHUB macro/AI aimbot — fast
+        ScanDllInjectionArtifact = true,      // injector EXE/AppInit/IFEO/CE/shellcode — fast
         DeepDriveScan = false,
         // No per-module timeout — every Quick module runs to completion. Quick stays
         // fast because slow modules are individually disabled above, not because they
