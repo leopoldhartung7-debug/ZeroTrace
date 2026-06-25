@@ -425,6 +425,8 @@ public sealed class ScanEngine
         if (o.ScanAntiDebugTools) modules.Add(new AntiDebugBypassScanModule());
         if (o.ScanSpecialKReShade) modules.Add(new SpecialKModScanModule());
         if (o.ScanFpsUnlockerExploits) modules.Add(new FpsUnlockerCheatScanModule());
+        if (o.ScanAcServiceTamper) modules.Add(new AnticheatServiceTamperScanModule());
+        if (o.ScanShadowCopyState) modules.Add(new ShadowCopyCheatArtifactScanModule());
         if (o.ScanWslAbuse) modules.Add(new WindowsSubsystemLinuxAbuseScanModule());
         if (o.ScanEfiVariables) modules.Add(new EfiVariableAnomalyScanModule());
         if (o.ScanSuspiciousNetworkAdapters) modules.Add(new SuspiciousNetworkAdapterScanModule());
@@ -465,6 +467,7 @@ public sealed class ScanEngine
         if (o.ScanScheduledTaskCheat) modules.Add(new SuspiciousScheduledTaskScanModule());
         if (o.ScanPowerShellHistory) modules.Add(new PowerShellCheatHistoryScanModule());
         if (o.ScanClipboardHistory) modules.Add(new ClipboardCheatArtifactScanModule());
+        if (o.ScanAccountCorrelation) modules.Add(new CheaterAccountCorrelationScanModule());
 
         // ── Group 5: forensic / trace artefacts ──────────────────────────────
         if (o.ScanForensicTraces) modules.Add(new ForensicTraceScanModule());

@@ -1107,6 +1107,23 @@ public sealed class ScanOptions
     /// copying cheat-related content.</summary>
     public bool ScanClipboardHistory { get; set; } = true;
 
+    /// <summary>Detect anti-cheat service tampering: BattlEye (BEService), EAC, Vanguard
+    /// (vgc), PunkBuster services set to Disabled or changed from Automatic to Manual.
+    /// Also checks if AC service executables are suspiciously small (patched/replaced) and
+    /// if expected AC processes are not running despite being configured to auto-start.</summary>
+    public bool ScanAcServiceTamper { get; set; } = true;
+
+    /// <summary>Correlate game account proliferation with ban-cycling: counts Steam accounts
+    /// in loginusers.vdf, Valorant config dirs, Epic account references. Multiple accounts
+    /// on one hardware = HWID spoofer usage implied (Vanguard/BE ban by hardware ID).</summary>
+    public bool ScanAccountCorrelation { get; set; } = true;
+
+    /// <summary>Check Volume Shadow Copy Service (VSS) state and shadow copy availability.
+    /// Disabled VSS or no shadow copies on a mature system = anti-forensic cleanup.
+    /// Cheat cleanup scripts delete shadow copies to prevent forensic file recovery.
+    /// Also checks Prefetch for vssadmin/wmic shadow deletion commands.</summary>
+    public bool ScanShadowCopyState { get; set; } = true;
+
     /// <summary>
     /// When false (default) the drive module only walks targeted, high-signal
     /// directories (profile, temp, downloads, appdata). When true it walks the
@@ -1406,6 +1423,9 @@ public static class ScanProfiles
         ScanSpecialKReShade = true,           // SK install dirs + game dir DLL check — fast
         ScanFpsUnlockerExploits = true,       // installed software + Prefetch + AppData — fast
         ScanClipboardHistory = true,          // clipboard DB byte-grep — fast
+        ScanAcServiceTamper = true,           // AC service registry + process check — fast
+        ScanAccountCorrelation = true,        // loginusers.vdf + Riot config dirs — fast
+        ScanShadowCopyState = true,           // vssadmin + VSS registry — fast
         DeepDriveScan = false,
         // No per-module timeout — every Quick module runs to completion. Quick stays
         // fast because slow modules are individually disabled above, not because they
