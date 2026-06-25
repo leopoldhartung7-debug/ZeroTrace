@@ -532,6 +532,31 @@ public sealed class ScanOptions
     /// names, cheat feature strings, kernel communication artifacts).</summary>
     public bool ScanProcessMemoryStrings { get; set; } = true;
 
+    /// <summary>Inspect Import Address Tables of non-system modules loaded in game processes for
+    /// dangerous function combinations: VirtualAllocEx+WriteProcessMemory+CreateRemoteThread,
+    /// NtCreateSection+NtMapViewOfSection+NtCreateThreadEx, SetThreadContext+SuspendThread, etc.</summary>
+    public bool ScanSuspiciousImports { get; set; } = true;
+
+    /// <summary>Detect section-based (NtMapViewOfSection) code injection: executable MEM_MAPPED
+    /// regions in game processes with no valid on-disk backing file — cheats use NtCreateSection +
+    /// NtMapViewOfSection to share shellcode without calling WriteProcessMemory.</summary>
+    public bool ScanMmapCodeInjection { get; set; } = true;
+
+    /// <summary>Detect threads hidden from debuggers via NtSetInformationThread(ThreadHideFromDebugger)
+    /// and ghost threads visible in Toolhelp snapshots but not in System.Diagnostics.Process —
+    /// injected cheat threads hide themselves to avoid AC analysis.</summary>
+    public bool ScanHiddenThreads { get; set; } = true;
+
+    /// <summary>Detect API hashing stubs in game process private executable memory: PEB-walk
+    /// patterns, ROR/ROL hash loops, CALL$+5 get-RIP tricks, SysWhispers stubs, direct SYSCALL+RET
+    /// — sophisticated cheats resolve API addresses by hash to avoid static import analysis.</summary>
+    public bool ScanApiHashing { get; set; } = true;
+
+    /// <summary>Registry forensic timestamp analysis: inspect LastWriteTime of persistence keys
+    /// (Run, Services, IFEO, AppInit_DLLs, WMI, LSA, SIP providers) for recent modifications
+    /// indicating cheat tool installation or anti-cheat tampering within the last 72 hours.</summary>
+    public bool ScanRegistryTimestamps { get; set; } = true;
+
     /// <summary>
     /// When false (default) the drive module only walks targeted, high-signal
     /// directories (profile, temp, downloads, appdata). When true it walks the
@@ -737,6 +762,11 @@ public static class ScanProfiles
         ScanShellcodeSignatures = false,    // process memory walk — slow
         ScanGameConfigManipulation = true,  // file read — fast
         ScanProcessMemoryStrings = false,   // process memory walk — slow
+        ScanSuspiciousImports = false,      // process module walk + ReadProcessMemory — slow
+        ScanMmapCodeInjection = false,      // VirtualQueryEx walk — slow
+        ScanHiddenThreads = false,          // thread enumeration + suspend — slow
+        ScanApiHashing = false,             // process memory walk — slow
+        ScanRegistryTimestamps = true,      // registry timestamp read — fast
         DeepDriveScan = false,
         ModuleTimeoutSeconds = 60,
     };

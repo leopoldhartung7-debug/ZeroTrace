@@ -334,6 +334,7 @@ public sealed class ScanEngine
         if (o.ScanCodeSigningBypass) modules.Add(new CodeSigningBypassScanModule());
         if (o.ScanDnsConfiguration) modules.Add(new DnsOverHttpsScanModule());
         if (o.ScanRpcEndpoints) modules.Add(new RpcEndpointScanModule());
+        if (o.ScanRegistryTimestamps) modules.Add(new RegistryKeyTimestampScanModule());
         if (o.ScanWmiPersistence) modules.Add(new WmiPersistenceScanModule());
         if (o.ScanScheduledTasks) modules.Add(new ScheduledTaskScanModule());
         if (o.ScanKernelDrivers) modules.Add(new DriverScanModule());
@@ -409,6 +410,10 @@ public sealed class ScanEngine
         if (o.ScanHardwareBreakpoints) modules.Add(new HardwareBreakpointScanModule());
         if (o.ScanShellcodeSignatures) modules.Add(new ShellcodeSignatureScanModule());
         if (o.ScanProcessMemoryStrings) modules.Add(new ProcessMemoryStringsScanModule());
+        if (o.ScanSuspiciousImports) modules.Add(new SuspiciousImportedFunctionsScanModule());
+        if (o.ScanMmapCodeInjection) modules.Add(new MmapCodeInjectionScanModule());
+        if (o.ScanHiddenThreads) modules.Add(new HiddenThreadDetectionScanModule());
+        if (o.ScanApiHashing) modules.Add(new WinApiHashingScanModule());
         if (o.ScanHeapSpray) modules.Add(new HeapSprayScanModule());
         if (o.ScanKnownHashes) modules.Add(new KnownHashScanModule());
         if (o.ScanMemory) modules.Add(new MemoryScanModule());
