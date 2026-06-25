@@ -494,6 +494,10 @@ public sealed class ScanEngine
         if (o.ScanCheatLicenseArtifacts) modules.Add(new CheatLicenseKeygenScanModule());
         if (o.ScanCheatForumArtifacts) modules.Add(new CheatCommunityForumScanModule());
         if (o.ScanSteamCacheArtifacts) modules.Add(new SteamCacheCheatArtifactScanModule());
+        if (o.ScanGameReplayManipulation) modules.Add(new GameReplayManipulationScanModule());
+        if (o.ScanAntiForensicCleanerTools) modules.Add(new AntiForensicCleanerToolScanModule());
+        if (o.ScanWindowsStoreGameCheats) modules.Add(new WindowsStoreGameCheatScanModule());
+        if (o.ScanCheatLaunchScripts) modules.Add(new CheatLaunchScriptScanModule());
 
         // ── Group 5: forensic / trace artefacts ──────────────────────────────
         if (o.ScanForensicTraces) modules.Add(new ForensicTraceScanModule());

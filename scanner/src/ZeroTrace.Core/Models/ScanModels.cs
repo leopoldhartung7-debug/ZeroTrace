@@ -923,6 +923,35 @@ public sealed class ScanOptions
     /// Steam log forensics is a primary Ocean/detect.ac detection source.</summary>
     public bool ScanSteamCacheArtifacts { get; set; } = true;
 
+    /// <summary>Detect game replay/demo manipulation: CS2/CSGO stub or missing demo files
+    /// (0-byte or sub-2KB real demos), VALORANT replay gaps, FACEIT demo corruption,
+    /// demo-blocking tools on disk or in memory, and CS2 Steam launch options that disable
+    /// demo recording (-nodemo, +demo_forcerecord 0). Demo forensics is a primary
+    /// Ocean/detect.ac source — demos prove innocence or cheat presence.</summary>
+    public bool ScanGameReplayManipulation { get; set; } = true;
+
+    /// <summary>Detect anti-forensic tool artifacts: CCleaner with cheat-directory custom cleaning
+    /// rules or AutoRun enabled, BleachBit configuration with cheat paths, PrivaZer/Eraser
+    /// installations, O&O ShutUp10 and Windows10Privacy telemetry blockers, and Prefetch evidence
+    /// of cleaner execution before AC review. Cheaters run these tools to destroy forensic evidence
+    /// — artifacts prove intentional cleanup. Primary Ocean/detect.ac forensic signal.</summary>
+    public bool ScanAntiForensicCleanerTools { get; set; } = true;
+
+    /// <summary>Detect cheat artifacts in Xbox/PC Game Pass game directories (C:\XboxGames\):
+    /// proxy DLLs for DLL-hijacking injection (winhttp.dll, dxgi.dll, dinput8.dll), BepInEx
+    /// Doorstop framework in Unity-based Game Pass titles, cheat-keyword DLL files, Game Bar
+    /// overlay abuse, Game DVR disabled to prevent screenshot evidence, and per-package LocalState
+    /// cheat files. Game Pass titles have different install paths from Steam/Epic.</summary>
+    public bool ScanWindowsStoreGameCheats { get; set; } = true;
+
+    /// <summary>Detect cheat launcher scripts in Desktop, Downloads, Startup, AppData, and Temp:
+    /// .bat/.cmd files with AC-service-stop or inject commands; AutoHotKey .ahk scripts with
+    /// PixelSearch/ImageSearch (triggerbot) and recoil-control patterns; Python .py scripts with
+    /// AI-aimbot imports (bettercam, ultralytics, dxcam, pymem); PowerShell scripts with
+    /// cheat-keyword names; VBS/JS download-and-execute scripts. Launcher scripts frequently
+    /// survive after the main cheat binary is deleted — primary Ocean/detect.ac signal.</summary>
+    public bool ScanCheatLaunchScripts { get; set; } = true;
+
     /// <summary>Scan game directories (Steam, Epic, user-specified) for BepInEx, Unity Doorstop,
     /// and MelonLoader code injection frameworks. Detects: doorstop_config.ini (enabled=true),
     /// winhttp.dll Doorstop proxy in game root, BepInEx/plugins/ DLLs with cheat keywords,
@@ -1623,6 +1652,10 @@ public static class ScanProfiles
         ScanSpooferArtifacts = true,          // file stat + NIC registry + installed software — fast
         ScanAntiCheatGameVersion = true,      // AC service registry + Steam LaunchOptions — fast
         ScanSteamCacheArtifacts = false,      // Steam log + workshop .acf scan — slow
+        ScanGameReplayManipulation = true,    // demo dir stat + launch opts registry — fast
+        ScanAntiForensicCleanerTools = true,  // CCleaner registry + Prefetch stat — fast
+        ScanWindowsStoreGameCheats = true,    // XboxGames dir stat + Game Bar registry — fast
+        ScanCheatLaunchScripts = true,        // Desktop/Downloads script scan — bounded
         DeepDriveScan = false,
         // No per-module timeout — every Quick module runs to completion. Quick stays
         // fast because slow modules are individually disabled above, not because they
