@@ -936,6 +936,19 @@ public sealed class ScanOptions
     /// routines are frozen. All or majority of AC threads suspended = critical finding.</summary>
     public bool ScanSuspendedAcThreads { get; set; } = true;
 
+    /// <summary>Cross-reference PEB.Ldr.InLoadOrderModuleList (raw ReadProcessMemory walk) against
+    /// EnumProcessModulesEx results in game processes. Modules visible in EnumProcessModulesEx
+    /// but absent from the Ldr doubly-linked list were manually mapped (reflective DLL injection /
+    /// manual map) without the Windows loader — the classic technique to hide injected DLLs
+    /// from snapshot-based detection tools. Requires elevation.</summary>
+    public bool ScanPebLdrInconsistency { get; set; } = true;
+
+    /// <summary>Detect DirectInput 8 (dinput8.dll) vtable hooks in game processes: scans the DX
+    /// IDirectInputDevice8 vtable for GetDeviceState (slot 9) and GetDeviceData (slot 10) pointers
+    /// that fall outside dinput8.dll's mapped range. Aimbot/no-recoil cheats hook these slots to
+    /// intercept and modify raw mouse input before the game reads it. Requires elevation.</summary>
+    public bool ScanDirectInputVtableHooks { get; set; } = true;
+
     /// <summary>
     /// When false (default) the drive module only walks targeted, high-signal
     /// directories (profile, temp, downloads, appdata). When true it walks the
@@ -1205,6 +1218,8 @@ public static class ScanProfiles
         ScanDxVtableHooks = false,            // cross-process vtable read — slow
         ScanAcPriorityAbuse = true,           // GetPriorityClass + GetProcessAffinityMask — fast
         ScanSuspendedAcThreads = true,        // NtQuerySystemInformation class 5 — fast
+        ScanPebLdrInconsistency = false,      // ReadProcessMemory walk — slow; elevation required
+        ScanDirectInputVtableHooks = false,   // cross-process dinput8.dll scan — slow
         DeepDriveScan = false,
         ModuleTimeoutSeconds = 60,
     };

@@ -316,6 +316,8 @@ public sealed class ScanEngine
         if (o.ScanDxVtableHooks) modules.Add(new DirectXVtableHookScanModule());
         if (o.ScanAcPriorityAbuse) modules.Add(new AntiCheatProcessPriorityAbuseScanModule());
         if (o.ScanSuspendedAcThreads) modules.Add(new SuspendedAntiCheatThreadScanModule());
+        if (o.ScanPebLdrInconsistency) modules.Add(new PebLdrInconsistencyScanModule());
+        if (o.ScanDirectInputVtableHooks) modules.Add(new DirectInputVtableHookScanModule());
 
         // ── Group 3: registry / WMI / driver queries ──────────────────────────
         if (o.ScanRegistry) modules.Add(new RegistryScanModule());
