@@ -419,6 +419,12 @@ public sealed class ScanOptions
     /// SeDebugPrivilege/SeTcbPrivilege/SeLoadDriverPrivilege enabled.</summary>
     public bool ScanTokenImpersonation { get; set; } = true;
 
+    /// <summary>Integrity-level based token abuse detection: enumerate processes running with
+    /// SYSTEM mandatory integrity level (S-1-16-16384) that are not known legitimate system services,
+    /// and detect impersonation tokens (TokenType=2) held by non-system processes. Complements
+    /// ScanTokenImpersonation with integrity-label based analysis.</summary>
+    public bool ScanTokenIntegrityAbuse { get; set; } = true;
+
     /// <summary>Check PowerShell security configuration: Script Block Logging, Module Logging,
     /// Execution Policy, PS v2 downgrade vector, AMSI provider integrity, and transcription.</summary>
     public bool ScanPowerShellSecurity { get; set; } = true;
@@ -864,6 +870,24 @@ public sealed class ScanOptions
     /// Uses EnumWindows + GetWindowLongPtr(GWL_EXSTYLE) for overlay detection.</summary>
     public bool ScanGlobalInputHooks { get; set; } = true;
 
+    /// <summary>Detect sleep-obfuscated cheat DLLs (Ekko/Foliage/Deathsleep patterns) that
+    /// XOR-encrypt themselves and change memory permissions to RW (not executable) while sleeping.
+    /// Uses VirtualQueryEx to find large private RW-only committed regions with high entropy
+    /// (Shannon > 7.2 bits/byte) in game processes, combined with encrypted PE header detection.</summary>
+    public bool ScanSleepMasking { get; set; } = true;
+
+    /// <summary>Enumerate all ESTABLISHED outbound TCP connections via GetExtendedTcpTable
+    /// (TCP_TABLE_OWNER_PID_ALL) and check against known cheat protocol ports (41337, 31337,
+    /// etc.), connections from cheat-named processes, and processes from suspicious paths with
+    /// high-numbered remote ports. Complements DNS cache analysis with live connection data.</summary>
+    public bool ScanActiveCheatConnections { get; set; } = true;
+
+    /// <summary>Detect DirectX (D3D11/D3D12/DXGI) virtual function table hooks in game processes.
+    /// ESP/overlay cheats hook IDXGISwapChain::Present() (vtable slot 8) to draw wallhack boxes
+    /// every frame. Detection reads cross-process vtable arrays and flags entries pointing to
+    /// anonymous private executable memory instead of known DX DLLs. Requires elevation.</summary>
+    public bool ScanDxVtableHooks { get; set; } = true;
+
     /// <summary>Detect malicious EFI/UEFI NVRAM variables used by boot-level HWID spoofers
     /// and cheat loaders. Checks EFI Boot* entries for unexpected boot managers, vendor-specific
     /// GUID namespaces matching known cheat spoofer DXE drivers, and known cheat variable names
@@ -1060,6 +1084,7 @@ public static class ScanProfiles
         ScanDllLoadOrderHijack = true,    // registry + PATH check — fast
         ScanAntiDebugTechniques = false,  // process memory scan — slow
         ScanTokenImpersonation = false,   // process handle + token — slow
+        ScanTokenIntegrityAbuse = true,   // integrity level check on running procs — fast
         ScanPowerShellSecurity = true,    // registry — fast
         ScanAlternativeDataStreams = false, // file walk — slow
         ScanVbsHvci = true,              // registry — fast
@@ -1141,6 +1166,10 @@ public static class ScanProfiles
         ScanEfiVariables = true,              // GetFirmwareEnvironmentVariable — fast
         ScanDnsCacheExtended = true,          // DnsGetCacheDataTable — fast
         ScanSuspiciousNetworkAdapters = true, // GetAdaptersInfo + registry — fast
+        ScanTokenIntegrityAbuse = true,       // integrity level check — fast
+        ScanSleepMasking = false,             // VirtualQueryEx memory scan — slow
+        ScanActiveCheatConnections = true,    // GetExtendedTcpTable ALL — fast
+        ScanDxVtableHooks = false,            // cross-process vtable read — slow
         DeepDriveScan = false,
         ModuleTimeoutSeconds = 60,
     };
