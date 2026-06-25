@@ -1324,6 +1324,21 @@ public sealed class ScanOptions
     public bool ScanNetworkPacketManipulation { get; set; } = true;
     public bool ScanGameTrainerCheatEngine { get; set; } = true;
     public bool ScanVirtualMachineCheatBypass { get; set; } = true;
+    public bool ScanEasyAntiCheatBypass { get; set; } = true;
+    public bool ScanBattleEyeBypass { get; set; } = true;
+    public bool ScanVanguardBypass { get; set; } = true;
+    public bool ScanFiveMNativeSpoof { get; set; } = true;
+    public bool ScanAltVResourceInjection { get; set; } = true;
+    public bool ScanRageMpPacketSpoof { get; set; } = true;
+    public bool ScanAntiDebugEvasion { get; set; } = true;
+    public bool ScanProcessInjectionArtifact { get; set; } = true;
+    public bool ScanKernelCallbackHijack { get; set; } = true;
+    public bool ScanMemoryPatchingDetection { get; set; } = true;
+    public bool ScanFiveMResourceManifestTamper { get; set; } = true;
+    public bool ScanCheatCloudService { get; set; } = true;
+    public bool ScanAntiCheatKiller { get; set; } = true;
+    public bool ScanGameExploitKit { get; set; } = true;
+    public bool ScanRootKitUserModeArtifact { get; set; } = true;
     /// <summary>Detect cheat source code and development artifacts: .git repos with cheat remote
     /// URLs, Visual Studio cheat projects (.sln/.vcxproj with cheat keywords), compiled build
     /// artifacts (cheat.pdb, x64/Release DLLs), game SDK directories, offset header files,
@@ -2117,6 +2132,21 @@ public static class ScanProfiles
         ScanNetworkPacketManipulation = true,   // lag switch / packet injection scan
         ScanGameTrainerCheatEngine = true,      // Cheat Engine / game trainer scan
         ScanVirtualMachineCheatBypass = true,   // VM-based cheat bypass scan
+        ScanEasyAntiCheatBypass = true,
+        ScanBattleEyeBypass = true,
+        ScanVanguardBypass = true,
+        ScanFiveMNativeSpoof = true,
+        ScanAltVResourceInjection = true,
+        ScanRageMpPacketSpoof = true,
+        ScanAntiDebugEvasion = true,
+        ScanProcessInjectionArtifact = true,
+        ScanKernelCallbackHijack = true,
+        ScanMemoryPatchingDetection = true,
+        ScanFiveMResourceManifestTamper = true,
+        ScanCheatCloudService = true,
+        ScanAntiCheatKiller = true,
+        ScanGameExploitKit = true,
+        ScanRootKitUserModeArtifact = true,
         ScanCheatSourceCodeRepo = true,        // cheat git repo/VS project/SDK/PDB artifact scan — fast
         DeepDriveScan = false,
         // No per-module timeout — every Quick module runs to completion. Quick stays

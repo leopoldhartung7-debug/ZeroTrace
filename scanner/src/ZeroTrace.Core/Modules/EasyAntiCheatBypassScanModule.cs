@@ -1,1469 +1,617 @@
 using Microsoft.Win32;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using ZeroTrace.Core.Models;
 
 namespace ZeroTrace.Core.Modules;
 
-// EasyAntiCheat bypass detection module.
-// Checks registry services, known bypass tool files, certificate store tampering,
-// game directory integrity, log anomalies, DLL sideloading, BYOVD drivers,
-// GitHub repo artifacts, PowerShell history, ETW ntdll copies, and script files.
 public sealed class EasyAntiCheatBypassScanModule : IScanModule
 {
     public string Name => "Easy Anti-Cheat Bypass Detection";
-    public double Weight => 4.2;
+    public double Weight => 4.6;
     public int ParallelGroup => 4;
 
-    // -------------------------------------------------------------------------
-    // Known bypass tool file names — flagged Critical anywhere they appear
-    // -------------------------------------------------------------------------
-    private static readonly string[] KnownBypassFileNames =
+    private static readonly string[] KnownEacBypassExeNames =
     [
-        "eac_bypass.exe",
-        "eac_spoofer.exe",
-        "eac_patcher.exe",
-        "eac_unloader.dll",
-        "EACBypass.dll",
-        "EAC-Bypass.exe",
-        "anticlient_bypass.dll",
-        "EACLoader.exe",
-        "EACKiller.exe",
-        "AntiCheatKiller.exe",
-        "ServiceKiller.exe",
-        "DriverUnloader.exe",
-        "BypassLoader.exe",
-        "FortniteBypass.exe",
-        "ApexBypass.exe",
-        "RustBypass.exe",
-        "eac_emu.dll",
-        "eac_emulator.dll",
-        "eac_hook.dll",
-        "eac_hook.exe",
-        "eac_disable.exe",
-        "eac_disable.bat",
-        "EACFix.exe",
-        "EACPatch.exe",
-        "EACRemover.exe",
-        "EACStub.exe",
-        "EACLoader_bypass.exe",
-        "eac_launcher_bypass.exe",
-        "noeac.exe",
-        "eacoff.exe",
+        "eac_bypass.exe", "eac_patch.exe", "eac_killer.exe", "eac_unloader.exe",
+        "eac_spoofer.exe", "eac_remover.exe", "eac_hook.exe", "eac_disable.exe",
+        "easyanticheat_bypass.exe", "easyanticheat_hook.exe", "easyanticheat_spoof.exe",
+        "easyanticheat_kill.exe", "easyanticheat_patch.exe", "bypasseac.exe",
+        "eac_bypass_loader.exe", "antieac.exe", "eac_dumper.exe", "eac_emu.exe",
+        "eac_emulator.exe", "eac_fake.exe", "eac_patcher.exe", "eac_skipper.exe",
+        "eac_suspend.exe", "eac_terminate.exe", "fakeeac.exe", "noeac.exe",
+        "eac_blocker.exe", "eac_injector.exe", "eac_loader_patch.exe",
+        "eac_offline.exe", "eac_workaround.exe", "eac_crack.exe",
+        "easyac_bypass.exe", "eac2_bypass.exe", "easy_bypass.exe",
+        "eac_v2_bypass.exe", "eac_cert_bypass.exe", "eac_tls_bypass.exe",
+        "eac_network_bypass.exe", "eac_protocol_bypass.exe", "eac_sign_bypass.exe",
+        "eac_stealth.exe", "eac_hide.exe", "eac_ghost.exe", "eac_cloak.exe",
+        "eac_shadow.exe", "eac_phantom.exe", "eac_wraith.exe",
+        "eac_offset_bypass.exe", "eac_scan_bypass.exe", "eac_memory_bypass.exe",
+        "eac_driver_bypass.exe", "eac_kernel_bypass.exe", "eac_ring0_bypass.exe",
     ];
 
-    // anticlient.dll is only suspicious outside a legitimate EAC install directory
-    private const string AntclientDll = "anticlient.dll";
-
-    // -------------------------------------------------------------------------
-    // Legitimate DLLs that are expected to live next to EasyAntiCheat_EOS.exe
-    // -------------------------------------------------------------------------
-    private static readonly string[] LegitEacDlls =
+    private static readonly string[] KnownEacBypassDllNames =
     [
-        "EasyAntiCheat_EOS.dll",
-        "EasyAntiCheat.dll",
+        "eac_bypass.dll", "eac_hook.dll", "eac_patch.dll", "eac_spoof.dll",
+        "easyanticheat_bypass.dll", "easyanticheat_hook.dll", "antieac.dll",
+        "eac_emu.dll", "eac_emulator.dll", "eac_fake.dll", "eac_stealth.dll",
+        "eac_hide.dll", "eac_ghost.dll", "eac_cloak.dll", "eac_shadow.dll",
+        "eac_phantom.dll", "eac_loader.dll", "fakeeac.dll", "noeac.dll",
+        "eac_injector.dll", "eac_memory_bypass.dll", "eac_driver_bypass.dll",
+        "eac_kernel_bypass.dll", "eac_ring0_bypass.dll", "eac_cert_bypass.dll",
+        "eac_tls_bypass.dll", "eac_network_bypass.dll", "eac_protocol_bypass.dll",
+        "eac_sign_bypass.dll", "eac_offset_bypass.dll", "eac_scan_bypass.dll",
     ];
 
-    // -------------------------------------------------------------------------
-    // BYOVD (Bring Your Own Vulnerable Driver) known-bad driver filenames
-    // -------------------------------------------------------------------------
-    private static readonly string[] ByovdDriverNames =
+    private static readonly string[] EacBypassDirNames =
     [
-        "gdrv.sys",
-        "WinRing0x64.sys",
-        "WinRing0.sys",
-        "cpuz141_x64.sys",
-        "cpuz143_x64.sys",
-        "AsrDrv103.sys",
-        "HwRwDrv.sys",
-        "iqvw64e.sys",
-        "MsIo64.sys",
-        "PhyMemDrv.sys",
-        "PROCEXP152.SYS",
-        "dbutil_2_3.sys",
-        "RTCore64.sys",
-        "kprocesshacker.sys",
-        "AsUpIO64.sys",
-        "NalDrv.sys",
-        "Speedfan.sys",
-        "mhyprot2.sys",
-        "Dbk64.sys",
-        "HackerShield.sys",
-        "viragt64.sys",
-        "AsIO3.sys",
-        "cpuz145.sys",
-        "ALCPU64.sys",
-        "EneTechIo64.sys",
-        "phymem64.sys",
-        "nicm.sys",
+        "eac_bypass", "eac bypass", "easyanticheat_bypass", "eac_hack",
+        "anti_eac", "eac_remover", "eac_killer", "eac_tools",
+        "eac_patch", "eac_spoofer", "eac_crack", "eac_dumper",
+        "eac_hooker", "eac_injector", "eac_patcher", "eac_stealth",
+        "noeac", "fakeeac", "eac_workaround", "eac_offline",
+        "eac_emulator", "eac_ghost", "eac_shadow", "eac_phantom",
+        "eac_cloak", "eac_loader_bypass", "eac2bypass", "eac_v2_bypass",
     ];
 
-    // -------------------------------------------------------------------------
-    // Known EAC bypass GitHub repository folder names
-    // -------------------------------------------------------------------------
-    private static readonly string[] BypassRepoDirNames =
+    private static readonly string[] EacBypassConfigKeywords =
     [
-        "EAC-Bypass",
-        "EasyAntiCheat-Bypass",
-        "eac-emu",
-        "eac-emulator",
-        "EACBypass",
-        "eac-bypass",
-        "EasyAntiCheatBypass",
-        "eac_bypass_source",
-        "anticlient_bypass",
+        "eac_bypass", "eac_disabled", "eac_hooked", "eac_patched",
+        "easyanticheat_bypass", "eac_spoofed", "eac_killed", "eac_removed",
+        "eac_emulated", "eac_faked", "eac_hidden", "eac_ghosted",
+        "bypass_eac", "disable_eac", "hook_eac", "patch_eac",
+        "spoof_eac", "kill_eac", "remove_eac", "emulate_eac",
+        "eac_cert_spoofed", "eac_tls_bypassed", "eac_network_bypassed",
+        "eac_driver_bypassed", "eac_kernel_bypassed", "eac_ring0_bypassed",
+        "eac_sign_bypassed", "eac_memory_bypassed", "eac_scan_bypassed",
+        "eac_offline_mode", "eac_fake_response", "eac_block_service",
+        "eac_block_connection", "eac_block_report", "eac_intercept",
     ];
 
-    // -------------------------------------------------------------------------
-    // PowerShell history command patterns and their associated risk levels
-    // -------------------------------------------------------------------------
-    private static readonly (string Pattern, RiskLevel Risk, string Title)[] PsHistoryPatterns =
+    private static readonly string[] EacLegitServiceNames =
     [
-        ("sc delete EasyAntiCheat",                                            RiskLevel.Critical, "EAC Service Deletion via sc.exe"),
-        ("EtwpDisablePatchGuard",                                              RiskLevel.Critical, "EtwpDisablePatchGuard Invocation in PS History"),
-        ("bcdedit /set nointegritychecks on",                                  RiskLevel.Critical, "Boot Integrity Checks Disabled via bcdedit"),
-        ("kdmapper",                                                            RiskLevel.Critical, "kdmapper Kernel Driver Mapper in PS History"),
-        ("[Runtime.InteropServices.Marshal]::GetDelegateForFunctionPointer",   RiskLevel.High,     "ETW Function Pointer Patch Pattern in PS History"),
-        ("sc stop EasyAntiCheat",                                              RiskLevel.High,     "EAC Service Stopped via sc.exe"),
-        ("net stop EasyAntiCheat",                                             RiskLevel.High,     "EAC Service Stopped via net stop"),
-        ("bcdedit /set testsigning on",                                        RiskLevel.High,     "Test Signing Mode Enabled via bcdedit"),
-        ("NtLoadDriver",                                                        RiskLevel.High,     "NtLoadDriver Call in PS History"),
-        ("[Reflection.Assembly]::LoadWithPartialName",                         RiskLevel.Medium,   "Reflection Assembly Load (ETW patch artifact) in PS History"),
+        "EasyAntiCheat", "EasyAntiCheat_EOS",
     ];
 
-    // -------------------------------------------------------------------------
-    // Entry point — delegates to all helper methods
-    // -------------------------------------------------------------------------
-    public async Task RunAsync(ZeroTrace.Core.Engine.ScanContext ctx, CancellationToken ct)
+    private static readonly string[] EacLegitExePaths =
+    [
+        @"EasyAntiCheat\EasyAntiCheat.exe",
+        @"EasyAntiCheat\EasyAntiCheat_EOS.exe",
+        @"EasyAntiCheat_EOS\EasyAntiCheat_EOS.exe",
+    ];
+
+    private static readonly string[] KnownEacRegistryBypassKeys =
+    [
+        @"SOFTWARE\EasyAntiCheat_bypass",
+        @"SOFTWARE\EAC_patch",
+        @"SOFTWARE\EAC_hook",
+        @"SOFTWARE\EAC_spoof",
+        @"SOFTWARE\EAC_emulator",
+        @"SOFTWARE\FakeEAC",
+        @"SOFTWARE\AntiEAC",
+    ];
+
+    private static readonly string[] EacCertBypassFileNames =
+    [
+        "eac_cert_bypass.bin", "eac_cert_spoof.bin", "eac_cert.fake",
+        "eac_ssl_bypass.dat", "eac_tls_bypass.dat", "eac_fake_cert.pem",
+        "eac_cert_patch.bin", "eac_sign_bypass.bin", "eac_cert_kill.bin",
+    ];
+
+    private static readonly string[] UserDirs;
+
+    static EasyAntiCheatBypassScanModule()
     {
-        // Run all detection helpers in sequence.
-        // Each helper is async and uses await internally.
-        await CheckEacServiceRegistryAsync(ctx, ct);
-        await ScanBypassToolFilesAsync(ctx, ct);
-        await CheckCertificateStoreTamperingAsync(ctx, ct);
-        await CheckGameDirectoryIntegrityAsync(ctx, ct);
-        await CheckEacLogAnomaliesAsync(ctx, ct);
-        await CheckDllSideloadingAsync(ctx, ct);
-        await CheckEacDriverPathAsync(ctx, ct);
-        await ScanByovdDriversAsync(ctx, ct);
-        await CheckBypassRepoDirsAsync(ctx, ct);
-        await CheckPowerShellHistoryAsync(ctx, ct);
-        await CheckNtdllCopiesAsync(ctx, ct);
-        await ScanScriptFilesAsync(ctx, ct);
+        var dirs = new List<string>();
+        string? profile = Environment.GetEnvironmentVariable("USERPROFILE");
+        string? appData = Environment.GetEnvironmentVariable("APPDATA");
+        string? localAppData = Environment.GetEnvironmentVariable("LOCALAPPDATA");
+        string? temp = Environment.GetEnvironmentVariable("TEMP");
+        string? desktop = profile != null ? Path.Combine(profile, "Desktop") : null;
+        string? downloads = profile != null ? Path.Combine(profile, "Downloads") : null;
+        string? documents = profile != null ? Path.Combine(profile, "Documents") : null;
+
+        foreach (var d in new[] { appData, localAppData, temp, desktop, downloads, documents })
+            if (d != null) dirs.Add(d);
+
+        UserDirs = [.. dirs];
     }
 
-    // =========================================================================
-    // 1. EAC service registry checks
-    // =========================================================================
-    private async Task CheckEacServiceRegistryAsync(ZeroTrace.Core.Engine.ScanContext ctx, CancellationToken ct)
+    public async Task RunAsync(ScanContext ctx, CancellationToken ct)
     {
-        await Task.Run(() =>
-        {
-            string[] serviceKeys =
-            [
-                @"SYSTEM\CurrentControlSet\Services\EasyAntiCheat",
-                @"SYSTEM\CurrentControlSet\Services\EasyAntiCheat_EOS",
-            ];
-
-            foreach (string keyPath in serviceKeys)
-            {
-                ct.ThrowIfCancellationRequested();
-                ctx.IncrementRegistryKeys();
-
-                try
-                {
-                    using RegistryKey? key = Registry.LocalMachine.OpenSubKey(keyPath, writable: false);
-                    if (key is null)
-                        continue;
-
-                    // Check Start value — 4 means disabled
-                    object? startVal = key.GetValue("Start");
-                    if (startVal is int startInt && startInt == 4)
-                    {
-                        ctx.AddFinding(new Finding
-                        {
-                            Module   = Name,
-                            Title    = "EAC Service Disabled in Registry",
-                            Risk     = RiskLevel.High,
-                            Location = $@"HKLM\{keyPath}",
-                            Reason   = "The EasyAntiCheat service Start value is set to 4 (Disabled). A bypass tool may have disabled the service.",
-                            Detail   = $"Start = {startInt}",
-                        });
-                    }
-
-                    // Check ImagePath value
-                    object? imagePathVal = key.GetValue("ImagePath");
-                    if (imagePathVal is string imagePath && !string.IsNullOrWhiteSpace(imagePath)
-                        )
-                    {
-                        // Flag if ImagePath does not contain \EasyAntiCheat\ (case-insensitive)
-                        if (!imagePath.Contains(@"\EasyAntiCheat\", StringComparison.OrdinalIgnoreCase))
-                        {
-                            ctx.AddFinding(new Finding
-                            {
-                                Module   = Name,
-                                Title    = "EAC Service ImagePath Outside EAC Directory",
-                                Risk     = RiskLevel.Critical,
-                                Location = $@"HKLM\{keyPath}",
-                                Reason   = "EasyAntiCheat service ImagePath does not reference the \\EasyAntiCheat\\ directory. The service binary may have been redirected.",
-                                Detail   = $"ImagePath = {imagePath}",
-                            });
-                        }
-
-                        // Flag if ImagePath points to Temp, Downloads, or AppData locations
-                        if (IsInSuspiciousUserPath(imagePath))
-                        {
-                            ctx.AddFinding(new Finding
-                            {
-                                Module   = Name,
-                                Title    = "EAC Service ImagePath Points to User Writable Location",
-                                Risk     = RiskLevel.Critical,
-                                Location = $@"HKLM\{keyPath}",
-                                Reason   = "EasyAntiCheat service ImagePath references a Temp, Downloads, or AppData directory — a strong indicator of binary redirection by a bypass tool.",
-                                Detail   = $"ImagePath = {imagePath}",
-                            });
-                        }
-                    }
-                }
-                catch (Exception ex) when (ex is UnauthorizedAccessException or System.Security.SecurityException)
-                {
-                    // Insufficient privileges to read this key — skip silently
-                }
-            }
-        }, ct);
+        await Task.WhenAll(
+            ScanUserDirsForBypassExes(ctx, ct),
+            ScanUserDirsForBypassDlls(ctx, ct),
+            ScanUserDirsForBypassDirs(ctx, ct),
+            ScanEacInstallIntegrity(ctx, ct),
+            CheckEacServiceTampering(ctx, ct),
+            CheckEacRegistryBypassKeys(ctx, ct),
+            ScanConfigsForEacBypassKeywords(ctx, ct),
+            ScanForEacCertBypassFiles(ctx, ct),
+            CheckEacSystemFileReplacement(ctx, ct),
+            ScanProgramFilesForEacTools(ctx, ct)
+        ).ConfigureAwait(false);
     }
 
-    // =========================================================================
-    // 2. Known EAC bypass tool files
-    // =========================================================================
-    private async Task ScanBypassToolFilesAsync(ZeroTrace.Core.Engine.ScanContext ctx, CancellationToken ct)
+    private Task ScanUserDirsForBypassExes(ScanContext ctx, CancellationToken ct)
     {
-        // Directories to scan for known bypass tool filenames
-        string[] scanDirs = BuildUserScanDirectories();
-
-        foreach (string dir in scanDirs)
+        return Task.Run(() =>
         {
-            ct.ThrowIfCancellationRequested();
-
-            if (!Directory.Exists(dir))
-                continue;
-
-            IEnumerable<string> files;
-            try
+            foreach (string root in UserDirs)
             {
-                files = Directory.EnumerateFiles(dir, "*", SearchOption.AllDirectories);
-            }
-            catch (UnauthorizedAccessException)
-            {
-                continue;
-            }
-
-            foreach (string filePath in files)
-            {
-                ct.ThrowIfCancellationRequested();
-
+                if (!Directory.Exists(root)) continue;
                 try
                 {
-                    string fileName = Path.GetFileName(filePath);
-                    ctx.IncrementFiles();
-
-                    // Check against the known bypass filename list
-                    foreach (string bad in KnownBypassFileNames)
-                    {
-                        if (fileName.Equals(bad, StringComparison.OrdinalIgnoreCase))
-                        {
-                            ctx.AddFinding(new Finding
-                            {
-                                Module   = Name,
-                                Title    = "Known EAC Bypass Tool Detected",
-                                Risk     = RiskLevel.Critical,
-                                Location = filePath,
-                                FileName = fileName,
-                                Reason   = $"File name \"{fileName}\" matches a known EasyAntiCheat bypass tool.",
-                                Detail   = $"Full path: {filePath}",
-                            });
-                            break;
-                        }
-                    }
-
-                    // anticlient.dll is only suspicious outside a legitimate EAC install directory
-                    if (fileName.Equals(AntclientDll, StringComparison.OrdinalIgnoreCase))
-                    {
-                        string fileDir = Path.GetDirectoryName(filePath) ?? string.Empty;
-                        if (!fileDir.Contains(@"\EasyAntiCheat\", StringComparison.OrdinalIgnoreCase))
-                        {
-                            ctx.AddFinding(new Finding
-                            {
-                                Module   = Name,
-                                Title    = "anticlient.dll Outside EAC Directory",
-                                Risk     = RiskLevel.Critical,
-                                Location = filePath,
-                                FileName = fileName,
-                                Reason   = "anticlient.dll found outside the EasyAntiCheat installation directory. This DLL is legitimate only inside an EAC game folder.",
-                                Detail   = $"Directory: {fileDir}",
-                            });
-                        }
-                    }
-                }
-                catch (IOException)
-                {
-                    // File may have been deleted or locked — skip silently
-                }
-            }
-        }
-
-        await Task.CompletedTask;
-    }
-
-    // =========================================================================
-    // 3. EAC certificate store tampering
-    // =========================================================================
-    private async Task CheckCertificateStoreTamperingAsync(ZeroTrace.Core.Engine.ScanContext ctx, CancellationToken ct)
-    {
-        await Task.Run(() =>
-        {
-            // Check HKLM Disallowed certificate store — entries here block EAC code-signing chain
-            string[] disallowedPaths =
-            [
-                @"SOFTWARE\Microsoft\SystemCertificates\Disallowed\Certificates",
-                @"SOFTWARE\Policies\Microsoft\SystemCertificates\Disallowed\Certificates",
-            ];
-
-            foreach (string regPath in disallowedPaths)
-            {
-                ct.ThrowIfCancellationRequested();
-                ctx.IncrementRegistryKeys();
-
-                try
-                {
-                    using RegistryKey? key = Registry.LocalMachine.OpenSubKey(regPath, writable: false);
-                    if (key is null)
-                        continue;
-
-                    string[] subkeyNames = key.GetSubKeyNames();
-                    foreach (string thumbprint in subkeyNames)
+                    foreach (string file in Directory.EnumerateFiles(root, "*.exe", SearchOption.AllDirectories))
                     {
                         ct.ThrowIfCancellationRequested();
-                        ctx.IncrementRegistryKeys();
-
-                        // Any certificate in the Disallowed store is anomalous and may block EAC.
-                        // Flag each one — attacker-placed certs here prevent EAC from launching.
-                        ctx.AddFinding(new Finding
+                        string fn = Path.GetFileName(file);
+                        foreach (string bypassName in KnownEacBypassExeNames)
                         {
-                            Module   = Name,
-                            Title    = "Certificate in Disallowed Store (Possible EAC Block)",
-                            Risk     = RiskLevel.High,
-                            Location = $@"HKLM\{regPath}\{thumbprint}",
-                            Reason   = "A certificate exists in the system Disallowed store. Placing an EasyAntiCheat code-signing certificate here prevents EAC from launching.",
-                            Detail   = $"Thumbprint subkey: {thumbprint}",
-                        });
-                    }
-                }
-                catch (Exception ex) when (ex is UnauthorizedAccessException or System.Security.SecurityException)
-                {
-                    // Skip if we cannot read this key
-                }
-            }
-
-            // Also check HKCU Disallowed store
-            string hkcuDisallowed = @"SOFTWARE\Microsoft\SystemCertificates\Disallowed\Certificates";
-            ctx.IncrementRegistryKeys();
-
-            try
-            {
-                using RegistryKey? key = Registry.CurrentUser.OpenSubKey(hkcuDisallowed, writable: false);
-                if (key is not null)
-                {
-                    string[] subkeyNames = key.GetSubKeyNames();
-                    foreach (string thumbprint in subkeyNames)
-                    {
-                        ct.ThrowIfCancellationRequested();
-                        ctx.IncrementRegistryKeys();
-
-                        ctx.AddFinding(new Finding
-                        {
-                            Module   = Name,
-                            Title    = "Certificate in HKCU Disallowed Store (Possible EAC Block)",
-                            Risk     = RiskLevel.High,
-                            Location = $@"HKCU\{hkcuDisallowed}\{thumbprint}",
-                            Reason   = "A certificate exists in the current user Disallowed store. This can block EasyAntiCheat's code-signing verification.",
-                            Detail   = $"Thumbprint subkey: {thumbprint}",
-                        });
-                    }
-                }
-            }
-            catch (Exception ex) when (ex is UnauthorizedAccessException or System.Security.SecurityException)
-            {
-                // Skip if we cannot read HKCU key
-            }
-        }, ct);
-    }
-
-    // =========================================================================
-    // 4. EAC game directory integrity checks
-    // =========================================================================
-    private async Task CheckGameDirectoryIntegrityAsync(ZeroTrace.Core.Engine.ScanContext ctx, CancellationToken ct)
-    {
-        await Task.Run(() =>
-        {
-            // Standalone EAC installation directory
-            string[] standaloneDirs =
-            [
-                @"C:\Program Files\EasyAntiCheat",
-                @"C:\Program Files (x86)\EasyAntiCheat",
-            ];
-
-            foreach (string dir in standaloneDirs)
-            {
-                ct.ThrowIfCancellationRequested();
-                if (!Directory.Exists(dir))
-                    continue;
-
-                CheckEacExePresence(ctx, dir, dir);
-            }
-
-            // Steam game library
-            string steamAppsCommon = @"C:\Program Files (x86)\Steam\steamapps\common";
-            ScanGameLibraryForEac(ctx, steamAppsCommon, ct);
-
-            // Epic Games library
-            string epicGames = @"C:\Program Files\Epic Games";
-            ScanGameLibraryForEac(ctx, epicGames, ct);
-
-            // EA/Origin library
-            string[] eaLibraries =
-            [
-                @"C:\Program Files\EA Games",
-                @"C:\Program Files (x86)\Origin Games",
-                @"C:\Program Files\Origin Games",
-                @"C:\Program Files\EA",
-            ];
-
-            foreach (string lib in eaLibraries)
-            {
-                ct.ThrowIfCancellationRequested();
-                ScanGameLibraryForEac(ctx, lib, ct);
-            }
-        }, ct);
-    }
-
-    // Enumerate immediate subdirectories of a game library root and check each for EAC
-    private void ScanGameLibraryForEac(ZeroTrace.Core.Engine.ScanContext ctx, string libraryRoot, CancellationToken ct)
-    {
-        if (!Directory.Exists(libraryRoot))
-            return;
-
-        IEnumerable<string> gameDirs;
-        try
-        {
-            gameDirs = Directory.EnumerateDirectories(libraryRoot, "*", SearchOption.TopDirectoryOnly);
-        }
-        catch (UnauthorizedAccessException)
-        {
-            return;
-        }
-
-        foreach (string gameDir in gameDirs)
-        {
-            ct.ThrowIfCancellationRequested();
-
-            // Only inspect game directories that appear to ship EAC
-            string eacSubdir = Path.Combine(gameDir, "EasyAntiCheat");
-            if (!Directory.Exists(eacSubdir))
-                continue; // Game does not use EAC — not our concern
-
-            CheckEacExePresence(ctx, gameDir, eacSubdir);
-        }
-    }
-
-    // Verify that EasyAntiCheat\EasyAntiCheat_EOS.exe or EasyAntiCheat.exe is present
-    private void CheckEacExePresence(ZeroTrace.Core.Engine.ScanContext ctx, string gameRoot, string eacDir)
-    {
-        string eosExe    = Path.Combine(eacDir, "EasyAntiCheat_EOS.exe");
-        string legacyExe = Path.Combine(eacDir, "EasyAntiCheat.exe");
-
-        bool eosPresent    = File.Exists(eosExe);
-        bool legacyPresent = File.Exists(legacyExe);
-
-        if (!eosPresent && !legacyPresent)
-        {
-            ctx.AddFinding(new Finding
-            {
-                Module   = Name,
-                Title    = "EAC Executable Missing from Game Directory",
-                Risk     = RiskLevel.Medium,
-                Location = eacDir,
-                Reason   = "The EasyAntiCheat directory exists but neither EasyAntiCheat_EOS.exe nor EasyAntiCheat.exe is present. The EAC executable may have been removed by a bypass tool.",
-                Detail   = $"Game root: {gameRoot}",
-            });
-        }
-    }
-
-    // =========================================================================
-    // 5. EAC log file anomalies
-    // =========================================================================
-    private async Task CheckEacLogAnomaliesAsync(ZeroTrace.Core.Engine.ScanContext ctx, CancellationToken ct)
-    {
-        await Task.Run(() =>
-        {
-            // Build a list of candidate game directories to search for EAC logs
-            List<string> gameDirs = [];
-            CollectGameDirectories(gameDirs);
-
-            foreach (string gameDir in gameDirs)
-            {
-                ct.ThrowIfCancellationRequested();
-
-                string logDir = Path.Combine(gameDir, "EasyAntiCheat", "Logs");
-                if (!Directory.Exists(logDir))
-                    continue;
-
-                // Check whether the log directory is completely empty
-                string[] allEntries;
-                try
-                {
-                    allEntries = Directory.GetFileSystemEntries(logDir);
-                }
-                catch (UnauthorizedAccessException)
-                {
-                    continue;
-                }
-
-                if (allEntries.Length == 0)
-                {
-                    ctx.AddFinding(new Finding
-                    {
-                        Module   = Name,
-                        Title    = "EAC Log Directory Is Empty",
-                        Risk     = RiskLevel.Low,
-                        Location = logDir,
-                        Reason   = "The EasyAntiCheat Logs directory exists but contains no files. Log files may have been deleted.",
-                        Detail   = $"Game directory: {gameDir}",
-                    });
-                    continue;
-                }
-
-                // Check individual .log files for zero-byte size (cleared logs)
-                IEnumerable<string> logFiles;
-                try
-                {
-                    logFiles = Directory.EnumerateFiles(logDir, "*.log", SearchOption.AllDirectories);
-                }
-                catch (UnauthorizedAccessException)
-                {
-                    continue;
-                }
-
-                foreach (string logFile in logFiles)
-                {
-                    ct.ThrowIfCancellationRequested();
-                    ctx.IncrementFiles();
-
-                    try
-                    {
-                        var fi = new FileInfo(logFile);
-                        if (fi.Length == 0)
-                        {
-                            ctx.AddFinding(new Finding
-                            {
-                                Module   = Name,
-                                Title    = "EAC Log File Cleared (Zero Bytes)",
-                                Risk     = RiskLevel.Medium,
-                                Location = logFile,
-                                FileName = Path.GetFileName(logFile),
-                                Reason   = "An EasyAntiCheat log file exists but has zero bytes. Logs are typically cleared by bypass tools to hide detection events.",
-                                Detail   = $"Game directory: {gameDir}",
-                            });
-                        }
-                    }
-                    catch (IOException)
-                    {
-                        // File inaccessible — skip silently
-                    }
-                }
-            }
-        }, ct);
-    }
-
-    // =========================================================================
-    // 6. DLL sideloading next to EasyAntiCheat_EOS.exe
-    // =========================================================================
-    private async Task CheckDllSideloadingAsync(ZeroTrace.Core.Engine.ScanContext ctx, CancellationToken ct)
-    {
-        await Task.Run(() =>
-        {
-            List<string> gameDirs = [];
-            CollectGameDirectories(gameDirs);
-
-            // Also check standalone EAC install paths
-            gameDirs.Add(@"C:\Program Files\EasyAntiCheat");
-            gameDirs.Add(@"C:\Program Files (x86)\EasyAntiCheat");
-
-            foreach (string gameDir in gameDirs)
-            {
-                ct.ThrowIfCancellationRequested();
-
-                // Look for EasyAntiCheat_EOS.exe in all subdirectories
-                IEnumerable<string> exeFiles;
-                try
-                {
-                    exeFiles = Directory.EnumerateFiles(gameDir, "EasyAntiCheat_EOS.exe", SearchOption.AllDirectories);
-                }
-                catch (UnauthorizedAccessException)
-                {
-                    continue;
-                }
-
-                foreach (string eosExe in exeFiles)
-                {
-                    ct.ThrowIfCancellationRequested();
-                    ctx.IncrementFiles();
-
-                    string eosDir = Path.GetDirectoryName(eosExe) ?? string.Empty;
-                    if (string.IsNullOrEmpty(eosDir))
-                        continue;
-
-                    CheckForUnexpectedDllsInDir(ctx, eosDir, ct);
-                }
-            }
-        }, ct);
-    }
-
-    // Check a directory for DLL files that are not in the known-legitimate EAC DLL list
-    private void CheckForUnexpectedDllsInDir(ZeroTrace.Core.Engine.ScanContext ctx, string dir, CancellationToken ct)
-    {
-        IEnumerable<string> dllFiles;
-        try
-        {
-            dllFiles = Directory.EnumerateFiles(dir, "*.dll", SearchOption.TopDirectoryOnly);
-        }
-        catch (UnauthorizedAccessException)
-        {
-            return;
-        }
-
-        foreach (string dllPath in dllFiles)
-        {
-            ct.ThrowIfCancellationRequested();
-            ctx.IncrementFiles();
-
-            try
-            {
-                string dllName = Path.GetFileName(dllPath);
-
-                // Check whether this DLL is in the known-legitimate set
-                bool isLegit = false;
-                foreach (string legit in LegitEacDlls)
-                {
-                    if (dllName.Equals(legit, StringComparison.OrdinalIgnoreCase))
-                    {
-                        isLegit = true;
-                        break;
-                    }
-                }
-
-                if (!isLegit)
-                {
-                    ctx.AddFinding(new Finding
-                    {
-                        Module   = Name,
-                        Title    = "Unexpected DLL Next to EasyAntiCheat_EOS.exe",
-                        Risk     = RiskLevel.Critical,
-                        Location = dllPath,
-                        FileName = dllName,
-                        Reason   = $"DLL \"{dllName}\" is not a known legitimate EasyAntiCheat file but resides in the same directory as EasyAntiCheat_EOS.exe. This is a classic DLL sideloading indicator.",
-                        Detail   = $"Directory: {dir}",
-                    });
-                }
-            }
-            catch (IOException)
-            {
-                // File inaccessible — skip silently
-            }
-        }
-    }
-
-    // =========================================================================
-    // 7. EAC driver outside expected path
-    // =========================================================================
-    private async Task CheckEacDriverPathAsync(ZeroTrace.Core.Engine.ScanContext ctx, CancellationToken ct)
-    {
-        await Task.Run(() =>
-        {
-            string windir   = Environment.GetEnvironmentVariable("SystemRoot") ?? @"C:\Windows";
-            string sys32Drv = Path.Combine(windir, "System32", "drivers");
-
-            // Check registry ImagePath for the EAC service driver
-            string[] serviceKeys =
-            [
-                @"SYSTEM\CurrentControlSet\Services\EasyAntiCheat",
-                @"SYSTEM\CurrentControlSet\Services\EasyAntiCheat_EOS",
-            ];
-
-            foreach (string keyPath in serviceKeys)
-            {
-                ct.ThrowIfCancellationRequested();
-                ctx.IncrementRegistryKeys();
-
-                try
-                {
-                    using RegistryKey? key = Registry.LocalMachine.OpenSubKey(keyPath, writable: false);
-                    if (key is null)
-                        continue;
-
-                    object? imagePathVal = key.GetValue("ImagePath");
-                    if (imagePathVal is string imagePath && !string.IsNullOrWhiteSpace(imagePath))
-                    {
-                        // Only examine kernel driver entries (*.sys)
-                        if (!imagePath.EndsWith(".sys", StringComparison.OrdinalIgnoreCase))
-                            continue;
-
-                        // Normalize: strip \??\ prefix if present
-                        string normalizedPath = imagePath
-                            .Replace(@"\??\", string.Empty, StringComparison.OrdinalIgnoreCase)
-                            .Trim('"');
-
-                        bool inSystem32  = normalizedPath.StartsWith(sys32Drv, StringComparison.OrdinalIgnoreCase);
-                        bool inEacFolder = normalizedPath.Contains(@"\EasyAntiCheat\", StringComparison.OrdinalIgnoreCase);
-
-                        if (!inSystem32 && !inEacFolder)
-                        {
-                            ctx.AddFinding(new Finding
-                            {
-                                Module   = Name,
-                                Title    = "EAC Driver Loaded from Unexpected Path",
-                                Risk     = RiskLevel.Critical,
-                                Location = $@"HKLM\{keyPath}",
-                                FileName = Path.GetFileName(normalizedPath),
-                                Reason   = "The EasyAntiCheat kernel driver is configured to load from a path outside System32\\drivers\\ and outside the EAC installation directory.",
-                                Detail   = $"ImagePath = {imagePath}",
-                            });
-                        }
-                    }
-                }
-                catch (Exception ex) when (ex is UnauthorizedAccessException or System.Security.SecurityException)
-                {
-                    // Skip inaccessible registry key silently
-                }
-            }
-
-            // Also search Temp, Downloads, and AppData for a stray easyanticheat.sys file
-            string[] suspiciousSearchDirs = BuildUserScanDirectories();
-            foreach (string searchDir in suspiciousSearchDirs)
-            {
-                ct.ThrowIfCancellationRequested();
-                if (!Directory.Exists(searchDir))
-                    continue;
-
-                IEnumerable<string> sysFiles;
-                try
-                {
-                    sysFiles = Directory.EnumerateFiles(searchDir, "easyanticheat.sys", SearchOption.AllDirectories);
-                }
-                catch (UnauthorizedAccessException)
-                {
-                    continue;
-                }
-
-                foreach (string sysFile in sysFiles)
-                {
-                    ct.ThrowIfCancellationRequested();
-                    ctx.IncrementFiles();
-
-                    try
-                    {
-                        ctx.AddFinding(new Finding
-                        {
-                            Module   = Name,
-                            Title    = "EAC Driver File in Suspicious Location",
-                            Risk     = RiskLevel.Critical,
-                            Location = sysFile,
-                            FileName = Path.GetFileName(sysFile),
-                            Reason   = "easyanticheat.sys was found in a Temp, Downloads, or AppData directory. The EAC driver should never reside in user-writable locations.",
-                            Detail   = $"Path: {sysFile}",
-                        });
-                    }
-                    catch (IOException)
-                    {
-                        // File inaccessible — skip silently
-                    }
-                }
-            }
-        }, ct);
-    }
-
-    // =========================================================================
-    // 8. BYOVD vulnerable driver detection
-    // =========================================================================
-    private async Task ScanByovdDriversAsync(ZeroTrace.Core.Engine.ScanContext ctx, CancellationToken ct)
-    {
-        // Part A: Check files on disk in suspicious directories
-        await ScanByovdDriverFilesAsync(ctx, ct);
-
-        // Part B: Check registry services for BYOVD driver entries pointing outside System32
-        await ScanByovdDriverRegistryAsync(ctx, ct);
-    }
-
-    private async Task ScanByovdDriverFilesAsync(ZeroTrace.Core.Engine.ScanContext ctx, CancellationToken ct)
-    {
-        string[] scanDirs = BuildUserScanDirectories();
-
-        foreach (string dir in scanDirs)
-        {
-            ct.ThrowIfCancellationRequested();
-            if (!Directory.Exists(dir))
-                continue;
-
-            IEnumerable<string> sysFiles;
-            try
-            {
-                sysFiles = Directory.EnumerateFiles(dir, "*.sys", SearchOption.AllDirectories);
-            }
-            catch (UnauthorizedAccessException)
-            {
-                continue;
-            }
-
-            foreach (string sysPath in sysFiles)
-            {
-                ct.ThrowIfCancellationRequested();
-
-                try
-                {
-                    string sysName = Path.GetFileName(sysPath);
-                    ctx.IncrementFiles();
-
-                    foreach (string bad in ByovdDriverNames)
-                    {
-                        if (sysName.Equals(bad, StringComparison.OrdinalIgnoreCase))
-                        {
-                            ctx.AddFinding(new Finding
-                            {
-                                Module   = Name,
-                                Title    = "BYOVD Vulnerable Driver Found on Disk",
-                                Risk     = RiskLevel.Critical,
-                                Location = sysPath,
-                                FileName = sysName,
-                                Reason   = $"Known vulnerable driver \"{sysName}\" found in a user-writable location. BYOVD (Bring Your Own Vulnerable Driver) attacks exploit these drivers to disable kernel-level anti-cheat such as EAC.",
-                                Detail   = $"Directory: {Path.GetDirectoryName(sysPath)}",
-                            });
-                            break;
-                        }
-                    }
-                }
-                catch (IOException)
-                {
-                    // File inaccessible — skip silently
-                }
-            }
-        }
-
-        await Task.CompletedTask;
-    }
-
-    private async Task ScanByovdDriverRegistryAsync(ZeroTrace.Core.Engine.ScanContext ctx, CancellationToken ct)
-    {
-        await Task.Run(() =>
-        {
-            string windir   = Environment.GetEnvironmentVariable("SystemRoot") ?? @"C:\Windows";
-            string sys32Drv = Path.Combine(windir, "System32", "drivers");
-
-            const string servicesRoot = @"SYSTEM\CurrentControlSet\Services";
-
-            try
-            {
-                using RegistryKey? servicesKey = Registry.LocalMachine.OpenSubKey(servicesRoot, writable: false);
-                if (servicesKey is null)
-                    return;
-
-                string[] serviceNames = servicesKey.GetSubKeyNames();
-
-                foreach (string serviceName in serviceNames)
-                {
-                    ct.ThrowIfCancellationRequested();
-                    ctx.IncrementRegistryKeys();
-
-                    // Check whether the service name matches a BYOVD driver filename (without extension)
-                    bool matchesByovd = false;
-                    string matchedDriver = string.Empty;
-
-                    foreach (string driverFile in ByovdDriverNames)
-                    {
-                        string driverBase = Path.GetFileNameWithoutExtension(driverFile);
-                        if (serviceName.Equals(driverBase, StringComparison.OrdinalIgnoreCase))
-                        {
-                            matchesByovd  = true;
-                            matchedDriver = driverFile;
-                            break;
-                        }
-                    }
-
-                    if (!matchesByovd)
-                        continue;
-
-                    // Service name matches — inspect ImagePath
-                    try
-                    {
-                        using RegistryKey? svcKey = servicesKey.OpenSubKey(serviceName, writable: false);
-                        if (svcKey is null)
-                            continue;
-
-                        object? imagePathVal = svcKey.GetValue("ImagePath");
-                        if (imagePathVal is not string imagePath || string.IsNullOrWhiteSpace(imagePath))
-                            continue;
-
-                        string normalizedPath = imagePath
-                            .Replace(@"\??\", string.Empty, StringComparison.OrdinalIgnoreCase)
-                            .Trim('"');
-
-                        // Flag if the driver is NOT in System32\drivers
-                        if (!normalizedPath.StartsWith(sys32Drv, StringComparison.OrdinalIgnoreCase))
-                        {
-                            ctx.AddFinding(new Finding
-                            {
-                                Module   = Name,
-                                Title    = "BYOVD Driver Service with Suspicious ImagePath",
-                                Risk     = RiskLevel.Critical,
-                                Location = $@"HKLM\{servicesRoot}\{serviceName}",
-                                FileName = matchedDriver,
-                                Reason   = $"Registry service \"{serviceName}\" matches a known BYOVD vulnerable driver and its ImagePath is outside System32\\drivers\\. The driver may be loaded to disable EAC at the kernel level.",
-                                Detail   = $"ImagePath = {imagePath}",
-                            });
-                        }
-                    }
-                    catch (Exception ex) when (ex is UnauthorizedAccessException or System.Security.SecurityException)
-                    {
-                        // Skip inaccessible service subkeys silently
-                    }
-                }
-            }
-            catch (Exception ex) when (ex is UnauthorizedAccessException or System.Security.SecurityException)
-            {
-                // Cannot read Services key — skip silently
-            }
-        }, ct);
-    }
-
-    // =========================================================================
-    // 9. GitHub bypass repository directory artifacts
-    // =========================================================================
-    private async Task CheckBypassRepoDirsAsync(ZeroTrace.Core.Engine.ScanContext ctx, CancellationToken ct)
-    {
-        await Task.Run(() =>
-        {
-            string[] searchRoots =
-            [
-                Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
-                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) is string profile
-                    ? Path.Combine(profile, "Downloads") : string.Empty,
-                Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
-                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            ];
-
-            foreach (string root in searchRoots)
-            {
-                ct.ThrowIfCancellationRequested();
-                if (string.IsNullOrEmpty(root) || !Directory.Exists(root))
-                    continue;
-
-                IEnumerable<string> subDirs;
-                try
-                {
-                    subDirs = Directory.EnumerateDirectories(root, "*", SearchOption.AllDirectories);
-                }
-                catch (UnauthorizedAccessException)
-                {
-                    continue;
-                }
-
-                foreach (string subDir in subDirs)
-                {
-                    ct.ThrowIfCancellationRequested();
-
-                    try
-                    {
-                        string dirName = Path.GetFileName(subDir);
-
-                        foreach (string repoName in BypassRepoDirNames)
-                        {
-                            if (dirName.Equals(repoName, StringComparison.OrdinalIgnoreCase))
+                            if (fn.Equals(bypassName, StringComparison.OrdinalIgnoreCase))
                             {
                                 ctx.AddFinding(new Finding
                                 {
-                                    Module   = Name,
-                                    Title    = "EAC Bypass Repository Directory Found",
-                                    Risk     = RiskLevel.High,
-                                    Location = subDir,
-                                    Reason   = $"Directory \"{dirName}\" matches a known EasyAntiCheat bypass GitHub repository name. This strongly indicates the user has cloned or possessed bypass source code.",
-                                    Detail   = $"Matched pattern: {repoName}",
+                                    Module = Name,
+                                    Title = "EAC Bypass Executable Detected",
+                                    Risk = Risk.Critical,
+                                    Location = file,
+                                    FileName = fn,
+                                    Reason = "Known Easy Anti-Cheat bypass tool found",
+                                    Detail = $"File '{fn}' is a known EAC bypass/patch/killer tool: {file}"
+                                });
+                                ctx.IncrementFiles();
+                                break;
+                            }
+                        }
+                    }
+                }
+                catch (UnauthorizedAccessException) { }
+            }
+        }, ct);
+    }
+
+    private Task ScanUserDirsForBypassDlls(ScanContext ctx, CancellationToken ct)
+    {
+        return Task.Run(() =>
+        {
+            foreach (string root in UserDirs)
+            {
+                if (!Directory.Exists(root)) continue;
+                try
+                {
+                    foreach (string file in Directory.EnumerateFiles(root, "*.dll", SearchOption.AllDirectories))
+                    {
+                        ct.ThrowIfCancellationRequested();
+                        string fn = Path.GetFileName(file);
+                        foreach (string bypassName in KnownEacBypassDllNames)
+                        {
+                            if (fn.Equals(bypassName, StringComparison.OrdinalIgnoreCase))
+                            {
+                                ctx.AddFinding(new Finding
+                                {
+                                    Module = Name,
+                                    Title = "EAC Bypass DLL Detected",
+                                    Risk = Risk.Critical,
+                                    Location = file,
+                                    FileName = fn,
+                                    Reason = "Known EAC hook/bypass DLL found in user directory",
+                                    Detail = $"EAC bypass library '{fn}' found at: {file}"
+                                });
+                                ctx.IncrementFiles();
+                                break;
+                            }
+                        }
+                    }
+                }
+                catch (UnauthorizedAccessException) { }
+            }
+        }, ct);
+    }
+
+    private Task ScanUserDirsForBypassDirs(ScanContext ctx, CancellationToken ct)
+    {
+        return Task.Run(() =>
+        {
+            foreach (string root in UserDirs)
+            {
+                if (!Directory.Exists(root)) continue;
+                try
+                {
+                    foreach (string dir in Directory.EnumerateDirectories(root, "*", SearchOption.AllDirectories))
+                    {
+                        ct.ThrowIfCancellationRequested();
+                        string dn = Path.GetFileName(dir);
+                        foreach (string bypassDir in EacBypassDirNames)
+                        {
+                            if (dn.Equals(bypassDir, StringComparison.OrdinalIgnoreCase)
+                                || dn.Contains(bypassDir, StringComparison.OrdinalIgnoreCase))
+                            {
+                                ctx.AddFinding(new Finding
+                                {
+                                    Module = Name,
+                                    Title = "EAC Bypass Directory Found",
+                                    Risk = Risk.High,
+                                    Location = dir,
+                                    FileName = dn,
+                                    Reason = "Directory name matches known EAC bypass tool pattern",
+                                    Detail = $"Suspicious EAC bypass directory: {dir}"
                                 });
                                 break;
                             }
                         }
                     }
-                    catch (IOException)
-                    {
-                        // Directory entry inaccessible — skip silently
-                    }
                 }
+                catch (UnauthorizedAccessException) { }
             }
         }, ct);
     }
 
-    // =========================================================================
-    // 10. PowerShell history — EAC bypass commands
-    // =========================================================================
-    private async Task CheckPowerShellHistoryAsync(ZeroTrace.Core.Engine.ScanContext ctx, CancellationToken ct)
+    private Task ScanEacInstallIntegrity(ScanContext ctx, CancellationToken ct)
     {
-        string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-        string historyPath = Path.Combine(
-            appData,
-            "Microsoft", "Windows", "PowerShell", "PSReadLine", "ConsoleHost_history.txt");
-
-        if (!File.Exists(historyPath))
-            return;
-
-        ctx.IncrementFiles();
-
-        string content;
-        try
+        return Task.Run(() =>
         {
-            using var fs = new FileStream(historyPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-            using var sr = new StreamReader(fs);
-            content = await sr.ReadToEndAsync();
-        }
-        catch (IOException)
-        {
-            return;
-        }
-        catch (UnauthorizedAccessException)
-        {
-            return;
-        }
+            string progFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
+            string progFilesX86 = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
 
-        // Check all static patterns
-        foreach (var (pattern, risk, title) in PsHistoryPatterns)
-        {
-            if (content.Contains(pattern, StringComparison.OrdinalIgnoreCase))
+            var eacRoots = new List<string>();
+
+            foreach (string pf in new[] { progFiles, progFilesX86 })
             {
-                ctx.AddFinding(new Finding
-                {
-                    Module   = Name,
-                    Title    = title,
-                    Risk     = risk,
-                    Location = historyPath,
-                    FileName = Path.GetFileName(historyPath),
-                    Reason   = $"PowerShell history contains the pattern: \"{pattern}\"",
-                    Detail   = ExtractMatchingLine(content, pattern),
-                });
-            }
-        }
-
-        // taskkill + EasyAntiCheat combined check
-        if (content.Contains("taskkill", StringComparison.OrdinalIgnoreCase)
-            && content.Contains("EasyAntiCheat", StringComparison.OrdinalIgnoreCase))
-        {
-            ctx.AddFinding(new Finding
-            {
-                Module   = Name,
-                Title    = "EAC Process Kill via taskkill in PS History",
-                Risk     = RiskLevel.High,
-                Location = historyPath,
-                FileName = Path.GetFileName(historyPath),
-                Reason   = "PowerShell history contains both \"taskkill\" and \"EasyAntiCheat\" — indicative of an attempt to forcibly terminate the EAC process.",
-                Detail   = ExtractMatchingLine(content, "taskkill"),
-            });
-        }
-
-        // EtwEventWrite combined with patch/hook/bypass/disable
-        if (content.Contains("EtwEventWrite", StringComparison.OrdinalIgnoreCase))
-        {
-            string[] etwCompanions = ["patch", "hook", "bypass", "disable"];
-            foreach (string companion in etwCompanions)
-            {
-                if (content.Contains(companion, StringComparison.OrdinalIgnoreCase))
-                {
-                    ctx.AddFinding(new Finding
-                    {
-                        Module   = Name,
-                        Title    = "ETW EtwEventWrite Patch/Hook Command in PS History",
-                        Risk     = RiskLevel.Critical,
-                        Location = historyPath,
-                        FileName = Path.GetFileName(historyPath),
-                        Reason   = $"PowerShell history contains \"EtwEventWrite\" combined with \"{companion}\". ETW patching is used to blind kernel-level anti-cheat telemetry.",
-                        Detail   = ExtractMatchingLine(content, "EtwEventWrite"),
-                    });
-                    break;
-                }
-            }
-        }
-
-        // "eac" combined with bypass/disable/kill/patch
-        string[] eacActionWords = ["bypass", "disable", "kill", "patch"];
-        foreach (string action in eacActionWords)
-        {
-            // Search line by line to find lines containing both "eac" and the action word
-            bool found = false;
-            foreach (string line in content.Split('\n', StringSplitOptions.RemoveEmptyEntries))
-            {
-                if (line.Contains("eac", StringComparison.OrdinalIgnoreCase)
-                    && line.Contains(action, StringComparison.OrdinalIgnoreCase))
-                {
-                    ctx.AddFinding(new Finding
-                    {
-                        Module   = Name,
-                        Title    = $"EAC {action} Command in PS History",
-                        Risk     = RiskLevel.High,
-                        Location = historyPath,
-                        FileName = Path.GetFileName(historyPath),
-                        Reason   = $"PowerShell history line contains both \"eac\" and \"{action}\", indicating an attempt to {action} EasyAntiCheat.",
-                        Detail   = line.Trim(),
-                    });
-                    found = true;
-                    break;
-                }
-            }
-
-            if (found)
-                break; // Avoid duplicate findings for the same history file
-        }
-    }
-
-    // =========================================================================
-    // 11. Modified ntdll.dll in application directories (ETW patching artifact)
-    // =========================================================================
-    private async Task CheckNtdllCopiesAsync(ZeroTrace.Core.Engine.ScanContext ctx, CancellationToken ct)
-    {
-        string windir       = Environment.GetEnvironmentVariable("SystemRoot") ?? @"C:\Windows";
-        string sys32        = Path.Combine(windir, "System32");
-        string syswow64     = Path.Combine(windir, "SysWOW64");
-
-        // Directories to search for stray ntdll.dll copies
-        List<string> searchDirs = [..BuildUserScanDirectories()];
-
-        // Also check under Program Files game directories
-        string[] programFileRoots =
-        [
-            @"C:\Program Files",
-            @"C:\Program Files (x86)",
-        ];
-
-        foreach (string pfRoot in programFileRoots)
-        {
-            if (!Directory.Exists(pfRoot))
-                continue;
-
-            IEnumerable<string> pfSubDirs;
-            try
-            {
-                pfSubDirs = Directory.EnumerateDirectories(pfRoot, "*", SearchOption.TopDirectoryOnly);
-            }
-            catch (UnauthorizedAccessException)
-            {
-                continue;
-            }
-
-            foreach (string pfSubDir in pfSubDirs)
-            {
-                ct.ThrowIfCancellationRequested();
-                searchDirs.Add(pfSubDir);
-            }
-        }
-
-        foreach (string dir in searchDirs)
-        {
-            ct.ThrowIfCancellationRequested();
-            if (!Directory.Exists(dir))
-                continue;
-
-            IEnumerable<string> ntdllFiles;
-            try
-            {
-                ntdllFiles = Directory.EnumerateFiles(dir, "ntdll.dll", SearchOption.AllDirectories);
-            }
-            catch (UnauthorizedAccessException)
-            {
-                continue;
-            }
-
-            foreach (string ntdllPath in ntdllFiles)
-            {
-                ct.ThrowIfCancellationRequested();
-                ctx.IncrementFiles();
-
+                if (!Directory.Exists(pf)) continue;
                 try
                 {
-                    // Only flag if it is NOT in System32 or SysWOW64
-                    bool inSystem32  = ntdllPath.StartsWith(sys32, StringComparison.OrdinalIgnoreCase);
-                    bool inSysWow64  = ntdllPath.StartsWith(syswow64, StringComparison.OrdinalIgnoreCase);
+                    foreach (string dir in Directory.EnumerateDirectories(pf, "*", SearchOption.TopDirectoryOnly))
+                    {
+                        string dn = Path.GetFileName(dir);
+                        if (dn.Contains("EasyAntiCheat", StringComparison.OrdinalIgnoreCase) ||
+                            dn.Contains("EAC", StringComparison.OrdinalIgnoreCase))
+                            eacRoots.Add(dir);
+                    }
+                }
+                catch (UnauthorizedAccessException) { }
+            }
 
-                    if (!inSystem32 && !inSysWow64)
+            foreach (string eacRoot in eacRoots)
+            {
+                ct.ThrowIfCancellationRequested();
+                try
+                {
+                    foreach (string file in Directory.EnumerateFiles(eacRoot, "*", SearchOption.AllDirectories))
+                    {
+                        ct.ThrowIfCancellationRequested();
+                        string fn = Path.GetFileName(file);
+                        foreach (string bypassName in KnownEacBypassExeNames.Concat(KnownEacBypassDllNames))
+                        {
+                            if (fn.Equals(bypassName, StringComparison.OrdinalIgnoreCase))
+                            {
+                                ctx.AddFinding(new Finding
+                                {
+                                    Module = Name,
+                                    Title = "EAC Bypass Tool Planted in EAC Install Directory",
+                                    Risk = Risk.Critical,
+                                    Location = file,
+                                    FileName = fn,
+                                    Reason = "Bypass file placed inside EAC installation folder",
+                                    Detail = $"Malicious file '{fn}' inside EAC install: {file}"
+                                });
+                                ctx.IncrementFiles();
+                                break;
+                            }
+                        }
+                    }
+                }
+                catch (UnauthorizedAccessException) { }
+                catch (IOException) { }
+            }
+        }, ct);
+    }
+
+    private Task CheckEacServiceTampering(ScanContext ctx, CancellationToken ct)
+    {
+        return Task.Run(() =>
+        {
+            foreach (string svcName in EacLegitServiceNames)
+            {
+                ct.ThrowIfCancellationRequested();
+                try
+                {
+                    using RegistryKey? svcKey = Registry.LocalMachine.OpenSubKey(
+                        $@"SYSTEM\CurrentControlSet\Services\{svcName}");
+                    if (svcKey == null) continue;
+
+                    object? startVal = svcKey.GetValue("Start");
+                    if (startVal is int startInt && startInt == 4)
                     {
                         ctx.AddFinding(new Finding
                         {
-                            Module   = Name,
-                            Title    = "ntdll.dll Copy Outside System32 (ETW Patch Artifact)",
-                            Risk     = RiskLevel.Critical,
-                            Location = ntdllPath,
-                            FileName = "ntdll.dll",
-                            Reason   = "A copy of ntdll.dll was found outside System32 and SysWOW64. Attackers place a patched ntdll.dll next to game executables to intercept ETW calls and blind EasyAntiCheat telemetry (double-load technique).",
-                            Detail   = $"Directory: {Path.GetDirectoryName(ntdllPath)}",
+                            Module = Name,
+                            Title = "EAC Service Disabled in Registry",
+                            Risk = Risk.Critical,
+                            Location = $@"HKLM\SYSTEM\CurrentControlSet\Services\{svcName}",
+                            FileName = "registry",
+                            Reason = $"Service '{svcName}' has Start=4 (disabled) — EAC bypass technique",
+                            Detail = $"EAC service '{svcName}' was disabled via registry modification"
                         });
+                        ctx.IncrementRegistryKeys();
+                    }
+
+                    object? imagePath = svcKey.GetValue("ImagePath");
+                    if (imagePath is string imgStr)
+                    {
+                        if (imgStr.Contains("bypass", StringComparison.OrdinalIgnoreCase) ||
+                            imgStr.Contains("hook", StringComparison.OrdinalIgnoreCase) ||
+                            imgStr.Contains("patch", StringComparison.OrdinalIgnoreCase) ||
+                            imgStr.Contains("fake", StringComparison.OrdinalIgnoreCase) ||
+                            imgStr.Contains("spoof", StringComparison.OrdinalIgnoreCase))
+                        {
+                            ctx.AddFinding(new Finding
+                            {
+                                Module = Name,
+                                Title = "EAC Service Binary Path Tampered",
+                                Risk = Risk.Critical,
+                                Location = $@"HKLM\SYSTEM\CurrentControlSet\Services\{svcName}",
+                                FileName = "registry",
+                                Reason = $"Service '{svcName}' ImagePath contains suspicious bypass keywords",
+                                Detail = $"EAC service path tampered: {imgStr}"
+                            });
+                            ctx.IncrementRegistryKeys();
+                        }
                     }
                 }
-                catch (IOException)
-                {
-                    // File inaccessible — skip silently
-                }
+                catch (UnauthorizedAccessException) { }
             }
-        }
-
-        await Task.CompletedTask;
+        }, ct);
     }
 
-    // =========================================================================
-    // 12. Batch/script files targeting EAC
-    // =========================================================================
-    private async Task ScanScriptFilesAsync(ZeroTrace.Core.Engine.ScanContext ctx, CancellationToken ct)
+    private Task CheckEacRegistryBypassKeys(ScanContext ctx, CancellationToken ct)
     {
-        string[] scriptExtensions = ["*.bat", "*.cmd", "*.ps1", "*.vbs"];
-
-        string[] scriptSearchDirs =
-        [
-            Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
-            Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
-            Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-                "Downloads"),
-        ];
-
-        // Action words that make the script suspicious when paired with EAC identifiers
-        string[] actionWords = ["stop", "delete", "kill", "disable", "taskkill"];
-
-        // EAC identifier strings to look for in script content
-        string[] eacIdentifiers = ["EasyAntiCheat", "EACService", "eac_service"];
-
-        foreach (string dir in scriptSearchDirs)
+        return Task.Run(() =>
         {
-            ct.ThrowIfCancellationRequested();
-            if (!Directory.Exists(dir))
-                continue;
-
-            foreach (string ext in scriptExtensions)
+            foreach (string regKey in KnownEacRegistryBypassKeys)
             {
-                IEnumerable<string> scriptFiles;
+                ct.ThrowIfCancellationRequested();
                 try
                 {
-                    scriptFiles = Directory.EnumerateFiles(dir, ext, SearchOption.AllDirectories);
+                    using RegistryKey? key = Registry.LocalMachine.OpenSubKey(regKey)
+                                          ?? Registry.CurrentUser.OpenSubKey(regKey);
+                    if (key != null)
+                    {
+                        ctx.AddFinding(new Finding
+                        {
+                            Module = Name,
+                            Title = "EAC Bypass Registry Key Found",
+                            Risk = Risk.Critical,
+                            Location = regKey,
+                            FileName = "registry",
+                            Reason = "Known EAC bypass tool created this registry key",
+                            Detail = $"EAC bypass registry artifact found: {regKey}"
+                        });
+                        ctx.IncrementRegistryKeys();
+                    }
                 }
-                catch (UnauthorizedAccessException)
-                {
-                    continue;
-                }
+                catch (UnauthorizedAccessException) { }
+            }
 
-                foreach (string scriptPath in scriptFiles)
+            try
+            {
+                using RegistryKey? muiKey = Registry.CurrentUser.OpenSubKey(
+                    @"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\UserAssist");
+                if (muiKey != null)
+                {
+                    foreach (string sub in muiKey.GetSubKeyNames())
+                    {
+                        ct.ThrowIfCancellationRequested();
+                        try
+                        {
+                            using RegistryKey? countKey = muiKey.OpenSubKey($@"{sub}\Count");
+                            if (countKey == null) continue;
+                            foreach (string valName in countKey.GetValueNames())
+                            {
+                                string decoded = Rot13Decode(valName);
+                                foreach (string bypassName in KnownEacBypassExeNames)
+                                {
+                                    if (decoded.Contains(bypassName, StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        ctx.AddFinding(new Finding
+                                        {
+                                            Module = Name,
+                                            Title = "EAC Bypass Tool Execution Evidence in UserAssist",
+                                            Risk = Risk.Critical,
+                                            Location = @"HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\UserAssist",
+                                            FileName = "registry",
+                                            Reason = "EAC bypass tool was previously launched (UserAssist execution log)",
+                                            Detail = $"UserAssist entry: {decoded}"
+                                        });
+                                        ctx.IncrementRegistryKeys();
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        catch (UnauthorizedAccessException) { }
+                    }
+                }
+            }
+            catch (UnauthorizedAccessException) { }
+        }, ct);
+    }
+
+    private Task ScanConfigsForEacBypassKeywords(ScanContext ctx, CancellationToken ct)
+    {
+        return Task.Run(async () =>
+        {
+            foreach (string root in UserDirs)
+            {
+                if (!Directory.Exists(root)) continue;
+                try
+                {
+                    foreach (string file in Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories))
+                    {
+                        ct.ThrowIfCancellationRequested();
+                        string ext = Path.GetExtension(file).ToLowerInvariant();
+                        if (ext != ".json" && ext != ".cfg" && ext != ".ini" && ext != ".txt" && ext != ".yaml") continue;
+
+                        try
+                        {
+                            using var fs = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                            using var sr = new StreamReader(fs);
+                            string content = await sr.ReadToEndAsync(ct).ConfigureAwait(false);
+                            foreach (string keyword in EacBypassConfigKeywords)
+                            {
+                                if (content.Contains(keyword, StringComparison.OrdinalIgnoreCase))
+                                {
+                                    ctx.AddFinding(new Finding
+                                    {
+                                        Module = Name,
+                                        Title = "EAC Bypass Config Keyword Found",
+                                        Risk = Risk.High,
+                                        Location = file,
+                                        FileName = Path.GetFileName(file),
+                                        Reason = $"Config file contains EAC bypass keyword: '{keyword}'",
+                                        Detail = $"EAC bypass configuration in: {file}"
+                                    });
+                                    ctx.IncrementFiles();
+                                    break;
+                                }
+                            }
+                        }
+                        catch (IOException) { }
+                        catch (UnauthorizedAccessException) { }
+                    }
+                }
+                catch (UnauthorizedAccessException) { }
+            }
+        }, ct);
+    }
+
+    private Task ScanForEacCertBypassFiles(ScanContext ctx, CancellationToken ct)
+    {
+        return Task.Run(() =>
+        {
+            foreach (string root in UserDirs)
+            {
+                if (!Directory.Exists(root)) continue;
+                try
+                {
+                    foreach (string file in Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories))
+                    {
+                        ct.ThrowIfCancellationRequested();
+                        string fn = Path.GetFileName(file);
+                        foreach (string certBypass in EacCertBypassFileNames)
+                        {
+                            if (fn.Equals(certBypass, StringComparison.OrdinalIgnoreCase))
+                            {
+                                ctx.AddFinding(new Finding
+                                {
+                                    Module = Name,
+                                    Title = "EAC Certificate Bypass File Detected",
+                                    Risk = Risk.Critical,
+                                    Location = file,
+                                    FileName = fn,
+                                    Reason = "EAC certificate/TLS bypass artifact file found",
+                                    Detail = $"EAC cert bypass file: {file}"
+                                });
+                                ctx.IncrementFiles();
+                                break;
+                            }
+                        }
+                    }
+                }
+                catch (UnauthorizedAccessException) { }
+            }
+        }, ct);
+    }
+
+    private Task CheckEacSystemFileReplacement(ScanContext ctx, CancellationToken ct)
+    {
+        return Task.Run(() =>
+        {
+            string driversDir = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.Windows), "System32", "drivers");
+            string[] eacSysFiles = ["EasyAntiCheat.sys", "EasyAntiCheat_EOS.sys"];
+
+            foreach (string sysFile in eacSysFiles)
+            {
+                ct.ThrowIfCancellationRequested();
+                string sysPath = Path.Combine(driversDir, sysFile);
+                if (!File.Exists(sysPath)) continue;
+                try
+                {
+                    var fi = new FileInfo(sysPath);
+                    if (fi.Length < 100_000)
+                    {
+                        ctx.AddFinding(new Finding
+                        {
+                            Module = Name,
+                            Title = "EAC Driver File Suspiciously Small",
+                            Risk = Risk.High,
+                            Location = sysPath,
+                            FileName = sysFile,
+                            Reason = "EAC driver file is abnormally small — may be replaced with stub",
+                            Detail = $"'{sysFile}' size is {fi.Length} bytes (expected >100KB)"
+                        });
+                        ctx.IncrementFiles();
+                    }
+                }
+                catch (IOException) { }
+            }
+        }, ct);
+    }
+
+    private Task ScanProgramFilesForEacTools(ScanContext ctx, CancellationToken ct)
+    {
+        return Task.Run(() =>
+        {
+            try
+            {
+                using RegistryKey? uninst = Registry.LocalMachine.OpenSubKey(
+                    @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall");
+                if (uninst == null) return;
+                foreach (string sub in uninst.GetSubKeyNames())
                 {
                     ct.ThrowIfCancellationRequested();
-                    ctx.IncrementFiles();
-
-                    await InspectScriptFileAsync(ctx, scriptPath, eacIdentifiers, actionWords, ct);
+                    try
+                    {
+                        using RegistryKey? app = uninst.OpenSubKey(sub);
+                        if (app == null) continue;
+                        string? displayName = app.GetValue("DisplayName") as string;
+                        if (displayName == null) continue;
+                        foreach (string bypassDir in EacBypassDirNames)
+                        {
+                            if (displayName.Contains(bypassDir, StringComparison.OrdinalIgnoreCase))
+                            {
+                                ctx.AddFinding(new Finding
+                                {
+                                    Module = Name,
+                                    Title = "EAC Bypass Software in Installed Programs List",
+                                    Risk = Risk.Critical,
+                                    Location = @"HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\" + sub,
+                                    FileName = "registry",
+                                    Reason = $"Installed program name matches EAC bypass pattern: '{displayName}'",
+                                    Detail = $"Uninstall entry: '{displayName}'"
+                                });
+                                ctx.IncrementRegistryKeys();
+                                break;
+                            }
+                        }
+                    }
+                    catch (UnauthorizedAccessException) { }
                 }
             }
-        }
-    }
-
-    private async Task InspectScriptFileAsync(
-        ZeroTrace.Core.Engine.ScanContext ctx,
-        string scriptPath,
-        string[] eacIdentifiers,
-        string[] actionWords,
-        CancellationToken ct)
-    {
-        string content;
-        try
-        {
-            using var fs = new FileStream(scriptPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-            using var sr = new StreamReader(fs);
-            content = await sr.ReadToEndAsync();
-        }
-        catch (IOException)
-        {
-            return;
-        }
-        catch (UnauthorizedAccessException)
-        {
-            return;
-        }
-
-        ct.ThrowIfCancellationRequested();
-
-        string fileName = Path.GetFileName(scriptPath);
-        string extension = Path.GetExtension(scriptPath).ToLowerInvariant();
-
-        // Check each EAC identifier against each action word
-        foreach (string identifier in eacIdentifiers)
-        {
-            if (!content.Contains(identifier, StringComparison.OrdinalIgnoreCase))
-                continue;
-
-            foreach (string action in actionWords)
-            {
-                if (!content.Contains(action, StringComparison.OrdinalIgnoreCase))
-                    continue;
-
-                // Determine risk: delete/kill actions are Critical; stop/disable are High
-                RiskLevel risk = (action.Equals("delete", StringComparison.OrdinalIgnoreCase)
-                                  || action.Equals("kill", StringComparison.OrdinalIgnoreCase))
-                    ? RiskLevel.Critical
-                    : RiskLevel.High;
-
-                ctx.AddFinding(new Finding
-                {
-                    Module   = Name,
-                    Title    = $"Script File Targeting EAC ({action})",
-                    Risk     = risk,
-                    Location = scriptPath,
-                    FileName = fileName,
-                    Reason   = $"Script file contains both \"{identifier}\" and \"{action}\", indicating it may be used to {action} EasyAntiCheat.",
-                    Detail   = $"Extension: {extension}, Identifier matched: {identifier}",
-                });
-
-                // Only one finding per file — avoid flooding with multiple identifier/action combinations
-                return;
-            }
-        }
-    }
-
-    // =========================================================================
-    // Private utility helpers
-    // =========================================================================
-
-    // Build the list of user-writable directories to scan for suspicious files
-    private static string[] BuildUserScanDirectories()
-    {
-        string appData      = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-        string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        string desktop      = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
-        string userProfile  = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-        string downloads    = Path.Combine(userProfile, "Downloads");
-        string systemTemp   = Path.GetTempPath();
-        string localTemp    = Path.Combine(localAppData, "Temp");
-
-        return
-        [
-            desktop,
-            downloads,
-            systemTemp,
-            localTemp,
-            appData,
-            localAppData,
-        ];
-    }
-
-    // Collect all likely game installation directories for EAC-related checks
-    private static void CollectGameDirectories(List<string> dirs)
-    {
-        string[] steamRoots =
-        [
-            @"C:\Program Files (x86)\Steam\steamapps\common",
-            @"C:\Program Files\Steam\steamapps\common",
-        ];
-
-        foreach (string root in steamRoots)
-        {
-            if (!Directory.Exists(root))
-                continue;
-
-            try
-            {
-                foreach (string subDir in Directory.EnumerateDirectories(root, "*", SearchOption.TopDirectoryOnly))
-                    dirs.Add(subDir);
-            }
             catch (UnauthorizedAccessException) { }
-        }
-
-        string[] epicRoots =
-        [
-            @"C:\Program Files\Epic Games",
-            @"C:\Program Files (x86)\Epic Games",
-        ];
-
-        foreach (string root in epicRoots)
-        {
-            if (!Directory.Exists(root))
-                continue;
-
-            try
-            {
-                foreach (string subDir in Directory.EnumerateDirectories(root, "*", SearchOption.TopDirectoryOnly))
-                    dirs.Add(subDir);
-            }
-            catch (UnauthorizedAccessException) { }
-        }
-
-        string[] eaRoots =
-        [
-            @"C:\Program Files\EA Games",
-            @"C:\Program Files (x86)\Origin Games",
-            @"C:\Program Files\Origin Games",
-            @"C:\Program Files\EA",
-        ];
-
-        foreach (string root in eaRoots)
-        {
-            if (!Directory.Exists(root))
-                continue;
-
-            try
-            {
-                foreach (string subDir in Directory.EnumerateDirectories(root, "*", SearchOption.TopDirectoryOnly))
-                    dirs.Add(subDir);
-            }
-            catch (UnauthorizedAccessException) { }
-        }
+        }, ct);
     }
 
-    // Returns true if the given path resides in a Temp, Downloads, or AppData location
-    private static bool IsInSuspiciousUserPath(string path)
+    private static string Rot13Decode(string input)
     {
-        string[] suspiciousFragments =
-        [
-            @"\Temp\",
-            @"\Downloads\",
-            @"\AppData\",
-        ];
-
-        foreach (string fragment in suspiciousFragments)
-        {
-            if (path.Contains(fragment, StringComparison.OrdinalIgnoreCase))
-                return true;
-        }
-
-        // Also catch paths ending with these directory names (no trailing slash)
-        string[] suspiciousEndings =
-        [
-            @"\Temp",
-            @"\Downloads",
-            @"\AppData",
-        ];
-
-        foreach (string ending in suspiciousEndings)
-        {
-            if (path.EndsWith(ending, StringComparison.OrdinalIgnoreCase))
-                return true;
-        }
-
-        return false;
-    }
-
-    // Extract the first line of content that contains the given pattern (for Detail field)
-    private static string ExtractMatchingLine(string content, string pattern)
-    {
-        foreach (string line in content.Split('\n', StringSplitOptions.RemoveEmptyEntries))
-        {
-            if (line.Contains(pattern, StringComparison.OrdinalIgnoreCase))
-                return line.Trim();
-        }
-
-        return string.Empty;
+        return new string(input.Select(c =>
+            c >= 'a' && c <= 'z' ? (char)('a' + (c - 'a' + 13) % 26) :
+            c >= 'A' && c <= 'Z' ? (char)('A' + (c - 'A' + 13) % 26) : c).ToArray());
     }
 }

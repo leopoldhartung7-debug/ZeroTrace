@@ -581,6 +581,21 @@ public sealed class ScanEngine
         if (o.ScanNetworkPacketManipulation) modules.Add(new NetworkPacketManipulationScanModule());
         if (o.ScanGameTrainerCheatEngine) modules.Add(new GameTrainerCheatEngineScanModule());
         if (o.ScanVirtualMachineCheatBypass) modules.Add(new VirtualMachineCheatBypassScanModule());
+        if (o.ScanEasyAntiCheatBypass) modules.Add(new EasyAntiCheatBypassScanModule());
+        if (o.ScanBattleEyeBypass) modules.Add(new BattleEyeBypassScanModule());
+        if (o.ScanVanguardBypass) modules.Add(new VanguardBypassScanModule());
+        if (o.ScanFiveMNativeSpoof) modules.Add(new FiveMNativeSpoofScanModule());
+        if (o.ScanAltVResourceInjection) modules.Add(new AltVResourceInjectionScanModule());
+        if (o.ScanRageMpPacketSpoof) modules.Add(new RageMpPacketSpoofScanModule());
+        if (o.ScanAntiDebugEvasion) modules.Add(new AntiDebugEvasionScanModule());
+        if (o.ScanProcessInjectionArtifact) modules.Add(new ProcessInjectionArtifactScanModule());
+        if (o.ScanKernelCallbackHijack) modules.Add(new KernelCallbackHijackScanModule());
+        if (o.ScanMemoryPatchingDetection) modules.Add(new MemoryPatchingDetectionScanModule());
+        if (o.ScanFiveMResourceManifestTamper) modules.Add(new FiveMResourceManifestTamperScanModule());
+        if (o.ScanCheatCloudService) modules.Add(new CheatCloudServiceScanModule());
+        if (o.ScanAntiCheatKiller) modules.Add(new AntiCheatKillerScanModule());
+        if (o.ScanGameExploitKit) modules.Add(new GameExploitKitScanModule());
+        if (o.ScanRootKitUserModeArtifact) modules.Add(new RootKitUserModeArtifactScanModule());
         if (o.ScanCheatSourceCodeRepo) modules.Add(new CheatSourceCodeRepoScanModule());
 
         // ── Group 5: forensic / trace artefacts ──────────────────────────────
