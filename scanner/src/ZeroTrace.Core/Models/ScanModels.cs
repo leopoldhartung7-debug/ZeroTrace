@@ -347,6 +347,22 @@ public sealed class ScanOptions
     /// and ntdll.dll double-loading used to bypass Anti-Cheat userland hooks in ntdll.</summary>
     public bool ScanDirectSyscalls { get; set; } = true;
 
+    /// <summary>Deep scan of Scheduled Task XML files in System32\Tasks for encoded PowerShell
+    /// commands, LOLBIN launchers, non-system paths, and cheat-keyword task names.</summary>
+    public bool ScanTaskSchedulerDeep { get; set; } = true;
+
+    /// <summary>Detect file association and shell command hijacking (exefile, batfile, vbsfile)
+    /// in HKCU\Classes — an admin-free technique to intercept every EXE launch.</summary>
+    public bool ScanFileAssociationHijack { get; set; } = true;
+
+    /// <summary>Deep scan of all user/common startup folders for hidden scripts, suspicious
+    /// file types, and cheat-keyword entries that run at every login.</summary>
+    public bool ScanStartupFolderDeep { get; set; } = true;
+
+    /// <summary>Read physical sector 0 of all fixed drives to detect MBR/VBR bootkit
+    /// infections used to load unsigned drivers before the OS and bypass all anti-cheat.</summary>
+    public bool ScanBootSector { get; set; } = true;
+
     /// <summary>
     /// When false (default) the drive module only walks targeted, high-signal
     /// directories (profile, temp, downloads, appdata). When true it walks the
@@ -507,6 +523,10 @@ public static class ScanProfiles
         ScanAntiCheatStatus = true,       // process + file — fast
         ScanWmiSubscriptionDeep = true,   // WMI query — medium
         ScanDirectSyscalls = false,       // memory walk — slow
+        ScanTaskSchedulerDeep = false,    // file read — slow
+        ScanFileAssociationHijack = true, // registry — fast
+        ScanStartupFolderDeep = true,     // small folder — fast
+        ScanBootSector = false,           // disk sector read — slow
         DeepDriveScan = false,
         ModuleTimeoutSeconds = 60,
     };

@@ -313,6 +313,7 @@ public sealed class ScanEngine
         if (o.ScanWinlogonHijack) modules.Add(new WinlogonHijackScanModule());
         if (o.ScanSvcHostGroups) modules.Add(new SvcHostGroupScanModule());
         if (o.ScanWmiSubscriptionDeep) modules.Add(new WmiSubscriptionDeepScanModule());
+        if (o.ScanFileAssociationHijack) modules.Add(new FileAssociationHijackScanModule());
         if (o.ScanWmiPersistence) modules.Add(new WmiPersistenceScanModule());
         if (o.ScanScheduledTasks) modules.Add(new ScheduledTaskScanModule());
         if (o.ScanKernelDrivers) modules.Add(new DriverScanModule());
@@ -329,6 +330,8 @@ public sealed class ScanEngine
         if (o.ScanLuaScripts) modules.Add(new LuaScriptScanModule());
         if (o.ScanPowerShellHistoryDeep) modules.Add(new PowerShellHistoryDeepScanModule());
         if (o.ScanEventLogDeep) modules.Add(new WindowsEventLogDeepScanModule());
+        if (o.ScanTaskSchedulerDeep) modules.Add(new TaskSchedulerDeepScanModule());
+        if (o.ScanStartupFolderDeep) modules.Add(new StartupFolderDeepScanModule());
 
         // ── Group 5: forensic / trace artefacts ──────────────────────────────
         if (o.ScanForensicTraces) modules.Add(new ForensicTraceScanModule());
@@ -363,6 +366,7 @@ public sealed class ScanEngine
         if (o.ScanProcessInjection) modules.Add(new ProcessInjectionScanModule());
         if (o.ScanSignatureVerification) modules.Add(new SignatureVerificationScanModule());
         if (o.ScanDirectSyscalls) modules.Add(new SystemCallDirectScanModule());
+        if (o.ScanBootSector) modules.Add(new BootSectorScanModule());
         if (o.ScanThreadStartAddress) modules.Add(new ThreadStartAddressScanModule());
         if (o.ScanHeapSpray) modules.Add(new HeapSprayScanModule());
         if (o.ScanKnownHashes) modules.Add(new KnownHashScanModule());
