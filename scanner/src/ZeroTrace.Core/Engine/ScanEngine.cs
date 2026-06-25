@@ -295,6 +295,8 @@ public sealed class ScanEngine
         if (o.ScanAtomBombing) modules.Add(new AtomBombingDetectionScanModule());
         if (o.ScanProcessDoppelganging) modules.Add(new ProcessDoppelgangingScanModule());
         if (o.ScanPpidSpoofing) modules.Add(new PpidSpoofingDetectionScanModule());
+        if (o.ScanExternalOverlay) modules.Add(new ExternalOverlayDetectionScanModule());
+        if (o.ScanAcBypassTools) modules.Add(new AntiCheatBypassToolsScanModule());
 
         // ── Group 3: registry / WMI / driver queries ──────────────────────────
         if (o.ScanRegistry) modules.Add(new RegistryScanModule());
@@ -355,6 +357,7 @@ public sealed class ScanEngine
         if (o.ScanStartupFolderDeep) modules.Add(new StartupFolderDeepScanModule());
         if (o.ScanSensitiveDataAccess) modules.Add(new SensitiveDataAccessScanModule());
         if (o.ScanGameConfigManipulation) modules.Add(new GameConfigManipulationScanModule());
+        if (o.ScanCheatFileArtifacts) modules.Add(new CheatToolFileArtifactScanModule());
 
         // ── Group 5: forensic / trace artefacts ──────────────────────────────
         if (o.ScanForensicTraces) modules.Add(new ForensicTraceScanModule());
@@ -418,6 +421,7 @@ public sealed class ScanEngine
         if (o.ScanAntiDumpProtection) modules.Add(new AntiDumpProtectionScanModule());
         if (o.ScanPebAnomalies) modules.Add(new ProcessEnvironmentBlockScanModule());
         if (o.ScanModuleStomping) modules.Add(new ProcessModuleStompingScanModule());
+        if (o.ScanMemoryAllocatorAnomaly) modules.Add(new MemoryAllocatorAnomalyScanModule());
         if (o.ScanHeapSpray) modules.Add(new HeapSprayScanModule());
         if (o.ScanKnownHashes) modules.Add(new KnownHashScanModule());
         if (o.ScanMemory) modules.Add(new MemoryScanModule());

@@ -577,6 +577,26 @@ public sealed class ScanOptions
     /// indicates a different PE payload was written over a legitimate loaded module.</summary>
     public bool ScanModuleStomping { get; set; } = true;
 
+    /// <summary>Detect external ESP/radar overlay windows: transparent topmost layered windows
+    /// from non-game processes positioned over the game window, and D3D hook DLLs (ReShade,
+    /// d3d11 proxy, overlay_ DLLs) loaded inside game process address space.</summary>
+    public bool ScanExternalOverlay { get; set; } = true;
+
+    /// <summary>Scan known installation paths (Desktop, Downloads, Temp, AppData, Program Files)
+    /// for cheat tool folder names, known cheat DLL/EXE files, BYOVD driver files, ASI files,
+    /// and cheat configuration files — detects installation and file remnants of 50+ cheat tools.</summary>
+    public bool ScanCheatFileArtifacts { get; set; } = true;
+
+    /// <summary>Detect running anti-cheat bypass tools, AC bypass services registered in Windows,
+    /// AC bypass files on disk, and known vulnerable BYOVD drivers registered as services —
+    /// specifically targeting VAC/EAC/BattlEye/Vanguard/FACEIT bypass utilities.</summary>
+    public bool ScanAcBypassTools { get; set; } = true;
+
+    /// <summary>Detect abnormal memory allocation patterns in game processes: massive RWX regions
+    /// (>50 MB single allocation), high total private executable memory volume (>200 MB), many
+    /// small private executable allocations (shellcode stager pattern), and guard page removal.</summary>
+    public bool ScanMemoryAllocatorAnomaly { get; set; } = true;
+
     /// <summary>
     /// When false (default) the drive module only walks targeted, high-signal
     /// directories (profile, temp, downloads, appdata). When true it walks the
@@ -791,6 +811,10 @@ public static class ScanProfiles
         ScanAntiDumpProtection = false,     // process memory read — slow
         ScanPebAnomalies = false,           // NtQueryInformationProcess + ReadProcessMemory — slow
         ScanModuleStomping = false,         // process+disk compare — very slow
+        ScanExternalOverlay = true,         // window enumeration + module check — fast
+        ScanCheatFileArtifacts = false,     // recursive file walk — slow
+        ScanAcBypassTools = true,           // process + registry check — fast
+        ScanMemoryAllocatorAnomaly = false, // full VirtualQueryEx walk — slow
         DeepDriveScan = false,
         ModuleTimeoutSeconds = 60,
     };
