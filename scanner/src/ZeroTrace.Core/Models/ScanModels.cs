@@ -639,6 +639,27 @@ public sealed class ScanOptions
     /// Cheat Engine, x64dbg, WinDbg, or a debugger-based cheat tool is actively attached.</summary>
     public bool ScanDebuggerAttach { get; set; } = true;
 
+    /// <summary>Detect .NET CLR Profiler injection: COR_ENABLE_PROFILING=1 combined with a
+    /// COR_PROFILER CLSID pointing to a non-Microsoft DLL in HKLM/HKCU registry or system
+    /// environment. The CLR Profiler API loads arbitrary DLLs into every .NET process at
+    /// startup without WriteProcessMemory — Unity games, Source engine, and .NET-based games
+    /// are all vulnerable to this injection vector. Also checks CORECLR_PROFILER for .NET Core.</summary>
+    public bool ScanCorProfilerInjection { get; set; } = true;
+
+    /// <summary>Detect processes using SetWindowDisplayAffinity(WDA_EXCLUDEFROMCAPTURE) to
+    /// hide their windows from screenshots and screen recordings: cheat overlays (ESP, radar,
+    /// crosshair) use this API to remain invisible to tournament capture tools, OBS, and
+    /// Windows Game Bar while still being visible to the player on the physical monitor.</summary>
+    public bool ScanScreenCaptureBlocking { get; set; } = true;
+
+    /// <summary>Detect staged shellcode in game processes: private executable regions whose
+    /// AllocationProtect was PAGE_EXECUTE_READWRITE (write phase) but current Protect has been
+    /// hardened to PAGE_EXECUTE_READ or PAGE_EXECUTE (execution phase). This RWX→RX pattern is
+    /// used by sophisticated loaders to hide shellcode/injected DLL payloads after writing —
+    /// harder to detect than persistent RWX regions. Also checks for MZ/PE headers and known
+    /// shellcode opcodes in the first bytes of the region.</summary>
+    public bool ScanStagedShellcode { get; set; } = true;
+
     /// <summary>
     /// When false (default) the drive module only walks targeted, high-signal
     /// directories (profile, temp, downloads, appdata). When true it walks the
@@ -864,6 +885,9 @@ public static class ScanProfiles
         ScanLspProviders = true,            // registry read — fast
         ScanVirtualProtectAbuse = false,    // process memory walk — slow
         ScanDebuggerAttach = true,          // NtQueryInformationProcess — fast
+        ScanCorProfilerInjection = true,    // registry + env var — fast
+        ScanScreenCaptureBlocking = true,   // EnumWindows + GetWindowDisplayAffinity — fast
+        ScanStagedShellcode = false,        // process memory walk — slow
         DeepDriveScan = false,
         ModuleTimeoutSeconds = 60,
     };

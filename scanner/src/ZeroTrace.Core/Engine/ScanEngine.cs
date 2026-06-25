@@ -299,6 +299,7 @@ public sealed class ScanEngine
         if (o.ScanAcBypassTools) modules.Add(new AntiCheatBypassToolsScanModule());
         if (o.ScanSuspiciousChildProcesses) modules.Add(new SuspiciousChildProcessScanModule());
         if (o.ScanGameMemoryReadAccess) modules.Add(new GameMemoryReadAccessScanModule());
+        if (o.ScanScreenCaptureBlocking) modules.Add(new ScreenCaptureBlockingScanModule());
 
         // ── Group 3: registry / WMI / driver queries ──────────────────────────
         if (o.ScanRegistry) modules.Add(new RegistryScanModule());
@@ -340,6 +341,7 @@ public sealed class ScanEngine
         if (o.ScanRpcEndpoints) modules.Add(new RpcEndpointScanModule());
         if (o.ScanRegistryTimestamps) modules.Add(new RegistryKeyTimestampScanModule());
         if (o.ScanLspProviders) modules.Add(new LspProviderScanModule());
+        if (o.ScanCorProfilerInjection) modules.Add(new CorProfilerInjectionScanModule());
         if (o.ScanWmiPersistence) modules.Add(new WmiPersistenceScanModule());
         if (o.ScanScheduledTasks) modules.Add(new ScheduledTaskScanModule());
         if (o.ScanKernelDrivers) modules.Add(new DriverScanModule());
@@ -429,6 +431,7 @@ public sealed class ScanEngine
         if (o.ScanCodeCaves) modules.Add(new CodeCaveDetectionScanModule());
         if (o.ScanVirtualProtectAbuse) modules.Add(new VirtualProtectAbuseScanModule());
         if (o.ScanDebuggerAttach) modules.Add(new DebuggerAttachDetectionScanModule());
+        if (o.ScanStagedShellcode) modules.Add(new StagedShellcodeDetectionScanModule());
         if (o.ScanHeapSpray) modules.Add(new HeapSprayScanModule());
         if (o.ScanKnownHashes) modules.Add(new KnownHashScanModule());
         if (o.ScanMemory) modules.Add(new MemoryScanModule());
