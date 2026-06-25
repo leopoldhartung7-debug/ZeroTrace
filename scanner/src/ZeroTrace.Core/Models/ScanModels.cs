@@ -503,6 +503,19 @@ public sealed class ScanOptions
     /// suspicious parent PIDs via PROC_THREAD_ATTRIBUTE_PARENT_PROCESS manipulation.</summary>
     public bool ScanPpidSpoofing { get; set; } = true;
 
+    /// <summary>Detect inline (byte-patch) hooks in critical DLL exports (ntdll, kernel32,
+    /// kernelbase, win32u): compare first 16 bytes in game process memory vs on-disk PE
+    /// and flag JMP/CALL/INT3 patches on high-value functions (NtOpenProcess, EtwEventWrite, etc.).</summary>
+    public bool ScanInlineHooks { get; set; } = true;
+
+    /// <summary>Detect ETW (Event Tracing for Windows) tampering: compare EtwEventWrite and
+    /// related ntdll functions in memory vs on-disk; detect stopped kernel/security ETW sessions.</summary>
+    public bool ScanEtwTamper { get; set; } = true;
+
+    /// <summary>Detect hardware breakpoints (DR0–DR3) set in game process threads: cheats use
+    /// CPU debug registers to intercept API calls without modifying any code bytes in memory.</summary>
+    public bool ScanHardwareBreakpoints { get; set; } = true;
+
     /// <summary>
     /// When false (default) the drive module only walks targeted, high-signal
     /// directories (profile, temp, downloads, appdata). When true it walks the
@@ -702,6 +715,9 @@ public static class ScanProfiles
         ScanReflectiveDllInjection = false, // virtual memory walk — slow
         ScanProcessDoppelganging = true,    // file stat + process query — fast
         ScanPpidSpoofing = true,            // NtQueryInformationProcess — fast
+        ScanInlineHooks = false,            // process + disk read — slow
+        ScanEtwTamper = true,              // ntdll comparison + ETW query — medium
+        ScanHardwareBreakpoints = false,    // thread suspend+context — slow
         DeepDriveScan = false,
         ModuleTimeoutSeconds = 60,
     };

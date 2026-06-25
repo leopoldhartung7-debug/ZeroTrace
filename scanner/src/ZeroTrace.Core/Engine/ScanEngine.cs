@@ -403,6 +403,9 @@ public sealed class ScanEngine
         if (o.ScanApcInjection) modules.Add(new ApcInjectionScanModule());
         if (o.ScanTlsCallbacks) modules.Add(new TlsCallbackScanModule());
         if (o.ScanReflectiveDllInjection) modules.Add(new ReflectiveDllInjectionScanModule());
+        if (o.ScanInlineHooks) modules.Add(new InlineHookDetectionScanModule());
+        if (o.ScanEtwTamper) modules.Add(new EtwTamperScanModule());
+        if (o.ScanHardwareBreakpoints) modules.Add(new HardwareBreakpointScanModule());
         if (o.ScanHeapSpray) modules.Add(new HeapSprayScanModule());
         if (o.ScanKnownHashes) modules.Add(new KnownHashScanModule());
         if (o.ScanMemory) modules.Add(new MemoryScanModule());
