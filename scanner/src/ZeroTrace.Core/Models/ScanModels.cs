@@ -1191,6 +1191,21 @@ public sealed class ScanOptions
     /// money drop/recovery artifacts, RPH online bypass patches, network hook plugins, and
     /// RPH console history with cheat commands.</summary>
     public bool ScanRagePluginHookCheat { get; set; } = true;
+    /// <summary>Detect Bring Your Own Vulnerable Driver (BYOVD) attacks: 80+ known CVE-exploited
+    /// driver files (Gigabyte gdrv.sys, MSI RTCore64.sys, Dell dbutil, WinRing0, CPU-Z, ASUS,
+    /// ASRock, SpeedFan, HWiNFO64, MsIo64, WinIo, rwdrv etc.) in Temp/Downloads/AppData,
+    /// registry service entries with wrong ImagePath, and KDMapper/drvmap tooling artifacts.</summary>
+    public bool ScanByovdVulnerableDriver { get; set; } = true;
+    /// <summary>Detect ETW (Event Tracing for Windows) bypass and Windows telemetry evasion used
+    /// by cheats to blind AV/EDR: EtwEventWrite patches in PS history, modified ntdll.dll outside
+    /// System32, WMI autologger provider disabling, Script Block Logging registry disable, Windows
+    /// Defender policy bypass keys, and diagnostic/telemetry service disable artifacts.</summary>
+    public bool ScanEtwBypassTelemetry { get; set; } = true;
+    /// <summary>Detect Easy Anti-Cheat (EAC) bypass techniques: EAC service registry manipulation,
+    /// 50+ known bypass EXE/DLL names, BYOVD drivers used to kill EAC kernel callbacks (gdrv.sys,
+    /// RTCore64.sys, dbutil_2_3.sys etc.), EAC certificate store tampering, modified EAC directory
+    /// structures, ETW patch artifacts targeting EAC telemetry, and KDMapper tooling alongside EAC.</summary>
+    public bool ScanEasyAntiCheatBypass { get; set; } = true;
 
     /// <summary>Scan game directories (Steam, Epic, user-specified) for BepInEx, Unity Doorstop,
     /// and MelonLoader code injection frameworks. Detects: doorstop_config.ini (enabled=true),
@@ -1932,6 +1947,9 @@ public static class ScanProfiles
         ScanAntiScreenshotEvasion = true,      // screenshot-hide DWM/DXGI/WDA evasion scan — fast
         ScanCryptoMinerCheatBundle = true,     // bundled miner/RAT/stealer in cheat package scan — fast
         ScanRagePluginHookCheat = true,        // RPH cheat plugin/bypass/console history scan — fast
+        ScanByovdVulnerableDriver = true,      // 80+ CVE-exploited driver BYOVD artifact scan — fast
+        ScanEtwBypassTelemetry = true,         // ETW patch/WD policy/telemetry disable scan — fast
+        ScanEasyAntiCheatBypass = true,        // EAC service/BYOVD/cert/ETW bypass scan — fast
         DeepDriveScan = false,
         // No per-module timeout — every Quick module runs to completion. Quick stays
         // fast because slow modules are individually disabled above, not because they

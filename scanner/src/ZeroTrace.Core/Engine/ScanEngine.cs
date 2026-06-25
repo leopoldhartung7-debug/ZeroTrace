@@ -534,6 +534,9 @@ public sealed class ScanEngine
         if (o.ScanAntiScreenshotEvasion) modules.Add(new AntiScreenshotEvasionScanModule());
         if (o.ScanCryptoMinerCheatBundle) modules.Add(new CryptoMinerCheatBundleScanModule());
         if (o.ScanRagePluginHookCheat) modules.Add(new RagePluginHookCheatScanModule());
+        if (o.ScanByovdVulnerableDriver) modules.Add(new ByovdVulnerableDriverScanModule());
+        if (o.ScanEtwBypassTelemetry) modules.Add(new EtwBypassTelemetryScanModule());
+        if (o.ScanEasyAntiCheatBypass) modules.Add(new EasyAntiCheatBypassScanModule());
 
         // ── Group 5: forensic / trace artefacts ──────────────────────────────
         if (o.ScanForensicTraces) modules.Add(new ForensicTraceScanModule());
