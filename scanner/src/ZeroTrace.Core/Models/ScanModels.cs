@@ -782,6 +782,29 @@ public sealed class ScanOptions
     /// active filesystem verification of the excluded locations.</summary>
     public bool ScanAvExclusionActivePaths { get; set; } = true;
 
+    /// <summary>Enumerate Windows Filtering Platform (WFP) callout drivers via FwpmCalloutEnum0.
+    /// WFP callout drivers intercept all network packets at the kernel level — cheat tools use
+    /// them to silently duplicate game server UDP traffic for radar cheats (without touching the
+    /// game process) and to block anti-cheat update/telemetry servers. Flags unknown persistent
+    /// WFP callout providers not matching a whitelist of Windows built-in and known legitimate
+    /// security software (VPN clients, EDR products, Windows Defender NIS driver).</summary>
+    public bool ScanWfpFilters { get; set; } = true;
+
+    /// <summary>Check process mitigation policies of known game and anti-cheat processes via
+    /// GetProcessMitigationPolicy. Flags game/AC processes with DEP, ASLR, or both disabled —
+    /// BYOVD kernel drivers can call NtSetInformationProcess(ProcessMitigationPolicy) to strip
+    /// CFG/DEP/ACG from a game process before injecting a cheat DLL, leaving the weakened
+    /// mitigation state as a detectable artifact after injection completes.</summary>
+    public bool ScanProcessMitigations { get; set; } = true;
+
+    /// <summary>Scan Cryptographic Service Provider (CSP) and CNG provider registry entries
+    /// for malicious DLL registrations outside System32. CSP/CNG providers are loaded into
+    /// every process that performs cryptographic operations — including SSL/TLS and Authenticode
+    /// validation. Cheat tools and MITM tools register fake providers to intercept anti-cheat
+    /// TLS communications, fake certificate validation for unsigned drivers, or weaken system
+    /// randomness. Checks HKLM/HKCU Cryptography\Defaults\Provider and CNG provider paths.</summary>
+    public bool ScanCryptoApiProviders { get; set; } = true;
+
     /// <summary>
     /// When false (default) the drive module only walks targeted, high-signal
     /// directories (profile, temp, downloads, appdata). When true it walks the
@@ -1026,6 +1049,9 @@ public static class ScanProfiles
         ScanSeDebugPrivilege = true,          // OpenProcessToken on all procs — medium
         ScanBepInExDoorstop = false,          // game directory walk — slow
         ScanAvExclusionActivePaths = true,    // registry + targeted dir scan — medium
+        ScanWfpFilters = true,                // FwpmCalloutEnum0 via BFE — fast
+        ScanProcessMitigations = true,        // GetProcessMitigationPolicy on game procs — fast
+        ScanCryptoApiProviders = true,        // registry — fast
         DeepDriveScan = false,
         ModuleTimeoutSeconds = 60,
     };
