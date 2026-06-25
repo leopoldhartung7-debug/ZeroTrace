@@ -1169,6 +1169,18 @@ public sealed class ScanOptions
     /// modified FiveM.exe/FiveM_GTAProcess.exe, ESX/QBCore exploit scripts, known FiveM cheat menu
     /// directories (Eulen, Phantom-X, Lynx, Impulse), and native call spoofing artifacts.</summary>
     public bool ScanFiveMExploitInjection { get; set; } = true;
+    /// <summary>Detect DirectX/Vulkan/ImGui overlay-based cheats: ESP overlays, aimbot render DLLs,
+    /// Reshade-based cheat shaders, RTSS hook abuse, external process ESP drawing, GDI layered
+    /// window cheats, Discord overlay hook abuse, and D3D11/D3D12 Present hook signatures.</summary>
+    public bool ScanOverlayEspAimbot { get; set; } = true;
+    /// <summary>Detect speed hacks and timer manipulation: CheatEngine speed feature artifacts,
+    /// GetTickCount/QueryPerformanceCounter hook DLLs, multimedia timer abuse registry keys,
+    /// speedhack32/64.dll, TimeFlow/TimeMaster trainer tools, and Python speed hack scripts.</summary>
+    public bool ScanSpeedHackTimer { get; set; } = true;
+    /// <summary>Detect cheats that evade screenshot-based anti-cheat: SetWindowDisplayAffinity
+    /// (WDA_EXCLUDEFROMCAPTURE) abusers, DWM hook DLLs hiding overlays, OBS game capture bypass,
+    /// DXGI Present hook that skips render on capture queries, and FiveM anti-ban screenshot bypass.</summary>
+    public bool ScanAntiScreenshotEvasion { get; set; } = true;
 
     /// <summary>Scan game directories (Steam, Epic, user-specified) for BepInEx, Unity Doorstop,
     /// and MelonLoader code injection frameworks. Detects: doorstop_config.ini (enabled=true),
@@ -1904,7 +1916,10 @@ public static class ScanProfiles
         ScanAmsiBypassArtifact = true,        // AMSI patch/registry bypass + reflective DLL scan — fast
         ScanCheatHashSignature = true,        // SHA-256/MD5 hash database match scan — fast
         ScanCryptoMiner = true,               // bundled miner EXE/config/persistence scan — fast
-        ScanFiveMExploitInjection = true,     // FiveM NUI/Lua/socket/manifest exploit scan — fast
+        ScanFiveMExploitInjection = true,      // FiveM NUI/Lua/socket/manifest exploit scan — fast
+        ScanOverlayEspAimbot = true,           // D3D/ImGui/GDI overlay ESP & aimbot DLL scan — fast
+        ScanSpeedHackTimer = true,             // speed hack EXE/DLL/timer abuse artifact scan — fast
+        ScanAntiScreenshotEvasion = true,      // screenshot-hide DWM/DXGI/WDA evasion scan — fast
         DeepDriveScan = false,
         // No per-module timeout — every Quick module runs to completion. Quick stays
         // fast because slow modules are individually disabled above, not because they
