@@ -1181,6 +1181,16 @@ public sealed class ScanOptions
     /// (WDA_EXCLUDEFROMCAPTURE) abusers, DWM hook DLLs hiding overlays, OBS game capture bypass,
     /// DXGI Present hook that skips render on capture queries, and FiveM anti-ban screenshot bypass.</summary>
     public bool ScanAntiScreenshotEvasion { get; set; } = true;
+    /// <summary>Scan for crypto miners (XMRig, PhoenixMiner, T-Rex, lolMiner, NBMiner) bundled
+    /// with cheat installers: miner configs with pool/wallet fields, miner persistence via Task
+    /// Scheduler and registry, disguised miner EXEs, bundled RAT/stealer artifacts (AsyncRAT,
+    /// Redline, Discord token grabber), and clipboard hijacker DLLs in cheat directories.</summary>
+    public bool ScanCryptoMinerCheatBundle { get; set; } = true;
+    /// <summary>Detect RagePluginHook (RPH)-based cheats for GTA V and FiveM: RPH cheat plugin
+    /// DLLs (GodMode, NoClip, TeleportAnywhere), RPH config with bypass/anti-cheat-disable keys,
+    /// money drop/recovery artifacts, RPH online bypass patches, network hook plugins, and
+    /// RPH console history with cheat commands.</summary>
+    public bool ScanRagePluginHookCheat { get; set; } = true;
 
     /// <summary>Scan game directories (Steam, Epic, user-specified) for BepInEx, Unity Doorstop,
     /// and MelonLoader code injection frameworks. Detects: doorstop_config.ini (enabled=true),
@@ -1920,6 +1930,8 @@ public static class ScanProfiles
         ScanOverlayEspAimbot = true,           // D3D/ImGui/GDI overlay ESP & aimbot DLL scan — fast
         ScanSpeedHackTimer = true,             // speed hack EXE/DLL/timer abuse artifact scan — fast
         ScanAntiScreenshotEvasion = true,      // screenshot-hide DWM/DXGI/WDA evasion scan — fast
+        ScanCryptoMinerCheatBundle = true,     // bundled miner/RAT/stealer in cheat package scan — fast
+        ScanRagePluginHookCheat = true,        // RPH cheat plugin/bypass/console history scan — fast
         DeepDriveScan = false,
         // No per-module timeout — every Quick module runs to completion. Quick stays
         // fast because slow modules are individually disabled above, not because they
