@@ -491,6 +491,18 @@ public sealed class ScanOptions
     /// binary-dense entries, and abnormal atom counts indicative of payload staging.</summary>
     public bool ScanAtomBombing { get; set; } = true;
 
+    /// <summary>Detect Reflective DLL Injection: scan game process virtual memory for private
+    /// executable regions containing valid MZ/PE headers not listed in the process module table.</summary>
+    public bool ScanReflectiveDllInjection { get; set; } = true;
+
+    /// <summary>Detect Process Doppelganging and Herpaderping: running processes whose image
+    /// file on disk is missing, too small, or no longer a valid PE (post-run overwrite).</summary>
+    public bool ScanProcessDoppelganging { get; set; } = true;
+
+    /// <summary>Detect PPID (Parent Process ID) spoofing: processes claiming impossible or
+    /// suspicious parent PIDs via PROC_THREAD_ATTRIBUTE_PARENT_PROCESS manipulation.</summary>
+    public bool ScanPpidSpoofing { get; set; } = true;
+
     /// <summary>
     /// When false (default) the drive module only walks targeted, high-signal
     /// directories (profile, temp, downloads, appdata). When true it walks the
@@ -687,6 +699,9 @@ public static class ScanProfiles
         ScanApcInjection = false,          // thread handle + memory scan — slow
         ScanTlsCallbacks = false,          // process module memory scan — slow
         ScanAtomBombing = true,            // atom table enumeration — fast
+        ScanReflectiveDllInjection = false, // virtual memory walk — slow
+        ScanProcessDoppelganging = true,    // file stat + process query — fast
+        ScanPpidSpoofing = true,            // NtQueryInformationProcess — fast
         DeepDriveScan = false,
         ModuleTimeoutSeconds = 60,
     };

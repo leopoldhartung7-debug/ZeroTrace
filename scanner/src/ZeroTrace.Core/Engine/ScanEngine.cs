@@ -293,6 +293,8 @@ public sealed class ScanEngine
         if (o.ScanGpuProcesses) modules.Add(new GpuProcessMemoryScanModule());
         if (o.ScanProtectedProcesses) modules.Add(new ProtectedProcessScanModule());
         if (o.ScanAtomBombing) modules.Add(new AtomBombingDetectionScanModule());
+        if (o.ScanProcessDoppelganging) modules.Add(new ProcessDoppelgangingScanModule());
+        if (o.ScanPpidSpoofing) modules.Add(new PpidSpoofingDetectionScanModule());
 
         // ── Group 3: registry / WMI / driver queries ──────────────────────────
         if (o.ScanRegistry) modules.Add(new RegistryScanModule());
@@ -400,6 +402,7 @@ public sealed class ScanEngine
         if (o.ScanExceptionHandlerChain) modules.Add(new ExceptionHandlerChainScanModule());
         if (o.ScanApcInjection) modules.Add(new ApcInjectionScanModule());
         if (o.ScanTlsCallbacks) modules.Add(new TlsCallbackScanModule());
+        if (o.ScanReflectiveDllInjection) modules.Add(new ReflectiveDllInjectionScanModule());
         if (o.ScanHeapSpray) modules.Add(new HeapSprayScanModule());
         if (o.ScanKnownHashes) modules.Add(new KnownHashScanModule());
         if (o.ScanMemory) modules.Add(new MemoryScanModule());
