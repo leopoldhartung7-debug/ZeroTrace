@@ -395,6 +395,26 @@ public sealed class ScanOptions
     /// shells), RDP enabled with NLA disabled, and unauthorized RDP group members.</summary>
     public bool ScanRemoteAccessTools { get; set; } = true;
 
+    /// <summary>Detect process hollowing (RunPE): private executable memory regions with MZ headers,
+    /// PE size mismatches between disk and memory indicating in-place image replacement.</summary>
+    public bool ScanProcessHollowing { get; set; } = true;
+
+    /// <summary>Enumerate Windows kernel object directories (\BaseNamedObjects, \Device, \Driver)
+    /// for cheat-keyword named objects and known BYOVD driver/device names.</summary>
+    public bool ScanKernelObjects { get; set; } = true;
+
+    /// <summary>Detect network share misconfigurations: SMBv1 enabled, suspicious shares,
+    /// mapped drives to IP addresses, and null-session (anonymous) share access.</summary>
+    public bool ScanNetworkShares { get; set; } = true;
+
+    /// <summary>Detect DLL load order hijacking: writable directories before System32 in PATH,
+    /// proxy DLLs in PATH directories, and ExcludeFromKnownDlls overrides.</summary>
+    public bool ScanDllLoadOrderHijack { get; set; } = true;
+
+    /// <summary>Detect anti-debugging and anti-analysis techniques: running debugger processes
+    /// (x64dbg, Cheat Engine, IDA), ntdll PE header erasure, and IFEO page heap on games.</summary>
+    public bool ScanAntiDebugTechniques { get; set; } = true;
+
     /// <summary>
     /// When false (default) the drive module only walks targeted, high-signal
     /// directories (profile, temp, downloads, appdata). When true it walks the
@@ -567,6 +587,11 @@ public static class ScanProfiles
         ScanCryptoMiner = true,           // process + registry — fast
         ScanElamDriver = true,            // registry — fast
         ScanRemoteAccessTools = true,     // process + registry — fast
+        ScanProcessHollowing = false,     // memory scan — slow
+        ScanKernelObjects = true,         // NtQueryDirectoryObject — fast
+        ScanNetworkShares = true,         // registry + NetShareEnum — fast
+        ScanDllLoadOrderHijack = true,    // registry + PATH check — fast
+        ScanAntiDebugTechniques = false,  // process memory scan — slow
         DeepDriveScan = false,
         ModuleTimeoutSeconds = 60,
     };
