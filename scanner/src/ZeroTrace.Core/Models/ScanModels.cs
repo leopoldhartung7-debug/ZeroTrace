@@ -205,6 +205,42 @@ public sealed class ScanOptions
     /// DLLs (dinput8.dll, d3d9.dll), and tampered anti-cheat binaries.</summary>
     public bool ScanGameIntegrity { get; set; } = true;
 
+    /// <summary>Scan MuiCache registry for previously executed cheat tool binaries
+    /// (persists after file deletion — strong forensic artifact).</summary>
+    public bool ScanMuiCache { get; set; } = true;
+
+    /// <summary>Scan Windows RecentDocs registry and Recent LNK files for recently
+    /// opened cheat scripts, ASI files, or cheat configuration files.</summary>
+    public bool ScanRecentDocs { get; set; } = true;
+
+    /// <summary>Scan Windows Error Reporting crash dumps for cheat tool process
+    /// names, paths, and faulting module names (crash artifacts survive deletion).</summary>
+    public bool ScanWerArtifacts { get; set; } = true;
+
+    /// <summary>Detect processes with dangerous token privileges enabled:
+    /// SeDebugPrivilege (memory read/write), SeLoadDriverPrivilege (kernel driver loading).</summary>
+    public bool ScanTokenPrivileges { get; set; } = true;
+
+    /// <summary>Scan Amcache hive for previously executed cheat binaries
+    /// (includes SHA-1 hash and execution timestamp even after deletion).</summary>
+    public bool ScanAmcache { get; set; } = true;
+
+    /// <summary>Enumerate live kernel modules via NtQuerySystemInformation and flag
+    /// drivers not in System32, in suspicious paths, or matching known cheat tool names.</summary>
+    public bool ScanLoadedKernelModules { get; set; } = true;
+
+    /// <summary>Detect anti-debugging techniques in running processes (ProcessDebugFlags,
+    /// NtGlobalFlag debug heap) indicating cheat loaders hiding their behavior.</summary>
+    public bool ScanAntiDebugEvasion { get; set; } = true;
+
+    /// <summary>Query DNS cache for cheat distribution/license server domains and
+    /// scan hosts file for anti-cheat domain blocks or cheat CDN entries.</summary>
+    public bool ScanDnsHistory { get; set; } = true;
+
+    /// <summary>Scan environment variables for cheat tool artifacts and PATH hijacking
+    /// (user-writable directory before System32 enabling DLL search order abuse).</summary>
+    public bool ScanEnvironmentVariables { get; set; } = true;
+
     /// <summary>
     /// When false (default) the drive module only walks targeted, high-signal
     /// directories (profile, temp, downloads, appdata). When true it walks the
@@ -330,6 +366,15 @@ public static class ScanProfiles
         ScanComHijack = true,       // registry — fast
         ScanLuaScripts = false,     // file walk — slow
         ScanGameIntegrity = false,  // game root walk — slow
+        ScanMuiCache = true,        // registry — fast
+        ScanRecentDocs = true,      // registry + LNK files — fast
+        ScanWerArtifacts = true,    // text file read — fast
+        ScanTokenPrivileges = true, // process token query — medium
+        ScanAmcache = false,        // hive read — slow
+        ScanLoadedKernelModules = true, // NT syscall — fast
+        ScanAntiDebugEvasion = true, // NT syscall — fast
+        ScanDnsHistory = true,      // DNS cache API — fast
+        ScanEnvironmentVariables = true, // registry — fast
         DeepDriveScan = false,
         ModuleTimeoutSeconds = 60,
     };

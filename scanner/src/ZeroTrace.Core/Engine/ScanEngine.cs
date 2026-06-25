@@ -281,6 +281,9 @@ public sealed class ScanEngine
         if (o.ScanIatHooks) modules.Add(new IatHookScanModule());
         if (o.ScanDkom) modules.Add(new DkomScanModule());
         if (o.ScanHandles) modules.Add(new HandleScanModule());
+        if (o.ScanTokenPrivileges) modules.Add(new TokenPrivilegeScanModule());
+        if (o.ScanAntiDebugEvasion) modules.Add(new AntiDebugEvasionScanModule());
+        if (o.ScanLoadedKernelModules) modules.Add(new LoadedKernelModuleScanModule());
 
         // ── Group 3: registry / WMI / driver queries ──────────────────────────
         if (o.ScanRegistry) modules.Add(new RegistryScanModule());
@@ -291,6 +294,8 @@ public sealed class ScanEngine
         if (o.ScanFirewallRules) modules.Add(new FirewallRuleScanModule());
         if (o.ScanVolumeShadow) modules.Add(new VolumeShadowScanModule());
         if (o.ScanComHijack) modules.Add(new ComHijackScanModule());
+        if (o.ScanDnsHistory) modules.Add(new DnsHistoryScanModule());
+        if (o.ScanEnvironmentVariables) modules.Add(new EnvironmentVariableScanModule());
         if (o.ScanWmiPersistence) modules.Add(new WmiPersistenceScanModule());
         if (o.ScanScheduledTasks) modules.Add(new ScheduledTaskScanModule());
         if (o.ScanKernelDrivers) modules.Add(new DriverScanModule());
@@ -326,6 +331,10 @@ public sealed class ScanEngine
         if (o.ScanShellbags) modules.Add(new ShellbagScanModule());
         if (o.ScanUserAssist) modules.Add(new UserAssistScanModule());
         if (o.ScanAccessibilityAbuse) modules.Add(new AccessibilityAbuseScanModule());
+        if (o.ScanMuiCache) modules.Add(new MuiCacheScanModule());
+        if (o.ScanRecentDocs) modules.Add(new RecentDocsScanModule());
+        if (o.ScanWerArtifacts) modules.Add(new WerArtifactScanModule());
+        if (o.ScanAmcache) modules.Add(new AmcacheScanModule());
 
         // ── Sequential (group 0): order-sensitive or internally parallel ──────
         if (o.ScanMacroSoftware) modules.Add(new MacroSoftwareScanModule());
