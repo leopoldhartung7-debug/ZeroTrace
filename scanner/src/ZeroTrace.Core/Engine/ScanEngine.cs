@@ -425,6 +425,7 @@ public sealed class ScanEngine
         if (o.ScanModuleStomping) modules.Add(new ProcessModuleStompingScanModule());
         if (o.ScanMemoryAllocatorAnomaly) modules.Add(new MemoryAllocatorAnomalyScanModule());
         if (o.ScanSteamApiIntegrity) modules.Add(new SteamApiIntegrityScanModule());
+        if (o.ScanCodeCaves) modules.Add(new CodeCaveDetectionScanModule());
         if (o.ScanHeapSpray) modules.Add(new HeapSprayScanModule());
         if (o.ScanKnownHashes) modules.Add(new KnownHashScanModule());
         if (o.ScanMemory) modules.Add(new MemoryScanModule());

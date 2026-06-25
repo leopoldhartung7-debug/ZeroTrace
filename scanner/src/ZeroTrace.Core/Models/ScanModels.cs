@@ -612,6 +612,12 @@ public sealed class ScanOptions
     /// (ESP, aimbot, radar) to continuously read game state from another process.</summary>
     public bool ScanGameMemoryReadAccess { get; set; } = true;
 
+    /// <summary>Detect code caves in loaded module .text sections of game processes: runs of 32+
+    /// zeroed (0x00) or NOP (0x90) bytes within otherwise functional code that differ from the
+    /// on-disk PE at the same offset — proving shellcode was written then cleared/overwritten
+    /// to evade memory dump analysis while retaining the cave for future use.</summary>
+    public bool ScanCodeCaves { get; set; } = true;
+
     /// <summary>
     /// When false (default) the drive module only walks targeted, high-signal
     /// directories (profile, temp, downloads, appdata). When true it walks the
@@ -833,6 +839,7 @@ public static class ScanProfiles
         ScanSuspiciousChildProcesses = true, // process tree query — fast
         ScanSteamApiIntegrity = false,      // process memory compare — slow
         ScanGameMemoryReadAccess = true,    // NtQuerySystemInformation — medium
+        ScanCodeCaves = false,              // process+disk compare — slow
         DeepDriveScan = false,
         ModuleTimeoutSeconds = 60,
     };
