@@ -618,6 +618,27 @@ public sealed class ScanOptions
     /// to evade memory dump analysis while retaining the cave for future use.</summary>
     public bool ScanCodeCaves { get; set; } = true;
 
+    /// <summary>Detect Layered Service Provider (LSP) DLLs in the Winsock2 catalog: non-system
+    /// provider DLLs inserted into Protocol_Catalog9 or NameSpace_Catalog5 to intercept all
+    /// network traffic from game processes — used for network-level radar cheats, packet
+    /// injection, and traffic analysis. Flags non-system providers, missing DLL remnants,
+    /// and known cheat/proxy tool names in the catalog.</summary>
+    public bool ScanLspProviders { get; set; } = true;
+
+    /// <summary>Detect VirtualProtect abuse in game processes: MEM_IMAGE pages (module-backed)
+    /// whose current protection is PAGE_EXECUTE_READWRITE or PAGE_EXECUTE_WRITECOPY — evidence
+    /// that a hook installer called VirtualProtect to make a .text section writable before
+    /// patching a JMP/CALL byte sequence. Also detects AllocationProtect vs Protect mismatches
+    /// indicating permanent or transient protection changes on loaded modules.</summary>
+    public bool ScanVirtualProtectAbuse { get; set; } = true;
+
+    /// <summary>Detect debuggers attached to game processes via kernel-level signals:
+    /// ProcessDebugPort (class 7), ProcessDebugObjectHandle (class 30), and ProcessDebugFlags
+    /// (class 31) via NtQueryInformationProcess. Unlike PEB.BeingDebugged (trivially cleared),
+    /// these kernel-side indicators cannot be spoofed without a driver — any match confirms
+    /// Cheat Engine, x64dbg, WinDbg, or a debugger-based cheat tool is actively attached.</summary>
+    public bool ScanDebuggerAttach { get; set; } = true;
+
     /// <summary>
     /// When false (default) the drive module only walks targeted, high-signal
     /// directories (profile, temp, downloads, appdata). When true it walks the
@@ -840,6 +861,9 @@ public static class ScanProfiles
         ScanSteamApiIntegrity = false,      // process memory compare — slow
         ScanGameMemoryReadAccess = true,    // NtQuerySystemInformation — medium
         ScanCodeCaves = false,              // process+disk compare — slow
+        ScanLspProviders = true,            // registry read — fast
+        ScanVirtualProtectAbuse = false,    // process memory walk — slow
+        ScanDebuggerAttach = true,          // NtQueryInformationProcess — fast
         DeepDriveScan = false,
         ModuleTimeoutSeconds = 60,
     };

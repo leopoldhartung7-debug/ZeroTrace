@@ -339,6 +339,7 @@ public sealed class ScanEngine
         if (o.ScanDnsConfiguration) modules.Add(new DnsOverHttpsScanModule());
         if (o.ScanRpcEndpoints) modules.Add(new RpcEndpointScanModule());
         if (o.ScanRegistryTimestamps) modules.Add(new RegistryKeyTimestampScanModule());
+        if (o.ScanLspProviders) modules.Add(new LspProviderScanModule());
         if (o.ScanWmiPersistence) modules.Add(new WmiPersistenceScanModule());
         if (o.ScanScheduledTasks) modules.Add(new ScheduledTaskScanModule());
         if (o.ScanKernelDrivers) modules.Add(new DriverScanModule());
@@ -426,6 +427,8 @@ public sealed class ScanEngine
         if (o.ScanMemoryAllocatorAnomaly) modules.Add(new MemoryAllocatorAnomalyScanModule());
         if (o.ScanSteamApiIntegrity) modules.Add(new SteamApiIntegrityScanModule());
         if (o.ScanCodeCaves) modules.Add(new CodeCaveDetectionScanModule());
+        if (o.ScanVirtualProtectAbuse) modules.Add(new VirtualProtectAbuseScanModule());
+        if (o.ScanDebuggerAttach) modules.Add(new DebuggerAttachDetectionScanModule());
         if (o.ScanHeapSpray) modules.Add(new HeapSprayScanModule());
         if (o.ScanKnownHashes) modules.Add(new KnownHashScanModule());
         if (o.ScanMemory) modules.Add(new MemoryScanModule());
