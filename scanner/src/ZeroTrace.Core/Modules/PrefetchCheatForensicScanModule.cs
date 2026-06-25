@@ -19,7 +19,9 @@ public sealed class PrefetchCheatForensicScanModule : IScanModule
     // Prefetch filenames follow the pattern: EXENAME-XXXXXXXX.pf
     private static readonly HashSet<string> KnownCheatStems = new(StringComparer.OrdinalIgnoreCase)
     {
+        // -----------------------------------------------------------------------
         // Injectors
+        // -----------------------------------------------------------------------
         "INJECTOR",
         "XENOS",
         "XENOS64",
@@ -39,8 +41,19 @@ public sealed class PrefetchCheatForensicScanModule : IScanModule
         "LOADLIBINJECT",
         "MANUALMAP",
         "MANUALMAPPER64",
+        "GHOSTINJECT",
+        "SYRINGE",
+        "SYRINGE64",
+        "LOADLIBRARY",
+        "REMOTETHREADINJECT",
+        "APCINJECTOR",
+        "EARLYBIRD",
+        "PROCESSHOLLOW",
+        "PROCESSHOLLOWING",
 
+        // -----------------------------------------------------------------------
         // HWID spoofers
+        // -----------------------------------------------------------------------
         "HWIDSPOOFER",
         "PHANTOMSPOOFER",
         "CROWSPOOFER",
@@ -64,8 +77,17 @@ public sealed class PrefetchCheatForensicScanModule : IScanModule
         "BOARDIDSPOOFER",
         "SMBIOSSPOOFER",
         "PCISPOOFER",
+        "REGISTRYSPOOFER",
+        "GUIDSPOOFER",
+        "UUIDSPOOFER",
+        "MUIDSPOOFER",
+        "INSTANCEIDSPOOFER",
+        "HARDDISKSPOOFER",
+        "NETWORKSPOOFER",
 
+        // -----------------------------------------------------------------------
         // Bypass / driver mapping tools
+        // -----------------------------------------------------------------------
         "KDMAPPER",
         "DRVMAP",
         "DRIVERMAPPER",
@@ -89,8 +111,18 @@ public sealed class PrefetchCheatForensicScanModule : IScanModule
         "PATCHGUARDBYPASS",
         "DSEBYPASS",
         "DSEFIXER",
+        "KPPBYPASS",
+        "KSBYPASS",
+        "NTOSKRNLPATCH",
+        "RTCOREPATCH",
+        "GDRVSCAN",
+        "CPUZBYPASS",
+        "MSIO64BYPASS",
+        "NTIOLIB64BYPASS",
 
+        // -----------------------------------------------------------------------
         // Cheat loaders
+        // -----------------------------------------------------------------------
         "CHEATLOADER",
         "HACKLOADER",
         "GAMELOADER",
@@ -104,8 +136,13 @@ public sealed class PrefetchCheatForensicScanModule : IScanModule
         "MODLOADER",
         "PAYLOADRUN",
         "SHELLCODELOADER",
+        "STUBLOADER",
+        "CRYPTERLOADER",
+        "PACKERDROP",
 
-        // FiveM cheats
+        // -----------------------------------------------------------------------
+        // FiveM / GTA:Online cheats
+        // -----------------------------------------------------------------------
         "EULEN",
         "LYNX",
         "IMPULSE",
@@ -118,8 +155,13 @@ public sealed class PrefetchCheatForensicScanModule : IScanModule
         "FIVEMHACK",
         "FIVEMBYPASS",
         "FIVEMSPOOFER",
+        "FIVEM-BYPASS",
+        "FIVEM-CHEAT",
+        "FIVEM-HACK",
 
+        // -----------------------------------------------------------------------
         // GTA V menus
+        // -----------------------------------------------------------------------
         "2TAKE1",
         "STAND",
         "CHERAX",
@@ -134,8 +176,13 @@ public sealed class PrefetchCheatForensicScanModule : IScanModule
         "NATIVEMENU",
         "MODMENU",
         "GTACHEAT",
+        "NATIVETRAINER",
+        "SCRIPTDEV",
+        "OPENIV",
 
+        // -----------------------------------------------------------------------
         // CS2 / CSGO cheats
+        // -----------------------------------------------------------------------
         "AIMWARE",
         "SKEET",
         "GAMESENSE",
@@ -150,8 +197,13 @@ public sealed class PrefetchCheatForensicScanModule : IScanModule
         "CS2CHEAT",
         "CSGOHACK",
         "CS2HACK",
+        "CSGOSPOOFER",
+        "CS2SPOOFER",
+        "PRIMECHEAT",
 
+        // -----------------------------------------------------------------------
         // Valorant cheats
+        // -----------------------------------------------------------------------
         "VALOAIMBOT",
         "VALORANTCHEAT",
         "VALORANTHACK",
@@ -159,8 +211,11 @@ public sealed class PrefetchCheatForensicScanModule : IScanModule
         "VALORANTSPOOFER",
         "VALHACK",
         "VALOBOT",
+        "VANGUARDBYPASS2",
 
-        // Analysis and reverse engineering tools (dual-use)
+        // -----------------------------------------------------------------------
+        // Analysis and reverse engineering tools (dual-use / red-flag context)
+        // -----------------------------------------------------------------------
         "RECLASS",
         "RECLASS64",
         "X64DBG",
@@ -176,9 +231,15 @@ public sealed class PrefetchCheatForensicScanModule : IScanModule
         "SYSTEMINFORMER",
         "WINDBG",
         "OLLYDBG",
-        "IMMUNITY",
+        "IMMUNITYDEBUGGER",
+        "GHIDRA",
+        "IDA64",
+        "IDAG64",
+        "RADARE2",
 
+        // -----------------------------------------------------------------------
         // DMA / physical memory tools
+        // -----------------------------------------------------------------------
         "PCILEECH",
         "MEMPROC",
         "DMAREAD",
@@ -189,8 +250,12 @@ public sealed class PrefetchCheatForensicScanModule : IScanModule
         "DMAHACK",
         "MEMREAD",
         "PHYSMEMDRIVER",
+        "DMACONTROLLER",
+        "DMAFRAMEWORK",
 
+        // -----------------------------------------------------------------------
         // Speed hacks
+        // -----------------------------------------------------------------------
         "SPEEDHACK",
         "SPEEDHACK32",
         "SPEEDHACK64",
@@ -199,8 +264,11 @@ public sealed class PrefetchCheatForensicScanModule : IScanModule
         "SPEEDBOOST",
         "CLOCKHACK",
         "TIMEMANIP",
+        "SPEEDCHEAT",
 
+        // -----------------------------------------------------------------------
         // Trainers / memory editors
+        // -----------------------------------------------------------------------
         "TRAINER",
         "ARTMONEY",
         "TSEARCH",
@@ -208,8 +276,13 @@ public sealed class PrefetchCheatForensicScanModule : IScanModule
         "MEMORYEDITOR",
         "MEMEDITOR",
         "MEMEDIT",
+        "PWRCHEAT",
+        "PWNHACK",
+        "UNIVERSALTRAINER",
 
+        // -----------------------------------------------------------------------
         // Roblox exploits
+        // -----------------------------------------------------------------------
         "SYNAPSEX",
         "KRNL",
         "FLUXUS",
@@ -225,8 +298,15 @@ public sealed class PrefetchCheatForensicScanModule : IScanModule
         "ROBLOXCHEAT",
         "ROBLOXHACK",
         "ROBLOXEXPLOIT",
+        "COMET",
+        "SYNX",
+        "NIHON",
+        "SENTINEL",
+        "PROTO",
 
-        // Fortnite / Apex / Rust / PUBG
+        // -----------------------------------------------------------------------
+        // Fortnite / Apex / Rust / PUBG / Overwatch
+        // -----------------------------------------------------------------------
         "FORTNITEBYPASS",
         "FORTNITECHEAT",
         "FORTNITEHACK",
@@ -239,8 +319,17 @@ public sealed class PrefetchCheatForensicScanModule : IScanModule
         "PUBGHACK",
         "OVERWATCH2CHEAT",
         "OVERWATCHHACK",
+        "WARZONECHEAT",
+        "TARKOVCHEAT",
+        "R6CHEAT",
+        "RAINBOWSIXCHEAT",
+        "DOTA2HACK",
+        "LOL-HACK",
+        "LOLHACK",
 
+        // -----------------------------------------------------------------------
         // Crypto miners
+        // -----------------------------------------------------------------------
         "XMRIG",
         "XMRIGCC",
         "PHOENIXMINER",
@@ -260,8 +349,14 @@ public sealed class PrefetchCheatForensicScanModule : IScanModule
         "TEAMREDMINER",
         "CLAYMORE",
         "MINER",
+        "CRYPTOMINER",
+        "HIVEOS",
+        "NICEHASH",
+        "NICEHASHMINER",
 
+        // -----------------------------------------------------------------------
         // RATs and stealers
+        // -----------------------------------------------------------------------
         "ASYNCRAT",
         "NJRAT",
         "DCRAT",
@@ -284,8 +379,16 @@ public sealed class PrefetchCheatForensicScanModule : IScanModule
         "BITRAT",
         "XWORM",
         "STEALC",
+        "LUMA",
+        "MEDUZA",
+        "RHADAMANTHYS",
+        "WHITESNAKE",
+        "LUMMA",
+        "RECORDSTEALER",
 
-        // General / generic
+        // -----------------------------------------------------------------------
+        // General / generic heuristic stems
+        // -----------------------------------------------------------------------
         "HACK",
         "CHEAT",
         "AIMBOT",
@@ -302,14 +405,26 @@ public sealed class PrefetchCheatForensicScanModule : IScanModule
         "INFINITEAMMO",
         "RAPIDFIRE",
         "SUPERSPRINT",
-        "SPEEDRUN",
         "AUTOSHOOT",
         "AUTOCLICKER",
         "RECOILCONTROL",
         "SPREADREDUCTION",
+        "NOFLASH",
+        "NORECOIL",
+        "BUNNYHOP",
+        "KNIFEBOT",
+        "TRIGGERBOT64",
+        "AUTOFIRE",
+        "SILENTAIM",
+        "AIMLOCK",
+        "HEADSHOTBOT",
+        "CLOSETCHEATER",
+        "LEGITHACK",
+        "RAGEBOT",
+        "HVHBOT",
     };
 
-    // Keywords that appear anywhere inside the prefetch filename stem to flag (broader heuristic).
+    // Broader keyword heuristics — match anywhere in the prefetch stem
     private static readonly string[] CheatKeywords = new[]
     {
         "INJECT",
@@ -336,11 +451,27 @@ public sealed class PrefetchCheatForensicScanModule : IScanModule
         "KEYLOG",
         "RAT-",
         "MINER",
+        "CRYPTER",
+        "PACKER",
+        "DROPER",
+        "DROPPER",
+        "DOWNLOADER",
+        "ROOTKIT",
+        "BOOTKIT",
+        "RANSOMWARE",
     };
 
-    // Registry paths for prefetch/superfetch control
+    // Registry paths for prefetch / superfetch control
     private const string PrefetchParamsKey =
         @"SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management\PrefetchParameters";
+
+    // SysMain service key (Superfetch / Prefetch service)
+    private const string SysMainServiceKey =
+        @"SYSTEM\CurrentControlSet\Services\SysMain";
+
+    // ReadyBoost / ReadyBoot related key
+    private const string ReadyBoostKey =
+        @"SYSTEM\CurrentControlSet\Control\WMI\Autologger\ReadyBoot";
 
     public async Task RunAsync(ScanContext ctx, CancellationToken ct)
     {
@@ -351,14 +482,27 @@ public sealed class PrefetchCheatForensicScanModule : IScanModule
         await ScanPrefetchDirectoryAsync(ctx, ct);
 
         ct.ThrowIfCancellationRequested();
-        ctx.Report(0.85, "Checking PrefetchParameters registry");
+        ctx.Report(0.80, "Checking PrefetchParameters registry");
 
         ScanPrefetchRegistry(ctx);
+
+        ct.ThrowIfCancellationRequested();
+        ctx.Report(0.90, "Checking SysMain service state");
+
+        ScanSysMainService(ctx);
+
+        ct.ThrowIfCancellationRequested();
+        ctx.Report(0.95, "Checking ReadyBoot autologger");
+
+        ScanReadyBootLogger(ctx);
 
         ctx.Report(1.0, "Prefetch forensics complete");
     }
 
-    // Scan the Windows Prefetch directory for cheat-related .pf files.
+    // -------------------------------------------------------------------------
+    // Prefetch Directory Scan
+    // -------------------------------------------------------------------------
+
     private async Task ScanPrefetchDirectoryAsync(ScanContext ctx, CancellationToken ct)
     {
         if (!Directory.Exists(PrefetchDirectory))
@@ -370,7 +514,9 @@ public sealed class PrefetchCheatForensicScanModule : IScanModule
                 Risk = RiskLevel.Medium,
                 Location = PrefetchDirectory,
                 FileName = "Prefetch",
-                Reason = "The Windows Prefetch directory does not exist. Prefetch may have been disabled or the directory manually deleted to erase execution evidence.",
+                Reason = "The Windows Prefetch directory does not exist. Prefetch may have been disabled or " +
+                         "the directory manually deleted to erase execution evidence. On an active gaming " +
+                         "system the Prefetch directory typically contains 100-1000 .pf files.",
                 Detail = $"Expected path: {PrefetchDirectory}"
             });
             return;
@@ -409,6 +555,39 @@ public sealed class PrefetchCheatForensicScanModule : IScanModule
             return;
         }
 
+        // Flag a suspiciously empty Prefetch directory on what appears to be an active system
+        if (prefetchFiles.Length == 0)
+        {
+            ctx.AddFinding(new Finding
+            {
+                Module = Name,
+                Title = "Prefetch Directory Contains No .pf Files",
+                Risk = RiskLevel.High,
+                Location = PrefetchDirectory,
+                Reason = "The Prefetch directory exists but contains zero .pf files. On any active Windows " +
+                         "system, hundreds of prefetch entries accumulate over time. An empty directory " +
+                         "strongly suggests the files were manually deleted or Prefetch was disabled and " +
+                         "the directory recently recreated, both of which are anti-forensics techniques.",
+                Detail = $"Directory: {PrefetchDirectory} | File count: 0"
+            });
+            return;
+        }
+
+        // Flag systems with an unusually low prefetch count (< 10 files) — another evasion indicator
+        if (prefetchFiles.Length < 10)
+        {
+            ctx.AddFinding(new Finding
+            {
+                Module = Name,
+                Title = "Suspiciously Low Prefetch File Count",
+                Risk = RiskLevel.Medium,
+                Location = PrefetchDirectory,
+                Reason = $"Only {prefetchFiles.Length} prefetch file(s) found. Active Windows systems normally " +
+                         "accumulate many more. This may indicate partial clearing of execution history.",
+                Detail = $"File count: {prefetchFiles.Length} | Directory: {PrefetchDirectory}"
+            });
+        }
+
         var now = DateTime.UtcNow;
         int totalFiles = prefetchFiles.Length;
         int processed = 0;
@@ -420,7 +599,7 @@ public sealed class PrefetchCheatForensicScanModule : IScanModule
             processed++;
             if (processed % 20 == 0)
             {
-                double fraction = 0.05 + (processed / (double)totalFiles) * 0.75;
+                double fraction = 0.05 + (processed / (double)totalFiles) * 0.70;
                 ctx.Report(fraction, pf.Name);
             }
 
@@ -428,15 +607,16 @@ public sealed class PrefetchCheatForensicScanModule : IScanModule
 
             // Extract the executable name from the prefetch filename.
             // Pattern: EXENAME-XXXXXXXX.pf  (hex suffix is exactly 8 hex digits)
-            string pfStem = Path.GetFileNameWithoutExtension(pf.Name); // e.g. "CHEATENGINE-X86_64-1A2B3C4D"
-            string exeName = ExtractExecutableName(pfStem);            // e.g. "CHEATENGINE-X86_64"
+            string pfStem = Path.GetFileNameWithoutExtension(pf.Name);
+            string exeName = ExtractExecutableName(pfStem);
 
             bool isExactMatch = KnownCheatStems.Contains(exeName);
             bool isKeywordMatch = !isExactMatch && ContainsCheatKeyword(exeName);
 
             bool isRecent = (now - pf.LastWriteTimeUtc) <= RecentThreshold;
             string ageNote = isRecent
-                ? $"Recently executed: last write {pf.LastWriteTimeUtc:yyyy-MM-dd HH:mm:ss} UTC ({(int)(now - pf.LastWriteTimeUtc).TotalDays} days ago)"
+                ? $"Recently executed: last write {pf.LastWriteTimeUtc:yyyy-MM-dd HH:mm:ss} UTC " +
+                  $"({(int)(now - pf.LastWriteTimeUtc).TotalDays} days ago)"
                 : $"Last write: {pf.LastWriteTimeUtc:yyyy-MM-dd HH:mm:ss} UTC";
 
             if (isExactMatch)
@@ -449,9 +629,9 @@ public sealed class PrefetchCheatForensicScanModule : IScanModule
                     Risk = risk,
                     Location = pf.FullName,
                     FileName = pf.Name,
-                    Reason = $"Prefetch file '{pf.Name}' matches a known cheat tool executable name '{exeName}'. " +
+                    Reason = $"Prefetch file '{pf.Name}' matches the known cheat tool executable name '{exeName}'. " +
                              "Prefetch records confirm this binary was executed on this system. " +
-                             "The entry persists even if the executable has since been deleted.",
+                             "The entry persists even after the executable has since been deleted.",
                     Detail = ageNote + $" | File size: {pf.Length} bytes"
                 });
             }
@@ -466,34 +646,43 @@ public sealed class PrefetchCheatForensicScanModule : IScanModule
                     Risk = risk,
                     Location = pf.FullName,
                     FileName = pf.Name,
-                    Reason = $"Prefetch file '{pf.Name}' contains the suspicious keyword '{matchedKeyword}' in the executable name '{exeName}'. " +
+                    Reason = $"Prefetch file '{pf.Name}' contains the suspicious keyword '{matchedKeyword}' " +
+                             $"in the executable name '{exeName}'. " +
                              "This pattern is associated with cheat tools, injectors, or bypass software.",
                     Detail = ageNote + $" | Matched keyword: {matchedKeyword} | File size: {pf.Length} bytes"
                 });
             }
             else if (isRecent)
             {
-                // Even if not an exact/keyword match, still read the file content to scan for embedded cheat strings
+                // Even if not an exact/keyword match, scan the file content for embedded cheat strings
                 await ScanPrefetchFileContentAsync(ctx, pf, exeName, ageNote, ct);
             }
         }
 
-        ctx.Report(0.82, "Prefetch directory scan complete");
+        ctx.Report(0.78, "Prefetch directory scan complete");
     }
 
-    // Read .pf file binary content and scan for embedded cheat-related strings.
+    // -------------------------------------------------------------------------
+    // Prefetch File Content Scan (embedded referenced-file paths)
+    // -------------------------------------------------------------------------
+
     private async Task ScanPrefetchFileContentAsync(
         ScanContext ctx, FileInfo pf, string exeName, string ageNote, CancellationToken ct)
     {
         try
         {
             using var fs = new FileStream(pf.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-            // Read up to 64 KB — enough to capture the referenced-files section of any prefetch file
-            byte[] buffer = new byte[Math.Min(65536, (int)Math.Max(0, fs.Length))];
-            if (buffer.Length == 0) return;
 
+            // Read up to 64 KB — enough to capture the referenced-files section of any prefetch file.
+            // The MAM-compressed Windows 10+ format stores the referenced files section early in the
+            // decompressed output; a 64 KB read captures the header and the first referenced-files block.
+            int maxRead = (int)Math.Min(65536L, fs.Length);
+            if (maxRead < 4) return;
+
+            byte[] buffer = new byte[maxRead];
             int bytesRead = 0;
-            int remaining = buffer.Length;
+            int remaining = maxRead;
+
             while (remaining > 0)
             {
                 int n = await fs.ReadAsync(buffer, bytesRead, remaining, ct);
@@ -504,9 +693,10 @@ public sealed class PrefetchCheatForensicScanModule : IScanModule
 
             if (bytesRead < 4) return;
 
-            // Check the LNK magic: prefetch files have a signature at offset 4 (version) and 8 (signature "SCCA")
-            // but the outer MAM-compressed wrapper starts with the compression signature.
-            // We just search for ASCII/UTF-16 cheat keywords in the raw bytes.
+            // Search for ASCII and Unicode representations of cheat keywords in the raw bytes.
+            // We avoid decoding the MAM compression layer and instead do a raw string search —
+            // this is sufficient because the referenced-filenames table in older prefetch formats
+            // (Win XP through Win 8.1) is stored as uncompressed UTF-16LE strings.
             string asciiContent = System.Text.Encoding.ASCII.GetString(buffer, 0, bytesRead);
             string utf16Content = System.Text.Encoding.Unicode.GetString(buffer, 0, bytesRead - (bytesRead % 2));
 
@@ -518,12 +708,13 @@ public sealed class PrefetchCheatForensicScanModule : IScanModule
                     ctx.AddFinding(new Finding
                     {
                         Module = Name,
-                        Title = $"Suspicious Content in Prefetch File: {pf.Name}",
+                        Title = $"Cheat-Related String Embedded in Prefetch File: {pf.Name}",
                         Risk = RiskLevel.Medium,
                         Location = pf.FullName,
                         FileName = pf.Name,
-                        Reason = $"Prefetch file for '{exeName}' contains embedded references to the string '{keyword}', " +
-                                 "suggesting the executable accessed or loaded cheat-related files during its run.",
+                        Reason = $"The prefetch file for '{exeName}' contains embedded references to the keyword " +
+                                 $"'{keyword}', suggesting that when this executable ran it accessed or loaded " +
+                                 "cheat-related files. Windows prefetch records all DLLs and files opened by a process.",
                         Detail = ageNote + $" | Embedded keyword: {keyword}"
                     });
                     break; // One finding per file to avoid duplicates
@@ -532,16 +723,18 @@ public sealed class PrefetchCheatForensicScanModule : IScanModule
         }
         catch (UnauthorizedAccessException)
         {
-            // Access denied to individual prefetch file — skip silently
+            // Skip individual prefetch files we cannot read
         }
         catch (IOException)
         {
-            // I/O error on individual prefetch file — skip silently
+            // Skip I/O errors on individual prefetch files
         }
     }
 
-    // Scan the PrefetchParameters registry key for evidence that prefetching was disabled
-    // to hide execution history.
+    // -------------------------------------------------------------------------
+    // Registry: PrefetchParameters
+    // -------------------------------------------------------------------------
+
     private void ScanPrefetchRegistry(ScanContext ctx)
     {
         try
@@ -553,9 +746,10 @@ public sealed class PrefetchCheatForensicScanModule : IScanModule
                 {
                     Module = Name,
                     Title = "PrefetchParameters Registry Key Missing",
-                    Risk = RiskLevel.Low,
+                    Risk = RiskLevel.Medium,
                     Location = $@"HKLM\{PrefetchParamsKey}",
-                    Reason = "The PrefetchParameters registry key is absent. This is unusual and may indicate registry tampering.",
+                    Reason = "The PrefetchParameters registry key is absent. This is unusual and may indicate " +
+                             "registry tampering or a stripped OS installation.",
                     Detail = "Expected at HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Memory Management\\PrefetchParameters"
                 });
                 return;
@@ -577,10 +771,11 @@ public sealed class PrefetchCheatForensicScanModule : IScanModule
                         Risk = RiskLevel.High,
                         Location = $@"HKLM\{PrefetchParamsKey}",
                         FileName = "EnablePrefetcher",
-                        Reason = "The Windows Prefetcher is disabled via EnablePrefetcher=0 in the registry. " +
-                                 "Disabling prefetch prevents new execution evidence from being recorded and is a " +
-                                 "known anti-forensics technique used by cheat software and cheat users to erase execution history.",
-                        Detail = $"EnablePrefetcher = {enablePrefetcher} (0 = disabled, 1 = application only, 2 = boot only, 3 = all)"
+                        Reason = "EnablePrefetcher=0 fully disables the Windows Prefetcher. New .pf entries will " +
+                                 "no longer be written, preventing execution history recording. This is a well-known " +
+                                 "anti-forensics technique used by cheat software, HWID spoofers, and anti-ban tools " +
+                                 "to ensure no evidence of future cheat executions is recorded.",
+                        Detail = "EnablePrefetcher = 0 (0=disabled, 1=app only, 2=boot only, 3=all)"
                     });
                 }
                 else if (enablePrefetcher == 1 || enablePrefetcher == 2)
@@ -592,9 +787,29 @@ public sealed class PrefetchCheatForensicScanModule : IScanModule
                         Risk = RiskLevel.Low,
                         Location = $@"HKLM\{PrefetchParamsKey}",
                         FileName = "EnablePrefetcher",
-                        Reason = $"EnablePrefetcher is set to {enablePrefetcher} (partially active). " +
-                                 "The default is 3 (fully enabled). Partial disabling may limit execution history recording.",
+                        Reason = $"EnablePrefetcher is set to {enablePrefetcher} (partial). " +
+                                 "The default is 3 (fully enabled). Partial disabling may limit execution history.",
                         Detail = $"EnablePrefetcher = {enablePrefetcher}"
+                    });
+                }
+            }
+            else if (enablePrefetcherVal == null)
+            {
+                // Value absent — check if directory is also empty/missing
+                bool dirEmpty = !Directory.Exists(PrefetchDirectory) ||
+                                new DirectoryInfo(PrefetchDirectory).GetFiles("*.pf").Length == 0;
+                if (dirEmpty)
+                {
+                    ctx.AddFinding(new Finding
+                    {
+                        Module = Name,
+                        Title = "EnablePrefetcher Value Absent and No Prefetch Files Present",
+                        Risk = RiskLevel.High,
+                        Location = $@"HKLM\{PrefetchParamsKey}",
+                        Reason = "The EnablePrefetcher registry value is not set and the Prefetch directory " +
+                                 "contains no .pf files. This combination strongly suggests prefetch was " +
+                                 "deliberately disabled to prevent execution history from being recorded.",
+                        Detail = $"Prefetch dir: {PrefetchDirectory}"
                     });
                 }
             }
@@ -613,35 +828,30 @@ public sealed class PrefetchCheatForensicScanModule : IScanModule
                         Risk = RiskLevel.Medium,
                         Location = $@"HKLM\{PrefetchParamsKey}",
                         FileName = "EnableSuperfetch",
-                        Reason = "EnableSuperfetch=0 disables the SysMain service's prefetch-based memory management. " +
-                                 "While not directly hiding execution traces, it is commonly disabled alongside Prefetch " +
-                                 "in anti-forensics configurations.",
+                        Reason = "EnableSuperfetch=0 disables the SysMain service's prefetch-based memory " +
+                                 "management. While not directly hiding execution traces, this is commonly " +
+                                 "set alongside Prefetch disabling in anti-forensics configurations.",
                         Detail = $"EnableSuperfetch = {enableSuperfetch}"
                     });
                 }
             }
 
-            // Check for missing EnablePrefetcher value entirely (a different form of disabling)
-            if (enablePrefetcherVal == null)
+            // Check BootControlEnabled
+            object? bootControlVal = baseKey.GetValue("BootControlEnabled");
+            if (bootControlVal is int bootControlEnabled && bootControlEnabled == 0)
             {
-                // The value being absent may mean it's using defaults or was deliberately removed.
-                // Only noteworthy if the Prefetch directory is also empty or missing.
-                if (!Directory.Exists(PrefetchDirectory) ||
-                    (Directory.Exists(PrefetchDirectory) &&
-                     new DirectoryInfo(PrefetchDirectory).GetFiles("*.pf").Length == 0))
+                ctx.IncrementRegistryKeys();
+                ctx.AddFinding(new Finding
                 {
-                    ctx.AddFinding(new Finding
-                    {
-                        Module = Name,
-                        Title = "Prefetch Disabled and No Prefetch Files Present",
-                        Risk = RiskLevel.High,
-                        Location = $@"HKLM\{PrefetchParamsKey}",
-                        Reason = "The EnablePrefetcher registry value is absent and the Prefetch directory " +
-                                 "contains no .pf files. This combination strongly suggests prefetch was " +
-                                 "deliberately disabled to prevent execution history recording.",
-                        Detail = $"Prefetch dir: {PrefetchDirectory}"
-                    });
-                }
+                    Module = Name,
+                    Title = "Prefetch Boot Control Disabled",
+                    Risk = RiskLevel.Low,
+                    Location = $@"HKLM\{PrefetchParamsKey}",
+                    FileName = "BootControlEnabled",
+                    Reason = "BootControlEnabled=0 disables prefetch boot tracing, further reducing " +
+                             "execution history recorded during system startup.",
+                    Detail = "BootControlEnabled = 0"
+                });
             }
         }
         catch (UnauthorizedAccessException ex)
@@ -652,7 +862,7 @@ public sealed class PrefetchCheatForensicScanModule : IScanModule
                 Title = "PrefetchParameters Registry Access Denied",
                 Risk = RiskLevel.Low,
                 Location = $@"HKLM\{PrefetchParamsKey}",
-                Reason = "Access denied when reading PrefetchParameters registry key.",
+                Reason = "Access denied reading PrefetchParameters registry key.",
                 Detail = ex.Message
             });
         }
@@ -670,13 +880,101 @@ public sealed class PrefetchCheatForensicScanModule : IScanModule
         }
     }
 
+    // -------------------------------------------------------------------------
+    // Registry: SysMain (Superfetch) service state
+    // -------------------------------------------------------------------------
+
+    private void ScanSysMainService(ScanContext ctx)
+    {
+        try
+        {
+            using RegistryKey? sysMainKey = Registry.LocalMachine.OpenSubKey(SysMainServiceKey, writable: false);
+            if (sysMainKey == null) return;
+
+            ctx.IncrementRegistryKeys();
+
+            object? startVal = sysMainKey.GetValue("Start");
+            if (startVal is int startType)
+            {
+                ctx.IncrementRegistryKeys();
+                // Start=4 means Disabled; Start=3 means Manual; Start=2 means Automatic
+                if (startType == 4)
+                {
+                    ctx.AddFinding(new Finding
+                    {
+                        Module = Name,
+                        Title = "SysMain (Superfetch) Service Disabled",
+                        Risk = RiskLevel.Medium,
+                        Location = $@"HKLM\{SysMainServiceKey}",
+                        FileName = "Start",
+                        Reason = "The SysMain (Superfetch) service is set to Disabled (Start=4). " +
+                                 "While this can be done for performance reasons, disabling SysMain in " +
+                                 "combination with other indicators (disabled prefetch, cleared logs) is " +
+                                 "consistent with an anti-forensics setup.",
+                        Detail = "SysMain Start = 4 (Disabled)"
+                    });
+                }
+            }
+        }
+        catch (UnauthorizedAccessException)
+        {
+            // Skip if access denied
+        }
+        catch (IOException)
+        {
+            // Skip I/O errors
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Registry: ReadyBoot autologger state
+    // -------------------------------------------------------------------------
+
+    private void ScanReadyBootLogger(ScanContext ctx)
+    {
+        try
+        {
+            using RegistryKey? rbKey = Registry.LocalMachine.OpenSubKey(ReadyBoostKey, writable: false);
+            if (rbKey == null) return;
+
+            ctx.IncrementRegistryKeys();
+
+            object? enabledVal = rbKey.GetValue("Enabled");
+            if (enabledVal is int enabled && enabled == 0)
+            {
+                ctx.IncrementRegistryKeys();
+                ctx.AddFinding(new Finding
+                {
+                    Module = Name,
+                    Title = "ReadyBoot ETW Autologger Disabled",
+                    Risk = RiskLevel.Low,
+                    Location = $@"HKLM\{ReadyBoostKey}",
+                    FileName = "Enabled",
+                    Reason = "The ReadyBoot ETW autologger is disabled. While not a direct cheat indicator, " +
+                             "this logger records boot-time program loads and its disabling reduces " +
+                             "the system's execution audit trail.",
+                    Detail = "ReadyBoot\\Enabled = 0"
+                });
+            }
+        }
+        catch (UnauthorizedAccessException)
+        {
+            // Skip if access denied
+        }
+        catch (IOException)
+        {
+            // Skip I/O errors
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Helpers
+    // -------------------------------------------------------------------------
+
     // Extract the executable name portion from a prefetch filename stem.
-    // Prefetch stems look like: CHEATENGINE-X86_64-1A2B3C4D
-    // The last dash+8-hex-char segment is the hash suffix we need to strip.
-    // Returns the stem with the hash suffix removed, uppercased.
+    // Pattern: EXENAME-XXXXXXXX  (last dash + 8 hex digits = hash suffix)
     private static string ExtractExecutableName(string pfStem)
     {
-        // Find the last dash followed by exactly 8 hex characters (end of string)
         int len = pfStem.Length;
         if (len > 9)
         {

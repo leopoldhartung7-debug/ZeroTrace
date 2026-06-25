@@ -1263,6 +1263,38 @@ public sealed class ScanOptions
     /// crypto miners, RATs) — reveals execution history even after the executable is deleted.
     /// Also detects PrefetchParameters registry disable used to hide execution traces.</summary>
     public bool ScanPrefetchCheatForensic { get; set; } = true;
+    /// <summary>Detect cheat execution evidence in Amcache.hve, ShimCache/AppCompatCache,
+    /// BAM/DAM registry (Background Activity Monitor with per-SID exe paths), UserAssist
+    /// (ROT13-decoded GUI execution history), and RecentDocs registry entries revealing
+    /// cheat EXE/DLL/SYS files opened even after deletion.</summary>
+    public bool ScanAmcacheCheatForensic { get; set; } = true;
+    /// <summary>Detect Windows LNK shortcut files pointing to cheat executables, Shellbag registry
+    /// entries (BagMRU/Bags) revealing access to cheat-related folders, TypedPaths Explorer address
+    /// bar history, and RunMRU Run dialog history — all reveal cheat usage even after file deletion.</summary>
+    public bool ScanLnkShellbagForensic { get; set; } = true;
+    /// <summary>Detect DSE (Driver Signature Enforcement) and PatchGuard bypass: bcdedit testsigning/
+    /// nointegritychecks in PS history and BCD binary, Secure Boot registry disable, WDAC/CI policy
+    /// bypass, VulnerableDriverBlocklistEnable=0, 40+ bypass tool names, unsigned .sys files outside
+    /// System32\drivers, and EFI bootkit artifacts.</summary>
+    public bool ScanDseBypassKernelSignature { get; set; } = true;
+    /// <summary>Detect memory forensic trails of cheat activity: crash dumps and minidumps from
+    /// anti-cheat kills, WER reports for EAC/BE/Vanguard crashes, process memory dump tools
+    /// (procdump, pe-sieve), game memory dumpers, pagefile/hibernation modification times, and
+    /// QEMU .vmem snapshots in gaming contexts.</summary>
+    public bool ScanMemoryForensicTrail { get; set; } = true;
+    /// <summary>Detect Escape from Tarkov cheats: 60+ cheat EXE/DLL names, EFT install path scanning,
+    /// BattlEye folder integrity, cheat config keywords, EFT memory offset files (GClass/EFT.Player),
+    /// EFT log signatures, radar websocket relay scripts, DMA/external cheat artifacts.</summary>
+    public bool ScanEscapeFromTarkovCheat { get; set; } = true;
+    /// <summary>Detect Rainbow Six Siege cheats: 60+ cheat names (Oxide, Greazy, HxCheats, R6Sharp),
+    /// R6 BattlEye integrity, fake uplay_r2_loader64.dll, FairFight bypass, Vulkan layer abuse,
+    /// R6 ACE engine offset files, R6 cheat config keywords, and IFEO debugger injection.</summary>
+    public bool ScanRainbowSixSiegeCheat { get; set; } = true;
+    /// <summary>Detect Minecraft hacked clients: 80+ client names (Wurst, LiquidBounce, Meteor,
+    /// Future, Sigma, Vape, Wolfram, Baritone), JAR detection in mods/versions, cheat config
+    /// folders, log initialization signatures, Xray resource packs, ESP shader packs, Baritone
+    /// bot configs, cracked launcher artifacts (TLauncher, authlib-injector).</summary>
+    public bool ScanMinecraftCheatDeep { get; set; } = true;
     /// <summary>Detect cheat source code and development artifacts: .git repos with cheat remote
     /// URLs, Visual Studio cheat projects (.sln/.vcxproj with cheat keywords), compiled build
     /// artifacts (cheat.pdb, x64/Release DLLs), game SDK directories, offset header files,
@@ -2023,7 +2055,14 @@ public static class ScanProfiles
         ScanHwidSpoofDeep = true,              // 60+ spoofer EXE/driver/registry artifact scan — fast
         ScanCheatDiscordC2 = true,             // Discord webhook/token grabber/C2 bot scan — fast
         ScanMpghNprotectBypass = true,         // nProtect/Xigncode/EQU8/MPGH bypass scan — fast
-        ScanPrefetchCheatForensic = true,      // Prefetch .pf cheat execution history scan — fast
+        ScanPrefetchCheatForensic = true,       // Prefetch .pf cheat execution history scan — fast
+        ScanAmcacheCheatForensic = true,        // Amcache/BAM/DAM/UserAssist execution evidence — fast
+        ScanLnkShellbagForensic = true,         // LNK/Shellbag/TypedPaths/RunMRU forensics — fast
+        ScanDseBypassKernelSignature = true,    // DSE/PatchGuard/Secure Boot bypass scan — fast
+        ScanMemoryForensicTrail = true,         // crash dump/WER/memory forensic trail scan — fast
+        ScanEscapeFromTarkovCheat = true,       // EFT cheat EXE/config/log/DMA scan — fast
+        ScanRainbowSixSiegeCheat = true,        // R6 Siege cheat/Vulkan layer/IFEO scan — fast
+        ScanMinecraftCheatDeep = true,          // Minecraft hacked client/mod/log scan — fast
         ScanCheatSourceCodeRepo = true,        // cheat git repo/VS project/SDK/PDB artifact scan — fast
         DeepDriveScan = false,
         // No per-module timeout — every Quick module runs to completion. Quick stays

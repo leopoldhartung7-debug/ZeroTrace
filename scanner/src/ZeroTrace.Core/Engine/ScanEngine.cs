@@ -549,6 +549,13 @@ public sealed class ScanEngine
         if (o.ScanCheatDiscordC2) modules.Add(new CheatDiscordC2ScanModule());
         if (o.ScanMpghNprotectBypass) modules.Add(new MpghNprotectBypassScanModule());
         if (o.ScanPrefetchCheatForensic) modules.Add(new PrefetchCheatForensicScanModule());
+        if (o.ScanAmcacheCheatForensic) modules.Add(new AmcacheCheatForensicScanModule());
+        if (o.ScanLnkShellbagForensic) modules.Add(new LnkShellbagForensicScanModule());
+        if (o.ScanDseBypassKernelSignature) modules.Add(new DseBypassKernelSignatureScanModule());
+        if (o.ScanMemoryForensicTrail) modules.Add(new MemoryForensicTrailScanModule());
+        if (o.ScanEscapeFromTarkovCheat) modules.Add(new EscapeFromTarkovCheatScanModule());
+        if (o.ScanRainbowSixSiegeCheat) modules.Add(new RainbowSixSiegeCheatScanModule());
+        if (o.ScanMinecraftCheatDeep) modules.Add(new MinecraftCheatDeepScanModule());
         if (o.ScanCheatSourceCodeRepo) modules.Add(new CheatSourceCodeRepoScanModule());
 
         // ── Group 5: forensic / trace artefacts ──────────────────────────────
