@@ -128,6 +128,46 @@ public sealed class ScanOptions
     /// </summary>
     public bool ScanCloudAnalysis { get; set; } = false;
 
+    /// <summary>Detect cleared or manipulated Windows event logs (EventID 1102/104,
+    /// abnormally short log spans, audit policy tampering).</summary>
+    public bool ScanEventLogTamper { get; set; } = true;
+
+    /// <summary>Scan Windows Defender and AV exclusion lists for entries added by
+    /// cheat tools to prevent AV from detecting their injected DLLs.</summary>
+    public bool ScanAvExclusions { get; set; } = true;
+
+    /// <summary>Detect HWID spoofer tools, drivers, and manipulated hardware
+    /// serial numbers (disk, BIOS, MAC address anomalies).</summary>
+    public bool ScanHwidSpoofer { get; set; } = true;
+
+    /// <summary>Detect process injection indicators: suspicious DLLs in game/system
+    /// processes, orphaned private executable memory regions (shellcode).</summary>
+    public bool ScanProcessInjection { get; set; } = true;
+
+    /// <summary>Detect macro and input-automation software used for triggerbot,
+    /// rapid-fire, no-recoil, and aim-assist scripts (AHK, Interception, G-Hub).</summary>
+    public bool ScanMacroSoftware { get; set; } = true;
+
+    /// <summary>Scan NTFS Alternate Data Streams in high-risk directories for
+    /// hidden executable content or cheat configuration data.</summary>
+    public bool ScanNtfsAds { get; set; } = true;
+
+    /// <summary>Detect packet capture drivers and tools (WinPcap, Npcap, WinDivert)
+    /// used by network-ESP cheats to intercept game server packets.</summary>
+    public bool ScanPacketCapture { get; set; } = true;
+
+    /// <summary>Scan Import Address Table (IAT) of the scanner process for hooks
+    /// that redirect API calls — a cheat anti-detection layer.</summary>
+    public bool ScanIatHooks { get; set; } = true;
+
+    /// <summary>Detect NTFS file timestamp manipulation (timestomping) — cheats
+    /// overwrite creation/modification dates to evade forensic timeline analysis.</summary>
+    public bool ScanTimestampManipulation { get; set; } = true;
+
+    /// <summary>Detect hypervisors and virtual machine environments that may be
+    /// used to bypass kernel-level anti-cheat protection (HVCI bypass).</summary>
+    public bool ScanHypervisor { get; set; } = true;
+
     /// <summary>
     /// When false (default) the drive module only walks targeted, high-signal
     /// directories (profile, temp, downloads, appdata). When true it walks the
@@ -234,6 +274,16 @@ public static class ScanProfiles
         ScanKernelBridge = true,    // fast — just open device + 1 IOCTL
         ScanAntiAnalysis = true,    // fast — only API calls
         ScanCloudAnalysis = false,  // always off in Quick (requires network + consent)
+        ScanEventLogTamper = true,  // registry + event reader — fast
+        ScanAvExclusions = true,    // registry only — fast
+        ScanHwidSpoofer = false,    // WMI calls — slow
+        ScanProcessInjection = false, // heavy P/Invoke — slow
+        ScanMacroSoftware = true,   // fast — process + registry check
+        ScanNtfsAds = false,        // file walk — slow
+        ScanPacketCapture = true,   // fast — registry + process check
+        ScanIatHooks = true,        // fast — in-process only
+        ScanTimestampManipulation = false, // file walk — slow
+        ScanHypervisor = true,      // CPUID + WMI — fast
         DeepDriveScan = false,
         ModuleTimeoutSeconds = 60,
     };

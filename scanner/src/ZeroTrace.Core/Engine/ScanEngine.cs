@@ -273,15 +273,21 @@ public sealed class ScanEngine
         if (o.ScanAutostart) modules.Add(new AutostartScanModule());
         if (o.ScanOverlay) modules.Add(new OverlayScanModule());
         if (o.ScanVirtualMachine) modules.Add(new VirtualMachineScanModule());
+        if (o.ScanHypervisor) modules.Add(new HypervisorDetectionScanModule());
         if (o.ScanDmaRisk) modules.Add(new DmaRiskScanModule());
         if (o.ScanNetwork) modules.Add(new NetworkScanModule());
         if (o.ScanNamedResources) modules.Add(new NamedResourceScanModule());
         if (o.ScanSyscallHooks) modules.Add(new SyscallHookScanModule());
+        if (o.ScanIatHooks) modules.Add(new IatHookScanModule());
         if (o.ScanDkom) modules.Add(new DkomScanModule());
         if (o.ScanHandles) modules.Add(new HandleScanModule());
 
         // ── Group 3: registry / WMI / driver queries ──────────────────────────
         if (o.ScanRegistry) modules.Add(new RegistryScanModule());
+        if (o.ScanAvExclusions) modules.Add(new WindowsDefenderExclusionScanModule());
+        if (o.ScanEventLogTamper) modules.Add(new EventLogTamperScanModule());
+        if (o.ScanHwidSpoofer) modules.Add(new HwidSpooferScanModule());
+        if (o.ScanPacketCapture) modules.Add(new PacketCaptureScanModule());
         if (o.ScanWmiPersistence) modules.Add(new WmiPersistenceScanModule());
         if (o.ScanScheduledTasks) modules.Add(new ScheduledTaskScanModule());
         if (o.ScanKernelDrivers) modules.Add(new DriverScanModule());
@@ -314,9 +320,13 @@ public sealed class ScanEngine
         if (o.ScanAppData) modules.Add(new AppDataScanModule());
 
         // ── Sequential (group 0): order-sensitive or internally parallel ──────
+        if (o.ScanMacroSoftware) modules.Add(new MacroSoftwareScanModule());
         if (o.ScanSuspiciousExecutables) modules.Add(new SuspiciousExecutableScanModule());
+        if (o.ScanProcessInjection) modules.Add(new ProcessInjectionScanModule());
         if (o.ScanMemory) modules.Add(new MemoryScanModule());
         if (o.ScanDrives) modules.Add(new DriveScanModule());
+        if (o.ScanNtfsAds) modules.Add(new NtfsAdsScanModule());
+        if (o.ScanTimestampManipulation) modules.Add(new TimestampManipulationScanModule());
         if (o.ScanCustomStrings) modules.Add(new CustomStringsScanModule());
         // Cloud analysis runs after drives so all hashes are collected first.
         if (o.ScanCloudAnalysis) modules.Add(new CloudAnalysisScanModule(
