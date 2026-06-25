@@ -322,6 +322,8 @@ public sealed class ScanEngine
         if (o.ScanElamDriver) modules.Add(new ElamDriverScanModule());
         if (o.ScanNetworkShares) modules.Add(new NetworkShareEnumScanModule());
         if (o.ScanDllLoadOrderHijack) modules.Add(new DllLoadOrderHijackScanModule());
+        if (o.ScanPowerShellSecurity) modules.Add(new PowerShellConstrainedLanguageScanModule());
+        if (o.ScanVbsHvci) modules.Add(new VirtualizationBasedSecurityScanModule());
         if (o.ScanWmiPersistence) modules.Add(new WmiPersistenceScanModule());
         if (o.ScanScheduledTasks) modules.Add(new ScheduledTaskScanModule());
         if (o.ScanKernelDrivers) modules.Add(new DriverScanModule());
@@ -381,6 +383,8 @@ public sealed class ScanEngine
         if (o.ScanGameDirectoryInjection) modules.Add(new GameDirectoryInjectionScanModule());
         if (o.ScanProcessHollowing) modules.Add(new ProcessHollowingScanModule());
         if (o.ScanAntiDebugTechniques) modules.Add(new AntiDebugTechniqueScanModule());
+        if (o.ScanTokenImpersonation) modules.Add(new TokenImpersonationScanModule());
+        if (o.ScanAlternativeDataStreams) modules.Add(new AlternativeDataStreamScanModule());
         if (o.ScanHeapSpray) modules.Add(new HeapSprayScanModule());
         if (o.ScanKnownHashes) modules.Add(new KnownHashScanModule());
         if (o.ScanMemory) modules.Add(new MemoryScanModule());

@@ -415,6 +415,22 @@ public sealed class ScanOptions
     /// (x64dbg, Cheat Engine, IDA), ntdll PE header erasure, and IFEO page heap on games.</summary>
     public bool ScanAntiDebugTechniques { get; set; } = true;
 
+    /// <summary>Detect token impersonation and privilege escalation: non-system processes with
+    /// SeDebugPrivilege/SeTcbPrivilege/SeLoadDriverPrivilege enabled.</summary>
+    public bool ScanTokenImpersonation { get; set; } = true;
+
+    /// <summary>Check PowerShell security configuration: Script Block Logging, Module Logging,
+    /// Execution Policy, PS v2 downgrade vector, AMSI provider integrity, and transcription.</summary>
+    public bool ScanPowerShellSecurity { get; set; } = true;
+
+    /// <summary>Scan for NTFS Alternate Data Streams hiding executable code or large payloads
+    /// in non-executable files across user temp/desktop/download directories.</summary>
+    public bool ScanAlternativeDataStreams { get; set; } = true;
+
+    /// <summary>Check Virtualization-Based Security (VBS), HVCI, and Credential Guard status —
+    /// critical OS security features that block kernel-level cheats and credential theft.</summary>
+    public bool ScanVbsHvci { get; set; } = true;
+
     /// <summary>
     /// When false (default) the drive module only walks targeted, high-signal
     /// directories (profile, temp, downloads, appdata). When true it walks the
@@ -592,6 +608,10 @@ public static class ScanProfiles
         ScanNetworkShares = true,         // registry + NetShareEnum — fast
         ScanDllLoadOrderHijack = true,    // registry + PATH check — fast
         ScanAntiDebugTechniques = false,  // process memory scan — slow
+        ScanTokenImpersonation = false,   // process handle + token — slow
+        ScanPowerShellSecurity = true,    // registry — fast
+        ScanAlternativeDataStreams = false, // file walk — slow
+        ScanVbsHvci = true,              // registry — fast
         DeepDriveScan = false,
         ModuleTimeoutSeconds = 60,
     };
