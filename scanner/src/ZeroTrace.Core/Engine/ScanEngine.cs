@@ -556,6 +556,7 @@ public sealed class ScanEngine
         if (o.ScanEscapeFromTarkovCheat) modules.Add(new EscapeFromTarkovCheatScanModule());
         if (o.ScanRainbowSixSiegeCheat) modules.Add(new RainbowSixSiegeCheatScanModule());
         if (o.ScanMinecraftCheatDeep) modules.Add(new MinecraftCheatDeepScanModule());
+        if (o.ScanAimbotMouseSignature) modules.Add(new AimbotMouseSignatureScanModule());
         if (o.ScanCheatSourceCodeRepo) modules.Add(new CheatSourceCodeRepoScanModule());
 
         // ── Group 5: forensic / trace artefacts ──────────────────────────────

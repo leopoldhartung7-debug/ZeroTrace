@@ -1295,6 +1295,11 @@ public sealed class ScanOptions
     /// folders, log initialization signatures, Xray resource packs, ESP shader packs, Baritone
     /// bot configs, cracked launcher artifacts (TLauncher, authlib-injector).</summary>
     public bool ScanMinecraftCheatDeep { get; set; } = true;
+    /// <summary>Detect aimbot and mouse behavior artifacts: 50+ aimbot EXE/DLL names, aimbot config
+    /// keys (fov/smoothing/bone_target/silent_aim), Python AI aimbot scripts (OpenCV/PyAutoGUI),
+    /// AHK/AutoIt recoil scripts, Logitech G-Hub/Razer Synapse macro scripts, Arduino/Raspberry Pi
+    /// HID aimbot sketches, Cronus Zen .gpc scripts, and Xim Apex adapter configs.</summary>
+    public bool ScanAimbotMouseSignature { get; set; } = true;
     /// <summary>Detect cheat source code and development artifacts: .git repos with cheat remote
     /// URLs, Visual Studio cheat projects (.sln/.vcxproj with cheat keywords), compiled build
     /// artifacts (cheat.pdb, x64/Release DLLs), game SDK directories, offset header files,
@@ -2063,6 +2068,7 @@ public static class ScanProfiles
         ScanEscapeFromTarkovCheat = true,       // EFT cheat EXE/config/log/DMA scan — fast
         ScanRainbowSixSiegeCheat = true,        // R6 Siege cheat/Vulkan layer/IFEO scan — fast
         ScanMinecraftCheatDeep = true,          // Minecraft hacked client/mod/log scan — fast
+        ScanAimbotMouseSignature = true,        // aimbot EXE/config/AHK/Arduino/Cronus scan — fast
         ScanCheatSourceCodeRepo = true,        // cheat git repo/VS project/SDK/PDB artifact scan — fast
         DeepDriveScan = false,
         // No per-module timeout — every Quick module runs to completion. Quick stays
