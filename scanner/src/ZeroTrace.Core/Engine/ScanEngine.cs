@@ -525,6 +525,7 @@ public sealed class ScanEngine
         if (o.ScanRobloxExploit) modules.Add(new RobloxExploitScanModule());
         if (o.ScanCheatTrainerKeygen) modules.Add(new CheatTrainerKeygenScanModule());
         if (o.ScanWindowsEventLogTamper) modules.Add(new WindowsEventLogTamperScanModule());
+        if (o.ScanAmsiBypassArtifact) modules.Add(new AmsiBypassArtifactScanModule());
 
         // ── Group 5: forensic / trace artefacts ──────────────────────────────
         if (o.ScanForensicTraces) modules.Add(new ForensicTraceScanModule());

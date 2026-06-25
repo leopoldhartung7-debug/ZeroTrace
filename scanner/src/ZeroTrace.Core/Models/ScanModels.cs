@@ -1151,6 +1151,11 @@ public sealed class ScanOptions
     /// logs, disabled audit policies, event-log service manipulation, wevtutil-based clearing commands
     /// in PowerShell history, and log-size rollover abuse used to hide cheat activity.</summary>
     public bool ScanWindowsEventLogTamper { get; set; } = true;
+    /// <summary>Scan for AMSI (Antimalware Scan Interface) bypass artifacts: registry patches that
+    /// disable AMSI, PowerShell scripts that null out AmsiScanBuffer, reflective AMSI patch DLLs,
+    /// AMSI provider DLL substitutions, and process memory patches targeting amsi.dll used by
+    /// cheat loaders to evade AV/EDR detection during injection.</summary>
+    public bool ScanAmsiBypassArtifact { get; set; } = true;
 
     /// <summary>Scan game directories (Steam, Epic, user-specified) for BepInEx, Unity Doorstop,
     /// and MelonLoader code injection frameworks. Detects: doorstop_config.ini (enabled=true),
@@ -1883,6 +1888,7 @@ public static class ScanProfiles
         ScanRobloxExploit = true,             // Roblox exploit injector/executor artifact scan — fast
         ScanCheatTrainerKeygen = true,        // standalone trainer + keygen/crack artifact scan — fast
         ScanWindowsEventLogTamper = true,     // event log clearing/audit policy tamper scan — fast
+        ScanAmsiBypassArtifact = true,        // AMSI patch/registry bypass + reflective DLL scan — fast
         DeepDriveScan = false,
         // No per-module timeout — every Quick module runs to completion. Quick stays
         // fast because slow modules are individually disabled above, not because they
