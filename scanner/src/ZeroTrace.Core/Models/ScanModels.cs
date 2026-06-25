@@ -1296,10 +1296,10 @@ public static class ScanProfiles
         Profile = ScanProfile.Deep,
         // All true (inherit defaults) plus:
         DeepDriveScan = true,
-        // No per-module timeout in Deep — every module runs to completion no matter
-        // how long. Slow modules (deep memory walks, full drive scans, hash baselines)
-        // need this to finish their work; skipping would create false negatives.
-        ModuleTimeoutSeconds = 0,
+        // 90-second per-module budget targets a 2–5 min total Deep wall-clock on a
+        // typical machine: fast modules finish in <5s, slow memory/disk walks get
+        // up to 90s each. Aggregate land in the user-requested 2–5 min window.
+        ModuleTimeoutSeconds = 90,
         MaxDepth = 20,
     };
 
