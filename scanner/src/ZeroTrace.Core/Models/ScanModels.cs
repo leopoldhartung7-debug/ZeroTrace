@@ -431,6 +431,22 @@ public sealed class ScanOptions
     /// critical OS security features that block kernel-level cheats and credential theft.</summary>
     public bool ScanVbsHvci { get; set; } = true;
 
+    /// <summary>Detect process memory protection anomalies: RWX private regions with MZ headers,
+    /// aggregate RWX allocation volume in game/injection-target processes.</summary>
+    public bool ScanMemoryProtection { get; set; } = true;
+
+    /// <summary>Detect WER (Windows Error Reporting) and crash handler hijacking: WER disabled,
+    /// full memory dump config, AeDebug non-standard debugger, WerFault IFEO hijack.</summary>
+    public bool ScanWerFaultHijack { get; set; } = true;
+
+    /// <summary>Detect Windows Defender deeper tampering: real-time protection off, behavior/script
+    /// monitoring disabled, Defender services disabled, signature age, network/folder protection.</summary>
+    public bool ScanWindowsDefenderTamper { get; set; } = true;
+
+    /// <summary>Detect code signing bypass: vulnerable driver blocklist disabled, CI.dll integrity,
+    /// unknown WDAC policy files, test signing mode, UMCI policy options.</summary>
+    public bool ScanCodeSigningBypass { get; set; } = true;
+
     /// <summary>
     /// When false (default) the drive module only walks targeted, high-signal
     /// directories (profile, temp, downloads, appdata). When true it walks the
@@ -612,6 +628,10 @@ public static class ScanProfiles
         ScanPowerShellSecurity = true,    // registry — fast
         ScanAlternativeDataStreams = false, // file walk — slow
         ScanVbsHvci = true,              // registry — fast
+        ScanMemoryProtection = false,    // process memory walk — slow
+        ScanWerFaultHijack = true,       // registry — fast
+        ScanWindowsDefenderTamper = true, // registry — fast
+        ScanCodeSigningBypass = true,    // registry + file stat — fast
         DeepDriveScan = false,
         ModuleTimeoutSeconds = 60,
     };
