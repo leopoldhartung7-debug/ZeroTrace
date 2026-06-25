@@ -1231,6 +1231,11 @@ public sealed class ScanOptions
     /// outside legitimate context, Xilinx/Altera FPGA PCI device registry entries, and
     /// anti-VM-detection evasion configs used to bypass anti-cheat VM detection.</summary>
     public bool ScanHypervisorCheatDetection { get; set; } = true;
+    /// <summary>Detect cheat source code and development artifacts: .git repos with cheat remote
+    /// URLs, Visual Studio cheat projects (.sln/.vcxproj with cheat keywords), compiled build
+    /// artifacts (cheat.pdb, x64/Release DLLs), game SDK directories, offset header files,
+    /// IDA/Ghidra dump outputs, hazedumper JSONs, and obfuscation tool project files.</summary>
+    public bool ScanCheatSourceCodeRepo { get; set; } = true;
 
     /// <summary>Scan game directories (Steam, Epic, user-specified) for BepInEx, Unity Doorstop,
     /// and MelonLoader code injection frameworks. Detects: doorstop_config.ini (enabled=true),
@@ -1980,6 +1985,7 @@ public static class ScanProfiles
         ScanProcessInjectionTechnique = true,  // DLL/manual-map/hollow/reflective inject scan — fast
         ScanFiveMRageMpAltVCheatNetwork = true, // FiveM/RageMP/altV packet/exploit network scan — fast
         ScanHypervisorCheatDetection = true,   // PCILeech/DMA/FPGA/Qemu hypervisor cheat scan — fast
+        ScanCheatSourceCodeRepo = true,        // cheat git repo/VS project/SDK/PDB artifact scan — fast
         DeepDriveScan = false,
         // No per-module timeout — every Quick module runs to completion. Quick stays
         // fast because slow modules are individually disabled above, not because they
