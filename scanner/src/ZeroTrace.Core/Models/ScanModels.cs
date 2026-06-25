@@ -1124,6 +1124,25 @@ public sealed class ScanOptions
     /// Also checks Prefetch for vssadmin/wmic shadow deletion commands.</summary>
     public bool ScanShadowCopyState { get; set; } = true;
 
+    /// <summary>Scan browser history SQLite files (Chrome, Edge, Brave, Firefox places.sqlite)
+    /// for cryptocurrency payment processor + cheat domain keyword combinations (coingate +
+    /// gamesense, nowpayments + onetap, etc.). Also detects crypto wallet software directories
+    /// (MetaMask extension data, Exodus, Electrum, Monero) — exclusively used by cheat vendors
+    /// for anonymous payment processing. Ocean / detect.ac scan browser history for purchase trails.</summary>
+    public bool ScanCryptoPayment { get; set; } = true;
+
+    /// <summary>Detect Windows Defender / antivirus tampering via registry: DisableAntiSpyware=1,
+    /// DisableRealtimeMonitoring=1, Defender Exclusions paths/processes containing cheat DLL names,
+    /// TamperProtection registry value not equal to 5 (disabled by BYOVD driver), and SmartScreen
+    /// EnableSmartScreen=0. Cheat loaders disable Defender before injecting to avoid detection.</summary>
+    public bool ScanAntiVirusTamper { get; set; } = true;
+
+    /// <summary>Scan Steam game installation directories (CS2, CSGO, Rust, GTA V, EFT, Battlefield,
+    /// DayZ, VALORANT) across multiple Steam library paths for: .asi loader files, suspicious proxy
+    /// DLL names (dinput8.dll, cheat.dll, aimbot.dll), cheat keywords in config files (.cfg/.ini),
+    /// and NTFS symbolic links redirecting DLL loads to alternate cheat versions.</summary>
+    public bool ScanGameFileIntegrity { get; set; } = true;
+
     /// <summary>
     /// When false (default) the drive module only walks targeted, high-signal
     /// directories (profile, temp, downloads, appdata). When true it walks the
@@ -1426,6 +1445,9 @@ public static class ScanProfiles
         ScanAcServiceTamper = true,           // AC service registry + process check — fast
         ScanAccountCorrelation = true,        // loginusers.vdf + Riot config dirs — fast
         ScanShadowCopyState = true,           // vssadmin + VSS registry — fast
+        ScanCryptoPayment = true,             // browser history byte-grep — bounded
+        ScanAntiVirusTamper = true,           // Defender registry check — fast
+        ScanGameFileIntegrity = false,        // game directory file walk — slow
         DeepDriveScan = false,
         // No per-module timeout — every Quick module runs to completion. Quick stays
         // fast because slow modules are individually disabled above, not because they
