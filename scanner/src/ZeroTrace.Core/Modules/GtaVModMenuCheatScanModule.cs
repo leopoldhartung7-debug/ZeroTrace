@@ -1,1028 +1,1080 @@
-using System.Diagnostics;
+using System.IO;
+using System.Text;
 using Microsoft.Win32;
-using ZeroTrace.Core.Engine;
 using ZeroTrace.Core.Models;
 
 namespace ZeroTrace.Core.Modules;
 
 public sealed class GtaVModMenuCheatScanModule : IScanModule
 {
-    public string Name => "GTA V Mod Menu / Cheat";
+    public string Name => "GTA-V-ModMenu-Cheat";
     public double Weight => 0.65;
     public int ParallelGroup => 4;
 
-    private static readonly HashSet<string> KnownModMenuExeNames = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "menyoo.exe", "menyoopc.exe", "kiddion.exe", "kiddionsmb.exe", "kiddions_mb.exe",
-        "modest_menu.exe", "simplegta.exe", "lambdamenu.exe", "lambda_menu.exe",
-        "gtavcheats.exe", "online_cheats.exe", "gtao_cheats.exe", "orbital_menu.exe",
-        "cherax.exe", "2take1.exe", "2take1menu.exe", "brute.exe", "brutemenu.exe",
-        "midnight.exe", "midnight_menu.exe", "stand_menu.exe", "stand.exe",
-        "eulen_gta.exe", "lynx_gta.exe", "wexternal.exe", "phantom_gta.exe", "nova_menu.exe"
-    };
+    // ─── GTA V static install path candidates ────────────────────────────────
 
-    private static readonly HashSet<string> KnownModMenuDllNames = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "menyoo.dll", "ScriptHookV.dll", "ScriptHookVDotNet.dll", "kiddion.dll",
-        "lambda.dll", "orbital.dll", "cherax.dll", "2take1.dll", "stand.dll",
-        "midnight.dll", "brute.dll"
-    };
-
-    private static readonly HashSet<string> AsiLoaderDllNames = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "dinput8.dll", "dsound.dll", "version.dll"
-    };
-
-    private static readonly string[] AsiLoaderLogFiles =
-    {
-        "ASILoader.log", "asiloader.log", "ScriptHookV.log", "ScriptHookVDotNet.log"
-    };
-
-    private static readonly string[] CheatAsiKeywords =
-    {
-        "menyoo", "lambda", "kiddion", "stand", "cherax", "orbital", "2take1", "brute",
-        "midnight", "nova", "phantom", "trainer", "cheat", "hack", "menu", "godmode",
-        "money", "modmenu"
-    };
-
-    private static readonly string[] KiddionConfigKeywords =
-    {
-        "aimbot", "godMode", "neverWanted", "moneyDrop", "vehicleSpawn", "teleport", "invisible"
-    };
-
-    private static readonly string[] GtaoCheatConfigKeywords =
-    {
-        "aimbot", "godmode", "noclip", "moneyloop", "vehiclespawn", "invisible",
-        "neverWanted", "moneyDrop", "teleport"
-    };
-
-    private static readonly string[] GtaVInstallPaths =
+    private static readonly string[] StaticGtaVPaths =
     {
         @"C:\Program Files\Rockstar Games\Grand Theft Auto V",
         @"C:\Program Files (x86)\Rockstar Games\Grand Theft Auto V",
+        @"D:\Rockstar Games\Grand Theft Auto V",
         @"D:\Grand Theft Auto V",
-        @"C:\Program Files\Epic Games\GTAV"
+        @"C:\Games\Grand Theft Auto V",
+        @"C:\Program Files\Epic Games\GTAV",
     };
 
-    private static readonly string[] PrefetchModMenuPatterns =
+    // ─── Known cheat DLL names (Critical when present in GTA V install dir) ──
+
+    private static readonly HashSet<string> KnownCheatDlls = new(StringComparer.OrdinalIgnoreCase)
     {
-        "MENYOO", "KIDDION", "LAMBDAMENU", "LAMBDA_MENU", "2TAKE1", "CHERAX",
-        "ORBITAL", "STAND", "MIDNIGHT", "BRUTE", "KIDDIONSMB", "KIDDIONS_MB",
-        "STAND_MENU", "NOVA_MENU", "PHANTOM_GTA", "ORBITAL_MENU", "BRUTEMENU",
-        "MIDNIGHT_MENU", "SIMPLEGTA", "GTAVCHEATS", "ONLINE_CHEATS"
+        "menyoo.dll", "lambda.dll", "orbital.dll", "cherax.dll",
+        "2take1.dll", "stand.dll", "midnight.dll", "brute.dll",
+        "nova.dll", "phantom.dll", "kiddion.dll",
     };
 
-    private static readonly string[] GtaVCommandlineAntiDetectFlags =
+    // ─── Proxy / wrapper DLLs (Medium unless paired with other indicators) ───
+
+    private static readonly HashSet<string> AmbiguousProxyDlls = new(StringComparer.OrdinalIgnoreCase)
     {
-        "-nocheatdetect", "-noanticheat", "--skipintro"
+        "dinput8.dll", "dsound.dll", "version.dll",
     };
 
-    private static readonly string[] GtaVLogCheatKeywords =
+    // ─── Name fragments that flag an ASI as a cheat ──────────────────────────
+
+    private static readonly string[] CheatAsiPatterns =
     {
-        "mod menu", "modmenu", "ScriptHook", "menyoo", "kiddion", "stand", "2take1",
-        "cherax", "orbital", "lambda", "brute", "midnight"
+        "menyoo", "lambda", "kiddion", "stand", "cherax", "orbital",
+        "2take1", "brute", "midnight", "nova", "phantom", "trainer",
+        "modmenu", "godmode", "money", "esp", "aimbot", "cheat", "hack",
     };
+
+    // ─── ScriptHookV log keywords that upgrade risk to High ──────────────────
+
+    private static readonly string[] ScriptHookLogCheatNames =
+    {
+        "menyoo", "lambda", "stand", "cherax", "kiddion",
+        "orbital", "2take1", "brute", "midnight", "nova", "phantom",
+    };
+
+    // ─── Config-file cheat feature keywords ──────────────────────────────────
+
+    private static readonly string[] ConfigCheatKeywords =
+    {
+        "godMode", "godmode", "neverWanted", "neverwanted",
+        "moneyDrop", "moneydrop", "vehicleSpawn", "vehiclespawn",
+        "teleport", "invisible", "aimbot", "esp", "wallhack",
+        "noclip", "infiniteAmmo", "infiniteammo", "superJump",
+        "superSpeed", "rapidFire", "undetected", "bypass", "antiban",
+    };
+
+    // ─── Known mod menu EXE names (used by Section 3 and Section 4) ──────────
+
+    private static readonly HashSet<string> KnownModMenuExeNames = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "menyoo.exe", "menyoopc.exe", "kiddion.exe", "kiddionsmb.exe",
+        "kiddions_mb.exe", "modest_menu.exe", "lambdamenu.exe",
+        "lambda_menu.exe", "orbital_menu.exe", "cherax.exe",
+        "2take1.exe", "2take1menu.exe", "brute.exe", "brutemenu.exe",
+        "midnight.exe", "midnight_menu.exe", "stand_menu.exe", "stand.exe",
+        "nova_menu.exe", "phantom_gta.exe", "wexternal.exe",
+        "gtao_cheats.exe", "online_cheats.exe",
+    };
+
+    // ─── GTA Online script cheat keywords (Section 6) ────────────────────────
+
+    private static readonly string[] ScriptCheatKeywords =
+    {
+        "MoneyDrop", "CasinoHack", "MoneyGlitch", "RP_Boost",
+        "casino_cheat", "GtaOnline", "gta_online",
+    };
+
+    // ─── Prefetch name prefixes (Section 7) ──────────────────────────────────
+
+    private static readonly string[] PrefetchPatterns =
+    {
+        "MENYOO", "KIDDION", "LAMBDAMENU", "2TAKE1", "CHERAX",
+        "ORBITAL", "STAND", "MIDNIGHT", "BRUTE", "NOVA", "WEXTERNAL",
+    };
+
+    // ─── GTA V commandline.txt anti-detect flags (Section 5) ─────────────────
+
+    private static readonly string[] CommandlineAntiDetectFlags =
+    {
+        "-nocheatdetect", "-noanticheat", "-novac",
+        "sv_cheats", "-novrnotification",
+    };
+
+    // ─── Rockstar / GTA V log cheat keywords (Section 5) ─────────────────────
+
+    private static readonly string[] RockstarLogCheatKeywords =
+    {
+        "ScriptHookV", "menyoo", "kiddion", "stand", "cherax",
+        "lambda", "2take1", "orbital", "brute", "midnight", "nova", "phantom",
+    };
+
+    // ─── Entry point ─────────────────────────────────────────────────────────
 
     public async Task RunAsync(ScanContext ctx, CancellationToken ct)
     {
-        await ScanUserDirectoriesForModMenuExeAsync(ctx, ct);
-        ctx.Report(0.15, "Mod Menu EXE", "Bekannte Mod-Menu-Executables gesucht");
+        await Task.Run(async () =>
+        {
+            // Section 1: GTA V install directory scan
+            var gtaVDirs = FindGtaVInstallDirectories(ctx, ct);
+            foreach (var dir in gtaVDirs)
+            {
+                ct.ThrowIfCancellationRequested();
+                await ScanGtaVInstallDirectoryAsync(ctx, dir, ct).ConfigureAwait(false);
+            }
 
-        await ScanGtaVInstallDirectoriesAsync(ctx, ct);
-        ctx.Report(0.32, "GTA V Verzeichnis", "GTA V Installationsverzeichnis geprueft");
+            ctx.Report(0.20, "GTA V install dir", "GTA V install directories scanned");
 
-        await ScanKiddionArtifactsAsync(ctx, ct);
-        ctx.Report(0.44, "Kiddion Artefakte", "Kiddion's Modest Menu Artefakte geprueft");
+            // Section 2: known mod menu AppData directories
+            await ScanModMenuAppDataDirectoriesAsync(ctx, ct).ConfigureAwait(false);
+            ctx.Report(0.42, "Mod menu AppData", "Mod menu AppData directories scanned");
 
-        await Scan2Take1ArtifactsAsync(ctx, ct);
-        ctx.Report(0.54, "2Take1 Artefakte", "2Take1 Menu Artefakte geprueft");
+            // Section 3: known mod menu executables on disk
+            await ScanKnownModMenuExecutablesAsync(ctx, ct).ConfigureAwait(false);
+            ctx.Report(0.58, "Mod menu EXEs", "Known mod menu executables scanned");
 
-        await ScanStandMenuArtifactsAsync(ctx, ct);
-        ctx.Report(0.62, "Stand Artefakte", "Stand Menu Artefakte geprueft");
+            // Section 4: running process detection
+            ScanRunningProcesses(ctx, ct);
+            ctx.Report(0.65, "Running processes", "Running processes checked");
 
-        await ScanOtherMenuArtifactsAsync(ctx, ct);
-        ctx.Report(0.70, "Andere Menus", "Weitere Mod-Menu-Artefakte geprueft");
+            // Section 5: Rockstar Social Club / R* config tamper
+            await ScanRockstarConfigAndLogsAsync(ctx, ct).ConfigureAwait(false);
+            ctx.Report(0.75, "Rockstar config", "Rockstar config and logs scanned");
 
-        await ScanGtaoMoneyGlitchScriptsAsync(ctx, ct);
-        ctx.Report(0.78, "Money-Glitch-Skripte", "GTAO-Money-Glitch-Skripte gesucht");
+            // Section 6: GTAO money/casino cheat scripts
+            await ScanGtaoScriptFilesAsync(ctx, ct).ConfigureAwait(false);
+            ctx.Report(0.88, "GTAO scripts", "GTA Online cheat script files scanned");
 
-        ScanPrefetchArtifacts(ctx, ct);
-        ctx.Report(0.85, "Prefetch", "Prefetch-Artefakte geprueft");
+            // Section 7: Prefetch scan
+            ScanPrefetchDirectory(ctx, ct);
+            ctx.Report(1.0, "Prefetch", "Prefetch artifacts scanned");
 
-        await ScanGtaVModAccountArtifactsAsync(ctx, ct);
-        ctx.Report(0.92, "Modded Account", "GTA V Modded-Account-Artefakte geprueft");
-
-        ScanRegistryArtifacts(ctx, ct);
-        ctx.Report(0.96, "Registry", "Registry-Artefakte geprueft");
-
-        ScanRunningProcesses(ctx, ct);
-        ctx.Report(1.0, "Prozesse", "Laufende Mod-Menu-Prozesse geprueft");
+        }, ct);
     }
 
-    private async Task ScanUserDirectoriesForModMenuExeAsync(ScanContext ctx, CancellationToken ct)
+    // ─── Section 1 helper: find GTA V install directories ────────────────────
+
+    private static List<string> FindGtaVInstallDirectories(ScanContext ctx, CancellationToken ct)
     {
-        var searchDirs = GetUserSearchDirectories();
+        var found = new List<string>();
 
-        foreach (var dir in searchDirs)
+        foreach (var path in StaticGtaVPaths)
         {
-            if (ct.IsCancellationRequested) break;
-            if (!Directory.Exists(dir)) continue;
-
-            string[] exeFiles = Array.Empty<string>();
-            try { exeFiles = Directory.GetFiles(dir, "*.exe", SearchOption.AllDirectories); }
-            catch (UnauthorizedAccessException) { continue; }
-            catch { continue; }
-
-            foreach (var file in exeFiles)
+            ct.ThrowIfCancellationRequested();
+            if (Directory.Exists(path) &&
+                !found.Contains(path, StringComparer.OrdinalIgnoreCase))
             {
-                if (ct.IsCancellationRequested) break;
-                ctx.IncrementFiles();
+                found.Add(path);
+            }
+        }
 
-                var fileName = Path.GetFileName(file);
-                if (!KnownModMenuExeNames.Contains(fileName)) continue;
+        // Check Steam registry for GTA V install dir (App ID 271590)
+        try
+        {
+            using var steamAppsKey = Registry.CurrentUser.OpenSubKey(
+                @"SOFTWARE\Valve\Steam\Apps\271590");
+            if (steamAppsKey != null)
+            {
+                ctx.IncrementRegistryKeys();
+                var installDir = steamAppsKey.GetValue("InstallDir") as string;
+                if (!string.IsNullOrEmpty(installDir) &&
+                    Directory.Exists(installDir) &&
+                    !found.Contains(installDir, StringComparer.OrdinalIgnoreCase))
+                {
+                    found.Add(installDir);
+                }
+            }
+        }
+        catch (Exception) { }
 
+        return found;
+    }
+
+    // ─── Section 1: scan one GTA V install directory ─────────────────────────
+
+    private static async Task ScanGtaVInstallDirectoryAsync(
+        ScanContext ctx, string gtaDir, CancellationToken ct)
+    {
+        bool hasOtherCheatIndicator = false;
+        bool hasScriptHookV = false;
+        bool hasAsiLoader = false;
+
+        string[] rootFiles;
+        try
+        {
+            rootFiles = Directory.GetFiles(gtaDir, "*", SearchOption.TopDirectoryOnly);
+        }
+        catch (UnauthorizedAccessException) { return; }
+        catch (DirectoryNotFoundException) { return; }
+        catch (IOException) { return; }
+
+        foreach (var file in rootFiles)
+        {
+            ct.ThrowIfCancellationRequested();
+            ctx.IncrementFiles();
+            var fileName = Path.GetFileName(file);
+            var fileNameLower = fileName.ToLowerInvariant();
+            var ext = Path.GetExtension(fileNameLower);
+
+            // Known cheat DLLs → Critical
+            if (KnownCheatDlls.Contains(fileName))
+            {
+                hasOtherCheatIndicator = true;
                 ctx.AddFinding(new Finding
                 {
-                    Module = Name,
-                    Title = $"Bekanntes GTA V Mod-Menu-Executable: {fileName}",
-                    Risk = RiskLevel.High,
+                    Module = "GTA-V-ModMenu-Cheat",
+                    Title = $"GTA V: Known cheat DLL in install directory: {fileName}",
+                    Risk = RiskLevel.Critical,
                     Location = file,
                     FileName = fileName,
-                    Reason = $"Die Datei '{fileName}' ist ein bekanntes GTA V Mod-Menu- oder " +
-                             "Cheat-Tool. Solche Programme werden verwendet, um in GTA Online " +
-                             "zu cheaten (Godmode, Money-Drop, Aimbot usw.).",
-                    Detail = $"Gefunden in: {dir}"
+                    Reason = $"Known GTA V mod menu DLL '{fileName}' found directly in GTA V install directory. " +
+                             "This DLL is injected into GTA V at startup to enable cheat features " +
+                             "such as god mode, money drops, and aimbot.",
+                    Detail = $"Path={file} GtaVDir={gtaDir}",
                 });
+                continue;
             }
 
-            string[] dllFiles = Array.Empty<string>();
-            try { dllFiles = Directory.GetFiles(dir, "*.dll", SearchOption.AllDirectories); }
-            catch (UnauthorizedAccessException) { }
-            catch { }
-
-            foreach (var file in dllFiles)
+            // Ambiguous proxy DLLs → Medium (unless paired with other indicators later)
+            if (AmbiguousProxyDlls.Contains(fileName))
             {
-                if (ct.IsCancellationRequested) break;
-                ctx.IncrementFiles();
-
-                var fileName = Path.GetFileName(file);
-                if (!KnownModMenuDllNames.Contains(fileName)) continue;
-
                 ctx.AddFinding(new Finding
                 {
-                    Module = Name,
-                    Title = $"Bekannte GTA V Mod-Menu-DLL: {fileName}",
-                    Risk = RiskLevel.High,
+                    Module = "GTA-V-ModMenu-Cheat",
+                    Title = $"GTA V: Proxy/ASI loader DLL present: {fileName}",
+                    Risk = RiskLevel.Medium,
                     Location = file,
                     FileName = fileName,
-                    Reason = $"Die DLL '{fileName}' ist eine bekannte GTA V Mod-Menu-Komponente. " +
-                             "Diese DLLs werden in den GTA V Prozess geladen, um Cheat-Funktionen " +
-                             "wie Godmode, Money-Drop und Aimbot zu aktivieren.",
-                    Detail = $"Gefunden in: {dir}"
+                    Reason = $"Proxy wrapper DLL '{fileName}' found in GTA V directory. " +
+                             "This DLL is commonly used as an ASI loader to inject mod menus and cheat plugins. " +
+                             "Not conclusive on its own but indicates a modified GTA V installation.",
+                    Detail = $"Path={file} GtaVDir={gtaDir}",
                 });
+                continue;
+            }
+
+            // ScriptHookV.dll — will be assessed after checking the log
+            if (string.Equals(fileNameLower, "scripthookv.dll", StringComparison.OrdinalIgnoreCase))
+            {
+                hasScriptHookV = true;
+                continue;
+            }
+
+            // ASI loader log files signal an active ASI loader
+            if (string.Equals(fileNameLower, "scripthookv.log", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(fileNameLower, "asiloader.log", StringComparison.OrdinalIgnoreCase))
+            {
+                hasAsiLoader = true;
+                continue;
+            }
+
+            // ASI files
+            if (ext == ".asi")
+            {
+                hasAsiLoader = true;
+                var baseNameLower = Path.GetFileNameWithoutExtension(fileNameLower);
+                var matchedPattern = string.Empty;
+
+                foreach (var pattern in CheatAsiPatterns)
+                {
+                    if (baseNameLower.Contains(pattern, StringComparison.OrdinalIgnoreCase))
+                    {
+                        matchedPattern = pattern;
+                        break;
+                    }
+                }
+
+                if (!string.IsNullOrEmpty(matchedPattern))
+                {
+                    hasOtherCheatIndicator = true;
+                    ctx.AddFinding(new Finding
+                    {
+                        Module = "GTA-V-ModMenu-Cheat",
+                        Title = $"GTA V: Cheat-named ASI file in install directory: {fileName}",
+                        Risk = RiskLevel.High,
+                        Location = file,
+                        FileName = fileName,
+                        Reason = $"ASI plugin '{fileName}' in GTA V directory matches known cheat pattern '{matchedPattern}'. " +
+                                 "ASI files are the primary delivery format for GTA V mod menus and cheat plugins.",
+                        Detail = $"Path={file} MatchedPattern={matchedPattern} GtaVDir={gtaDir}",
+                    });
+                }
+                else
+                {
+                    ctx.AddFinding(new Finding
+                    {
+                        Module = "GTA-V-ModMenu-Cheat",
+                        Title = $"GTA V: ASI loader plugin present: {fileName}",
+                        Risk = RiskLevel.Medium,
+                        Location = file,
+                        FileName = fileName,
+                        Reason = $"ASI file '{fileName}' found in GTA V directory. " +
+                                 "ASI files require an ASI loader (dinput8/dsound/version proxy) and " +
+                                 "are used to load mods, scripts, and cheat menus into GTA V.",
+                        Detail = $"Path={file} GtaVDir={gtaDir}",
+                    });
+                }
             }
         }
 
-        await Task.CompletedTask;
-    }
-
-    private async Task ScanGtaVInstallDirectoriesAsync(ScanContext ctx, CancellationToken ct)
-    {
-        foreach (var gtaDir in GtaVInstallPaths)
+        // Evaluate ScriptHookV — check its log for cheat references
+        if (hasScriptHookV)
         {
-            if (ct.IsCancellationRequested) break;
-            if (!Directory.Exists(gtaDir)) continue;
+            var scriptHookPath = Path.Combine(gtaDir, "ScriptHookV.dll");
+            var scriptHookLogPath = Path.Combine(gtaDir, "ScriptHookV.log");
+            bool logHasCheat = false;
+            var logCheatName = string.Empty;
 
-            await ScanGtaVRootForCheatDllsAsync(gtaDir, ctx, ct);
-            ScanGtaVForAsiLoaderLogs(gtaDir, ctx);
-            await ScanGtaVForCheatAsiFilesAsync(gtaDir, ctx, ct);
-            await ScanGtaVScriptsDirectoryAsync(gtaDir, ctx, ct);
-        }
-    }
-
-    private async Task ScanGtaVRootForCheatDllsAsync(string gtaDir, ScanContext ctx, CancellationToken ct)
-    {
-        string[] allDlls = Array.Empty<string>();
-        try { allDlls = Directory.GetFiles(gtaDir, "*.dll"); }
-        catch (UnauthorizedAccessException) { return; }
-        catch { return; }
-
-        foreach (var dllPath in allDlls)
-        {
-            if (ct.IsCancellationRequested) break;
-            ctx.IncrementFiles();
-
-            var dllName = Path.GetFileName(dllPath);
-
-            if (KnownModMenuDllNames.Contains(dllName))
+            if (File.Exists(scriptHookLogPath))
             {
-                ctx.AddFinding(new Finding
+                ctx.IncrementFiles();
+                try
                 {
-                    Module = Name,
-                    Title = $"Mod-Menu-DLL im GTA V Verzeichnis: {dllName}",
-                    Risk = RiskLevel.Critical,
-                    Location = dllPath,
-                    FileName = dllName,
-                    Reason = $"Die bekannte Mod-Menu-DLL '{dllName}' befindet sich direkt im " +
-                             "GTA V Installationsverzeichnis. Das Vorhandensein dieser DLL zeigt, " +
-                             "dass das Mod-Menu aktiv in GTA V installiert ist.",
-                    Detail = $"GTA V Verzeichnis: {gtaDir}"
-                });
+                    using var fs = new FileStream(
+                        scriptHookLogPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                    using var sr = new StreamReader(fs, Encoding.UTF8,
+                        detectEncodingFromByteOrderMarks: true, bufferSize: 4096, leaveOpen: false);
+                    string? line;
+                    while ((line = await sr.ReadLineAsync(ct).ConfigureAwait(false)) != null)
+                    {
+                        ct.ThrowIfCancellationRequested();
+                        foreach (var name in ScriptHookLogCheatNames)
+                        {
+                            if (line.Contains(name, StringComparison.OrdinalIgnoreCase))
+                            {
+                                logHasCheat = true;
+                                logCheatName = name;
+                                break;
+                            }
+                        }
+                        if (logHasCheat) break;
+                    }
+                }
+                catch (UnauthorizedAccessException) { }
+                catch (IOException) { }
             }
-            else if (AsiLoaderDllNames.Contains(dllName))
+
+            if (logHasCheat)
             {
+                hasOtherCheatIndicator = true;
                 ctx.AddFinding(new Finding
                 {
-                    Module = Name,
-                    Title = $"ASI-Loader-DLL im GTA V Verzeichnis: {dllName}",
+                    Module = "GTA-V-ModMenu-Cheat",
+                    Title = $"GTA V: ScriptHookV.log references cheat tool '{logCheatName}'",
                     Risk = RiskLevel.High,
-                    Location = dllPath,
-                    FileName = dllName,
-                    Reason = $"Die DLL '{dllName}' im GTA V Verzeichnis ist ein bekannter ASI-Loader " +
-                             "(Mod-Loader). ASI-Loader werden verwendet, um ASI-Plugins (Mod-Menus) " +
-                             "automatisch in GTA V zu laden. Legitime GTA V Installationen " +
-                             "enthalten diese Datei nicht.",
-                    Detail = $"GTA V Verzeichnis: {gtaDir}"
+                    Location = scriptHookLogPath,
+                    FileName = "ScriptHookV.log",
+                    Reason = $"ScriptHookV.log contains a reference to known GTA V cheat tool '{logCheatName}'. " +
+                             "ScriptHookV is required by most mod menus; this log entry confirms active cheat use.",
+                    Detail = $"GtaVDir={gtaDir} CheatName={logCheatName} LogPath={scriptHookLogPath}",
                 });
             }
-        }
-
-        await Task.CompletedTask;
-    }
-
-    private void ScanGtaVForAsiLoaderLogs(string gtaDir, ScanContext ctx)
-    {
-        foreach (var logFileName in AsiLoaderLogFiles)
-        {
-            var logPath = Path.Combine(gtaDir, logFileName);
-            if (!File.Exists(logPath)) continue;
-
-            ctx.IncrementFiles();
-            ctx.AddFinding(new Finding
+            else
             {
-                Module = Name,
-                Title = $"ASI-Loader-Log im GTA V Verzeichnis: {logFileName}",
-                Risk = RiskLevel.High,
-                Location = logPath,
-                FileName = logFileName,
-                Reason = $"Die Log-Datei '{logFileName}' beweist, dass ein ASI-Loader/ScriptHook " +
-                         "in GTA V aktiv war. ASI-Loader sind Voraussetzung fuer das Laden von " +
-                         "Mod-Menus und Cheat-Plugins in GTA V.",
-                Detail = $"GTA V Verzeichnis: {gtaDir}"
-            });
-        }
-    }
+                var riskLevel = (hasOtherCheatIndicator || hasAsiLoader)
+                    ? RiskLevel.High
+                    : RiskLevel.Medium;
 
-    private async Task ScanGtaVForCheatAsiFilesAsync(string gtaDir, ScanContext ctx, CancellationToken ct)
-    {
-        string[] asiFiles = Array.Empty<string>();
-        try { asiFiles = Directory.GetFiles(gtaDir, "*.asi"); }
-        catch (UnauthorizedAccessException) { return; }
-        catch { return; }
-
-        foreach (var asiPath in asiFiles)
-        {
-            if (ct.IsCancellationRequested) break;
-            ctx.IncrementFiles();
-
-            var asiName = Path.GetFileNameWithoutExtension(asiPath).ToLowerInvariant();
-            var matchedKeyword = CheatAsiKeywords
-                .FirstOrDefault(k => asiName.Contains(k.ToLowerInvariant()));
-
-            if (matchedKeyword != null)
-            {
-                var fileName = Path.GetFileName(asiPath);
                 ctx.AddFinding(new Finding
                 {
-                    Module = Name,
-                    Title = $"Cheat-ASI-Plugin im GTA V Verzeichnis: {fileName}",
-                    Risk = RiskLevel.Critical,
-                    Location = asiPath,
-                    FileName = fileName,
-                    Reason = $"Die ASI-Datei '{fileName}' hat einen Namen, der auf ein Mod-Menu " +
-                             $"oder Cheat-Plugin hinweist (Schluesselbegriff: '{matchedKeyword}'). " +
-                             "ASI-Dateien werden vom ASI-Loader direkt in GTA V geladen und " +
-                             "ermöglichen Cheat-Funktionen wie Godmode, Money-Drop und ESP.",
-                    Detail = $"Passender Schluesselbegriff: '{matchedKeyword}', GTA V: {gtaDir}"
+                    Module = "GTA-V-ModMenu-Cheat",
+                    Title = "GTA V: ScriptHookV.dll present in install directory",
+                    Risk = riskLevel,
+                    Location = scriptHookPath,
+                    FileName = "ScriptHookV.dll",
+                    Reason = "ScriptHookV.dll found in GTA V install directory. " +
+                             "ScriptHookV is required by almost every GTA V mod menu and cheat tool. " +
+                             "While single-player modding is legitimate, it is also the prerequisite " +
+                             "for all script-based cheats in GTA Online.",
+                    Detail = $"GtaVDir={gtaDir} OtherCheatIndicator={hasOtherCheatIndicator} AsiLoader={hasAsiLoader}",
                 });
             }
         }
 
-        await Task.CompletedTask;
-    }
-
-    private async Task ScanGtaVScriptsDirectoryAsync(string gtaDir, ScanContext ctx, CancellationToken ct)
-    {
+        // Scan scripts\ directory for cheat-named DLLs
         var scriptsDir = Path.Combine(gtaDir, "scripts");
-        if (!Directory.Exists(scriptsDir)) return;
-
-        string[] scriptFiles = Array.Empty<string>();
-        try { scriptFiles = Directory.GetFiles(scriptsDir, "*", SearchOption.AllDirectories); }
-        catch (UnauthorizedAccessException) { return; }
-        catch { return; }
-
-        foreach (var scriptFile in scriptFiles)
+        if (Directory.Exists(scriptsDir))
         {
-            if (ct.IsCancellationRequested) break;
+            await ScanGtaVScriptsDirAsync(ctx, scriptsDir, ct).ConfigureAwait(false);
+        }
+
+        // Menyoo-specific: menyooStuff\ inside GTA V dir
+        var menyooStuffDir = Path.Combine(gtaDir, "menyooStuff");
+        if (Directory.Exists(menyooStuffDir))
+        {
+            ctx.AddFinding(new Finding
+            {
+                Module = "GTA-V-ModMenu-Cheat",
+                Title = "GTA V: Menyoo mod menu data directory found inside GTA V folder",
+                Risk = RiskLevel.Critical,
+                Location = menyooStuffDir,
+                FileName = "menyooStuff",
+                Reason = "The 'menyooStuff' directory inside the GTA V install folder is created by " +
+                         "Menyoo PC mod menu. Its presence proves Menyoo was installed and used.",
+                Detail = $"GtaVDir={gtaDir} MenyooStuffDir={menyooStuffDir}",
+            });
+        }
+    }
+
+    private static async Task ScanGtaVScriptsDirAsync(
+        ScanContext ctx, string scriptsDir, CancellationToken ct)
+    {
+        string[] dllFiles;
+        try
+        {
+            dllFiles = Directory.GetFiles(scriptsDir, "*.dll", SearchOption.TopDirectoryOnly);
+        }
+        catch (UnauthorizedAccessException) { return; }
+        catch (IOException) { return; }
+
+        foreach (var dll in dllFiles)
+        {
+            ct.ThrowIfCancellationRequested();
             ctx.IncrementFiles();
+            var fileName = Path.GetFileName(dll);
+            var baseNameLower = Path.GetFileNameWithoutExtension(dll).ToLowerInvariant();
+            var matchedPattern = string.Empty;
 
-            var scriptFileName = Path.GetFileName(scriptFile);
-            var scriptNameLower = Path.GetFileNameWithoutExtension(scriptFile).ToLowerInvariant();
-            var ext = Path.GetExtension(scriptFile).ToLowerInvariant();
+            foreach (var pattern in CheatAsiPatterns)
+            {
+                if (baseNameLower.Contains(pattern, StringComparison.OrdinalIgnoreCase))
+                {
+                    matchedPattern = pattern;
+                    break;
+                }
+            }
 
-            if (ext != ".dll" && ext != ".cs" && ext != ".asi") continue;
-
-            var matchedKeyword = CheatAsiKeywords
-                .FirstOrDefault(k => scriptNameLower.Contains(k.ToLowerInvariant()));
-
-            if (matchedKeyword == null && !KnownModMenuDllNames.Contains(scriptFileName)) continue;
+            if (string.IsNullOrEmpty(matchedPattern)) continue;
 
             ctx.AddFinding(new Finding
             {
-                Module = Name,
-                Title = $"Cheat-Skript im GTA V scripts-Verzeichnis: {scriptFileName}",
-                Risk = RiskLevel.Critical,
-                Location = scriptFile,
-                FileName = scriptFileName,
-                Reason = $"Die Datei '{scriptFileName}' im GTA V scripts-Verzeichnis entspricht " +
-                         "einem bekannten Cheat-Plugin oder Mod-Menu-Skript. " +
-                         "Script-Hook-Skripte in diesem Verzeichnis werden beim Spielstart " +
-                         "automatisch geladen.",
-                Detail = matchedKeyword != null
-                    ? $"Schluesselbegriff: '{matchedKeyword}'"
-                    : "Bekannte Mod-Menu-DLL"
+                Module = "GTA-V-ModMenu-Cheat",
+                Title = $"GTA V scripts\\: Cheat-named DLL found: {fileName}",
+                Risk = RiskLevel.High,
+                Location = dll,
+                FileName = fileName,
+                Reason = $"DLL '{fileName}' in GTA V scripts\\ directory matches cheat pattern '{matchedPattern}'. " +
+                         "The scripts\\ folder is used by ScriptHookV.NET to load cheat scripts automatically at startup.",
+                Detail = $"Path={dll} MatchedPattern={matchedPattern} Dir={scriptsDir}",
             });
         }
 
-        await Task.CompletedTask;
+        await Task.CompletedTask.ConfigureAwait(false);
     }
 
-    private async Task ScanKiddionArtifactsAsync(ScanContext ctx, CancellationToken ct)
+    // ─── Section 2: known mod menu AppData directories ────────────────────────
+
+    private static async Task ScanModMenuAppDataDirectoriesAsync(
+        ScanContext ctx, CancellationToken ct)
     {
-        var roamingAppData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+        var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
         var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
 
-        var kiddionDirs = new[]
+        // Each tuple: (directory path, menu name, HKCU registry key or null, base risk)
+        var menuEntries = new (string Dir, string MenuName, string? RegKey, RiskLevel Risk)[]
         {
-            Path.Combine(roamingAppData, "Kiddion's Modest Menu"),
-            Path.Combine(localAppData, "Kiddion")
+            (Path.Combine(appData,      "Kiddion's Modest Menu"), "Kiddion's Modest Menu", null,                RiskLevel.High),
+            (Path.Combine(localAppData, "Kiddion"),               "Kiddion's Modest Menu", null,                RiskLevel.High),
+            (Path.Combine(localAppData, "Kiddion's Modest Menu"), "Kiddion's Modest Menu", null,                RiskLevel.High),
+            (Path.Combine(appData,      "2Take1"),                "2Take1 Menu",           @"Software\2Take1",  RiskLevel.Critical),
+            (Path.Combine(localAppData, "2Take1"),                "2Take1 Menu",           @"Software\2Take1",  RiskLevel.Critical),
+            (Path.Combine(appData,      "Stand"),                 "Stand Menu",            @"Software\Stand",   RiskLevel.Critical),
+            (Path.Combine(localAppData, "Stand"),                 "Stand Menu",            @"Software\Stand",   RiskLevel.Critical),
+            (Path.Combine(appData,      "Orbital"),               "Orbital Menu",          null,                RiskLevel.Critical),
+            (Path.Combine(localAppData, "Orbital"),               "Orbital Menu",          null,                RiskLevel.Critical),
+            (Path.Combine(appData,      "Cherax"),                "Cherax Menu",           @"Software\Cherax",  RiskLevel.Critical),
+            (Path.Combine(localAppData, "Cherax"),                "Cherax Menu",           @"Software\Cherax",  RiskLevel.Critical),
+            (Path.Combine(appData,      "Midnight"),              "Midnight Menu",         null,                RiskLevel.Critical),
+            (Path.Combine(localAppData, "Midnight"),              "Midnight Menu",         null,                RiskLevel.Critical),
+            (Path.Combine(appData,      "Brute"),                 "Brute Menu",            null,                RiskLevel.Critical),
+            (Path.Combine(localAppData, "Brute"),                 "Brute Menu",            null,                RiskLevel.Critical),
+            (Path.Combine(appData,      "Nova"),                  "Nova Menu",             null,                RiskLevel.Critical),
+            (Path.Combine(appData,      "Menyoo PC"),             "Menyoo PC",             null,                RiskLevel.Critical),
+            (Path.Combine(appData,      "MenyooStuff"),           "Menyoo PC",             null,                RiskLevel.Critical),
+            (Path.Combine(appData,      "Lambda Menu"),           "Lambda Menu",           null,                RiskLevel.Critical),
+            (Path.Combine(appData,      "Eulen"),                 "Eulen GTA",             null,                RiskLevel.Critical),
+            (Path.Combine(appData,      "Lynx"),                  "Lynx GTA",              null,                RiskLevel.Critical),
         };
 
-        foreach (var kiddionDir in kiddionDirs)
+        var seenRegKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var (dir, menuName, regKey, baseRisk) in menuEntries)
         {
-            if (ct.IsCancellationRequested) break;
-            if (!Directory.Exists(kiddionDir)) continue;
-
-            ctx.AddFinding(new Finding
-            {
-                Module = Name,
-                Title = "Kiddion's Modest Menu Konfigurationsverzeichnis gefunden",
-                Risk = RiskLevel.High,
-                Location = kiddionDir,
-                Reason = "Das AppData-Verzeichnis von Kiddion's Modest Menu wurde gefunden. " +
-                         "Kiddion's Modest Menu ist das beliebteste GTA Online Cheat-Tool " +
-                         "mit Godmode, Money-Drop und weiteren Funktionen.",
-                Detail = $"Verzeichnis: {kiddionDir}"
-            });
-
-            var configPath = Path.Combine(kiddionDir, "config.json");
-            if (File.Exists(configPath))
-            {
-                ctx.IncrementFiles();
-                try
-                {
-                    string content;
-                    using var sr = new StreamReader(configPath);
-                    content = await sr.ReadToEndAsync();
-
-                    var matchedKeywords = KiddionConfigKeywords
-                        .Where(k => content.Contains(k, StringComparison.OrdinalIgnoreCase))
-                        .ToList();
-
-                    if (matchedKeywords.Count > 0)
-                    {
-                        ctx.AddFinding(new Finding
-                        {
-                            Module = Name,
-                            Title = "Kiddion Cheat-Konfiguration mit aktiven Cheat-Optionen",
-                            Risk = RiskLevel.Critical,
-                            Location = configPath,
-                            FileName = "config.json",
-                            Reason = "Die Kiddion-Konfigurationsdatei enthaelt aktivierte Cheat-Optionen: " +
-                                     string.Join(", ", matchedKeywords) + ". " +
-                                     "Diese Konfiguration belegt den aktiven Einsatz von Cheat-Funktionen " +
-                                     "in GTA Online.",
-                            Detail = $"Aktive Cheat-Optionen: {string.Join(", ", matchedKeywords)}"
-                        });
-                    }
-                }
-                catch (UnauthorizedAccessException) { }
-                catch { }
-            }
-        }
-
-        ScanPrefetchForPattern(ctx, "KIDDION", "Kiddion's Modest Menu");
-        ScanPrefetchForPattern(ctx, "KIDDIONSMB", "Kiddion's Modest Menu (kiddionsmb)");
-    }
-
-    private async Task Scan2Take1ArtifactsAsync(ScanContext ctx, CancellationToken ct)
-    {
-        var roamingAppData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-        var twoTake1Dir = Path.Combine(roamingAppData, "2Take1");
-
-        if (Directory.Exists(twoTake1Dir))
-        {
-            ctx.AddFinding(new Finding
-            {
-                Module = Name,
-                Title = "2Take1 Menu Konfigurationsverzeichnis gefunden",
-                Risk = RiskLevel.High,
-                Location = twoTake1Dir,
-                Reason = "Das AppData-Verzeichnis von 2Take1 Menu wurde gefunden. " +
-                         "2Take1 ist ein Abo-basiertes Premium-Cheat-Menu fuer GTA Online " +
-                         "mit erweiterten Funktionen wie Aimbot, Godmode und Money-Loop.",
-                Detail = $"Verzeichnis: {twoTake1Dir}"
-            });
-
-            var configFiles = new[] { "config.json", "settings.json" };
-            foreach (var configFileName in configFiles)
-            {
-                if (ct.IsCancellationRequested) break;
-                var configPath = Path.Combine(twoTake1Dir, configFileName);
-                if (!File.Exists(configPath)) continue;
-
-                ctx.IncrementFiles();
-                try
-                {
-                    string content;
-                    using var sr = new StreamReader(configPath);
-                    content = await sr.ReadToEndAsync();
-
-                    var matchedKeywords = GtaoCheatConfigKeywords
-                        .Where(k => content.Contains(k, StringComparison.OrdinalIgnoreCase))
-                        .ToList();
-
-                    if (matchedKeywords.Count > 0)
-                    {
-                        ctx.AddFinding(new Finding
-                        {
-                            Module = Name,
-                            Title = "2Take1 Konfiguration mit aktiven Cheat-Optionen",
-                            Risk = RiskLevel.Critical,
-                            Location = configPath,
-                            FileName = configFileName,
-                            Reason = "Die 2Take1-Konfigurationsdatei enthaelt aktive Cheat-Optionen: " +
-                                     string.Join(", ", matchedKeywords) + ".",
-                            Detail = $"Aktive Optionen: {string.Join(", ", matchedKeywords)}"
-                        });
-                    }
-                }
-                catch (UnauthorizedAccessException) { }
-                catch { }
-            }
-        }
-
-        try
-        {
-            using var twoTake1Key = Registry.CurrentUser.OpenSubKey(@"Software\2Take1");
-            if (twoTake1Key != null)
-            {
-                ctx.IncrementRegistryKeys();
-                ctx.AddFinding(new Finding
-                {
-                    Module = Name,
-                    Title = "2Take1 Menu in der Registry registriert",
-                    Risk = RiskLevel.High,
-                    Location = @"HKCU\Software\2Take1",
-                    Reason = "2Take1 Menu hat Registry-Eintraege hinterlassen, die auf eine " +
-                             "fruehre oder aktuelle Installation hinweisen.",
-                    Detail = $"Schluessel: HKCU\\Software\\2Take1"
-                });
-            }
-        }
-        catch { }
-
-        ScanPrefetchForPattern(ctx, "2TAKE1", "2Take1 Menu");
-    }
-
-    private async Task ScanStandMenuArtifactsAsync(ScanContext ctx, CancellationToken ct)
-    {
-        var roamingAppData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-        var standDir = Path.Combine(roamingAppData, "Stand");
-
-        if (Directory.Exists(standDir))
-        {
-            ctx.AddFinding(new Finding
-            {
-                Module = Name,
-                Title = "Stand Menu Konfigurationsverzeichnis gefunden",
-                Risk = RiskLevel.High,
-                Location = standDir,
-                Reason = "Das AppData-Verzeichnis von Stand Menu wurde gefunden. " +
-                         "Stand ist ein Premium-Cheat-Menu fuer GTA Online mit umfangreichen " +
-                         "Godmode-, ESP- und Modding-Funktionen.",
-                Detail = $"Verzeichnis: {standDir}"
-            });
-
-            string[] standFiles = Array.Empty<string>();
-            try { standFiles = Directory.GetFiles(standDir, "*", SearchOption.AllDirectories); }
-            catch (UnauthorizedAccessException) { }
-            catch { }
-
-            foreach (var standFile in standFiles)
-            {
-                if (ct.IsCancellationRequested) break;
-                ctx.IncrementFiles();
-            }
-        }
-
-        foreach (var gtaDir in GtaVInstallPaths)
-        {
-            if (ct.IsCancellationRequested) break;
-            if (!Directory.Exists(gtaDir)) continue;
-
-            var standDll = Path.Combine(gtaDir, "Stand.dll");
-            if (!File.Exists(standDll)) continue;
-
-            ctx.IncrementFiles();
-            ctx.AddFinding(new Finding
-            {
-                Module = Name,
-                Title = "Stand.dll im GTA V Verzeichnis",
-                Risk = RiskLevel.Critical,
-                Location = standDll,
-                FileName = "Stand.dll",
-                Reason = "Stand.dll im GTA V Installationsverzeichnis beweist, dass Stand Menu " +
-                         "aktiv in GTA V installiert ist und beim Spielstart geladen wird.",
-                Detail = $"GTA V Verzeichnis: {gtaDir}"
-            });
-        }
-
-        try
-        {
-            using var standKey = Registry.CurrentUser.OpenSubKey(@"Software\Stand");
-            if (standKey != null)
-            {
-                ctx.IncrementRegistryKeys();
-                ctx.AddFinding(new Finding
-                {
-                    Module = Name,
-                    Title = "Stand Menu in der Registry registriert",
-                    Risk = RiskLevel.High,
-                    Location = @"HKCU\Software\Stand",
-                    Reason = "Stand Menu hat Registry-Eintraege hinterlassen.",
-                    Detail = "Schluessel: HKCU\\Software\\Stand"
-                });
-            }
-        }
-        catch { }
-
-        ScanPrefetchForPattern(ctx, "STAND", "Stand Menu");
-
-        await Task.CompletedTask;
-    }
-
-    private async Task ScanOtherMenuArtifactsAsync(ScanContext ctx, CancellationToken ct)
-    {
-        var roamingAppData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-
-        var menuAppDataDirs = new[]
-        {
-            ("Orbital", "Orbital Menu"),
-            ("Cherax", "Cherax Menu"),
-            ("Midnight", "Midnight Menu"),
-            ("Brute", "Brute Menu"),
-            ("Nova", "Nova Menu"),
-            ("Phantom", "Phantom GTA")
-        };
-
-        foreach (var (dirName, menuName) in menuAppDataDirs)
-        {
-            if (ct.IsCancellationRequested) break;
-            var menuDir = Path.Combine(roamingAppData, dirName);
-            if (!Directory.Exists(menuDir)) continue;
-
-            ctx.AddFinding(new Finding
-            {
-                Module = Name,
-                Title = $"{menuName} Konfigurationsverzeichnis gefunden",
-                Risk = RiskLevel.High,
-                Location = menuDir,
-                Reason = $"Das AppData-Verzeichnis von '{menuName}' wurde gefunden. " +
-                         $"'{menuName}' ist ein GTA Online Cheat-Menu mit Godmode, " +
-                         "ESP und weiteren Cheat-Funktionen.",
-                Detail = $"Verzeichnis: {menuDir}"
-            });
-
-            string[] menuFiles = Array.Empty<string>();
-            try { menuFiles = Directory.GetFiles(menuDir, "*", SearchOption.AllDirectories); }
-            catch (UnauthorizedAccessException) { }
-            catch { }
-
-            foreach (var menuFile in menuFiles)
-            {
-                if (ct.IsCancellationRequested) break;
-                ctx.IncrementFiles();
-            }
-        }
-
-        foreach (var gtaDir in GtaVInstallPaths)
-        {
-            if (ct.IsCancellationRequested) break;
-            if (!Directory.Exists(gtaDir)) continue;
-
-            string[] gtaAsiFiles = Array.Empty<string>();
-            try { gtaAsiFiles = Directory.GetFiles(gtaDir, "*.asi"); }
-            catch (UnauthorizedAccessException) { continue; }
-            catch { continue; }
-
-            foreach (var asiFile in gtaAsiFiles)
-            {
-                if (ct.IsCancellationRequested) break;
-                ctx.IncrementFiles();
-
-                var asiNameLower = Path.GetFileNameWithoutExtension(asiFile).ToLowerInvariant();
-                if (menuAppDataDirs.Any(m => asiNameLower.Contains(m.Item1.ToLowerInvariant())))
-                {
-                    var asiFileName = Path.GetFileName(asiFile);
-                    var matchedMenu = menuAppDataDirs
-                        .First(m => asiNameLower.Contains(m.Item1.ToLowerInvariant()));
-                    ctx.AddFinding(new Finding
-                    {
-                        Module = Name,
-                        Title = $"{matchedMenu.Item2}-ASI im GTA V Verzeichnis: {asiFileName}",
-                        Risk = RiskLevel.Critical,
-                        Location = asiFile,
-                        FileName = asiFileName,
-                        Reason = $"Die ASI-Datei '{asiFileName}' im GTA V Verzeichnis gehört zu " +
-                                 $"'{matchedMenu.Item2}' und wird beim Spielstart automatisch geladen.",
-                        Detail = $"GTA V Verzeichnis: {gtaDir}"
-                    });
-                }
-            }
-        }
-
-        await Task.CompletedTask;
-    }
-
-    private async Task ScanGtaoMoneyGlitchScriptsAsync(ScanContext ctx, CancellationToken ct)
-    {
-        var scriptKeywords = new[]
-        {
-            "MoneyDrop", "CasinoHack", "MoneyGlitch", "RP_Boost", "casino_cheat",
-            "money_drop", "rp_boost", "gtaonline", "moneydrop"
-        };
-
-        var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-        var searchDirs = new[]
-        {
-            Path.Combine(userProfile, "Downloads"),
-            Environment.GetFolderPath(Environment.SpecialFolder.Desktop)
-        };
-
-        var scriptExtensions = new[] { "*.bat", "*.cmd", "*.ahk", "*.py", "*.ps1" };
-
-        foreach (var dir in searchDirs)
-        {
-            if (ct.IsCancellationRequested) break;
+            ct.ThrowIfCancellationRequested();
             if (!Directory.Exists(dir)) continue;
 
-            foreach (var ext in scriptExtensions)
+            ctx.AddFinding(new Finding
             {
-                string[] scriptFiles = Array.Empty<string>();
-                try { scriptFiles = Directory.GetFiles(dir, ext, SearchOption.AllDirectories); }
-                catch (UnauthorizedAccessException) { continue; }
-                catch { continue; }
+                Module = "GTA-V-ModMenu-Cheat",
+                Title = $"GTA V Mod Menu: {menuName} AppData directory found",
+                Risk = baseRisk,
+                Location = dir,
+                FileName = Path.GetFileName(dir),
+                Reason = $"AppData directory for '{menuName}' GTA V mod menu found at: {dir}. " +
+                         "The presence of this directory confirms the cheat tool was installed and used " +
+                         "on this system.",
+                Detail = $"MenuName={menuName} Dir={dir}",
+            });
 
-                foreach (var scriptFile in scriptFiles)
-                {
-                    if (ct.IsCancellationRequested) break;
-                    ctx.IncrementFiles();
+            await ScanMenuConfigFilesAsync(ctx, dir, menuName, ct).ConfigureAwait(false);
 
-                    var scriptNameLower = Path.GetFileNameWithoutExtension(scriptFile).ToLowerInvariant();
-                    var nameMatch = scriptKeywords
-                        .FirstOrDefault(k => scriptNameLower.Contains(k.ToLowerInvariant()));
-
-                    if (nameMatch != null)
-                    {
-                        var scriptFileName = Path.GetFileName(scriptFile);
-                        ctx.AddFinding(new Finding
-                        {
-                            Module = Name,
-                            Title = $"GTAO Money/Casino-Cheat-Skript: {scriptFileName}",
-                            Risk = RiskLevel.High,
-                            Location = scriptFile,
-                            FileName = scriptFileName,
-                            Reason = $"Das Skript '{scriptFileName}' hat einen Namen, der auf " +
-                                     $"einen GTA Online Money-Glitch oder Casino-Hack hinweist " +
-                                     $"(Schluesselbegriff: '{nameMatch}').",
-                            Detail = $"Skript-Typ: {ext}, Schluesselbegriff: '{nameMatch}'"
-                        });
-                        continue;
-                    }
-
-                    try
-                    {
-                        string content;
-                        using var sr = new StreamReader(scriptFile);
-                        content = await sr.ReadToEndAsync();
-
-                        var contentMatch = scriptKeywords
-                            .FirstOrDefault(k => content.Contains(k, StringComparison.OrdinalIgnoreCase));
-
-                        if (contentMatch != null)
-                        {
-                            var scriptFileName = Path.GetFileName(scriptFile);
-                            ctx.AddFinding(new Finding
-                            {
-                                Module = Name,
-                                Title = $"Skript mit GTAO Cheat-Inhalt: {scriptFileName}",
-                                Risk = RiskLevel.High,
-                                Location = scriptFile,
-                                FileName = scriptFileName,
-                                Reason = $"Das Skript '{scriptFileName}' enthaelt GTA Online Cheat-Inhalt " +
-                                         $"(Schluesselbegriff: '{contentMatch}'). " +
-                                         "Solche Skripte werden fuer Money-Drops, Casino-Hacks " +
-                                         "oder RP-Boosts in GTA Online eingesetzt.",
-                                Detail = $"Inhaltlicher Schluesselbegriff: '{contentMatch}'"
-                            });
-                        }
-                    }
-                    catch (UnauthorizedAccessException) { }
-                    catch { }
-                }
+            if (regKey != null && seenRegKeys.Add(regKey))
+            {
+                ScanMenuRegistryKey(ctx, regKey, menuName);
             }
         }
     }
 
-    private void ScanPrefetchArtifacts(ScanContext ctx, CancellationToken ct)
+    private static async Task ScanMenuConfigFilesAsync(
+        ScanContext ctx, string dir, string menuName, CancellationToken ct)
     {
-        const string prefetchDir = @"C:\Windows\Prefetch";
-        if (!Directory.Exists(prefetchDir)) return;
+        string[] configPatterns = { "*.json", "*.ini", "*.cfg", "*.xml", "*.yaml", "*.toml" };
 
-        string[] pfFiles = Array.Empty<string>();
-        try { pfFiles = Directory.GetFiles(prefetchDir, "*.pf"); }
-        catch { return; }
-
-        foreach (var pfFile in pfFiles)
+        foreach (var pattern in configPatterns)
         {
-            if (ct.IsCancellationRequested) break;
-
-            var pfName = Path.GetFileNameWithoutExtension(pfFile).ToUpperInvariant();
-            var dashIdx = pfName.LastIndexOf('-');
-            var exeName = dashIdx > 0 && pfName.Length - dashIdx == 9 ? pfName[..dashIdx] : pfName;
-
-            var matchedPattern = PrefetchModMenuPatterns
-                .FirstOrDefault(p => exeName.StartsWith(p, StringComparison.OrdinalIgnoreCase) ||
-                                     exeName.Contains(p, StringComparison.OrdinalIgnoreCase));
-
-            if (matchedPattern == null) continue;
-
-            var lastRun = DateTime.MinValue;
-            try { lastRun = File.GetLastWriteTime(pfFile); } catch { }
-
-            ctx.AddFinding(new Finding
-            {
-                Module = Name,
-                Title = $"Prefetch: GTA V Mod-Menu ausgefuehrt ({exeName.ToLowerInvariant()}.exe)",
-                Risk = RiskLevel.Medium,
-                Location = pfFile,
-                FileName = exeName.ToLowerInvariant() + ".exe",
-                Reason = $"Die Prefetch-Datei '{pfName}' beweist, dass ein GTA V Mod-Menu oder " +
-                         "Cheat-Tool ausgefuehrt wurde. Prefetch-Dateien bleiben als forensischer " +
-                         "Beweis erhalten, auch wenn das Tool geloescht wurde.",
-                Detail = lastRun != DateTime.MinValue
-                    ? $"Zuletzt ausgefuehrt: {lastRun:yyyy-MM-dd HH:mm:ss}"
-                    : null
-            });
-        }
-    }
-
-    private void ScanPrefetchForPattern(ScanContext ctx, string pattern, string menuName)
-    {
-        const string prefetchDir = @"C:\Windows\Prefetch";
-        if (!Directory.Exists(prefetchDir)) return;
-
-        string[] pfFiles = Array.Empty<string>();
-        try { pfFiles = Directory.GetFiles(prefetchDir, pattern + "*.pf"); }
-        catch { return; }
-
-        foreach (var pfFile in pfFiles)
-        {
-            var pfName = Path.GetFileNameWithoutExtension(pfFile);
-            var lastRun = DateTime.MinValue;
-            try { lastRun = File.GetLastWriteTime(pfFile); } catch { }
-
-            ctx.AddFinding(new Finding
-            {
-                Module = Name,
-                Title = $"Prefetch: {menuName} ausgefuehrt",
-                Risk = RiskLevel.Medium,
-                Location = pfFile,
-                FileName = pfName.ToLowerInvariant() + ".exe",
-                Reason = $"Die Prefetch-Datei bestätigt, dass '{menuName}' ausgefuehrt wurde.",
-                Detail = lastRun != DateTime.MinValue
-                    ? $"Zuletzt ausgefuehrt: {lastRun:yyyy-MM-dd HH:mm:ss}"
-                    : null
-            });
-        }
-    }
-
-    private async Task ScanGtaVModAccountArtifactsAsync(ScanContext ctx, CancellationToken ct)
-    {
-        var roamingAppData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-        var gtaVConfigDir = Path.Combine(roamingAppData, "Rockstar Games", "GTA V", "cfg");
-        var gtaVAppDataDir = Path.Combine(roamingAppData, "Rockstar Games", "GTA V");
-
-        var commandLinePath = Path.Combine(gtaVConfigDir, "commandline.txt");
-        if (File.Exists(commandLinePath))
-        {
-            ctx.IncrementFiles();
+            string[] files;
             try
             {
-                string content;
-                using var sr = new StreamReader(commandLinePath);
-                content = await sr.ReadToEndAsync();
-
-                var matchedFlags = GtaVCommandlineAntiDetectFlags
-                    .Where(f => content.Contains(f, StringComparison.OrdinalIgnoreCase))
-                    .ToList();
-
-                if (matchedFlags.Count >= 2)
-                {
-                    ctx.AddFinding(new Finding
-                    {
-                        Module = Name,
-                        Title = "GTA V commandline.txt mit Anti-Detection-Flags",
-                        Risk = RiskLevel.Medium,
-                        Location = commandLinePath,
-                        FileName = "commandline.txt",
-                        Reason = "Die GTA V commandline.txt enthaelt mehrere Flags, die von Cheat-Benutzern " +
-                                 "eingesetzt werden, um die Anti-Cheat-Erkennung zu erschweren: " +
-                                 string.Join(", ", matchedFlags),
-                        Detail = $"Flags: {string.Join(", ", matchedFlags)}"
-                    });
-                }
+                files = Directory.GetFiles(dir, pattern, SearchOption.TopDirectoryOnly);
             }
-            catch (UnauthorizedAccessException) { }
-            catch { }
-        }
+            catch (UnauthorizedAccessException) { continue; }
+            catch (IOException) { continue; }
 
-        if (Directory.Exists(gtaVAppDataDir))
-        {
-            string[] logFiles = Array.Empty<string>();
-            try { logFiles = Directory.GetFiles(gtaVAppDataDir, "*.log", SearchOption.AllDirectories); }
-            catch (UnauthorizedAccessException) { }
-            catch { }
-
-            foreach (var logFile in logFiles)
+            foreach (var file in files)
             {
-                if (ct.IsCancellationRequested) break;
+                ct.ThrowIfCancellationRequested();
                 ctx.IncrementFiles();
 
-                try
-                {
-                    string content;
-                    using var sr = new StreamReader(logFile);
-                    content = await sr.ReadToEndAsync();
+                var matchedKw = await FindKeywordInFileAsync(file, ConfigCheatKeywords, ct)
+                    .ConfigureAwait(false);
+                if (matchedKw == null) continue;
 
-                    var matchedKeyword = GtaVLogCheatKeywords
-                        .FirstOrDefault(k => content.Contains(k, StringComparison.OrdinalIgnoreCase));
-
-                    if (matchedKeyword != null)
-                    {
-                        var logFileName = Path.GetFileName(logFile);
-                        ctx.AddFinding(new Finding
-                        {
-                            Module = Name,
-                            Title = $"GTA V Log-Datei mit Mod-Menu-Bezug: {logFileName}",
-                            Risk = RiskLevel.Medium,
-                            Location = logFile,
-                            FileName = logFileName,
-                            Reason = $"Die GTA V Log-Datei '{logFileName}' enthaelt Hinweise auf " +
-                                     $"ein Mod-Menu oder Cheat-Tool: '{matchedKeyword}'. " +
-                                     "Mod-Menus hinterlassen haeufig Spuren in GTA V Log-Dateien.",
-                            Detail = $"Schluesselbegriff: '{matchedKeyword}'"
-                        });
-                    }
-                }
-                catch (UnauthorizedAccessException) { }
-                catch { }
-            }
-        }
-    }
-
-    private void ScanRegistryArtifacts(ScanContext ctx, CancellationToken ct)
-    {
-        try
-        {
-            using var socialClubKey = Registry.CurrentUser.OpenSubKey(
-                @"Software\Rockstar Games\Social Club\Settings");
-            if (socialClubKey != null)
-            {
-                ctx.IncrementRegistryKeys();
-                var overlayValue = socialClubKey.GetValue("EnableInGameOverlay")?.ToString();
-                if (overlayValue != null && (overlayValue == "0" ||
-                    overlayValue.Equals("false", StringComparison.OrdinalIgnoreCase)))
-                {
-                    ctx.AddFinding(new Finding
-                    {
-                        Module = Name,
-                        Title = "Rockstar Social Club In-Game-Overlay deaktiviert",
-                        Risk = RiskLevel.Medium,
-                        Location = @"HKCU\Software\Rockstar Games\Social Club\Settings",
-                        Reason = "Das Rockstar Social Club In-Game-Overlay ist deaktiviert. " +
-                                 "Cheater deaktivieren das Overlay haeufig, um Konflikte mit " +
-                                 "ihren Mod-Menus zu vermeiden oder um die Anti-Cheat-Erkennung " +
-                                 "durch den Social Club zu erschweren.",
-                        Detail = $"EnableInGameOverlay: {overlayValue}"
-                    });
-                }
-            }
-        }
-        catch { }
-
-        if (ct.IsCancellationRequested) return;
-
-        try
-        {
-            using var scriptHookKey = Registry.CurrentUser.OpenSubKey(
-                @"Software\ScriptHookV");
-            if (scriptHookKey != null)
-            {
-                ctx.IncrementRegistryKeys();
                 ctx.AddFinding(new Finding
                 {
-                    Module = Name,
-                    Title = "ScriptHookV Registry-Eintraege gefunden",
+                    Module = "GTA-V-ModMenu-Cheat",
+                    Title = $"GTA V Mod Menu: {menuName} config contains cheat feature '{matchedKw}'",
                     Risk = RiskLevel.High,
-                    Location = @"HKCU\Software\ScriptHookV",
-                    Reason = "ScriptHookV ist in der Registry registriert. ScriptHookV ist eine " +
-                             "Voraussetzung fuer das Laden von Mod-Menus in GTA V. " +
-                             "Legitime GTA V Nutzung erfordert kein ScriptHookV.",
-                    Detail = "Schluessel: HKCU\\Software\\ScriptHookV"
+                    Location = file,
+                    FileName = Path.GetFileName(file),
+                    Reason = $"Configuration file for '{menuName}' contains cheat feature keyword '{matchedKw}'. " +
+                             "This confirms active configuration of cheat features such as god mode, " +
+                             "money drops, aimbot, or vehicle spawning.",
+                    Detail = $"MenuName={menuName} File={file} Keyword={matchedKw}",
                 });
             }
         }
-        catch { }
     }
 
-    private void ScanRunningProcesses(ScanContext ctx, CancellationToken ct)
+    private static void ScanMenuRegistryKey(ScanContext ctx, string keyPath, string menuName)
     {
-        var processes = ctx.GetProcessSnapshot();
-
-        foreach (var proc in processes)
+        try
         {
-            if (ct.IsCancellationRequested) break;
-            ctx.IncrementProcesses();
-
-            try
+            using var key = Registry.CurrentUser.OpenSubKey(keyPath);
+            if (key == null) return;
+            ctx.IncrementRegistryKeys();
+            ctx.AddFinding(new Finding
             {
-                var procExeName = proc.ProcessName + ".exe";
-                if (!KnownModMenuExeNames.Contains(procExeName)) continue;
-
-                var procPath = string.Empty;
-                try { procPath = proc.MainModule?.FileName ?? string.Empty; } catch { }
-
-                ctx.AddFinding(new Finding
-                {
-                    Module = Name,
-                    Title = $"GTA V Mod-Menu laeuft aktiv: {procExeName}",
-                    Risk = RiskLevel.Critical,
-                    Location = procPath.Length > 0 ? procPath : $"PID {proc.Id}",
-                    FileName = procExeName,
-                    Reason = $"Das GTA V Mod-Menu '{procExeName}' (PID {proc.Id}) ist aktuell aktiv. " +
-                             "Ein laufendes Mod-Menu ist ein eindeutiges Zeichen fuer eine aktive " +
-                             "Cheat-Sitzung in GTA V oder GTA Online.",
-                    Detail = $"PID: {proc.Id}, Pfad: {(procPath.Length > 0 ? procPath : "unbekannt")}"
-                });
-            }
-            catch { }
+                Module = "GTA-V-ModMenu-Cheat",
+                Title = $"GTA V Mod Menu: {menuName} registry key present",
+                Risk = RiskLevel.High,
+                Location = $@"HKCU\{keyPath}",
+                Reason = $"Registry key for '{menuName}' found at HKCU\\{keyPath}. " +
+                         "This registry artifact was created by the cheat tool and confirms " +
+                         "its installation or prior execution.",
+                Detail = $"MenuName={menuName} RegKey=HKCU\\{keyPath}",
+            });
         }
+        catch (Exception) { }
     }
 
-    private static IEnumerable<string> GetUserSearchDirectories()
-    {
-        var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-        var appDataRoaming = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-        var appDataLocal = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        var documents = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+    // ─── Section 3: known mod menu executables on disk ────────────────────────
 
-        var dirs = new List<string>
+    private static async Task ScanKnownModMenuExecutablesAsync(
+        ScanContext ctx, CancellationToken ct)
+    {
+        var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+        var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+
+        var searchRoots = new[]
         {
             Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
             Path.Combine(userProfile, "Downloads"),
             Path.GetTempPath(),
-            appDataRoaming,
-            appDataLocal,
-            documents
+            appData,
+            localAppData,
+            Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
         };
 
-        foreach (var gtaDir in GtaVInstallPaths)
+        foreach (var root in searchRoots)
         {
-            dirs.Add(gtaDir);
+            ct.ThrowIfCancellationRequested();
+            if (!Directory.Exists(root)) continue;
+
+            // Top-level EXEs
+            await ScanDirForModMenuExesAsync(ctx, root, ct).ConfigureAwait(false);
+
+            // One level of subdirectories
+            string[] subDirs;
+            try
+            {
+                subDirs = Directory.GetDirectories(root, "*", SearchOption.TopDirectoryOnly);
+            }
+            catch (UnauthorizedAccessException) { continue; }
+            catch (IOException) { continue; }
+
+            foreach (var sub in subDirs)
+            {
+                ct.ThrowIfCancellationRequested();
+                await ScanDirForModMenuExesAsync(ctx, sub, ct).ConfigureAwait(false);
+            }
+        }
+    }
+
+    private static async Task ScanDirForModMenuExesAsync(
+        ScanContext ctx, string dir, CancellationToken ct)
+    {
+        string[] exeFiles;
+        try
+        {
+            exeFiles = Directory.GetFiles(dir, "*.exe", SearchOption.TopDirectoryOnly);
+        }
+        catch (UnauthorizedAccessException) { return; }
+        catch (IOException) { return; }
+
+        foreach (var exe in exeFiles)
+        {
+            ct.ThrowIfCancellationRequested();
+            ctx.IncrementFiles();
+            var fileName = Path.GetFileName(exe);
+            if (!KnownModMenuExeNames.Contains(fileName)) continue;
+
+            ctx.AddFinding(new Finding
+            {
+                Module = "GTA-V-ModMenu-Cheat",
+                Title = $"GTA V Mod Menu EXE found on disk: {fileName}",
+                Risk = RiskLevel.Critical,
+                Location = exe,
+                FileName = fileName,
+                Reason = $"Known GTA V mod menu / cheat tool executable '{fileName}' found on disk. " +
+                         "This file is a recognized cheat tool providing god mode, money drops, " +
+                         "vehicle spawning, griefing, or aimbot capabilities in GTA Online.",
+                Detail = $"Path={exe}",
+            });
         }
 
-        return dirs;
+        await Task.CompletedTask.ConfigureAwait(false);
+    }
+
+    // ─── Section 4: running process detection ────────────────────────────────
+
+    private static void ScanRunningProcesses(ScanContext ctx, CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+        var snapshot = ctx.GetProcessSnapshot();
+
+        foreach (var proc in snapshot)
+        {
+            ct.ThrowIfCancellationRequested();
+            ctx.IncrementProcesses();
+
+            var procNameExe = proc.ProcessName + ".exe";
+            if (!KnownModMenuExeNames.Contains(procNameExe)) continue;
+
+            string procPath;
+            try { procPath = proc.MainModule?.FileName ?? string.Empty; }
+            catch { procPath = string.Empty; }
+
+            ctx.AddFinding(new Finding
+            {
+                Module = "GTA-V-ModMenu-Cheat",
+                Title = $"GTA V Mod Menu ACTIVELY RUNNING: {proc.ProcessName}",
+                Risk = RiskLevel.Critical,
+                Location = string.IsNullOrEmpty(procPath) ? $"PID {proc.Id}" : procPath,
+                FileName = procNameExe,
+                Reason = $"Known GTA V mod menu process '{proc.ProcessName}' (PID {proc.Id}) is currently running. " +
+                         "This constitutes direct evidence of an active cheat session in GTA V or GTA Online.",
+                Detail = $"PID={proc.Id} Name={proc.ProcessName} Path={procPath}",
+            });
+        }
+    }
+
+    // ─── Section 5: Rockstar Social Club / R* config tamper ──────────────────
+
+    private static async Task ScanRockstarConfigAndLogsAsync(
+        ScanContext ctx, CancellationToken ct)
+    {
+        var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+        var rockstarGtaVDir = Path.Combine(appData, "Rockstar Games", "GTA V");
+
+        if (Directory.Exists(rockstarGtaVDir))
+        {
+            // commandline.txt anti-detect flags
+            var commandlinePath = Path.Combine(rockstarGtaVDir, "commandline.txt");
+            if (File.Exists(commandlinePath))
+            {
+                ctx.IncrementFiles();
+                await ScanCommandlineTxtAsync(ctx, commandlinePath, ct).ConfigureAwait(false);
+            }
+
+            // .log files referencing cheat tools
+            await ScanRockstarLogFilesAsync(ctx, rockstarGtaVDir, ct).ConfigureAwait(false);
+        }
+
+        // Social Club registry: EnableInGameOverlay = 0
+        ScanSocialClubRegistry(ctx);
+    }
+
+    private static async Task ScanCommandlineTxtAsync(
+        ScanContext ctx, string filePath, CancellationToken ct)
+    {
+        try
+        {
+            using var fs = new FileStream(
+                filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            using var sr = new StreamReader(fs, Encoding.UTF8,
+                detectEncodingFromByteOrderMarks: true, bufferSize: 4096, leaveOpen: false);
+            string? line;
+            while ((line = await sr.ReadLineAsync(ct).ConfigureAwait(false)) != null)
+            {
+                ct.ThrowIfCancellationRequested();
+                foreach (var flag in CommandlineAntiDetectFlags)
+                {
+                    if (!line.Contains(flag, StringComparison.OrdinalIgnoreCase)) continue;
+
+                    ctx.AddFinding(new Finding
+                    {
+                        Module = "GTA-V-ModMenu-Cheat",
+                        Title = $"GTA V commandline.txt: anti-detect flag '{flag}'",
+                        Risk = RiskLevel.Medium,
+                        Location = filePath,
+                        FileName = "commandline.txt",
+                        Reason = $"GTA V commandline.txt contains anti-cheat detection bypass flag '{flag}'. " +
+                                 "This flag is inserted by cheaters to reduce the detection surface " +
+                                 "of cheat tools running alongside GTA V.",
+                        Detail = $"File={filePath} Flag={flag} Line={TruncateLine(line)}",
+                    });
+                    break; // one finding per line
+                }
+            }
+        }
+        catch (UnauthorizedAccessException) { }
+        catch (IOException) { }
+    }
+
+    private static async Task ScanRockstarLogFilesAsync(
+        ScanContext ctx, string dir, CancellationToken ct)
+    {
+        string[] logFiles;
+        try
+        {
+            logFiles = Directory.GetFiles(dir, "*.log", SearchOption.TopDirectoryOnly);
+        }
+        catch (UnauthorizedAccessException) { return; }
+        catch (IOException) { return; }
+
+        foreach (var logFile in logFiles)
+        {
+            ct.ThrowIfCancellationRequested();
+            ctx.IncrementFiles();
+
+            try
+            {
+                using var fs = new FileStream(
+                    logFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                using var sr = new StreamReader(fs, Encoding.UTF8,
+                    detectEncodingFromByteOrderMarks: true, bufferSize: 8192, leaveOpen: false);
+                string? line;
+                while ((line = await sr.ReadLineAsync(ct).ConfigureAwait(false)) != null)
+                {
+                    ct.ThrowIfCancellationRequested();
+                    var matchedKw = string.Empty;
+                    foreach (var kw in RockstarLogCheatKeywords)
+                    {
+                        if (line.Contains(kw, StringComparison.OrdinalIgnoreCase))
+                        {
+                            matchedKw = kw;
+                            break;
+                        }
+                    }
+
+                    if (string.IsNullOrEmpty(matchedKw)) continue;
+
+                    ctx.AddFinding(new Finding
+                    {
+                        Module = "GTA-V-ModMenu-Cheat",
+                        Title = $"GTA V Rockstar log references cheat tool '{matchedKw}'",
+                        Risk = RiskLevel.High,
+                        Location = logFile,
+                        FileName = Path.GetFileName(logFile),
+                        Reason = $"Rockstar Games GTA V log file contains a reference to known cheat tool '{matchedKw}'. " +
+                                 "This log entry confirms that the cheat tool interacted with or was loaded " +
+                                 "alongside GTA V.",
+                        Detail = $"LogFile={logFile} Keyword={matchedKw} Line={TruncateLine(line)}",
+                    });
+                    break; // one finding per log file
+                }
+            }
+            catch (UnauthorizedAccessException) { }
+            catch (IOException) { }
+        }
+    }
+
+    private static void ScanSocialClubRegistry(ScanContext ctx)
+    {
+        const string scSettingsKey = @"Software\Rockstar Games\Social Club\Settings";
+        try
+        {
+            using var key = Registry.CurrentUser.OpenSubKey(scSettingsKey);
+            if (key == null) return;
+            ctx.IncrementRegistryKeys();
+
+            var overlayValue = key.GetValue("EnableInGameOverlay");
+            if (overlayValue is int overlayInt && overlayInt == 0)
+            {
+                ctx.AddFinding(new Finding
+                {
+                    Module = "GTA-V-ModMenu-Cheat",
+                    Title = "GTA V: Rockstar Social Club in-game overlay disabled in registry",
+                    Risk = RiskLevel.Low,
+                    Location = $@"HKCU\{scSettingsKey}",
+                    Reason = "EnableInGameOverlay is set to 0 in Rockstar Social Club registry settings. " +
+                             "Cheaters commonly disable the Social Club overlay to reduce detection surface " +
+                             "and prevent conflicts between the overlay and their mod menu.",
+                    Detail = $"RegKey=HKCU\\{scSettingsKey} Value=EnableInGameOverlay=0",
+                });
+            }
+        }
+        catch (Exception) { }
+    }
+
+    // ─── Section 6: GTAO money/casino cheat scripts ───────────────────────────
+
+    private static async Task ScanGtaoScriptFilesAsync(
+        ScanContext ctx, CancellationToken ct)
+    {
+        var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+
+        var searchDirs = new[]
+        {
+            Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
+            Path.Combine(userProfile, "Downloads"),
+            Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+        };
+
+        string[] scriptExtensions = { "*.bat", "*.ahk", "*.py" };
+
+        foreach (var dir in searchDirs)
+        {
+            ct.ThrowIfCancellationRequested();
+            if (!Directory.Exists(dir)) continue;
+
+            foreach (var ext in scriptExtensions)
+            {
+                await ScanDirForGtaoScriptsAsync(ctx, dir, ext, ct).ConfigureAwait(false);
+            }
+
+            // One level of subdirectories
+            string[] subDirs;
+            try
+            {
+                subDirs = Directory.GetDirectories(dir, "*", SearchOption.TopDirectoryOnly);
+            }
+            catch (UnauthorizedAccessException) { continue; }
+            catch (IOException) { continue; }
+
+            foreach (var sub in subDirs)
+            {
+                ct.ThrowIfCancellationRequested();
+                foreach (var ext in scriptExtensions)
+                {
+                    await ScanDirForGtaoScriptsAsync(ctx, sub, ext, ct).ConfigureAwait(false);
+                }
+            }
+        }
+    }
+
+    private static async Task ScanDirForGtaoScriptsAsync(
+        ScanContext ctx, string dir, string pattern, CancellationToken ct)
+    {
+        string[] files;
+        try
+        {
+            files = Directory.GetFiles(dir, pattern, SearchOption.TopDirectoryOnly);
+        }
+        catch (UnauthorizedAccessException) { return; }
+        catch (IOException) { return; }
+
+        foreach (var file in files)
+        {
+            ct.ThrowIfCancellationRequested();
+            ctx.IncrementFiles();
+            await ScanGtaoScriptFileAsync(ctx, file, ct).ConfigureAwait(false);
+        }
+    }
+
+    private static async Task ScanGtaoScriptFileAsync(
+        ScanContext ctx, string filePath, CancellationToken ct)
+    {
+        var ext = Path.GetExtension(filePath).ToLowerInvariant();
+        var fileName = Path.GetFileName(filePath);
+        string content;
+
+        try
+        {
+            using var fs = new FileStream(
+                filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            using var sr = new StreamReader(fs, Encoding.UTF8,
+                detectEncodingFromByteOrderMarks: true, bufferSize: 8192, leaveOpen: false);
+
+            // Cap at ~200 KB to avoid hanging on huge files
+            var sb = new StringBuilder();
+            var lineCount = 0;
+            string? line;
+            while ((line = await sr.ReadLineAsync(ct).ConfigureAwait(false)) != null &&
+                   lineCount < 5000)
+            {
+                sb.AppendLine(line);
+                lineCount++;
+            }
+            content = sb.ToString();
+        }
+        catch (UnauthorizedAccessException) { return; }
+        catch (IOException) { return; }
+
+        // Check for GTA Online cheat keywords
+        var matchedKw = string.Empty;
+        foreach (var kw in ScriptCheatKeywords)
+        {
+            if (content.Contains(kw, StringComparison.OrdinalIgnoreCase))
+            {
+                matchedKw = kw;
+                break;
+            }
+        }
+
+        if (!string.IsNullOrEmpty(matchedKw))
+        {
+            ctx.AddFinding(new Finding
+            {
+                Module = "GTA-V-ModMenu-Cheat",
+                Title = $"GTA Online cheat script: {fileName} (keyword: {matchedKw})",
+                Risk = RiskLevel.High,
+                Location = filePath,
+                FileName = fileName,
+                Reason = $"Script file '{fileName}' contains GTA Online cheat keyword '{matchedKw}'. " +
+                         "This script likely automates money drops, casino cheats, RP boosting, " +
+                         "or griefing in GTA Online.",
+                Detail = $"Path={filePath} Keyword={matchedKw} Extension={ext}",
+            });
+            return;
+        }
+
+        // AHK files: flag if they contain GTA + aimbot/godmode/money combo
+        if (ext == ".ahk")
+        {
+            bool hasGta = content.Contains("GTA", StringComparison.OrdinalIgnoreCase);
+            bool hasCheatTerm = content.Contains("aimbot", StringComparison.OrdinalIgnoreCase) ||
+                                content.Contains("godmode", StringComparison.OrdinalIgnoreCase) ||
+                                content.Contains("money", StringComparison.OrdinalIgnoreCase);
+
+            if (hasGta && hasCheatTerm)
+            {
+                ctx.AddFinding(new Finding
+                {
+                    Module = "GTA-V-ModMenu-Cheat",
+                    Title = $"GTA V AutoHotkey cheat script found: {fileName}",
+                    Risk = RiskLevel.High,
+                    Location = filePath,
+                    FileName = fileName,
+                    Reason = $"AutoHotkey script '{fileName}' contains GTA-related cheat terms " +
+                             "(GTA + aimbot/godmode/money). This script likely automates cheat " +
+                             "actions in GTA V or GTA Online.",
+                    Detail = $"Path={filePath} HasGTA={hasGta} HasCheatTerm={hasCheatTerm}",
+                });
+            }
+        }
+    }
+
+    // ─── Section 7: Prefetch scan ─────────────────────────────────────────────
+
+    private static void ScanPrefetchDirectory(ScanContext ctx, CancellationToken ct)
+    {
+        const string prefetchDir = @"C:\Windows\Prefetch";
+        if (!Directory.Exists(prefetchDir)) return;
+
+        foreach (var prefix in PrefetchPatterns)
+        {
+            ct.ThrowIfCancellationRequested();
+
+            string[] pfFiles;
+            try
+            {
+                pfFiles = Directory.GetFiles(prefetchDir, prefix + "*.pf",
+                    SearchOption.TopDirectoryOnly);
+            }
+            catch (UnauthorizedAccessException) { continue; }
+            catch (IOException) { continue; }
+
+            foreach (var pf in pfFiles)
+            {
+                ct.ThrowIfCancellationRequested();
+                ctx.IncrementFiles();
+                var pfName = Path.GetFileName(pf);
+                var lastRun = DateTime.MinValue;
+                try { lastRun = File.GetLastWriteTimeUtc(pf); } catch { }
+
+                ctx.AddFinding(new Finding
+                {
+                    Module = "GTA-V-ModMenu-Cheat",
+                    Title = $"GTA V Mod Menu: Prefetch artifact '{pfName}'",
+                    Risk = RiskLevel.Medium,
+                    Location = pf,
+                    FileName = pfName,
+                    Reason = $"Windows Prefetch file '{pfName}' proves prior execution of a GTA V mod menu " +
+                             $"tool matching pattern '{prefix}'. Prefetch files are persistent forensic " +
+                             "artifacts that survive deletion of the cheat tool itself.",
+                    Detail = lastRun != DateTime.MinValue
+                        ? $"Path={pf} Pattern={prefix} LastRun={lastRun:yyyy-MM-dd HH:mm:ss} UTC"
+                        : $"Path={pf} Pattern={prefix}",
+                });
+            }
+        }
+    }
+
+    // ─── Shared helpers ───────────────────────────────────────────────────────
+
+    private static async Task<string?> FindKeywordInFileAsync(
+        string filePath, string[] keywords, CancellationToken ct)
+    {
+        try
+        {
+            using var fs = new FileStream(
+                filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            using var sr = new StreamReader(fs, Encoding.UTF8,
+                detectEncodingFromByteOrderMarks: true, bufferSize: 4096, leaveOpen: false);
+            string? line;
+            while ((line = await sr.ReadLineAsync(ct).ConfigureAwait(false)) != null)
+            {
+                ct.ThrowIfCancellationRequested();
+                foreach (var kw in keywords)
+                {
+                    if (line.Contains(kw, StringComparison.OrdinalIgnoreCase))
+                        return kw;
+                }
+            }
+        }
+        catch (UnauthorizedAccessException) { }
+        catch (IOException) { }
+        return null;
+    }
+
+    private static string TruncateLine(string line)
+    {
+        var trimmed = line.Trim();
+        return trimmed.Length > 220 ? trimmed[..220] + "..." : trimmed;
     }
 }
