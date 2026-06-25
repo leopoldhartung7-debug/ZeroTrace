@@ -596,6 +596,12 @@ public sealed class ScanEngine
         if (o.ScanAntiCheatKiller) modules.Add(new AntiCheatKillerScanModule());
         if (o.ScanGameExploitKit) modules.Add(new GameExploitKitScanModule());
         if (o.ScanRootKitUserModeArtifact) modules.Add(new RootKitUserModeArtifactScanModule());
+        if (o.ScanGTA5OnlineCheat) modules.Add(new GTA5OnlineCheatScanModule());
+        if (o.ScanRustApexCheat) modules.Add(new RustApexCheatScanModule());
+        if (o.ScanEscapeFromTarkovCheat) modules.Add(new EscapeFromTarkovCheatScanModule());
+        if (o.ScanMinecraftCheatDeep) modules.Add(new MinecraftCheatDeepScanModule());
+        if (o.ScanFortniteWarzoneCheat) modules.Add(new FortniteWarzoneCheatScanModule());
+        if (o.ScanRainbowSixSiegeCheat) modules.Add(new RainbowSixSiegeCheatScanModule());
         if (o.ScanCheatSourceCodeRepo) modules.Add(new CheatSourceCodeRepoScanModule());
 
         // ── Group 5: forensic / trace artefacts ──────────────────────────────
