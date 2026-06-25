@@ -828,6 +828,24 @@ public sealed class ScanOptions
     /// techniques that cheat loaders use to bypass UAC or tamper with AC execution.</summary>
     public bool ScanCompatibilityLayerBypass { get; set; } = true;
 
+    /// <summary>Enumerate \BaseNamedObjects and \Sessions\1\BaseNamedObjects for 100+ known
+    /// cheat tool mutex/event/semaphore/section names. Named kernel objects persist until
+    /// all handles are closed, making them reliable forensic indicators even after the
+    /// cheat process exits.</summary>
+    public bool ScanKnownCheatMutexExt { get; set; } = true;
+
+    /// <summary>Scan registry for 60+ exact artifact entries left by known cheat tools:
+    /// Xenos/GH injectors, Cheat Engine, HWID spoofers, GTA V menus (Kiddion, 2Take1,
+    /// Stand, Cherax, Midnight), CS2/Valorant cheat suites, BYOVD service registrations
+    /// (WinRing0, RTCORE64, gdrv, cpuz, AsIO3).</summary>
+    public bool ScanCheatToolRegistryArtifacts { get; set; } = true;
+
+    /// <summary>Scan System32, SysWOW64, Windows\Temp, System32\drivers, and Steam game
+    /// directories for unexpected NTFS reparse points (junctions and symlinks). Cheat tools
+    /// use NTFS junctions to redirect driver paths or replace game DLLs without touching
+    /// the originals. Uses DeviceIoControl(FSCTL_GET_REPARSE_POINT) to read targets.</summary>
+    public bool ScanNtfsReparsePoints { get; set; } = true;
+
     /// <summary>
     /// When false (default) the drive module only walks targeted, high-signal
     /// directories (profile, temp, downloads, appdata). When true it walks the
@@ -1078,6 +1096,9 @@ public static class ScanProfiles
         ScanSteamEmulators = false,           // game directory walk — slow
         ScanHkcuAppInitDlls = true,           // registry — fast
         ScanCompatibilityLayerBypass = true,  // registry + env var — fast
+        ScanKnownCheatMutexExt = true,        // NtQueryDirectoryObject — fast
+        ScanCheatToolRegistryArtifacts = true, // registry artifact scan — fast
+        ScanNtfsReparsePoints = false,         // filesystem walk — slow
         DeepDriveScan = false,
         ModuleTimeoutSeconds = 60,
     };
