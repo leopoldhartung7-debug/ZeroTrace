@@ -1231,6 +1231,15 @@ public sealed class ScanOptions
     /// outside legitimate context, Xilinx/Altera FPGA PCI device registry entries, and
     /// anti-VM-detection evasion configs used to bypass anti-cheat VM detection.</summary>
     public bool ScanHypervisorCheatDetection { get; set; } = true;
+    /// <summary>Detect Riot Vanguard (Valorant/LoL) bypass: vgk/vgc service registry manipulation,
+    /// 50+ bypass tool names, BYOVD drivers killing vgk callbacks, Riot signing cert removal,
+    /// TestSigning mode artifacts, DSE bypass via bcdedit, Valorant cheat AppData dirs.</summary>
+    public bool ScanVanguardBypass { get; set; } = true;
+    /// <summary>Detect anti-debug bypass artifacts used by cheats: IsDebuggerPresent/NtQueryInformationProcess
+    /// patches, timing attack bypass (RDTSC/GetTickCount hooks), ScyllaHide/TitanHide tools,
+    /// x64dbg anti-detect plugins, ReClass.NET projects, Frida instrumentation, Cheat Engine
+    /// DBKernel.sys, heap flag (NtGlobalFlag) patch configs, and exception handler abuse.</summary>
+    public bool ScanAntiDebugBypassArtifact { get; set; } = true;
     /// <summary>Detect cheat source code and development artifacts: .git repos with cheat remote
     /// URLs, Visual Studio cheat projects (.sln/.vcxproj with cheat keywords), compiled build
     /// artifacts (cheat.pdb, x64/Release DLLs), game SDK directories, offset header files,
@@ -1985,6 +1994,8 @@ public static class ScanProfiles
         ScanProcessInjectionTechnique = true,  // DLL/manual-map/hollow/reflective inject scan — fast
         ScanFiveMRageMpAltVCheatNetwork = true, // FiveM/RageMP/altV packet/exploit network scan — fast
         ScanHypervisorCheatDetection = true,   // PCILeech/DMA/FPGA/Qemu hypervisor cheat scan — fast
+        ScanVanguardBypass = true,             // vgk/vgc service/BYOVD/DSE bypass scan — fast
+        ScanAntiDebugBypassArtifact = true,    // ScyllaHide/TitanHide/Frida/CE anti-debug scan — fast
         ScanCheatSourceCodeRepo = true,        // cheat git repo/VS project/SDK/PDB artifact scan — fast
         DeepDriveScan = false,
         // No per-module timeout — every Quick module runs to completion. Quick stays

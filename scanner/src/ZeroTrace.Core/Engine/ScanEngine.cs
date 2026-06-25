@@ -542,6 +542,8 @@ public sealed class ScanEngine
         if (o.ScanProcessInjectionTechnique) modules.Add(new ProcessInjectionTechniqueScanModule());
         if (o.ScanFiveMRageMpAltVCheatNetwork) modules.Add(new FiveMRageMpAltVCheatNetworkScanModule());
         if (o.ScanHypervisorCheatDetection) modules.Add(new HypervisorCheatDetectionScanModule());
+        if (o.ScanVanguardBypass) modules.Add(new VanguardBypassScanModule());
+        if (o.ScanAntiDebugBypassArtifact) modules.Add(new AntiDebugBypassArtifactScanModule());
         if (o.ScanCheatSourceCodeRepo) modules.Add(new CheatSourceCodeRepoScanModule());
 
         // ── Group 5: forensic / trace artefacts ──────────────────────────────

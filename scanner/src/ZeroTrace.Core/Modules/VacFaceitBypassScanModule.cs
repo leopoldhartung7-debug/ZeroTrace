@@ -3,1380 +3,850 @@ using ZeroTrace.Core.Models;
 
 namespace ZeroTrace.Core.Modules;
 
+// VAC and FACEIT Anti-Cheat bypass detection module.
+// Detects Steam emulators bypassing VAC, VAC bypass DLLs, -insecure launch options,
+// FACEIT service tampering, FACEIT bypass tools, Steam API fake DLLs,
+// PS history targeting VAC/FACEIT, gameoverlayrenderer64 modifications,
+// CS2-specific bypass configs, workshop VPK executable content,
+// VAC trust factor tools, fake playtime inflators, and injector payloads in cfg\.
 public sealed class VacFaceitBypassScanModule : IScanModule
 {
     public string Name => "VAC / FACEIT Bypass Detection";
     public double Weight => 4.0;
     public int ParallelGroup => 4;
 
-    // Common base paths
-    private static readonly string SteamDefaultPath = @"C:\Program Files (x86)\Steam\";
-    private static readonly string EpicDefaultPath = @"C:\Program Files\Epic Games\";
-
-    // Steam emulator config filenames mapped to risk levels
-    private static readonly (string FileName, RiskLevel Risk, string Reason)[] SteamEmuConfigFiles =
+    // -------------------------------------------------------------------------
+    // Steam emulator config file names — bypass VAC by faking the Steam API
+    // -------------------------------------------------------------------------
+    private static readonly string[] SteamEmulatorConfigFiles =
     [
-        ("SmartSteamEmu.ini",      RiskLevel.Critical, "SmartSteamEmu config file — Steam VAC bypass emulator"),
-        ("SSE.ini",                RiskLevel.Critical, "SmartSteamEmu (SSE) config file — Steam VAC bypass emulator"),
-        ("cream_api.ini",          RiskLevel.Critical, "CreamAPI config — Steam DRM and VAC bypass emulator"),
-        ("SmokeAPI.ini",           RiskLevel.High,     "SmokeAPI config — Steam DLC/license bypass emulator"),
-        ("Koaloader.ini",          RiskLevel.High,     "Koaloader config — proxy DLL loader used by Steam emulators"),
-        ("steam_interfaces.txt",   RiskLevel.High,     "Goldberg Steam Emulator interface list artifact"),
-        ("user_steam_id.txt",      RiskLevel.High,     "Goldberg Steam Emulator saved user ID artifact"),
-        ("local_save.txt",         RiskLevel.Medium,   "Goldberg Steam Emulator local save artifact"),
-        ("DLLInjector.ini",        RiskLevel.Critical, "GreenLuma DLLInjector config — Steam authentication bypass"),
+        "SmartSteamEmu.ini",
+        "SmartSteamEmu64.ini",
+        "DLLInjector.ini",
+        "cream_api.ini",
+        "CreamAPI.ini",
+        "ALI213.ini",
+        "Profile.ini",
+        "steam_emu.ini",
+        "SteamFake.ini",
+        "SteamEmu.ini",
+        "goldberg_steam_emu.ini",
+        "local_save.txt",
     ];
 
-    // Steam emulator DLL filenames — all Critical
-    private static readonly string[] SteamEmuDlls =
+    // -------------------------------------------------------------------------
+    // Steam emulator directory names
+    // -------------------------------------------------------------------------
+    private static readonly string[] SteamEmulatorDirNames =
     [
-        "SmartSteamEmu64.dll",
-        "SmartSteamEmu.dll",
-        "GreenLuma.dll",
-        "CreamAPI.dll",
-        "cream_api.dll",
-        "steam_api_emu.dll",
-        "Goldberg_steam_api.dll",
-        "goldberg_steam_api64.dll",
-        "ALI213_steam_api.dll",
-        "skidrow_steam_api.dll",
-        "RELOADED_steam_api.dll",
-        "SmokeAPI.dll",
-        "SmokeAPI64.dll",
-        "Koaloader.dll",
-        "Koaloader64.dll",
-        "valve_native.dll",
+        "steam_settings",
+        "goldberg_emu",
+        "SmartSteamEmu",
+        "CreamAPI",
+        "ALI213",
+        "GreenLuma",
+        "SteamEmu",
+        "Goldberg_Steam_Emu",
+        "steam_emu_settings",
+        "cream_api",
     ];
 
-    // DLLs that are suspicious when found next to steam_api.dll / steam_api64.dll
-    private static readonly string[] SuspiciousProxyDlls =
+    // -------------------------------------------------------------------------
+    // VAC bypass DLL names that appear next to steam.exe
+    // -------------------------------------------------------------------------
+    private static readonly string[] VacBypassDllNames =
     [
-        "version.dll",
-        "winmm.dll",
-        "winhttp.dll",
-    ];
-
-    // Fake Steam API DLL names
-    private static readonly string[] FakeSteamApiDlls =
-    [
-        "vcruntime_bypass.dll",
-        "steamapi_bypass.dll",
         "steam_api64_bypass.dll",
-        "steam_api_bypass.dll",
-        "steamclient_bypass.dll",
+        "steamapi_bypass.dll",
+        "vcruntime_bypass.dll",
+        "vac_bypass.dll",
+        "VAC_Bypass.dll",
+        "vac_hook.dll",
         "steam_bypass.dll",
+        "steam64_fake.dll",
+        "steamclient_bypass.dll",
+        "steamclient64_bypass.dll",
+        "steam_api_fake.dll",
+        "vac_disable.dll",
+        "novac.dll",
+        "vac_off.dll",
     ];
 
-    // VAC scan window / bypass config strings
-    private static readonly (string Pattern, RiskLevel Risk, string Reason)[] VacConfigPatterns =
-    [
-        ("safe_window=120",  RiskLevel.Critical, "VAC safe scan window configuration — cheat evasion timing exploit"),
-        ("vac_safe=true",    RiskLevel.Critical, "VAC safe mode flag — explicit VAC bypass configuration"),
-        ("disable_vac",      RiskLevel.Critical, "Explicit VAC disable directive in config file"),
-        ("vac_bypass=1",     RiskLevel.Critical, "VAC bypass enabled flag in config file"),
-        ("vac_window",       RiskLevel.High,     "VAC scan window manipulation directive"),
-        ("vac_timing",       RiskLevel.High,     "VAC timing manipulation directive"),
-    ];
-
-    // VAC module hiding config strings
-    private static readonly (string Pattern, RiskLevel Risk, string Reason)[] VacHidingPatterns =
-    [
-        ("unmap_steam",       RiskLevel.Critical, "Steam module unmapping directive — hides cheat from VAC scan"),
-        ("unmap_steamclient", RiskLevel.Critical, "SteamClient module unmapping — evades VAC memory scan"),
-        ("hide_from_vac",     RiskLevel.Critical, "Explicit hide-from-VAC directive in cheat config"),
-        ("steam_unmap",       RiskLevel.Critical, "Steam unmap directive — manual module hiding from VAC"),
-        ("steamclient_hide",  RiskLevel.Critical, "SteamClient hide directive — VAC evasion artifact"),
-        ("module_unload",     RiskLevel.High,     "Module unload directive combined with Steam reference — possible VAC evasion"),
-    ];
-
-    // Trust factor bypass tool names
-    private static readonly string[] TrustBypassNames =
-    [
-        "trust_factor_bypass",
-        "trustfactor_bypass",
-        "tf_bypass",
-        "playtime_inflator",
-        "playtime_booster",
-        "vac_trust_bypass",
-        "TrustFactorBypass.exe",
-        "PlaytimeBooster.exe",
-        "TrustFactor.exe",
-        "fake_playtime.exe",
-    ];
-
-    // FACEIT bypass executable/DLL filenames
-    private static readonly string[] FaceitBypassFiles =
+    // -------------------------------------------------------------------------
+    // FACEIT bypass tool file names
+    // -------------------------------------------------------------------------
+    private static readonly string[] FaceitBypassFileNames =
     [
         "faceit_bypass.exe",
         "faceit_spoofer.exe",
-        "faceit_unloader.exe",
         "FC_Bypass.dll",
-        "faceit_bypass.dll",
-        "faceit-bypass.exe",
-        "faceit-bypass.dll",
-        "faceitbypass.exe",
-        "faceitbypass.dll",
-        "FaceitFix.exe",
-        "FaceitPatch.exe",
+        "faceit_unloader.exe",
         "faceit_killer.exe",
-        "faceit_off.exe",
+        "FaceitBypass.exe",
+        "FC_bypass.exe",
         "faceit_disable.exe",
-        "nofaceit.exe",
-        "faceit_emu.dll",
         "faceit_hook.dll",
+        "faceit_hook.exe",
+        "FaceitHook.dll",
+        "faceit_fake.exe",
+        "FACEIT_Bypass.dll",
+        "faceit_bypass_v2.dll",
+        "fc_spoofer.exe",
+        "faceit_patch.exe",
+        "faceit_unload.exe",
     ];
 
-    // FACEIT bypass GitHub repo folder names
-    private static readonly string[] FaceitBypassRepoNames =
+    // -------------------------------------------------------------------------
+    // FACEIT bypass GitHub repository folder names
+    // -------------------------------------------------------------------------
+    private static readonly string[] FaceitBypassRepoDirs =
     [
         "faceit-bypass",
         "faceit-ac-bypass",
         "faceit-cheat",
+        "FC-Bypass",
         "FaceitBypass",
-        "faceit_bypass_src",
-        "faceit-anticheat-bypass",
-        "open-faceit",
-        "faceit-emu",
-        "FACEITEmulator",
+        "faceit_bypass",
+        "faceit-unloader",
+        "faceit-spoofer",
+        "faceit_ac_bypass",
+        "FACEIT-Bypass",
     ];
-
-    // FACEIT evasion config patterns
-    private static readonly (string Pattern, RiskLevel Risk, string Reason)[] FaceitConfigPatterns =
-    [
-        ("bypass_faceit",        RiskLevel.Critical, "FACEIT bypass directive — explicit anti-cheat evasion"),
-        ("faceit_safe",          RiskLevel.Critical, "FACEIT safe mode directive — anti-cheat evasion config"),
-        ("disable_faceit_ac",    RiskLevel.Critical, "FACEIT AC disable directive in config file"),
-        ("faceit_bypass=true",   RiskLevel.Critical, "FACEIT bypass enabled flag in config"),
-        ("faceit_mode=bypass",   RiskLevel.Critical, "FACEIT bypass mode directive in config file"),
-        ("faceit_unload",        RiskLevel.High,     "FACEIT AC unload directive — evasion attempt"),
-        ("fc_bypass",            RiskLevel.High,     "FC_Bypass reference in config — FACEIT evasion artifact"),
-    ];
-
-    // PowerShell / script patterns for FACEIT/VAC tampering
-    private static readonly (string[] Tokens, RiskLevel Risk, string Reason)[] PowerShellPatterns =
-    [
-        (["sc stop faceit"],                     RiskLevel.Critical, "PowerShell command to stop FACEIT service — manual AC bypass"),
-        (["net stop faceit"],                    RiskLevel.Critical, "net stop command targeting FACEIT service — manual AC bypass"),
-        (["sc delete faceit"],                   RiskLevel.Critical, "PowerShell command to delete FACEIT service — AC removal"),
-        (["sc stop faceitservice"],              RiskLevel.Critical, "PowerShell command to stop FACEITService — manual AC bypass"),
-        (["sc stop vac"],                        RiskLevel.High,     "PowerShell command targeting VAC service"),
-        (["taskkill", "faceit"],                 RiskLevel.High,     "taskkill command targeting FACEIT process — anti-cheat evasion"),
-        (["taskkill", "faceitservice"],          RiskLevel.High,     "taskkill command targeting FACEITService process"),
-        (["taskkill", "steam.exe"],              RiskLevel.Medium,   "taskkill targeting Steam.exe — possible cheat-context Steam kill"),
-    ];
-
-    // CS2/CSGO autoexec suspicious cfg patterns
-    private static readonly (string Pattern, RiskLevel Risk, string Reason)[] AutoexecPatterns =
-    [
-        ("sv_cheats 1",          RiskLevel.Critical, "sv_cheats 1 in autoexec.cfg — server-side cheat enable command"),
-        ("r_drawothermodels 2",  RiskLevel.Critical, "r_drawothermodels 2 in autoexec — wallhack/ESP rendering command"),
-        ("enable_skeleton_draw", RiskLevel.High,     "enable_skeleton_draw in autoexec — skeleton ESP rendering command"),
-        ("mat_wireframe",        RiskLevel.Medium,   "mat_wireframe in autoexec — wireframe rendering command"),
-    ];
-
-    // CS2/CSGO paths to check
-    private static readonly string[] CsgoGameinfoPaths =
-    [
-        @"C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive\game\csgo\gameinfo.gi",
-        @"C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike 2\game\csgo\gameinfo.gi",
-    ];
-
-    private static readonly string[] CsgoAutoexecPaths =
-    [
-        @"C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive\game\csgo\cfg\autoexec.cfg",
-        @"C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike 2\game\csgo\cfg\autoexec.cfg",
-    ];
-
-    private static readonly string[] CsgoWorkshopPaths =
-    [
-        @"C:\Program Files (x86)\Steam\steamapps\workshop\content\730\",
-    ];
-
-    // Directories to scan for emulator configs / bypass tools
-    private static string[] GetCommonScanRoots()
-    {
-        var roots = new List<string>();
-        var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-        var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-        var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        var desktop = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
-        var downloads = Path.Combine(userProfile, "Downloads");
-        var documents = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-        var temp = Path.GetTempPath();
-
-        if (!string.IsNullOrEmpty(desktop)) roots.Add(desktop);
-        if (!string.IsNullOrEmpty(downloads)) roots.Add(downloads);
-        if (!string.IsNullOrEmpty(documents)) roots.Add(documents);
-        if (!string.IsNullOrEmpty(appData)) roots.Add(appData);
-        if (!string.IsNullOrEmpty(localAppData)) roots.Add(localAppData);
-        if (!string.IsNullOrEmpty(temp)) roots.Add(temp);
-        roots.Add(@"C:\Program Files (x86)\Steam\steamapps\common\");
-        roots.Add(@"C:\Program Files\Epic Games\");
-
-        return roots.Where(Directory.Exists).ToArray();
-    }
 
     // -------------------------------------------------------------------------
+    // VAC bypass GitHub repository folder names
+    // -------------------------------------------------------------------------
+    private static readonly string[] VacBypassRepoDirs =
+    [
+        "VAC-Bypass",
+        "vac-bypass",
+        "vac_bypass",
+        "VACBypass",
+        "vac-emulator",
+        "vac_emulator",
+        "VACEmulator",
+        "novac",
+        "no-vac",
+        "vac-disable",
+    ];
+
+    // -------------------------------------------------------------------------
+    // PowerShell history patterns targeting VAC or FACEIT
+    // -------------------------------------------------------------------------
+    private static readonly (string Pattern, RiskLevel Risk, string Title)[] PsHistoryPatterns =
+    [
+        ("taskkill /im faceit",           RiskLevel.Critical, "FACEIT Process Killed via taskkill"),
+        ("taskkill /f /im faceit",        RiskLevel.Critical, "FACEIT Force-Killed via taskkill"),
+        ("sc stop faceit",                RiskLevel.Critical, "FACEIT Service Stopped via sc.exe"),
+        ("sc delete faceit",              RiskLevel.Critical, "FACEIT Service Deleted via sc.exe"),
+        ("net stop faceit",               RiskLevel.High,     "FACEIT Service Stopped via net stop"),
+        ("sc stop VAC",                   RiskLevel.High,     "VAC Service Referenced in sc stop Command"),
+        ("taskkill /im faceit-client",    RiskLevel.Critical, "FACEIT Client Process Killed"),
+        ("faceit-client-container",       RiskLevel.Medium,   "FACEIT Client Container Referenced"),
+        ("vac_bypass",                    RiskLevel.High,     "vac_bypass Keyword in PS History"),
+        ("faceit_bypass",                 RiskLevel.High,     "faceit_bypass Keyword in PS History"),
+    ];
+
+    // =========================================================================
     // Entry point
-    // -------------------------------------------------------------------------
-
-    public async Task RunAsync(ScanContext ctx, CancellationToken ct)
+    // =========================================================================
+    public async Task RunAsync(ZeroTrace.Core.Engine.ScanContext ctx, CancellationToken ct)
     {
-        ct.ThrowIfCancellationRequested();
-        ctx.Report(0.00, "Starting VAC/FACEIT bypass scan");
-
-        await ScanSteamEmulatorConfigFilesAsync(ctx, ct);
-        ctx.Report(0.07, "Steam emulator config files scanned");
-
-        await ScanSteamEmulatorDllsAsync(ctx, ct);
-        ctx.Report(0.14, "Steam emulator DLLs scanned");
-
-        await ScanVacConfigPatternsAsync(ctx, ct);
-        ctx.Report(0.21, "VAC config patterns scanned");
-
-        await ScanVacModuleHidingArtifactsAsync(ctx, ct);
-        ctx.Report(0.28, "VAC module hiding artifacts scanned");
-
-        await ScanTrustFactorBypassToolsAsync(ctx, ct);
-        ctx.Report(0.34, "Trust factor bypass tools scanned");
-
-        await ScanSteamInsecureLaunchOptionsAsync(ctx, ct);
-        ctx.Report(0.41, "Steam launch options scanned");
-
-        await ScanFaceitServiceRegistryAsync(ctx, ct);
-        ctx.Report(0.48, "FACEIT service registry scanned");
-
+        await CheckFaceitServiceRegistryAsync(ctx, ct);
+        await ScanSteamEmulatorsAsync(ctx, ct);
+        await ScanVacBypassDllsNextToSteamAsync(ctx, ct);
+        await CheckSteamShortcutsInsecureFlagAsync(ctx, ct);
         await ScanFaceitBypassFilesAsync(ctx, ct);
-        ctx.Report(0.54, "FACEIT bypass executables scanned");
-
-        await ScanFaceitBypassReposAsync(ctx, ct);
-        ctx.Report(0.59, "FACEIT bypass repo folders scanned");
-
-        await ScanFaceitEvasionConfigsAsync(ctx, ct);
-        ctx.Report(0.64, "FACEIT evasion configs scanned");
-
-        await ScanFakeSteamApiDllsAsync(ctx, ct);
-        ctx.Report(0.69, "Fake Steam API DLLs scanned");
-
-        await ScanGameoverlayrendererOutsideSteamAsync(ctx, ct);
-        ctx.Report(0.73, "gameoverlayrenderer location scanned");
-
-        await ScanPowerShellHistoryAsync(ctx, ct);
-        ctx.Report(0.78, "PowerShell history scanned");
-
-        await ScanCsgoGameSpecificFilesAsync(ctx, ct);
-        ctx.Report(0.84, "CS2/CSGO specific files scanned");
-
+        await CheckFaceitKillArtifactsAsync(ctx, ct);
+        await CheckBypassRepoDirsAsync(ctx, ct);
+        await ScanSteamApiFakeDllsAsync(ctx, ct);
+        await CheckPowerShellHistoryAsync(ctx, ct);
+        await CheckGameoverlayRendererAsync(ctx, ct);
+        await CheckCs2InsecureLaunchOptionsAsync(ctx, ct);
+        await CheckCs2AutoexecAsync(ctx, ct);
         await ScanWorkshopVpkFilesAsync(ctx, ct);
-        ctx.Report(0.88, "CS2/CSGO workshop VPK files scanned");
-
-        await ScanSteamRegistryArtifactsAsync(ctx, ct);
-        ctx.Report(0.93, "Steam registry artifacts scanned");
-
-        await ScanCsgoCfgDirectoryPayloadsAsync(ctx, ct);
-        ctx.Report(1.00, "CS2/CSGO cfg directory payloads scanned");
+        await ScanVacTrustManipulationToolsAsync(ctx, ct);
+        await ScanCfgDirectoryForPayloadsAsync(ctx, ct);
     }
 
-    // -------------------------------------------------------------------------
-    // 1. Steam emulator config files
-    // -------------------------------------------------------------------------
-
-    private async Task ScanSteamEmulatorConfigFilesAsync(ScanContext ctx, CancellationToken ct)
+    // =========================================================================
+    // 1. FACEIT Anti-Cheat service registry checks
+    // =========================================================================
+    private async Task CheckFaceitServiceRegistryAsync(ZeroTrace.Core.Engine.ScanContext ctx, CancellationToken ct)
     {
-        var roots = GetCommonScanRoots();
+        await Task.Run(() =>
+        {
+            string[] serviceKeys =
+            [
+                @"SYSTEM\CurrentControlSet\Services\faceit",
+                @"SYSTEM\CurrentControlSet\Services\FaceitService",
+                @"SYSTEM\CurrentControlSet\Services\faceit-client-container",
+            ];
 
-        // Check for GreenLuma folder variants
-        var greenLumaFolders = new[] { "GreenLumaReborn", "GreenLuma2024", "GreenLuma" };
-        var creamInstallerFolder = "CreamInstaller";
-        var steamSettingsFolder = "steam_settings";
-        var ali213Folder = "ALI213";
+            foreach (string keyPath in serviceKeys)
+            {
+                ct.ThrowIfCancellationRequested();
+                ctx.IncrementRegistryKeys();
 
-        foreach (var root in roots)
+                try
+                {
+                    using RegistryKey? key = Registry.LocalMachine.OpenSubKey(keyPath, writable: false);
+                    if (key is null)
+                        continue;
+
+                    object? startVal = key.GetValue("Start");
+                    if (startVal is int startInt && startInt == 4)
+                    {
+                        ctx.AddFinding(new Finding
+                        {
+                            Module   = Name,
+                            Title    = "FACEIT Anti-Cheat Service Disabled in Registry",
+                            Risk     = RiskLevel.High,
+                            Location = $@"HKLM\{keyPath}",
+                            Reason   = $"The {Path.GetFileName(keyPath)} service Start value is 4 (Disabled). A bypass tool may have disabled the FACEIT Anti-Cheat service.",
+                            Detail   = $"Start = {startInt} (Disabled)",
+                        });
+                    }
+
+                    object? imagePathVal = key.GetValue("ImagePath");
+                    if (imagePathVal is string imagePath && !string.IsNullOrWhiteSpace(imagePath))
+                    {
+                        if (IsInSuspiciousUserPath(imagePath))
+                        {
+                            ctx.AddFinding(new Finding
+                            {
+                                Module   = Name,
+                                Title    = "FACEIT Service ImagePath in User-Writable Location",
+                                Risk     = RiskLevel.Critical,
+                                Location = $@"HKLM\{keyPath}",
+                                Reason   = "The FACEIT service ImagePath references a Temp, Downloads, or AppData directory. The service binary may have been redirected by a bypass tool.",
+                                Detail   = $"ImagePath = {imagePath}",
+                            });
+                        }
+                    }
+                }
+                catch (Exception ex) when (ex is UnauthorizedAccessException or System.Security.SecurityException)
+                {
+                }
+            }
+        }, ct);
+    }
+
+    // =========================================================================
+    // 2. Steam emulators bypassing VAC
+    // =========================================================================
+    private async Task ScanSteamEmulatorsAsync(ZeroTrace.Core.Engine.ScanContext ctx, CancellationToken ct)
+    {
+        string[] searchRoots = BuildUserScanDirectories();
+
+        // Also check common Steam and game install locations
+        List<string> extendedRoots = [..searchRoots];
+        extendedRoots.Add(@"C:\Program Files (x86)\Steam");
+        extendedRoots.Add(@"C:\Program Files (x86)\Steam\steamapps\common");
+        extendedRoots.Add(@"C:\Program Files\Steam");
+
+        foreach (string dir in extendedRoots)
         {
             ct.ThrowIfCancellationRequested();
+            if (!Directory.Exists(dir))
+                continue;
 
-            // Enumerate top-level and one level deep
-            IEnumerable<string> dirsToCheck;
+            IEnumerable<string> allFiles;
             try
             {
-                dirsToCheck = Directory.EnumerateDirectories(root, "*", SearchOption.TopDirectoryOnly)
-                    .Prepend(root);
+                allFiles = Directory.EnumerateFiles(dir, "*", SearchOption.AllDirectories);
             }
             catch (UnauthorizedAccessException)
             {
                 continue;
             }
 
-            foreach (var dir in dirsToCheck)
+            foreach (string filePath in allFiles)
             {
                 ct.ThrowIfCancellationRequested();
 
-                // Check for special named folders
-                var dirName = Path.GetFileName(dir);
-
-                foreach (var glFolder in greenLumaFolders)
+                try
                 {
-                    if (dirName.Equals(glFolder, StringComparison.OrdinalIgnoreCase))
+                    string fileName = Path.GetFileName(filePath);
+                    ctx.IncrementFiles();
+
+                    foreach (string emuFile in SteamEmulatorConfigFiles)
                     {
-                        ctx.AddFinding(new Finding
+                        if (fileName.Equals(emuFile, StringComparison.OrdinalIgnoreCase))
                         {
-                            Module = Name,
-                            Title = "GreenLuma Emulator Folder",
-                            Risk = RiskLevel.Critical,
-                            Location = dir,
-                            FileName = dirName,
-                            Reason = "GreenLuma Steam emulator folder found — bypasses Steam authentication and VAC",
-                            Detail = $"Folder: {dir}",
-                        });
+                            ctx.AddFinding(new Finding
+                            {
+                                Module   = Name,
+                                Title    = "Steam Emulator Config File Detected",
+                                Risk     = RiskLevel.Critical,
+                                Location = filePath,
+                                FileName = fileName,
+                                Reason   = $"File \"{fileName}\" is a Steam emulator configuration file. Steam emulators bypass VAC by faking the Steam API without connecting to Valve servers.",
+                                Detail   = $"Full path: {filePath}",
+                            });
+                            break;
+                        }
                     }
                 }
-
-                if (dirName.Equals(creamInstallerFolder, StringComparison.OrdinalIgnoreCase))
+                catch (IOException)
                 {
-                    ctx.AddFinding(new Finding
-                    {
-                        Module = Name,
-                        Title = "CreamInstaller Folder",
-                        Risk = RiskLevel.High,
-                        Location = dir,
-                        FileName = dirName,
-                        Reason = "CreamInstaller folder found — tool used to install CreamAPI/SmokeAPI Steam bypasses",
-                        Detail = $"Folder: {dir}",
-                    });
+                }
+            }
+        }
+
+        await ScanSteamEmulatorDirsAsync(ctx, ct);
+    }
+
+    private async Task ScanSteamEmulatorDirsAsync(ZeroTrace.Core.Engine.ScanContext ctx, CancellationToken ct)
+    {
+        await Task.Run(() =>
+        {
+            string userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            string[] searchRoots =
+            [
+                Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
+                Path.Combine(userProfile, "Downloads"),
+                Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            ];
+
+            foreach (string root in searchRoots)
+            {
+                ct.ThrowIfCancellationRequested();
+                if (string.IsNullOrEmpty(root) || !Directory.Exists(root))
+                    continue;
+
+                IEnumerable<string> subDirs;
+                try
+                {
+                    subDirs = Directory.EnumerateDirectories(root, "*", SearchOption.AllDirectories);
+                }
+                catch (UnauthorizedAccessException)
+                {
+                    continue;
                 }
 
-                if (dirName.Equals(steamSettingsFolder, StringComparison.OrdinalIgnoreCase))
-                {
-                    ctx.AddFinding(new Finding
-                    {
-                        Module = Name,
-                        Title = "Goldberg Steam Emulator Settings Folder",
-                        Risk = RiskLevel.Critical,
-                        Location = dir,
-                        FileName = dirName,
-                        Reason = "Goldberg Steam Emulator steam_settings folder found — bypasses Steam DRM and VAC",
-                        Detail = $"Folder: {dir}",
-                    });
-                }
-
-                // Check for ALI213\Profile.ini
-                if (dirName.Equals(ali213Folder, StringComparison.OrdinalIgnoreCase))
-                {
-                    var profileIni = Path.Combine(dir, "Profile.ini");
-                    if (File.Exists(profileIni))
-                    {
-                        await ReadAndReportEmuConfigAsync(ctx, profileIni,
-                            "ALI213 Steam Emulator Profile",
-                            RiskLevel.Critical,
-                            "ALI213 Steam emulator Profile.ini found — bypasses Steam authentication and VAC");
-                    }
-                }
-
-                // Check for GreenLuma DLLInjector.ini next to steam_api.dll
-                var dllInjectorIni = Path.Combine(dir, "DLLInjector.ini");
-                var steamApiDll = Path.Combine(dir, "steam_api.dll");
-                var steamApi64Dll = Path.Combine(dir, "steam_api64.dll");
-                if (File.Exists(dllInjectorIni) && (File.Exists(steamApiDll) || File.Exists(steamApi64Dll)))
-                {
-                    await ReadAndReportEmuConfigAsync(ctx, dllInjectorIni,
-                        "GreenLuma DLLInjector Config",
-                        RiskLevel.Critical,
-                        "GreenLuma DLLInjector.ini found next to steam_api.dll — Steam authentication bypass");
-                }
-
-                // Check for named emulator config files
-                foreach (var (fileName, risk, reason) in SteamEmuConfigFiles)
+                foreach (string subDir in subDirs)
                 {
                     ct.ThrowIfCancellationRequested();
-                    var filePath = Path.Combine(dir, fileName);
-                    if (!File.Exists(filePath)) continue;
 
-                    await ReadAndReportEmuConfigAsync(ctx, filePath,
-                        $"Steam Emulator Config: {fileName}",
-                        risk,
-                        reason);
+                    try
+                    {
+                        string dirName = Path.GetFileName(subDir);
+
+                        foreach (string emuDir in SteamEmulatorDirNames)
+                        {
+                            if (dirName.Equals(emuDir, StringComparison.OrdinalIgnoreCase))
+                            {
+                                ctx.AddFinding(new Finding
+                                {
+                                    Module   = Name,
+                                    Title    = "Steam Emulator Directory Detected",
+                                    Risk     = RiskLevel.Critical,
+                                    Location = subDir,
+                                    Reason   = $"Directory \"{dirName}\" matches a known Steam emulator folder name. Steam emulators bypass VAC by replacing the Steam API without connecting to Valve servers.",
+                                    Detail   = $"Matched pattern: {emuDir}",
+                                });
+                                break;
+                            }
+                        }
+                    }
+                    catch (IOException)
+                    {
+                    }
                 }
+            }
+        }, ct);
+    }
+
+    // =========================================================================
+    // 3. VAC bypass DLLs next to steam.exe
+    // =========================================================================
+    private async Task ScanVacBypassDllsNextToSteamAsync(ZeroTrace.Core.Engine.ScanContext ctx, CancellationToken ct)
+    {
+        await Task.Run(() =>
+        {
+            string[] steamExePaths =
+            [
+                @"C:\Program Files (x86)\Steam\steam.exe",
+                @"C:\Program Files\Steam\steam.exe",
+            ];
+
+            foreach (string steamExe in steamExePaths)
+            {
+                ct.ThrowIfCancellationRequested();
+                if (!File.Exists(steamExe))
+                    continue;
+
+                string steamDir = Path.GetDirectoryName(steamExe) ?? string.Empty;
+                if (string.IsNullOrEmpty(steamDir))
+                    continue;
+
+                IEnumerable<string> dllFiles;
+                try
+                {
+                    dllFiles = Directory.EnumerateFiles(steamDir, "*.dll", SearchOption.TopDirectoryOnly);
+                }
+                catch (UnauthorizedAccessException)
+                {
+                    continue;
+                }
+
+                foreach (string dllPath in dllFiles)
+                {
+                    ct.ThrowIfCancellationRequested();
+                    ctx.IncrementFiles();
+
+                    try
+                    {
+                        string fileName = Path.GetFileName(dllPath);
+
+                        foreach (string bad in VacBypassDllNames)
+                        {
+                            if (fileName.Equals(bad, StringComparison.OrdinalIgnoreCase))
+                            {
+                                ctx.AddFinding(new Finding
+                                {
+                                    Module   = Name,
+                                    Title    = "VAC Bypass DLL Found Next to steam.exe",
+                                    Risk     = RiskLevel.Critical,
+                                    Location = dllPath,
+                                    FileName = fileName,
+                                    Reason   = $"DLL \"{fileName}\" is a known VAC bypass file and is located in the Steam installation directory next to steam.exe. This DLL intercepts Steam API calls to disable VAC.",
+                                    Detail   = $"Steam directory: {steamDir}",
+                                });
+                                break;
+                            }
+                        }
+                    }
+                    catch (IOException)
+                    {
+                    }
+                }
+            }
+        }, ct);
+    }
+
+    // =========================================================================
+    // 4. Steam shortcut files with -insecure launch flag
+    // =========================================================================
+    private async Task CheckSteamShortcutsInsecureFlagAsync(ZeroTrace.Core.Engine.ScanContext ctx, CancellationToken ct)
+    {
+        string[] steamShortcutDirs =
+        [
+            @"C:\Program Files (x86)\Steam\userdata",
+            @"C:\Program Files\Steam\userdata",
+        ];
+
+        foreach (string shortcutRoot in steamShortcutDirs)
+        {
+            ct.ThrowIfCancellationRequested();
+            if (!Directory.Exists(shortcutRoot))
+                continue;
+
+            IEnumerable<string> shortcutFiles;
+            try
+            {
+                shortcutFiles = Directory.EnumerateFiles(shortcutRoot, "shortcuts.vdf", SearchOption.AllDirectories);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                continue;
+            }
+
+            foreach (string shortcutPath in shortcutFiles)
+            {
+                ct.ThrowIfCancellationRequested();
+                ctx.IncrementFiles();
+
+                await InspectShortcutFileAsync(ctx, shortcutPath, ct);
             }
         }
     }
 
-    // Helper: read an emulator config file and report a finding
-    private async Task ReadAndReportEmuConfigAsync(ScanContext ctx, string path, string title, RiskLevel risk, string reason)
+    private async Task InspectShortcutFileAsync(
+        ZeroTrace.Core.Engine.ScanContext ctx,
+        string shortcutPath,
+        CancellationToken ct)
     {
-        ctx.IncrementFiles();
         string content;
         try
         {
-            using var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            using var fs = new FileStream(shortcutPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
             using var sr = new StreamReader(fs);
             content = await sr.ReadToEndAsync();
         }
         catch (IOException)
         {
-            // Swallow silently
-            content = string.Empty;
+            return;
         }
         catch (UnauthorizedAccessException)
         {
-            content = string.Empty;
+            return;
         }
 
-        ctx.AddFinding(new Finding
+        ct.ThrowIfCancellationRequested();
+
+        if (content.Contains("-insecure", StringComparison.OrdinalIgnoreCase))
         {
-            Module = Name,
-            Title = title,
-            Risk = risk,
-            Location = path,
-            FileName = Path.GetFileName(path),
-            Reason = reason,
-            Detail = content.Length > 0
-                ? $"File size: {content.Length} bytes. First 200 chars: {content[..Math.Min(200, content.Length)]}"
-                : "File present but could not be read.",
-        });
+            ctx.AddFinding(new Finding
+            {
+                Module   = Name,
+                Title    = "Steam Shortcut Contains -insecure Launch Flag",
+                Risk     = RiskLevel.High,
+                Location = shortcutPath,
+                FileName = Path.GetFileName(shortcutPath),
+                Reason   = "A Steam shortcuts.vdf file contains the '-insecure' flag. This flag disables VAC protection for the launched game, allowing unsigned code and cheats to run without triggering VAC.",
+                Detail   = ExtractMatchingLine(content, "-insecure"),
+            });
+        }
     }
 
-    // -------------------------------------------------------------------------
-    // 2. Steam emulator DLLs
-    // -------------------------------------------------------------------------
-
-    private async Task ScanSteamEmulatorDllsAsync(ScanContext ctx, CancellationToken ct)
+    // =========================================================================
+    // 5. FACEIT bypass tool files
+    // =========================================================================
+    private async Task ScanFaceitBypassFilesAsync(ZeroTrace.Core.Engine.ScanContext ctx, CancellationToken ct)
     {
-        var roots = GetCommonScanRoots();
+        string[] scanDirs = BuildUserScanDirectories();
 
-        foreach (var root in roots)
+        foreach (string dir in scanDirs)
         {
             ct.ThrowIfCancellationRequested();
+            if (!Directory.Exists(dir))
+                continue;
 
             IEnumerable<string> files;
             try
             {
-                files = Directory.EnumerateFiles(root, "*.dll", SearchOption.AllDirectories);
+                files = Directory.EnumerateFiles(dir, "*", SearchOption.AllDirectories);
             }
             catch (UnauthorizedAccessException)
             {
                 continue;
             }
 
-            foreach (var file in files)
+            foreach (string filePath in files)
+            {
+                ct.ThrowIfCancellationRequested();
+
+                try
+                {
+                    string fileName = Path.GetFileName(filePath);
+                    ctx.IncrementFiles();
+
+                    foreach (string bad in FaceitBypassFileNames)
+                    {
+                        if (fileName.Equals(bad, StringComparison.OrdinalIgnoreCase))
+                        {
+                            ctx.AddFinding(new Finding
+                            {
+                                Module   = Name,
+                                Title    = "Known FACEIT Bypass Tool File Detected",
+                                Risk     = RiskLevel.Critical,
+                                Location = filePath,
+                                FileName = fileName,
+                                Reason   = $"File \"{fileName}\" matches a known FACEIT Anti-Cheat bypass tool name.",
+                                Detail   = $"Full path: {filePath}",
+                            });
+                            break;
+                        }
+                    }
+                }
+                catch (IOException)
+                {
+                }
+            }
+        }
+
+        await Task.CompletedTask;
+    }
+
+    // =========================================================================
+    // 6. FACEIT kill artifacts — evidence that faceit-client-container was stopped
+    // =========================================================================
+    private async Task CheckFaceitKillArtifactsAsync(ZeroTrace.Core.Engine.ScanContext ctx, CancellationToken ct)
+    {
+        await Task.Run(() =>
+        {
+            // Check for service deletion artifacts in the event log via registry remnants
+            string[] deletedServicePaths =
+            [
+                @"SYSTEM\CurrentControlSet\Services\faceit",
+                @"SYSTEM\CurrentControlSet\Services\FaceitService",
+            ];
+
+            foreach (string keyPath in deletedServicePaths)
+            {
+                ct.ThrowIfCancellationRequested();
+                ctx.IncrementRegistryKeys();
+
+                try
+                {
+                    using RegistryKey? key = Registry.LocalMachine.OpenSubKey(keyPath, writable: false);
+                    if (key is null)
+                        continue;
+
+                    // If the service key exists but has no ImagePath or DisplayName,
+                    // it may be a remnant after forcible deletion/modification
+                    object? displayName = key.GetValue("DisplayName");
+                    object? imagePath   = key.GetValue("ImagePath");
+
+                    if (displayName is null && imagePath is null)
+                    {
+                        ctx.AddFinding(new Finding
+                        {
+                            Module   = Name,
+                            Title    = "FACEIT Service Registry Key Has No ImagePath or DisplayName",
+                            Risk     = RiskLevel.Medium,
+                            Location = $@"HKLM\{keyPath}",
+                            Reason   = "The FACEIT service registry key exists but has neither ImagePath nor DisplayName values, which is anomalous. The service may have been partially deleted or stripped by a bypass tool.",
+                            Detail   = $"Key: HKLM\\{keyPath}",
+                        });
+                    }
+                }
+                catch (Exception ex) when (ex is UnauthorizedAccessException or System.Security.SecurityException)
+                {
+                }
+            }
+
+            // Check for FACEIT client container kill artifact files
+            string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            string faceitDir    = Path.Combine(localAppData, "Programs", "FACEIT Client");
+
+            if (!Directory.Exists(faceitDir))
+                return;
+
+            // Look for crash dumps or forcible-exit artifacts
+            IEnumerable<string> dumpFiles;
+            try
+            {
+                dumpFiles = Directory.EnumerateFiles(faceitDir, "*.dmp", SearchOption.AllDirectories);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return;
+            }
+
+            foreach (string dumpPath in dumpFiles)
             {
                 ct.ThrowIfCancellationRequested();
                 ctx.IncrementFiles();
 
-                var fileName = Path.GetFileName(file);
-
-                // Check known emulator DLLs
-                foreach (var emuDll in SteamEmuDlls)
+                try
                 {
-                    if (fileName.Equals(emuDll, StringComparison.OrdinalIgnoreCase))
+                    var fi = new FileInfo(dumpPath);
+                    // A fresh dump (< 1 hour old) is suspicious
+                    if ((DateTime.UtcNow - fi.LastWriteTimeUtc).TotalHours < 1.0)
                     {
                         ctx.AddFinding(new Finding
                         {
-                            Module = Name,
-                            Title = $"Steam Emulator DLL: {emuDll}",
-                            Risk = RiskLevel.Critical,
-                            Location = file,
-                            FileName = fileName,
-                            Reason = $"Known Steam emulator DLL '{emuDll}' found — bypasses Steam DRM and VAC",
-                            Detail = $"Found at: {file}",
+                            Module   = Name,
+                            Title    = "Recent FACEIT Client Crash Dump Found",
+                            Risk     = RiskLevel.Medium,
+                            Location = dumpPath,
+                            FileName = Path.GetFileName(dumpPath),
+                            Reason   = "A very recent FACEIT client crash dump was found. FACEIT bypass tools frequently cause the client to crash by forcibly terminating it.",
+                            Detail   = $"Last write: {fi.LastWriteTimeUtc:u}",
                         });
-                        break;
                     }
                 }
-
-                // Check proxy DLLs when steam_api exists in same dir
-                var dir = Path.GetDirectoryName(file) ?? string.Empty;
-                bool hasSteamApi = File.Exists(Path.Combine(dir, "steam_api.dll"))
-                                || File.Exists(Path.Combine(dir, "steam_api64.dll"));
-
-                if (hasSteamApi)
+                catch (IOException)
                 {
-                    foreach (var proxyDll in SuspiciousProxyDlls)
+                }
+            }
+        }, ct);
+    }
+
+    // =========================================================================
+    // 7. VAC and FACEIT bypass GitHub repository directories
+    // =========================================================================
+    private async Task CheckBypassRepoDirsAsync(ZeroTrace.Core.Engine.ScanContext ctx, CancellationToken ct)
+    {
+        await Task.Run(() =>
+        {
+            string userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            string[] searchRoots =
+            [
+                Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
+                Path.Combine(userProfile, "Downloads"),
+                Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            ];
+
+            foreach (string root in searchRoots)
+            {
+                ct.ThrowIfCancellationRequested();
+                if (string.IsNullOrEmpty(root) || !Directory.Exists(root))
+                    continue;
+
+                IEnumerable<string> subDirs;
+                try
+                {
+                    subDirs = Directory.EnumerateDirectories(root, "*", SearchOption.AllDirectories);
+                }
+                catch (UnauthorizedAccessException)
+                {
+                    continue;
+                }
+
+                foreach (string subDir in subDirs)
+                {
+                    ct.ThrowIfCancellationRequested();
+
+                    try
                     {
-                        if (fileName.Equals(proxyDll, StringComparison.OrdinalIgnoreCase))
+                        string dirName = Path.GetFileName(subDir);
+
+                        foreach (string repoName in FaceitBypassRepoDirs)
+                        {
+                            if (dirName.Equals(repoName, StringComparison.OrdinalIgnoreCase))
+                            {
+                                ctx.AddFinding(new Finding
+                                {
+                                    Module   = Name,
+                                    Title    = "FACEIT Bypass Repository Directory Found",
+                                    Risk     = RiskLevel.High,
+                                    Location = subDir,
+                                    Reason   = $"Directory \"{dirName}\" matches a known FACEIT bypass GitHub repository name. The user likely cloned or possesses bypass source code.",
+                                    Detail   = $"Matched pattern: {repoName}",
+                                });
+                                break;
+                            }
+                        }
+
+                        foreach (string repoName in VacBypassRepoDirs)
+                        {
+                            if (dirName.Equals(repoName, StringComparison.OrdinalIgnoreCase))
+                            {
+                                ctx.AddFinding(new Finding
+                                {
+                                    Module   = Name,
+                                    Title    = "VAC Bypass Repository Directory Found",
+                                    Risk     = RiskLevel.High,
+                                    Location = subDir,
+                                    Reason   = $"Directory \"{dirName}\" matches a known VAC bypass GitHub repository name. The user likely cloned or possesses bypass source code.",
+                                    Detail   = $"Matched pattern: {repoName}",
+                                });
+                                break;
+                            }
+                        }
+                    }
+                    catch (IOException)
+                    {
+                    }
+                }
+            }
+        }, ct);
+    }
+
+    // =========================================================================
+    // 8. Fake Steam API DLLs next to game executables
+    // =========================================================================
+    private async Task ScanSteamApiFakeDllsAsync(ZeroTrace.Core.Engine.ScanContext ctx, CancellationToken ct)
+    {
+        string[] gameLibraries =
+        [
+            @"C:\Program Files (x86)\Steam\steamapps\common",
+            @"C:\Program Files\Steam\steamapps\common",
+        ];
+
+        string[] fakeDllPatterns =
+        [
+            "steam_api64_bypass.dll",
+            "steamapi_bypass.dll",
+            "vcruntime_bypass.dll",
+            "steam_api_fake.dll",
+            "steamclient_bypass.dll",
+        ];
+
+        foreach (string library in gameLibraries)
+        {
+            ct.ThrowIfCancellationRequested();
+            if (!Directory.Exists(library))
+                continue;
+
+            IEnumerable<string> dllFiles;
+            try
+            {
+                dllFiles = Directory.EnumerateFiles(library, "*.dll", SearchOption.AllDirectories);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                continue;
+            }
+
+            foreach (string dllPath in dllFiles)
+            {
+                ct.ThrowIfCancellationRequested();
+                ctx.IncrementFiles();
+
+                try
+                {
+                    string fileName = Path.GetFileName(dllPath);
+
+                    foreach (string pattern in fakeDllPatterns)
+                    {
+                        if (fileName.Equals(pattern, StringComparison.OrdinalIgnoreCase))
                         {
                             ctx.AddFinding(new Finding
                             {
-                                Module = Name,
-                                Title = $"Suspicious Proxy DLL Next to Steam API: {proxyDll}",
-                                Risk = RiskLevel.Critical,
-                                Location = file,
+                                Module   = Name,
+                                Title    = "Fake Steam API DLL in Game Directory",
+                                Risk     = RiskLevel.Critical,
+                                Location = dllPath,
                                 FileName = fileName,
-                                Reason = $"'{proxyDll}' found alongside steam_api.dll — common emulator proxy DLL injection technique",
-                                Detail = $"Found at: {file}",
+                                Reason   = $"DLL \"{fileName}\" is a known fake or bypass Steam API file. These DLLs intercept Steam API calls to bypass VAC without connecting to Valve servers.",
+                                Detail   = $"Game directory: {Path.GetDirectoryName(dllPath)}",
                             });
                             break;
                         }
                     }
 
-                    // steamclient.dll in game dir is suspicious (should only be in Steam install dir)
-                    if (fileName.Equals("steamclient.dll", StringComparison.OrdinalIgnoreCase)
-                        && !dir.StartsWith(SteamDefaultPath, StringComparison.OrdinalIgnoreCase))
+                    // Also flag any steam_api*.dll in a game directory that has 'bypass' or 'fake' in the name
+                    if (fileName.StartsWith("steam_api", StringComparison.OrdinalIgnoreCase)
+                        && (fileName.Contains("bypass", StringComparison.OrdinalIgnoreCase)
+                            || fileName.Contains("fake", StringComparison.OrdinalIgnoreCase)
+                            || fileName.Contains("hack", StringComparison.OrdinalIgnoreCase)))
                     {
                         ctx.AddFinding(new Finding
                         {
-                            Module = Name,
-                            Title = "steamclient.dll in Game Directory",
-                            Risk = RiskLevel.Critical,
-                            Location = file,
+                            Module   = Name,
+                            Title    = "Suspicious steam_api DLL Name in Game Directory",
+                            Risk     = RiskLevel.High,
+                            Location = dllPath,
                             FileName = fileName,
-                            Reason = "steamclient.dll found in game directory (not in Steam install) — possible emulator injection point",
-                            Detail = $"Found at: {file}",
+                            Reason   = $"DLL \"{fileName}\" starts with 'steam_api' but contains a suspicious suffix ('bypass', 'fake', or 'hack'). This may be a fake Steam API planted to bypass VAC.",
+                            Detail   = $"Game directory: {Path.GetDirectoryName(dllPath)}",
                         });
                     }
-                }
-            }
-        }
-
-        await Task.CompletedTask;
-    }
-
-    // -------------------------------------------------------------------------
-    // 3. VAC scan window exploit configs
-    // -------------------------------------------------------------------------
-
-    private async Task ScanVacConfigPatternsAsync(ScanContext ctx, CancellationToken ct)
-    {
-        var roots = GetCommonScanRoots();
-        var extensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { ".ini", ".cfg", ".json", ".txt" };
-
-        foreach (var root in roots)
-        {
-            ct.ThrowIfCancellationRequested();
-
-            IEnumerable<string> files;
-            try
-            {
-                files = Directory.EnumerateFiles(root, "*.*", SearchOption.AllDirectories);
-            }
-            catch (UnauthorizedAccessException)
-            {
-                continue;
-            }
-
-            foreach (var file in files)
-            {
-                ct.ThrowIfCancellationRequested();
-                var ext = Path.GetExtension(file);
-                if (!extensions.Contains(ext)) continue;
-
-                ctx.IncrementFiles();
-                string content;
-                try
-                {
-                    using var fs = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-                    using var sr = new StreamReader(fs);
-                    content = await sr.ReadToEndAsync();
                 }
                 catch (IOException)
                 {
-                    continue;
-                }
-                catch (UnauthorizedAccessException)
-                {
-                    continue;
-                }
-
-                var contentLower = content.ToLowerInvariant();
-
-                foreach (var (pattern, risk, reason) in VacConfigPatterns)
-                {
-                    if (contentLower.Contains(pattern.ToLowerInvariant(), StringComparison.OrdinalIgnoreCase))
-                    {
-                        ctx.AddFinding(new Finding
-                        {
-                            Module = Name,
-                            Title = $"VAC Bypass Config Pattern: {pattern}",
-                            Risk = risk,
-                            Location = file,
-                            FileName = Path.GetFileName(file),
-                            Reason = reason,
-                            Detail = $"Pattern '{pattern}' found in file: {file}",
-                        });
-                    }
-                }
-
-                // Special case: safe_period + vac combination
-                if (contentLower.Contains("safe_period", StringComparison.OrdinalIgnoreCase)
-                    && contentLower.Contains("vac", StringComparison.OrdinalIgnoreCase))
-                {
-                    ctx.AddFinding(new Finding
-                    {
-                        Module = Name,
-                        Title = "VAC Safe Period Configuration",
-                        Risk = RiskLevel.High,
-                        Location = file,
-                        FileName = Path.GetFileName(file),
-                        Reason = "Config file contains 'safe_period' combined with 'vac' — VAC evasion timing configuration",
-                        Detail = $"Found in: {file}",
-                    });
                 }
             }
         }
     }
 
-    // -------------------------------------------------------------------------
-    // 4. VAC module hiding artifacts
-    // -------------------------------------------------------------------------
-
-    private async Task ScanVacModuleHidingArtifactsAsync(ScanContext ctx, CancellationToken ct)
+    // =========================================================================
+    // 9. PowerShell history targeting VAC or FACEIT
+    // =========================================================================
+    private async Task CheckPowerShellHistoryAsync(ZeroTrace.Core.Engine.ScanContext ctx, CancellationToken ct)
     {
-        var roots = GetCommonScanRoots();
-        var extensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { ".ini", ".cfg", ".json", ".txt", ".lua", ".xml" };
+        string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+        string historyPath = Path.Combine(
+            appData, "Microsoft", "Windows", "PowerShell", "PSReadLine", "ConsoleHost_history.txt");
 
-        foreach (var root in roots)
-        {
-            ct.ThrowIfCancellationRequested();
+        if (!File.Exists(historyPath))
+            return;
 
-            IEnumerable<string> files;
-            try
-            {
-                files = Directory.EnumerateFiles(root, "*.*", SearchOption.AllDirectories);
-            }
-            catch (UnauthorizedAccessException)
-            {
-                continue;
-            }
-
-            foreach (var file in files)
-            {
-                ct.ThrowIfCancellationRequested();
-                var ext = Path.GetExtension(file);
-                if (!extensions.Contains(ext)) continue;
-
-                ctx.IncrementFiles();
-                string content;
-                try
-                {
-                    using var fs = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-                    using var sr = new StreamReader(fs);
-                    content = await sr.ReadToEndAsync();
-                }
-                catch (IOException)
-                {
-                    continue;
-                }
-                catch (UnauthorizedAccessException)
-                {
-                    continue;
-                }
-
-                var contentLower = content.ToLowerInvariant();
-
-                foreach (var (pattern, risk, reason) in VacHidingPatterns)
-                {
-                    var patternLower = pattern.ToLowerInvariant();
-
-                    // Special case: module_unload must also contain "steam"
-                    if (patternLower == "module_unload")
-                    {
-                        if (contentLower.Contains("module_unload", StringComparison.OrdinalIgnoreCase)
-                            && contentLower.Contains("steam", StringComparison.OrdinalIgnoreCase))
-                        {
-                            ctx.AddFinding(new Finding
-                            {
-                                Module = Name,
-                                Title = "VAC Hiding: module_unload + steam",
-                                Risk = risk,
-                                Location = file,
-                                FileName = Path.GetFileName(file),
-                                Reason = reason,
-                                Detail = $"Found in: {file}",
-                            });
-                        }
-                        continue;
-                    }
-
-                    if (contentLower.Contains(patternLower, StringComparison.OrdinalIgnoreCase))
-                    {
-                        ctx.AddFinding(new Finding
-                        {
-                            Module = Name,
-                            Title = $"VAC Module Hiding Artifact: {pattern}",
-                            Risk = risk,
-                            Location = file,
-                            FileName = Path.GetFileName(file),
-                            Reason = reason,
-                            Detail = $"Pattern '{pattern}' found in file: {file}",
-                        });
-                    }
-                }
-            }
-        }
-
-        await Task.CompletedTask;
-    }
-
-    // -------------------------------------------------------------------------
-    // 5. Trust factor manipulation tools
-    // -------------------------------------------------------------------------
-
-    private async Task ScanTrustFactorBypassToolsAsync(ScanContext ctx, CancellationToken ct)
-    {
-        var roots = GetCommonScanRoots();
-
-        foreach (var root in roots)
-        {
-            ct.ThrowIfCancellationRequested();
-
-            // Check files
-            IEnumerable<string> files;
-            try
-            {
-                files = Directory.EnumerateFiles(root, "*.*", SearchOption.AllDirectories);
-            }
-            catch (UnauthorizedAccessException)
-            {
-                continue;
-            }
-
-            foreach (var file in files)
-            {
-                ct.ThrowIfCancellationRequested();
-                ctx.IncrementFiles();
-                var fileName = Path.GetFileName(file);
-
-                foreach (var bypassName in TrustBypassNames)
-                {
-                    if (fileName.Equals(bypassName, StringComparison.OrdinalIgnoreCase))
-                    {
-                        ctx.AddFinding(new Finding
-                        {
-                            Module = Name,
-                            Title = $"Trust Factor Bypass Tool: {bypassName}",
-                            Risk = RiskLevel.High,
-                            Location = file,
-                            FileName = fileName,
-                            Reason = $"Known trust factor bypass tool '{bypassName}' found — manipulates CS2/CSGO matchmaking trust rating",
-                            Detail = $"Found at: {file}",
-                        });
-                        break;
-                    }
-                }
-            }
-
-            // Also check directory names
-            IEnumerable<string> dirs;
-            try
-            {
-                dirs = Directory.EnumerateDirectories(root, "*", SearchOption.AllDirectories);
-            }
-            catch (UnauthorizedAccessException)
-            {
-                continue;
-            }
-
-            foreach (var dir in dirs)
-            {
-                ct.ThrowIfCancellationRequested();
-                var dirName = Path.GetFileName(dir);
-
-                foreach (var bypassName in TrustBypassNames)
-                {
-                    var baseName = Path.GetFileNameWithoutExtension(bypassName);
-                    if (dirName.Equals(baseName, StringComparison.OrdinalIgnoreCase)
-                        || dirName.Equals(bypassName, StringComparison.OrdinalIgnoreCase))
-                    {
-                        ctx.AddFinding(new Finding
-                        {
-                            Module = Name,
-                            Title = $"Trust Factor Bypass Folder: {dirName}",
-                            Risk = RiskLevel.High,
-                            Location = dir,
-                            FileName = dirName,
-                            Reason = $"Trust factor bypass tool folder '{dirName}' found — manipulates CS2/CSGO matchmaking trust rating",
-                            Detail = $"Found at: {dir}",
-                        });
-                        break;
-                    }
-                }
-            }
-        }
-
-        await Task.CompletedTask;
-    }
-
-    // -------------------------------------------------------------------------
-    // 6. Steam -insecure launch option check
-    // -------------------------------------------------------------------------
-
-    private async Task ScanSteamInsecureLaunchOptionsAsync(ScanContext ctx, CancellationToken ct)
-    {
-        var localConfigPaths = new List<string>();
-
-        // APPDATA path
-        var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-        var appDataUserdataRoot = Path.Combine(appData, "Steam", "userdata");
-        if (Directory.Exists(appDataUserdataRoot))
-        {
-            try
-            {
-                foreach (var userDir in Directory.EnumerateDirectories(appDataUserdataRoot))
-                {
-                    ct.ThrowIfCancellationRequested();
-                    var vdfPath = Path.Combine(userDir, "config", "localconfig.vdf");
-                    if (File.Exists(vdfPath)) localConfigPaths.Add(vdfPath);
-                }
-            }
-            catch (UnauthorizedAccessException) { }
-        }
-
-        // Default Steam install path
-        var steamUserdataRoot = @"C:\Program Files (x86)\Steam\userdata";
-        if (Directory.Exists(steamUserdataRoot))
-        {
-            try
-            {
-                foreach (var userDir in Directory.EnumerateDirectories(steamUserdataRoot))
-                {
-                    ct.ThrowIfCancellationRequested();
-                    var vdfPath = Path.Combine(userDir, "config", "localconfig.vdf");
-                    if (File.Exists(vdfPath) && !localConfigPaths.Contains(vdfPath, StringComparer.OrdinalIgnoreCase))
-                        localConfigPaths.Add(vdfPath);
-                }
-            }
-            catch (UnauthorizedAccessException) { }
-        }
-
-        foreach (var vdfPath in localConfigPaths)
-        {
-            ct.ThrowIfCancellationRequested();
-            ctx.IncrementFiles();
-
-            string content;
-            try
-            {
-                using var fs = new FileStream(vdfPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-                using var sr = new StreamReader(fs);
-                content = await sr.ReadToEndAsync();
-            }
-            catch (IOException)
-            {
-                continue;
-            }
-            catch (UnauthorizedAccessException)
-            {
-                continue;
-            }
-
-            if (content.Contains("-insecure", StringComparison.OrdinalIgnoreCase))
-            {
-                ctx.AddFinding(new Finding
-                {
-                    Module = Name,
-                    Title = "Steam -insecure Launch Option",
-                    Risk = RiskLevel.Critical,
-                    Location = vdfPath,
-                    FileName = Path.GetFileName(vdfPath),
-                    Reason = "-insecure flag in Steam localconfig.vdf — disables VAC for CS2/CSGO",
-                    Detail = $"File: {vdfPath}",
-                });
-            }
-
-            if (content.Contains("sv_cheats 1", StringComparison.OrdinalIgnoreCase))
-            {
-                ctx.AddFinding(new Finding
-                {
-                    Module = Name,
-                    Title = "sv_cheats 1 in Steam Launch Options",
-                    Risk = RiskLevel.Critical,
-                    Location = vdfPath,
-                    FileName = Path.GetFileName(vdfPath),
-                    Reason = "sv_cheats 1 in Steam localconfig.vdf launch options — enables server-side cheats",
-                    Detail = $"File: {vdfPath}",
-                });
-            }
-
-            if (content.Contains("-allowdebug", StringComparison.OrdinalIgnoreCase))
-            {
-                ctx.AddFinding(new Finding
-                {
-                    Module = Name,
-                    Title = "Steam -allowdebug Launch Option",
-                    Risk = RiskLevel.High,
-                    Location = vdfPath,
-                    FileName = Path.GetFileName(vdfPath),
-                    Reason = "-allowdebug flag in Steam launch options — enables debug mode which can be abused to bypass anti-cheat",
-                    Detail = $"File: {vdfPath}",
-                });
-            }
-
-            // -dev combined with CS AppID context (730 = CS2/CSGO)
-            if (content.Contains("-dev", StringComparison.OrdinalIgnoreCase)
-                && (content.Contains("\"730\"", StringComparison.OrdinalIgnoreCase)
-                    || content.Contains("counter-strike", StringComparison.OrdinalIgnoreCase)))
-            {
-                ctx.AddFinding(new Finding
-                {
-                    Module = Name,
-                    Title = "Steam -dev Launch Option in CS Context",
-                    Risk = RiskLevel.Medium,
-                    Location = vdfPath,
-                    FileName = Path.GetFileName(vdfPath),
-                    Reason = "-dev launch option found in CS2/CSGO context — developer mode may weaken anti-cheat protections",
-                    Detail = $"File: {vdfPath}",
-                });
-            }
-        }
-    }
-
-    // -------------------------------------------------------------------------
-    // 7. FACEIT AC service/driver check
-    // -------------------------------------------------------------------------
-
-    private async Task ScanFaceitServiceRegistryAsync(ScanContext ctx, CancellationToken ct)
-    {
-        ct.ThrowIfCancellationRequested();
-
-        // Check FACEIT service registry keys
-        var faceitServiceKeys = new[] { "faceit", "FACEITService" };
-
-        foreach (var serviceName in faceitServiceKeys)
-        {
-            ct.ThrowIfCancellationRequested();
-            var keyPath = $@"SYSTEM\CurrentControlSet\Services\{serviceName}";
-
-            await Task.Run(() =>
-            {
-                try
-                {
-                    using var key = Registry.LocalMachine.OpenSubKey(keyPath);
-                    ctx.IncrementRegistryKeys();
-
-                    if (key == null) return;
-
-                    var startValue = key.GetValue("Start");
-                    if (startValue is int startInt && startInt == 4)
-                    {
-                        ctx.AddFinding(new Finding
-                        {
-                            Module = Name,
-                            Title = $"FACEIT Service Disabled: {serviceName}",
-                            Risk = RiskLevel.Critical,
-                            Location = $@"HKLM\{keyPath}",
-                            FileName = null,
-                            Reason = $"FACEIT service '{serviceName}' is set to Start=4 (Disabled) — anti-cheat driver has been manually disabled",
-                            Detail = $"Registry key: HKLM\\{keyPath}, Start value: 4",
-                        });
-                    }
-
-                    // Validate ImagePath exists on disk
-                    var imagePath = key.GetValue("ImagePath") as string;
-                    if (!string.IsNullOrEmpty(imagePath))
-                    {
-                        // Strip kernel path prefix if present
-                        var cleanPath = imagePath.TrimStart('\\').Replace("SystemRoot\\", @"C:\Windows\", StringComparison.OrdinalIgnoreCase);
-                        if (imagePath.Contains("faceit.sys", StringComparison.OrdinalIgnoreCase))
-                        {
-                            var sysPath = cleanPath;
-                            if (!File.Exists(sysPath))
-                            {
-                                ctx.AddFinding(new Finding
-                                {
-                                    Module = Name,
-                                    Title = "FACEIT Driver File Missing",
-                                    Risk = RiskLevel.High,
-                                    Location = $@"HKLM\{keyPath}",
-                                    FileName = "faceit.sys",
-                                    Reason = "FACEIT service points to faceit.sys driver that does not exist on disk — driver may have been removed to bypass FACEIT",
-                                    Detail = $"ImagePath: {imagePath}",
-                                });
-                            }
-                        }
-                    }
-                }
-                catch (UnauthorizedAccessException) { }
-                catch (Exception) { }
-            }, ct);
-        }
-
-        // Process check: look for FACEIT client processes
-        await Task.Run(() =>
-        {
-            var faceitProcessNames = new[] { "faceit-client-container", "faceit-anticheat", "FACEITClient" };
-            bool anyFaceitRunning = false;
-
-            foreach (var procName in faceitProcessNames)
-            {
-                try
-                {
-                    var procs = System.Diagnostics.Process.GetProcessesByName(procName);
-                    ctx.IncrementProcesses((long)procs.Length);
-
-                    if (procs.Length > 0)
-                    {
-                        anyFaceitRunning = true;
-                    }
-                }
-                catch { }
-            }
-
-            if (!anyFaceitRunning)
-            {
-                ctx.AddFinding(new Finding
-                {
-                    Module = Name,
-                    Title = "FACEIT Client Process Not Running",
-                    Risk = RiskLevel.Low,
-                    Location = "Process list",
-                    FileName = null,
-                    Reason = "No FACEIT client process detected — FACEIT may not be installed, or may have been bypassed/unloaded",
-                    Detail = "Processes checked: faceit-client-container, faceit-anticheat, FACEITClient",
-                });
-            }
-        }, ct);
-    }
-
-    // -------------------------------------------------------------------------
-    // 8. FACEIT bypass executables/DLLs
-    // -------------------------------------------------------------------------
-
-    private async Task ScanFaceitBypassFilesAsync(ScanContext ctx, CancellationToken ct)
-    {
-        var desktop = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
-        var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-        var downloads = Path.Combine(userProfile, "Downloads");
-        var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-        var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        var temp = Path.GetTempPath();
-
-        var searchRoots = new[] { desktop, downloads, appData, localAppData, temp }
-            .Where(Directory.Exists)
-            .ToArray();
-
-        foreach (var root in searchRoots)
-        {
-            ct.ThrowIfCancellationRequested();
-
-            IEnumerable<string> files;
-            try
-            {
-                files = Directory.EnumerateFiles(root, "*.*", SearchOption.AllDirectories);
-            }
-            catch (UnauthorizedAccessException)
-            {
-                continue;
-            }
-
-            foreach (var file in files)
-            {
-                ct.ThrowIfCancellationRequested();
-                ctx.IncrementFiles();
-                var fileName = Path.GetFileName(file);
-
-                foreach (var bypassFile in FaceitBypassFiles)
-                {
-                    if (fileName.Equals(bypassFile, StringComparison.OrdinalIgnoreCase))
-                    {
-                        ctx.AddFinding(new Finding
-                        {
-                            Module = Name,
-                            Title = $"FACEIT Bypass File: {bypassFile}",
-                            Risk = RiskLevel.Critical,
-                            Location = file,
-                            FileName = fileName,
-                            Reason = $"Known FACEIT bypass executable/DLL '{bypassFile}' found — used to disable or circumvent FACEIT anti-cheat",
-                            Detail = $"Found at: {file}",
-                        });
-                        break;
-                    }
-                }
-            }
-        }
-
-        await Task.CompletedTask;
-    }
-
-    // -------------------------------------------------------------------------
-    // 9. FACEIT bypass GitHub repos (folder names)
-    // -------------------------------------------------------------------------
-
-    private async Task ScanFaceitBypassReposAsync(ScanContext ctx, CancellationToken ct)
-    {
-        var desktop = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
-        var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-        var downloads = Path.Combine(userProfile, "Downloads");
-        var documents = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-        var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-
-        var searchRoots = new[] { desktop, downloads, documents, appData }
-            .Where(Directory.Exists)
-            .ToArray();
-
-        foreach (var root in searchRoots)
-        {
-            ct.ThrowIfCancellationRequested();
-
-            IEnumerable<string> dirs;
-            try
-            {
-                dirs = Directory.EnumerateDirectories(root, "*", SearchOption.AllDirectories);
-            }
-            catch (UnauthorizedAccessException)
-            {
-                continue;
-            }
-
-            foreach (var dir in dirs)
-            {
-                ct.ThrowIfCancellationRequested();
-                var dirName = Path.GetFileName(dir);
-
-                foreach (var repoName in FaceitBypassRepoNames)
-                {
-                    if (dirName.Equals(repoName, StringComparison.OrdinalIgnoreCase))
-                    {
-                        ctx.AddFinding(new Finding
-                        {
-                            Module = Name,
-                            Title = $"FACEIT Bypass Repo Folder: {repoName}",
-                            Risk = RiskLevel.High,
-                            Location = dir,
-                            FileName = dirName,
-                            Reason = $"Known FACEIT bypass project folder '{repoName}' found — indicates presence of FACEIT anti-cheat bypass source or build",
-                            Detail = $"Found at: {dir}",
-                        });
-                        break;
-                    }
-                }
-            }
-        }
-
-        await Task.CompletedTask;
-    }
-
-    // -------------------------------------------------------------------------
-    // 10. FACEIT evasion config files
-    // -------------------------------------------------------------------------
-
-    private async Task ScanFaceitEvasionConfigsAsync(ScanContext ctx, CancellationToken ct)
-    {
-        var roots = GetCommonScanRoots();
-        var extensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { ".json", ".ini", ".cfg", ".txt" };
-
-        foreach (var root in roots)
-        {
-            ct.ThrowIfCancellationRequested();
-
-            IEnumerable<string> files;
-            try
-            {
-                files = Directory.EnumerateFiles(root, "*.*", SearchOption.AllDirectories);
-            }
-            catch (UnauthorizedAccessException)
-            {
-                continue;
-            }
-
-            foreach (var file in files)
-            {
-                ct.ThrowIfCancellationRequested();
-                var ext = Path.GetExtension(file);
-                if (!extensions.Contains(ext)) continue;
-
-                ctx.IncrementFiles();
-                string content;
-                try
-                {
-                    using var fs = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-                    using var sr = new StreamReader(fs);
-                    content = await sr.ReadToEndAsync();
-                }
-                catch (IOException)
-                {
-                    continue;
-                }
-                catch (UnauthorizedAccessException)
-                {
-                    continue;
-                }
-
-                foreach (var (pattern, risk, reason) in FaceitConfigPatterns)
-                {
-                    if (content.Contains(pattern, StringComparison.OrdinalIgnoreCase))
-                    {
-                        ctx.AddFinding(new Finding
-                        {
-                            Module = Name,
-                            Title = $"FACEIT Evasion Config: {pattern}",
-                            Risk = risk,
-                            Location = file,
-                            FileName = Path.GetFileName(file),
-                            Reason = reason,
-                            Detail = $"Pattern '{pattern}' found in: {file}",
-                        });
-                    }
-                }
-            }
-        }
-    }
-
-    // -------------------------------------------------------------------------
-    // 11. Fake Steam API DLLs
-    // -------------------------------------------------------------------------
-
-    private async Task ScanFakeSteamApiDllsAsync(ScanContext ctx, CancellationToken ct)
-    {
-        var roots = GetCommonScanRoots();
-
-        foreach (var root in roots)
-        {
-            ct.ThrowIfCancellationRequested();
-
-            IEnumerable<string> files;
-            try
-            {
-                files = Directory.EnumerateFiles(root, "*.dll", SearchOption.AllDirectories);
-            }
-            catch (UnauthorizedAccessException)
-            {
-                continue;
-            }
-
-            foreach (var file in files)
-            {
-                ct.ThrowIfCancellationRequested();
-                ctx.IncrementFiles();
-                var fileName = Path.GetFileName(file);
-
-                foreach (var fakeDll in FakeSteamApiDlls)
-                {
-                    if (fileName.Equals(fakeDll, StringComparison.OrdinalIgnoreCase))
-                    {
-                        ctx.AddFinding(new Finding
-                        {
-                            Module = Name,
-                            Title = $"Fake Steam API DLL: {fakeDll}",
-                            Risk = RiskLevel.Critical,
-                            Location = file,
-                            FileName = fileName,
-                            Reason = $"Fake/bypass Steam API DLL '{fakeDll}' found — replaces legitimate Steam API to bypass VAC and DRM",
-                            Detail = $"Found at: {file}",
-                        });
-                        break;
-                    }
-                }
-            }
-        }
-
-        await Task.CompletedTask;
-    }
-
-    // -------------------------------------------------------------------------
-    // 12. Modified gameoverlayrenderer64.dll outside Steam
-    // -------------------------------------------------------------------------
-
-    private async Task ScanGameoverlayrendererOutsideSteamAsync(ScanContext ctx, CancellationToken ct)
-    {
-        var searchNames = new[] { "gameoverlayrenderer64.dll", "gameoverlayrenderer.dll" };
-        var roots = GetCommonScanRoots();
-
-        foreach (var root in roots)
-        {
-            ct.ThrowIfCancellationRequested();
-
-            // Skip if this root is inside or is the Steam install directory
-            if (root.StartsWith(SteamDefaultPath, StringComparison.OrdinalIgnoreCase)) continue;
-
-            IEnumerable<string> files;
-            try
-            {
-                files = Directory.EnumerateFiles(root, "*.dll", SearchOption.AllDirectories);
-            }
-            catch (UnauthorizedAccessException)
-            {
-                continue;
-            }
-
-            foreach (var file in files)
-            {
-                ct.ThrowIfCancellationRequested();
-                ctx.IncrementFiles();
-                var fileName = Path.GetFileName(file);
-
-                // Skip files that are actually in the Steam dir
-                if (file.StartsWith(SteamDefaultPath, StringComparison.OrdinalIgnoreCase)) continue;
-
-                foreach (var searchName in searchNames)
-                {
-                    if (fileName.Equals(searchName, StringComparison.OrdinalIgnoreCase))
-                    {
-                        ctx.AddFinding(new Finding
-                        {
-                            Module = Name,
-                            Title = $"gameoverlayrenderer Outside Steam: {fileName}",
-                            Risk = RiskLevel.Critical,
-                            Location = file,
-                            FileName = fileName,
-                            Reason = $"'{fileName}' found outside Steam installation directory — commonly abused as DLL injection point for cheats",
-                            Detail = $"Found at: {file} (Steam install: {SteamDefaultPath})",
-                        });
-                        break;
-                    }
-                }
-            }
-        }
-
-        await Task.CompletedTask;
-    }
-
-    // -------------------------------------------------------------------------
-    // 13. PowerShell history for FACEIT/VAC commands
-    // -------------------------------------------------------------------------
-
-    private async Task ScanPowerShellHistoryAsync(ScanContext ctx, CancellationToken ct)
-    {
-        var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-        var psHistoryPath = Path.Combine(appData, "Microsoft", "Windows", "PowerShell", "PSReadLine", "ConsoleHost_history.txt");
-
-        if (File.Exists(psHistoryPath))
-        {
-            await ScanScriptFileForTamperingAsync(ctx, psHistoryPath, ct);
-        }
-
-        // Also scan .bat, .cmd, .ps1 files on Desktop and Downloads
-        var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-        var scriptRoots = new[]
-        {
-            Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
-            Path.Combine(userProfile, "Downloads"),
-        };
-
-        var scriptExtensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { ".bat", ".cmd", ".ps1" };
-
-        foreach (var root in scriptRoots)
-        {
-            ct.ThrowIfCancellationRequested();
-            if (!Directory.Exists(root)) continue;
-
-            IEnumerable<string> files;
-            try
-            {
-                files = Directory.EnumerateFiles(root, "*.*", SearchOption.AllDirectories);
-            }
-            catch (UnauthorizedAccessException)
-            {
-                continue;
-            }
-
-            foreach (var file in files)
-            {
-                ct.ThrowIfCancellationRequested();
-                var ext = Path.GetExtension(file);
-                if (!scriptExtensions.Contains(ext)) continue;
-
-                await ScanScriptFileForTamperingAsync(ctx, file, ct);
-            }
-        }
-    }
-
-    // Helper: scan a script/history file for FACEIT/VAC tampering commands
-    private async Task ScanScriptFileForTamperingAsync(ScanContext ctx, string filePath, CancellationToken ct)
-    {
         ctx.IncrementFiles();
+
         string content;
         try
         {
-            using var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            using var fs = new FileStream(historyPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
             using var sr = new StreamReader(fs);
             content = await sr.ReadToEndAsync();
         }
@@ -1389,228 +859,238 @@ public sealed class VacFaceitBypassScanModule : IScanModule
             return;
         }
 
-        var lines = content.Split('\n', StringSplitOptions.RemoveEmptyEntries);
-
-        foreach (var rawLine in lines)
+        foreach (var (pattern, risk, title) in PsHistoryPatterns)
         {
-            ct.ThrowIfCancellationRequested();
-            var line = rawLine.Trim();
-            var lineLower = line.ToLowerInvariant();
-
-            foreach (var (tokens, risk, reason) in PowerShellPatterns)
+            if (content.Contains(pattern, StringComparison.OrdinalIgnoreCase))
             {
-                bool allMatch = tokens.All(t => lineLower.Contains(t.ToLowerInvariant(), StringComparison.OrdinalIgnoreCase));
-                if (!allMatch) continue;
-
                 ctx.AddFinding(new Finding
                 {
-                    Module = Name,
-                    Title = $"FACEIT/VAC Tampering Command in Script",
-                    Risk = risk,
-                    Location = filePath,
-                    FileName = Path.GetFileName(filePath),
-                    Reason = reason,
-                    Detail = $"Command: {line.Truncate(200)} | File: {filePath}",
+                    Module   = Name,
+                    Title    = $"VAC/FACEIT Command in PS History: {title}",
+                    Risk     = risk,
+                    Location = historyPath,
+                    FileName = Path.GetFileName(historyPath),
+                    Reason   = $"PowerShell history contains the pattern \"{pattern}\", indicating an attempt to interfere with VAC or FACEIT Anti-Cheat.",
+                    Detail   = ExtractMatchingLine(content, pattern),
                 });
                 break;
             }
         }
+
+        // Additional combined check: GreenLuma referenced in PS history
+        if (content.Contains("GreenLuma", StringComparison.OrdinalIgnoreCase))
+        {
+            ctx.AddFinding(new Finding
+            {
+                Module   = Name,
+                Title    = "GreenLuma Steam Emulator Referenced in PS History",
+                Risk     = RiskLevel.High,
+                Location = historyPath,
+                FileName = Path.GetFileName(historyPath),
+                Reason   = "PowerShell history references 'GreenLuma', a Steam emulator that bypasses VAC by faking game ownership and disabling VAC checks.",
+                Detail   = ExtractMatchingLine(content, "GreenLuma"),
+            });
+        }
     }
 
-    // -------------------------------------------------------------------------
-    // 14. CS2/CSGO specific checks
-    // -------------------------------------------------------------------------
-
-    private async Task ScanCsgoGameSpecificFilesAsync(ScanContext ctx, CancellationToken ct)
+    // =========================================================================
+    // 10. Modified gameoverlayrenderer64.dll in game directories
+    // =========================================================================
+    private async Task CheckGameoverlayRendererAsync(ZeroTrace.Core.Engine.ScanContext ctx, CancellationToken ct)
     {
-        // gameinfo.gi checks
-        foreach (var gameinfoPath in CsgoGameinfoPaths)
+        await Task.Run(() =>
         {
-            ct.ThrowIfCancellationRequested();
-            if (!File.Exists(gameinfoPath)) continue;
+            // The legitimate gameoverlayrenderer64.dll lives only in the Steam installation
+            string[] legitSteamDirs =
+            [
+                @"C:\Program Files (x86)\Steam",
+                @"C:\Program Files\Steam",
+            ];
 
-            ctx.IncrementFiles();
-            string content;
-            try
-            {
-                using var fs = new FileStream(gameinfoPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-                using var sr = new StreamReader(fs);
-                content = await sr.ReadToEndAsync();
-            }
-            catch (IOException)
-            {
-                continue;
-            }
-            catch (UnauthorizedAccessException)
-            {
-                continue;
-            }
+            // Search game directories for a modified copy
+            string[] gameLibraries =
+            [
+                @"C:\Program Files (x86)\Steam\steamapps\common",
+                @"C:\Program Files\Steam\steamapps\common",
+            ];
 
-            if (content.Contains("sv_cheats 1", StringComparison.OrdinalIgnoreCase))
+            string steamInstallDir = string.Empty;
+            foreach (string dir in legitSteamDirs)
             {
-                ctx.AddFinding(new Finding
+                if (Directory.Exists(dir))
                 {
-                    Module = Name,
-                    Title = "sv_cheats 1 in CS2/CSGO gameinfo.gi",
-                    Risk = RiskLevel.Critical,
-                    Location = gameinfoPath,
-                    FileName = Path.GetFileName(gameinfoPath),
-                    Reason = "sv_cheats 1 found in gameinfo.gi — enables server-side cheats and disables VAC protection",
-                    Detail = $"File: {gameinfoPath}",
-                });
-            }
-
-            if (content.Contains("insecure", StringComparison.OrdinalIgnoreCase))
-            {
-                ctx.AddFinding(new Finding
-                {
-                    Module = Name,
-                    Title = "insecure Flag in CS2/CSGO gameinfo.gi",
-                    Risk = RiskLevel.High,
-                    Location = gameinfoPath,
-                    FileName = Path.GetFileName(gameinfoPath),
-                    Reason = "'insecure' found in gameinfo.gi — VAC insecure mode configured in game info file",
-                    Detail = $"File: {gameinfoPath}",
-                });
-            }
-
-            // Check for paths that go outside Steam install dir
-            var lines = content.Split('\n');
-            foreach (var line in lines)
-            {
-                ct.ThrowIfCancellationRequested();
-                var lineTrimmed = line.Trim();
-                // Look for path entries that don't start with game or csgo paths
-                if (lineTrimmed.StartsWith("Game", StringComparison.OrdinalIgnoreCase)
-                    && (lineTrimmed.Contains(@"..\..", StringComparison.OrdinalIgnoreCase)
-                        || lineTrimmed.Contains(@"C:\Users", StringComparison.OrdinalIgnoreCase)
-                        || lineTrimmed.Contains(@"%APPDATA%", StringComparison.OrdinalIgnoreCase)))
-                {
-                    ctx.AddFinding(new Finding
-                    {
-                        Module = Name,
-                        Title = "Custom Game Path in CS2/CSGO gameinfo.gi",
-                        Risk = RiskLevel.High,
-                        Location = gameinfoPath,
-                        FileName = Path.GetFileName(gameinfoPath),
-                        Reason = "Custom game path pointing outside Steam directory found in gameinfo.gi — could load unauthorized game content",
-                        Detail = $"Line: {lineTrimmed}",
-                    });
+                    steamInstallDir = dir;
                     break;
                 }
             }
-        }
 
-        // autoexec.cfg checks
-        foreach (var autoexecPath in CsgoAutoexecPaths)
-        {
-            ct.ThrowIfCancellationRequested();
-            if (!File.Exists(autoexecPath)) continue;
-
-            ctx.IncrementFiles();
-            string content;
-            try
-            {
-                using var fs = new FileStream(autoexecPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-                using var sr = new StreamReader(fs);
-                content = await sr.ReadToEndAsync();
-            }
-            catch (IOException)
-            {
-                continue;
-            }
-            catch (UnauthorizedAccessException)
-            {
-                continue;
-            }
-
-            foreach (var (pattern, risk, reason) in AutoexecPatterns)
-            {
-                if (content.Contains(pattern, StringComparison.OrdinalIgnoreCase))
-                {
-                    ctx.AddFinding(new Finding
-                    {
-                        Module = Name,
-                        Title = $"Suspicious autoexec.cfg Command: {pattern}",
-                        Risk = risk,
-                        Location = autoexecPath,
-                        FileName = Path.GetFileName(autoexecPath),
-                        Reason = reason,
-                        Detail = $"Pattern '{pattern}' in {autoexecPath}",
-                    });
-                }
-            }
-
-            // Check for bind commands with cheat keywords
-            var cheatBindKeywords = new[] { "aimbot", "wallhack", "esp", "triggerbot", "bhop", "speedhack", "norecoil", "spinbot" };
-            var bindLines = content.Split('\n').Where(l => l.TrimStart().StartsWith("bind", StringComparison.OrdinalIgnoreCase));
-            foreach (var bindLine in bindLines)
+            foreach (string library in gameLibraries)
             {
                 ct.ThrowIfCancellationRequested();
-                foreach (var kw in cheatBindKeywords)
+                if (!Directory.Exists(library))
+                    continue;
+
+                IEnumerable<string> overlayDlls;
+                try
                 {
-                    if (bindLine.Contains(kw, StringComparison.OrdinalIgnoreCase))
+                    overlayDlls = Directory.EnumerateFiles(
+                        library, "gameoverlayrenderer64.dll", SearchOption.AllDirectories);
+                }
+                catch (UnauthorizedAccessException)
+                {
+                    continue;
+                }
+
+                foreach (string dllPath in overlayDlls)
+                {
+                    ct.ThrowIfCancellationRequested();
+                    ctx.IncrementFiles();
+
+                    try
                     {
-                        ctx.AddFinding(new Finding
+                        // A copy inside a game subdirectory (not inside the Steam root) is suspicious
+                        bool inSteamRoot = !string.IsNullOrEmpty(steamInstallDir)
+                            && dllPath.StartsWith(steamInstallDir, StringComparison.OrdinalIgnoreCase);
+
+                        // The file should be in Steam root bin/ folder, not in a game directory
+                        bool inGameDir = dllPath.StartsWith(library, StringComparison.OrdinalIgnoreCase);
+
+                        if (inGameDir && !inSteamRoot)
                         {
-                            Module = Name,
-                            Title = "Cheat Keyword Bind in autoexec.cfg",
-                            Risk = RiskLevel.Medium,
-                            Location = autoexecPath,
-                            FileName = Path.GetFileName(autoexecPath),
-                            Reason = $"bind command with cheat keyword '{kw}' in autoexec.cfg",
-                            Detail = $"Line: {bindLine.Trim().Truncate(200)}",
-                        });
-                        break;
+                            ctx.AddFinding(new Finding
+                            {
+                                Module   = Name,
+                                Title    = "gameoverlayrenderer64.dll Found in Game Directory (Possible Modification)",
+                                Risk     = RiskLevel.High,
+                                Location = dllPath,
+                                FileName = "gameoverlayrenderer64.dll",
+                                Reason   = "gameoverlayrenderer64.dll was found inside a game directory rather than the Steam installation folder. A modified overlay renderer is used to hook VAC memory scanning calls.",
+                                Detail   = $"Game directory: {Path.GetDirectoryName(dllPath)}",
+                            });
+                        }
+                    }
+                    catch (IOException)
+                    {
                     }
                 }
             }
-        }
-
-        // Steam shortcut checks for -insecure
-        await ScanSteamShortcutsForInsecureAsync(ctx, ct);
+        }, ct);
     }
 
-    // Helper: scan Steam shortcut files for -insecure flag
-    private async Task ScanSteamShortcutsForInsecureAsync(ScanContext ctx, CancellationToken ct)
+    // =========================================================================
+    // 11. CS2 -insecure launch options and gameinfo.gi modifications
+    // =========================================================================
+    private async Task CheckCs2InsecureLaunchOptionsAsync(ZeroTrace.Core.Engine.ScanContext ctx, CancellationToken ct)
     {
-        var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-        var shortcutRoots = new[]
-        {
-            Path.Combine(appData, "Steam"),
-            @"C:\Program Files (x86)\Steam\userdata",
-        };
+        string[] cs2Dirs =
+        [
+            @"C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive",
+            @"C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike 2",
+        ];
 
-        foreach (var root in shortcutRoots)
+        foreach (string cs2Dir in cs2Dirs)
         {
             ct.ThrowIfCancellationRequested();
-            if (!Directory.Exists(root)) continue;
+            if (!Directory.Exists(cs2Dir))
+                continue;
 
-            IEnumerable<string> files;
+            // Check for gameinfo.gi modifications
+            IEnumerable<string> gameInfoFiles;
             try
             {
-                files = Directory.EnumerateFiles(root, "*.*", SearchOption.AllDirectories);
+                gameInfoFiles = Directory.EnumerateFiles(cs2Dir, "gameinfo.gi", SearchOption.AllDirectories);
             }
             catch (UnauthorizedAccessException)
             {
                 continue;
             }
 
-            foreach (var file in files)
+            foreach (string gameInfoPath in gameInfoFiles)
             {
                 ct.ThrowIfCancellationRequested();
-                var fileName = Path.GetFileName(file);
-                var ext = Path.GetExtension(file);
-
-                bool isShortcutFile = fileName.Equals("shortcuts.vdf", StringComparison.OrdinalIgnoreCase)
-                    || ext.Equals(".url", StringComparison.OrdinalIgnoreCase);
-                if (!isShortcutFile) continue;
-
                 ctx.IncrementFiles();
+
+                await InspectGameInfoFileAsync(ctx, gameInfoPath, ct);
+            }
+        }
+
+        // Check Steam local config for -insecure launch option for CS2
+        await CheckSteamLocalConfigForInsecureAsync(ctx, ct);
+    }
+
+    private async Task InspectGameInfoFileAsync(
+        ZeroTrace.Core.Engine.ScanContext ctx,
+        string gameInfoPath,
+        CancellationToken ct)
+    {
+        string content;
+        try
+        {
+            using var fs = new FileStream(gameInfoPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            using var sr = new StreamReader(fs);
+            content = await sr.ReadToEndAsync();
+        }
+        catch (IOException)
+        {
+            return;
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return;
+        }
+
+        ct.ThrowIfCancellationRequested();
+
+        // Look for added search paths pointing to outside the game directory (cheat DLL search path injection)
+        if (content.Contains("Game\t\t|gameinfo_path", StringComparison.OrdinalIgnoreCase)
+            && content.Contains(@"..\..", StringComparison.OrdinalIgnoreCase))
+        {
+            ctx.AddFinding(new Finding
+            {
+                Module   = Name,
+                Title    = "CS2 gameinfo.gi Contains Suspicious External Search Path",
+                Risk     = RiskLevel.High,
+                Location = gameInfoPath,
+                FileName = "gameinfo.gi",
+                Reason   = "gameinfo.gi contains an external path traversal in a Game search path entry. This technique is used to load cheat DLLs by adding them to the game's VPK search path.",
+                Detail   = ExtractMatchingLine(content, @"..\..")
+            });
+        }
+    }
+
+    private async Task CheckSteamLocalConfigForInsecureAsync(ZeroTrace.Core.Engine.ScanContext ctx, CancellationToken ct)
+    {
+        string[] steamUserDataRoots =
+        [
+            @"C:\Program Files (x86)\Steam\userdata",
+            @"C:\Program Files\Steam\userdata",
+        ];
+
+        foreach (string udRoot in steamUserDataRoots)
+        {
+            ct.ThrowIfCancellationRequested();
+            if (!Directory.Exists(udRoot))
+                continue;
+
+            IEnumerable<string> localConfigFiles;
+            try
+            {
+                localConfigFiles = Directory.EnumerateFiles(udRoot, "localconfig.vdf", SearchOption.AllDirectories);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                continue;
+            }
+
+            foreach (string configPath in localConfigFiles)
+            {
+                ct.ThrowIfCancellationRequested();
+                ctx.IncrementFiles();
+
                 string content;
                 try
                 {
-                    using var fs = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                    using var fs = new FileStream(configPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
                     using var sr = new StreamReader(fs);
                     content = await sr.ReadToEndAsync();
                 }
@@ -1627,339 +1107,503 @@ public sealed class VacFaceitBypassScanModule : IScanModule
                 {
                     ctx.AddFinding(new Finding
                     {
-                        Module = Name,
-                        Title = "-insecure Flag in Steam Shortcut",
-                        Risk = RiskLevel.Critical,
-                        Location = file,
-                        FileName = fileName,
-                        Reason = "-insecure flag found in Steam shortcut file — disables VAC for targeted game",
-                        Detail = $"File: {file}",
+                        Module   = Name,
+                        Title    = "Steam localconfig.vdf Contains -insecure Launch Option",
+                        Risk     = RiskLevel.High,
+                        Location = configPath,
+                        FileName = Path.GetFileName(configPath),
+                        Reason   = "Steam localconfig.vdf contains the '-insecure' launch option. This disables VAC for the configured game, allowing cheats to run without triggering VAC bans.",
+                        Detail   = ExtractMatchingLine(content, "-insecure"),
                     });
                 }
             }
         }
     }
 
-    // -------------------------------------------------------------------------
-    // 15. Steam Workshop VPK abuse
-    // -------------------------------------------------------------------------
-
-    private async Task ScanWorkshopVpkFilesAsync(ScanContext ctx, CancellationToken ct)
+    // =========================================================================
+    // 12. CS2 autoexec.cfg with sv_cheats 1 in online context
+    // =========================================================================
+    private async Task CheckCs2AutoexecAsync(ZeroTrace.Core.Engine.ScanContext ctx, CancellationToken ct)
     {
-        var cheatKeywords = new[] { "cheat", "hack", "bypass", "aimbot", "wallhack", "esp", "inject" };
+        string[] cs2CfgRoots =
+        [
+            @"C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive\game\csgo\cfg",
+            @"C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike 2\game\csgo\cfg",
+        ];
 
-        foreach (var workshopPath in CsgoWorkshopPaths)
+        foreach (string cfgRoot in cs2CfgRoots)
         {
             ct.ThrowIfCancellationRequested();
-            if (!Directory.Exists(workshopPath)) continue;
+            if (!Directory.Exists(cfgRoot))
+                continue;
 
-            IEnumerable<string> files;
+            IEnumerable<string> cfgFiles;
             try
             {
-                files = Directory.EnumerateFiles(workshopPath, "*.vpk", SearchOption.AllDirectories);
+                cfgFiles = Directory.EnumerateFiles(cfgRoot, "*.cfg", SearchOption.TopDirectoryOnly);
             }
             catch (UnauthorizedAccessException)
             {
                 continue;
             }
 
-            foreach (var file in files)
+            foreach (string cfgPath in cfgFiles)
             {
                 ct.ThrowIfCancellationRequested();
                 ctx.IncrementFiles();
-                var fileName = Path.GetFileName(file);
-                var fileNameLower = fileName.ToLowerInvariant();
 
-                // Check for suspicious keywords in VPK filename
-                foreach (var kw in cheatKeywords)
-                {
-                    if (fileNameLower.Contains(kw, StringComparison.OrdinalIgnoreCase))
-                    {
-                        ctx.AddFinding(new Finding
-                        {
-                            Module = Name,
-                            Title = $"Suspicious Workshop VPK: {fileName}",
-                            Risk = RiskLevel.High,
-                            Location = file,
-                            FileName = fileName,
-                            Reason = $"CS2/CSGO workshop VPK file with suspicious name containing '{kw}' — may contain unauthorized game modification or cheat payload",
-                            Detail = $"File: {file}",
-                        });
-                        break;
-                    }
-                }
-
-                // Also scan VPK header content for embedded executable references
-                try
-                {
-                    using var fs = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-                    using var sr = new StreamReader(fs);
-                    // Read first 4KB — VPK header with file list
-                    var buffer = new char[4096];
-                    int read = await sr.ReadAsync(buffer, 0, buffer.Length);
-                    var header = new string(buffer, 0, read);
-
-                    var suspiciousEmbeddedExtensions = new[] { ".exe", ".dll", ".bat", ".ps1" };
-                    foreach (var suspExt in suspiciousEmbeddedExtensions)
-                    {
-                        if (header.Contains(suspExt, StringComparison.OrdinalIgnoreCase))
-                        {
-                            ctx.AddFinding(new Finding
-                            {
-                                Module = Name,
-                                Title = $"Executable Extension in Workshop VPK: {fileName}",
-                                Risk = RiskLevel.High,
-                                Location = file,
-                                FileName = fileName,
-                                Reason = $"CS2/CSGO workshop VPK contains reference to '{suspExt}' — potential executable payload embedded in game content",
-                                Detail = $"Extension '{suspExt}' found in VPK header of: {file}",
-                            });
-                            break;
-                        }
-                    }
-                }
-                catch (IOException) { }
-                catch (UnauthorizedAccessException) { }
+                await InspectCfgFileAsync(ctx, cfgPath, ct);
             }
         }
     }
 
-    // -------------------------------------------------------------------------
-    // 16. HKLM/HKCU registry checks for FACEIT/VAC bypass artifacts
-    // -------------------------------------------------------------------------
-
-    private async Task ScanSteamRegistryArtifactsAsync(ScanContext ctx, CancellationToken ct)
+    private async Task InspectCfgFileAsync(
+        ZeroTrace.Core.Engine.ScanContext ctx,
+        string cfgPath,
+        CancellationToken ct)
     {
+        string content;
+        try
+        {
+            using var fs = new FileStream(cfgPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            using var sr = new StreamReader(fs);
+            content = await sr.ReadToEndAsync();
+        }
+        catch (IOException)
+        {
+            return;
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return;
+        }
+
         ct.ThrowIfCancellationRequested();
 
-        await Task.Run(() =>
+        string fileName = Path.GetFileName(cfgPath);
+
+        if (content.Contains("sv_cheats", StringComparison.OrdinalIgnoreCase)
+            && content.Contains("1", StringComparison.OrdinalIgnoreCase))
         {
-            // HKCU\SOFTWARE\FACEIT — flag if missing when FACEIT might be installed
-            try
+            ctx.AddFinding(new Finding
             {
-                using var faceitKey = Registry.CurrentUser.OpenSubKey(@"SOFTWARE\FACEIT");
-                ctx.IncrementRegistryKeys();
-                // Low informational if key is missing
-                if (faceitKey == null)
-                {
-                    ctx.AddFinding(new Finding
-                    {
-                        Module = Name,
-                        Title = "FACEIT Registry Key Absent",
-                        Risk = RiskLevel.Low,
-                        Location = @"HKCU\SOFTWARE\FACEIT",
-                        Reason = "FACEIT registry key not found — FACEIT may not be installed or registry entries were tampered with",
-                        Detail = "Key: HKCU\\SOFTWARE\\FACEIT",
-                    });
-                }
-            }
-            catch (UnauthorizedAccessException) { }
+                Module   = Name,
+                Title    = $"CS2/CSGO cfg File Contains sv_cheats 1",
+                Risk     = RiskLevel.Medium,
+                Location = cfgPath,
+                FileName = fileName,
+                Reason   = $"CS2/CSGO config file \"{fileName}\" contains 'sv_cheats 1'. Setting sv_cheats in an autoexec or startup cfg is used to enable cheat commands in online play through console variable manipulation.",
+                Detail   = ExtractMatchingLine(content, "sv_cheats"),
+            });
+        }
 
-            // HKCU\SOFTWARE\Valve\Steam — validate SteamExe path
-            try
+        // Check for injector commands in cfg files (exec + payload pattern)
+        string[] injectorCmds =
+        [
+            "exec payload",
+            "exec inject",
+            "exec cheat",
+            "exec hack",
+            "exec loader",
+        ];
+
+        foreach (string cmd in injectorCmds)
+        {
+            if (content.Contains(cmd, StringComparison.OrdinalIgnoreCase))
             {
-                using var steamKey = Registry.CurrentUser.OpenSubKey(@"SOFTWARE\Valve\Steam");
-                ctx.IncrementRegistryKeys();
-                if (steamKey != null)
+                ctx.AddFinding(new Finding
                 {
-                    var steamExePath = steamKey.GetValue("SteamExe") as string;
-                    if (!string.IsNullOrEmpty(steamExePath) && !File.Exists(steamExePath))
-                    {
-                        ctx.AddFinding(new Finding
-                        {
-                            Module = Name,
-                            Title = "Steam Executable Path Invalid",
-                            Risk = RiskLevel.High,
-                            Location = @"HKCU\SOFTWARE\Valve\Steam",
-                            Reason = "SteamExe registry value points to a path that does not exist on disk — Steam may have been removed while emulator remnants remain",
-                            Detail = $"SteamExe value: {steamExePath}",
-                        });
-                    }
-                }
+                    Module   = Name,
+                    Title    = $"CS2 cfg File Contains Suspicious exec Command",
+                    Risk     = RiskLevel.High,
+                    Location = cfgPath,
+                    FileName = fileName,
+                    Reason   = $"CS2 config file contains the suspicious command \"{cmd}\". This pattern is used to execute a separate payload or cheat configuration file at game startup.",
+                    Detail   = ExtractMatchingLine(content, cmd),
+                });
+                return;
             }
-            catch (UnauthorizedAccessException) { }
-
-            // HKCU\SOFTWARE\Valve\Steam\ActiveProcess — flag if pid present but Steam not running
-            try
-            {
-                using var activeProcessKey = Registry.CurrentUser.OpenSubKey(@"SOFTWARE\Valve\Steam\ActiveProcess");
-                ctx.IncrementRegistryKeys();
-                if (activeProcessKey != null)
-                {
-                    var pid = activeProcessKey.GetValue("pid");
-                    if (pid != null)
-                    {
-                        int pidInt = Convert.ToInt32(pid);
-                        bool steamRunning = false;
-                        try
-                        {
-                            var steamProcs = System.Diagnostics.Process.GetProcessesByName("Steam");
-                            steamRunning = steamProcs.Length > 0;
-                        }
-                        catch { }
-
-                        if (!steamRunning && pidInt != 0)
-                        {
-                            ctx.AddFinding(new Finding
-                            {
-                                Module = Name,
-                                Title = "Stale Steam ActiveProcess PID",
-                                Risk = RiskLevel.Medium,
-                                Location = @"HKCU\SOFTWARE\Valve\Steam\ActiveProcess",
-                                Reason = "Steam ActiveProcess PID is set in registry but Steam.exe is not running — possible ghost process or emulator artifact",
-                                Detail = $"PID value: {pidInt}",
-                            });
-                        }
-                    }
-                }
-            }
-            catch (UnauthorizedAccessException) { }
-
-            // HKLM\SOFTWARE\Valve\Steam — validate InstallPath
-            try
-            {
-                using var steamHklmKey = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Valve\Steam")
-                    ?? Registry.LocalMachine.OpenSubKey(@"SOFTWARE\WOW6432Node\Valve\Steam");
-                ctx.IncrementRegistryKeys();
-                if (steamHklmKey != null)
-                {
-                    var installPath = steamHklmKey.GetValue("InstallPath") as string;
-                    if (!string.IsNullOrEmpty(installPath) && !Directory.Exists(installPath))
-                    {
-                        ctx.AddFinding(new Finding
-                        {
-                            Module = Name,
-                            Title = "Steam InstallPath Missing from Disk",
-                            Risk = RiskLevel.Medium,
-                            Location = @"HKLM\SOFTWARE\Valve\Steam",
-                            Reason = "Steam InstallPath in registry points to a directory that does not exist — Steam was removed but emulator remnants may remain",
-                            Detail = $"InstallPath value: {installPath}",
-                        });
-                    }
-                }
-            }
-            catch (UnauthorizedAccessException) { }
-        }, ct);
+        }
     }
 
-    // -------------------------------------------------------------------------
-    // 17. CS2/CSGO injector payloads in cfg directories
-    // -------------------------------------------------------------------------
-
-    private async Task ScanCsgoCfgDirectoryPayloadsAsync(ScanContext ctx, CancellationToken ct)
+    // =========================================================================
+    // 13. Workshop VPK files with executable content
+    // =========================================================================
+    private async Task ScanWorkshopVpkFilesAsync(ZeroTrace.Core.Engine.ScanContext ctx, CancellationToken ct)
     {
-        var cfgDirSuffixes = new[]
-        {
-            @"game\csgo\cfg",
-            @"csgo\cfg",
-            @"cstrike\cfg",
-        };
+        string[] workshopRoots =
+        [
+            @"C:\Program Files (x86)\Steam\steamapps\workshop\content",
+            @"C:\Program Files\Steam\steamapps\workshop\content",
+        ];
 
-        var csgoBasePaths = new[]
-        {
-            @"C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive",
-            @"C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike 2",
-        };
-
-        var executableExtensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-        {
-            ".dll", ".exe", ".sys", ".bin"
-        };
-
-        var cfgPayloadPatterns = new[] { "loadlibrary", "inject", "shellcode", "payload" };
-
-        foreach (var basePath in csgoBasePaths)
+        foreach (string workshopRoot in workshopRoots)
         {
             ct.ThrowIfCancellationRequested();
-            if (!Directory.Exists(basePath)) continue;
+            if (!Directory.Exists(workshopRoot))
+                continue;
 
-            foreach (var suffix in cfgDirSuffixes)
+            IEnumerable<string> vpkFiles;
+            try
+            {
+                vpkFiles = Directory.EnumerateFiles(workshopRoot, "*.vpk", SearchOption.AllDirectories);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                continue;
+            }
+
+            foreach (string vpkPath in vpkFiles)
             {
                 ct.ThrowIfCancellationRequested();
-                var cfgDir = Path.Combine(basePath, suffix);
-                if (!Directory.Exists(cfgDir)) continue;
+                ctx.IncrementFiles();
 
-                IEnumerable<string> files;
+                await InspectVpkFileAsync(ctx, vpkPath, ct);
+            }
+        }
+    }
+
+    private async Task InspectVpkFileAsync(
+        ZeroTrace.Core.Engine.ScanContext ctx,
+        string vpkPath,
+        CancellationToken ct)
+    {
+        // Read first 4KB of the VPK to check for embedded PE content
+        byte[] buffer = new byte[4096];
+        int bytesRead;
+
+        try
+        {
+            using var fs = new FileStream(vpkPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            bytesRead = await fs.ReadAsync(buffer.AsMemory(0, buffer.Length), ct);
+        }
+        catch (IOException)
+        {
+            return;
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return;
+        }
+
+        if (bytesRead < 4)
+            return;
+
+        // Check for embedded PE MZ header inside the VPK (executable content)
+        for (int i = 0; i < bytesRead - 1; i++)
+        {
+            if (buffer[i] == 0x4D && buffer[i + 1] == 0x5A)
+            {
+                ctx.AddFinding(new Finding
+                {
+                    Module   = Name,
+                    Title    = "Workshop VPK File Contains Embedded PE Executable",
+                    Risk     = RiskLevel.Critical,
+                    Location = vpkPath,
+                    FileName = Path.GetFileName(vpkPath),
+                    Reason   = "A Workshop VPK file contains an embedded PE (MZ) header, indicating executable content inside a mod archive. This is used to smuggle cheat code past VAC's workshop file validation.",
+                    Detail   = $"MZ signature found at offset {i}",
+                });
+                return;
+            }
+        }
+
+        // Also flag VPK files with suspicious names
+        string fileName = Path.GetFileName(vpkPath);
+        string[] suspVpkNames =
+        [
+            "cheat",
+            "hack",
+            "inject",
+            "bypass",
+            "aimbot",
+            "wallhack",
+            "esp",
+        ];
+
+        foreach (string suspect in suspVpkNames)
+        {
+            if (fileName.Contains(suspect, StringComparison.OrdinalIgnoreCase))
+            {
+                ctx.AddFinding(new Finding
+                {
+                    Module   = Name,
+                    Title    = "Suspicious Workshop VPK File Name",
+                    Risk     = RiskLevel.High,
+                    Location = vpkPath,
+                    FileName = fileName,
+                    Reason   = $"Workshop VPK file name contains '{suspect}', which is associated with cheat content distributed through the Steam Workshop.",
+                    Detail   = $"Full path: {vpkPath}",
+                });
+                return;
+            }
+        }
+    }
+
+    // =========================================================================
+    // 14. VAC trust factor manipulation tools and fake playtime inflators
+    // =========================================================================
+    private async Task ScanVacTrustManipulationToolsAsync(ZeroTrace.Core.Engine.ScanContext ctx, CancellationToken ct)
+    {
+        string[] scanDirs = BuildUserScanDirectories();
+
+        string[] trustManipFileNames =
+        [
+            "playtime_booster.exe",
+            "steam_playtime.exe",
+            "fake_playtime.exe",
+            "idle_master.exe",
+            "IdleMaster.exe",
+            "steam_idle.exe",
+            "trust_booster.exe",
+            "vac_trust.exe",
+            "account_booster.exe",
+            "playtime_farmer.exe",
+            "steam_farmer.exe",
+            "game_idler.exe",
+            "hours_boost.exe",
+            "steam_hours.exe",
+        ];
+
+        foreach (string dir in scanDirs)
+        {
+            ct.ThrowIfCancellationRequested();
+            if (!Directory.Exists(dir))
+                continue;
+
+            IEnumerable<string> files;
+            try
+            {
+                files = Directory.EnumerateFiles(dir, "*", SearchOption.AllDirectories);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                continue;
+            }
+
+            foreach (string filePath in files)
+            {
+                ct.ThrowIfCancellationRequested();
+
                 try
                 {
-                    files = Directory.EnumerateFiles(cfgDir, "*.*", SearchOption.AllDirectories);
-                }
-                catch (UnauthorizedAccessException)
-                {
-                    continue;
-                }
-
-                foreach (var file in files)
-                {
-                    ct.ThrowIfCancellationRequested();
+                    string fileName = Path.GetFileName(filePath);
                     ctx.IncrementFiles();
-                    var ext = Path.GetExtension(file);
-                    var fileName = Path.GetFileName(file);
 
-                    // Check for executable files hidden in cfg directory
-                    if (executableExtensions.Contains(ext))
+                    foreach (string bad in trustManipFileNames)
                     {
-                        ctx.AddFinding(new Finding
-                        {
-                            Module = Name,
-                            Title = $"Executable File in CS2/CSGO cfg Directory: {fileName}",
-                            Risk = RiskLevel.Critical,
-                            Location = file,
-                            FileName = fileName,
-                            Reason = $"Executable file '{fileName}' found in CS2/CSGO cfg directory — likely injector or cheat payload hidden in game config folder",
-                            Detail = $"Found at: {file}",
-                        });
-                        continue;
-                    }
-
-                    // For .cfg files, check for injection-related content
-                    if (!ext.Equals(".cfg", StringComparison.OrdinalIgnoreCase)) continue;
-
-                    string content;
-                    try
-                    {
-                        using var fs = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-                        using var sr = new StreamReader(fs);
-                        content = await sr.ReadToEndAsync();
-                    }
-                    catch (IOException)
-                    {
-                        continue;
-                    }
-                    catch (UnauthorizedAccessException)
-                    {
-                        continue;
-                    }
-
-                    foreach (var pattern in cfgPayloadPatterns)
-                    {
-                        if (content.Contains(pattern, StringComparison.OrdinalIgnoreCase))
+                        if (fileName.Equals(bad, StringComparison.OrdinalIgnoreCase))
                         {
                             ctx.AddFinding(new Finding
                             {
-                                Module = Name,
-                                Title = $"Injection Payload Pattern in CS2/CSGO cfg: {pattern}",
-                                Risk = RiskLevel.Critical,
-                                Location = file,
+                                Module   = Name,
+                                Title    = "VAC Trust Factor Manipulation Tool Detected",
+                                Risk     = RiskLevel.Medium,
+                                Location = filePath,
                                 FileName = fileName,
-                                Reason = $"Config file in CS2/CSGO cfg directory contains '{pattern}' — indicates injector or shellcode payload in game configuration",
-                                Detail = $"Pattern '{pattern}' found in: {file}",
+                                Reason   = $"File \"{fileName}\" matches a known VAC trust factor manipulation or fake playtime inflator tool. These tools artificially boost Steam account metrics to improve VAC trust scores.",
+                                Detail   = $"Full path: {filePath}",
                             });
                             break;
                         }
                     }
                 }
+                catch (IOException)
+                {
+                }
+            }
+        }
+
+        await Task.CompletedTask;
+    }
+
+    // =========================================================================
+    // 15. CSGO/CS2 cfg\ directory with injector payloads
+    // =========================================================================
+    private async Task ScanCfgDirectoryForPayloadsAsync(ZeroTrace.Core.Engine.ScanContext ctx, CancellationToken ct)
+    {
+        string[] cfgRoots =
+        [
+            @"C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive\game\csgo\cfg",
+            @"C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike 2\game\csgo\cfg",
+        ];
+
+        string[] payloadKeywords =
+        [
+            "inject",
+            "payload",
+            "loader",
+            "cheat",
+            "hack",
+            "aimbot",
+            "wallhack",
+            "esp",
+            "bypass",
+            "triggerbot",
+        ];
+
+        foreach (string cfgRoot in cfgRoots)
+        {
+            ct.ThrowIfCancellationRequested();
+            if (!Directory.Exists(cfgRoot))
+                continue;
+
+            IEnumerable<string> allFiles;
+            try
+            {
+                allFiles = Directory.EnumerateFiles(cfgRoot, "*", SearchOption.TopDirectoryOnly);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                continue;
+            }
+
+            foreach (string filePath in allFiles)
+            {
+                ct.ThrowIfCancellationRequested();
+                ctx.IncrementFiles();
+
+                try
+                {
+                    string fileName = Path.GetFileName(filePath);
+
+                    // Flag non-.cfg files in the cfg directory — these are anomalous
+                    string ext = Path.GetExtension(filePath);
+                    if (!ext.Equals(".cfg", StringComparison.OrdinalIgnoreCase))
+                    {
+                        ctx.AddFinding(new Finding
+                        {
+                            Module   = Name,
+                            Title    = $"Non-cfg File in CS2 cfg\\ Directory",
+                            Risk     = RiskLevel.Medium,
+                            Location = filePath,
+                            FileName = fileName,
+                            Reason   = $"File \"{fileName}\" with extension '{ext}' was found in the CS2 cfg\\ directory. Only .cfg files should be present; other files may be injector payloads or cheat configs.",
+                            Detail   = $"cfg directory: {cfgRoot}",
+                        });
+                        continue;
+                    }
+
+                    // Inspect .cfg content for payload keywords
+                    await InspectCfgPayloadAsync(ctx, filePath, payloadKeywords, cfgRoot, ct);
+                }
+                catch (IOException)
+                {
+                }
             }
         }
     }
-}
 
-// String extension helper for safe truncation
-file static class StringExtensions
-{
-    public static string Truncate(this string value, int maxLength)
+    private async Task InspectCfgPayloadAsync(
+        ZeroTrace.Core.Engine.ScanContext ctx,
+        string cfgPath,
+        string[] keywords,
+        string cfgRoot,
+        CancellationToken ct)
     {
-        if (string.IsNullOrEmpty(value)) return value;
-        return value.Length <= maxLength ? value : value[..maxLength];
+        string content;
+        try
+        {
+            using var fs = new FileStream(cfgPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            using var sr = new StreamReader(fs);
+            content = await sr.ReadToEndAsync();
+        }
+        catch (IOException)
+        {
+            return;
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return;
+        }
+
+        ct.ThrowIfCancellationRequested();
+
+        string fileName = Path.GetFileName(cfgPath);
+
+        foreach (string keyword in keywords)
+        {
+            if (fileName.Contains(keyword, StringComparison.OrdinalIgnoreCase))
+            {
+                ctx.AddFinding(new Finding
+                {
+                    Module   = Name,
+                    Title    = $"Suspicious cfg File Name in CS2 cfg\\ Directory",
+                    Risk     = RiskLevel.High,
+                    Location = cfgPath,
+                    FileName = fileName,
+                    Reason   = $"cfg file name \"{fileName}\" contains the keyword '{keyword}', suggesting it is a cheat or injector configuration placed in the CS2 cfg directory.",
+                    Detail   = $"cfg root: {cfgRoot}",
+                });
+                return;
+            }
+        }
+    }
+
+    // =========================================================================
+    // Private utility helpers
+    // =========================================================================
+
+    private static string[] BuildUserScanDirectories()
+    {
+        string appData      = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+        string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        string desktop      = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+        string userProfile  = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        string downloads    = Path.Combine(userProfile, "Downloads");
+        string systemTemp   = Path.GetTempPath();
+        string localTemp    = Path.Combine(localAppData, "Temp");
+
+        return
+        [
+            desktop,
+            downloads,
+            systemTemp,
+            localTemp,
+            appData,
+            localAppData,
+        ];
+    }
+
+    private static bool IsInSuspiciousUserPath(string path)
+    {
+        string[] fragments =
+        [
+            @"\Temp\",
+            @"\Downloads\",
+            @"\AppData\",
+        ];
+
+        foreach (string fragment in fragments)
+        {
+            if (path.Contains(fragment, StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+
+        string[] endings =
+        [
+            @"\Temp",
+            @"\Downloads",
+            @"\AppData",
+        ];
+
+        foreach (string ending in endings)
+        {
+            if (path.EndsWith(ending, StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+
+        return false;
+    }
+
+    private static string ExtractMatchingLine(string content, string pattern)
+    {
+        foreach (string line in content.Split('\n', StringSplitOptions.RemoveEmptyEntries))
+        {
+            if (line.Contains(pattern, StringComparison.OrdinalIgnoreCase))
+                return line.Trim();
+        }
+
+        return string.Empty;
     }
 }

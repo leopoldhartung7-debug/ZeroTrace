@@ -1,1603 +1,1371 @@
-using ZeroTrace.Core.Engine;
+using System.Text.RegularExpressions;
+using Microsoft.Win32;
 using ZeroTrace.Core.Models;
 
 namespace ZeroTrace.Core.Modules;
 
 public sealed class FiveMRageMpAltVCheatNetworkScanModule : IScanModule
 {
-    public string Name => "FiveM / RageMP / alt:V Cheat Network Scan";
+    public string Name => "FiveM / RageMP / alt:V Network Cheat Scan";
     public double Weight => 4.0;
     public int ParallelGroup => 4;
 
-    private static readonly string LocalApp =
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-    private static readonly string AppData =
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-    private static readonly string UserProfile =
-        Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-    private static readonly string Temp = Path.GetTempPath();
+    private const string ModuleName = "FiveMRageMpAltVCheatNetworkScan";
 
-    private static readonly HashSet<string> FiveMBannedResourceNames = new(StringComparer.OrdinalIgnoreCase)
+    // ─── FiveM packet spoofing binary names ─────────────────────────────────
+    private static readonly string[] FiveMPacketSpooferExeNames =
+    {
+        "fivem_packet_spoof.exe", "fivempacketspoof.exe",
+        "fivem_spoofer.exe", "fivemspoofer.exe",
+        "fivem_bypass.exe", "fivembypass.exe",
+        "fivem_patch.exe", "fivempatch.exe",
+        "fivem_hack.exe", "fivemhack.exe",
+        "fivem_inject.exe", "fiveminject.exe",
+        "fivem_loader.exe", "fivemloader.exe",
+        "net_obj_spoof.exe", "netobjspoof.exe",
+        "playerappearance_spoof.exe",
+        "netcull_bypass.exe", "netcullbypass.exe",
+        "fivem_net_bypass.exe", "citizenfx_bypass.exe",
+    };
+
+    private static readonly string[] FiveMCheatDllNames =
+    {
+        "fivem_cheat.dll", "fivemcheat.dll",
+        "fivem_bypass.dll", "fivembypass.dll",
+        "fivem_inject.dll", "fiveminject.dll",
+        "fivem_hack.dll", "fivemhack.dll",
+        "citizenfx_hook.dll", "net_obj_hook.dll",
+        "netcull_patch.dll",
+    };
+
+    // ─── FiveM modded builds ─────────────────────────────────────────────────
+    private static readonly string[] FiveMModdedBuildNames =
+    {
+        "FiveM_patch.exe", "FiveM_bypass.exe",
+        "FiveM_cracked.exe", "FiveM_modded.exe",
+        "FiveM_unlocked.exe", "FiveM_cheats.exe",
+        "FiveM_hack.exe", "FiveM_inject.exe",
+    };
+
+    // ─── FiveM banned resource names ────────────────────────────────────────
+    private static readonly string[] FiveMBannedResourceNames =
     {
         "immortal", "godmode_bypass", "money_dupe", "vehicle_spawner_bypass",
-        "tp_all", "freeze_all", "kill_all", "crash_all", "ban_all", "kick_all",
-        "money_print", "dupe_money"
+        "tp_all", "freeze_all", "kill_all", "player_blips_bypass",
+        "anticheat_bypass", "bans_bypass", "admin_bypass",
+        "esx_exploit", "qbcore_exploit", "antiban",
+        "money_hack", "vehicle_dupe", "casino_hack",
+        "resource_monitor_bypass", "txadmin_bypass",
+        "health_bypass", "armor_bypass", "wanted_clear",
+        "weapon_bypass", "coords_spoof", "nametag_bypass",
     };
 
-    private static readonly HashSet<string> AltVBannedResourceNames = new(StringComparer.OrdinalIgnoreCase)
+    // ─── FiveM config cheat patterns (key=value) ────────────────────────────
+    private static readonly string[] FiveMCheatConfigPatterns =
     {
-        "esp_resource", "aimbot_resource", "wallhack", "speedhack",
-        "vehiclespawn_unlimited", "moneyhack", "money_print", "godmode_altv",
-        "crash_server", "kick_all_altv"
+        "spoofposition=true", "fakecoords=true", "bypassnetcull=true",
+        "disableanticheat=true", "bypassanticheat=true",
+        "spoofhealth=true", "spoofarmor=true",
+        "netbypass=true", "netcull=false",
+        "disablenetclip=true", "entitybypass=true",
+        "fakeping=", "spoofping=",
+        "disablenametags=true",
+        "entityspawn_unlimited=true",
+        "money_bypass=true",
     };
 
-    private static readonly HashSet<string> AltVKnownDlls = new(StringComparer.OrdinalIgnoreCase)
+    // ─── FiveM Lua exploit patterns ──────────────────────────────────────────
+    private static readonly string[] FiveMExploitLuaPatterns =
     {
-        "altv-client.dll", "js-module.dll", "csharp-module.dll",
-        "voice-module.dll", "bytecodemodule.dll"
+        "triggerserverevent",
+        "xplayer.addmoney",
+        "xplayer.addbank",
+        "setentityinvincible",
+        "executecommand(\"god\")",
+        "executecommand(\"noclip\")",
+        "executecommand(\"heal\")",
+        "networkoverridecrimeevidence",
+        "setplayerinvincible",
+        "addweapontoentity",
+        "networkisplayeractive",
+        "getplayerped",
+        "setentitycoords",
+        "networkresurrectlocalplayer",
+        "clearplayerwantedlevel",
+        "networkrequestcontrolofentity",
+        "setvehicleenginehealth",
+        "setvehiclefuel",
+        "networkobjectflags",
+        "txsv_expl",
+        "while true do triggerserverevent",
+        "citizen.settimeout(0,",
     };
 
-    private static readonly HashSet<string> RageMpKnownDlls = new(StringComparer.OrdinalIgnoreCase)
+    // ─── FiveM ESX / QBCore trigger-flood patterns (regex) ──────────────────
+    private static readonly string[] FiveMEsxQbExploitPatternStrings =
     {
-        "rage-hook.dll", "rage-client-sdk.dll", "rage-client-bridge.dll",
-        "v8.dll", "node.dll", "rage-native.dll"
+        @"triggerserverevent.*addmoney.*[0-9]{6,}",
+        @"triggerserverevent.*bank.*[0-9]{6,}",
+        @"triggerserverevent.*cashout.*[0-9]{6,}",
+        @"triggerserverevent.*setmoney",
+        @"triggerserverevent.*giveitem",
+        @"triggerserverevent.*additem",
+        @"exports.*addmoney",
+        @"triggerserverevent.*admin",
+        @"triggerserverevent.*setcoords",
+        @"triggerserverevent.*tp",
     };
 
-    private static readonly HashSet<string> PacketEditorToolNames = new(StringComparer.OrdinalIgnoreCase)
+    private static readonly Regex[] FiveMEsxQbExploitRegexes =
+        FiveMEsxQbExploitPatternStrings
+            .Select(p => new Regex(p, RegexOptions.Compiled | RegexOptions.IgnoreCase))
+            .ToArray();
+
+    // ─── RageMP packet injection / cheat binaries ────────────────────────────
+    private static readonly string[] RageMpCheatExeNames =
     {
-        "PacketEditor.exe", "PacketSender.exe", "WPEPro.exe", "wpe_pro.exe",
-        "WPE_Pro.exe", "PacketCapture.exe", "RawCap.exe", "NetworkMiner.exe"
+        "rage_packet_inject.exe", "ragepacketinject.exe",
+        "mp_packet_spoof.exe", "mppacketspoof.exe",
+        "ragemp_bypass.exe", "ragempbypass.exe",
+        "ragemp_hack.exe", "ragemphack.exe",
+        "ragemp_teleport.exe", "ragempteleport.exe",
+        "ragemp_money.exe", "ragempmoney.exe",
+        "ragemp_loader.exe", "ragemploader.exe",
+        "ragemp_inject.exe", "ragempinject.exe",
     };
 
-    private static readonly string[] CheatNetworkConfigKeywords =
+    private static readonly string[] RageMpCheatDllNames =
     {
-        "bypass_anticheat_net", "spoof_network", "fake_position", "position_desync",
-        "packet_intercept", "packet_modify", "packet_replay",
-        "netcull_bypass", "network_bypass", "ac_bypass_network"
+        "ragemp_bypass.dll", "ragemp_hook.dll",
+        "ragemp_cheat.dll", "ragemphook.dll",
+        "mp_cheat_bridge.dll", "rage_bridge.dll",
+        "rage_inject.dll", "ragemp_inject.dll",
     };
 
-    private static readonly string[] FiveMPacketSpoofContentStrings =
+    // ─── RageMP config cheat patterns ───────────────────────────────────────
+    private static readonly string[] RageMpCheatConfigPatterns =
     {
-        "NET_OBJ_PLAYER_APPEARANCE", "CNetworkPlayerMgr", "fivem_packet_spoof",
-        "spoofPosition=true", "fakeCoords", "bypassNetCull"
+        "teleport_via_packet=true",
+        "position_spoof=true",
+        "money_sync_exploit=true",
+        "bypass_anticheat=true",
+        "disable_netcheck=true",
+        "fake_position=true",
+        "enable_noclip=true",
+        "godmode=true",
+        "disable_collision=true",
+        "unlimited_ammo=true",
+        "speed_multiplier=",
+        "fly_mode=true",
+        "bypass_deathcheck=true",
     };
 
-    private static readonly string[] FiveMPacketSpoofFileNames =
+    // ─── alt:V exploit patterns (client-side JS) ─────────────────────────────
+    private static readonly string[] AltVExploitJsPatterns =
     {
-        "fivem_spoof.exe", "fivem_packet.exe", "fivem_bypass.exe",
-        "FiveM_patch.exe", "FiveM_bypass.exe"
+        "alt.emitserver",
+        "alt.emitServer",
+        "alt.setwaypointposition",
+        "alt.setWaypointPosition",
+        "native.setEntityCoords",
+        "native.setentitycoords",
+        "native.setPlayerInvincible",
+        "native.setplayerinvincible",
+        "native.addWeaponToEntity",
+        "native.addweapontoentity",
+        "native.setEntityHealth",
+        "native.setentityhealth",
+        "native.clearPlayerWantedLevel",
+        "native.networkResurrectLocalPlayer",
+        "alt.on(\"connectionComplete\"",
+        "native.requestControlOfEntity",
+        "setInterval.*alt.emitServer",
+        "while.*alt.emitServer",
+        "for.*alt.emitServer",
+        "alt.game.invoke",
+        "native.createVehicle",
+        "native.explosion",
     };
 
-    private static readonly string[] FiveMModdedClientFileNames =
+    // ─── alt:V banned resource patterns ─────────────────────────────────────
+    private static readonly string[] AltVBannedResourcePatterns =
     {
-        "FiveM_patch.exe", "FiveM_bypass.exe", "FiveM_hacked.exe",
-        "FiveM_mod.exe", "FiveM_spoof.exe"
+        "mass_spawn", "massspawn", "mass_entity_spawn",
+        "player_list_dump", "playerlistdump", "dump_players",
+        "godmode", "god_mode", "noclip", "no_clip",
+        "esp_resource", "aimbot_resource",
+        "money_hack", "moneyhack",
+        "tp_all", "tpall", "teleport_all",
+        "kill_all", "killall",
+        "freeze_all", "freezeall",
+        "crash_server", "crashserver",
+        "explode_all", "explodeall",
+        "bypass_ac", "bypassac",
     };
 
-    private static readonly string[] RageMpPacketInjectionToolNames =
+    // ─── Packet editor / traffic manipulation tools ──────────────────────────
+    private static readonly string[] PacketEditorExeNames =
     {
-        "rage_packet_inject.exe", "mp_packet_spoof.exe",
-        "ragemp_bypass.exe", "rage_spoof.exe"
+        "packeteditor.exe", "packetsender.exe", "wpe_pro.exe",
+        "wpepro.exe", "packet_editor.exe",
+        "smartsniff.exe", "networkpacketsniffer.exe",
+        "tcp_spoofer.exe", "tcpspoofer.exe",
+        "udp_spoofer.exe", "udpspoofer.exe",
+        "inject_packet.exe", "injectpacket.exe",
+        "rawpacket.exe", "raw_packet.exe",
+        "game_packet_editor.exe",
     };
 
-    private static readonly string[] RageMpConfigKeywords =
+    // ─── Packet capture file extensions ─────────────────────────────────────
+    private static readonly string[] PcapExtensions =
     {
-        "teleport_via_packet=true", "packet_spoof=true",
-        "ragemp_bypass", "position_spoof=true"
+        ".pcap", ".pcapng", ".cap", ".pkt",
     };
 
-    private static readonly string[] AltVBannedResourceFileNames =
+    // ─── Game-related keywords for PCAP naming heuristic ────────────────────
+    private static readonly string[] PcapGameKeywords =
     {
-        "hack.js", "cheat.js", "exploit.js", "bypass.js",
-        "aimbot.js", "esp.js"
+        "fivem", "ragemp", "altv", "alt-v", "gta", "cfx", "citizenfx",
     };
 
-    private static readonly string[] GameDomainFragments =
+    // ─── Proxy / traffic relay script file names ─────────────────────────────
+    private static readonly string[] ProxyScriptFileNames =
     {
-        "fivem", "rage", "altv", "cfx.re", "alt-multiplayer"
+        "game_proxy.py", "gta_proxy.py", "fivem_proxy.py",
+        "ragemp_proxy.py", "altv_proxy.py",
+        "game_relay.py", "tcp_relay.py", "udp_relay.py",
+        "game_proxy.js", "gta_proxy.js", "fivem_proxy.js",
+        "ragemp_proxy.js", "altv_proxy.js",
+        "game_relay.js", "packet_relay.js",
+        "proxy_server.py", "traffic_relay.py",
+        "mitm_proxy.py", "game_mitm.py",
     };
 
-    private static readonly string[] TrafficRelayGameKeywords =
+    // ─── VPN / proxy config keywords indicating game-domain routing ──────────
+    private static readonly string[] VpnGameDomainKeywords =
     {
-        "fivem", "rage", "altv", "gta", "5m", "cfx"
+        "cfx.re", "fivem.net", "rage.mp", "alt-mp.net",
+        "citizenfx", "rockstargames.com", "socialclub",
     };
 
-    private static readonly string[] CitizenFxSignerFragments =
+    // ─── Cheat config file extensions ────────────────────────────────────────
+    private static readonly HashSet<string> ConfigExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
-        "CitizenFX", "Cfx.re", "Microsoft"
+        ".cfg", ".ini", ".json", ".toml", ".yaml", ".yml", ".conf", ".config",
     };
 
-    private static readonly string[] KnownCitizenDllPatterns =
+    // ─── VPN directive keywords ───────────────────────────────────────────────
+    private static readonly string[] VpnDirectiveKeywords =
     {
-        "citizenfx", "cfx", "scripting", "mono", "chakra",
-        "node", "v8", "cef", "libcef", "d3d", "dinput"
+        "remote ", "server ", "route-nopull", "redirect-gateway",
+        "socks-proxy", "http-proxy",
     };
+
+    // ─── VPN config file extensions ──────────────────────────────────────────
+    private static readonly HashSet<string> VpnConfigExtensions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ".ovpn", ".conf", ".cfg", ".json",
+    };
+
+    // ─── Known-legitimate RageMP DLL names ──────────────────────────────────
+    private static readonly HashSet<string> RageMpLegitDlls = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "ragemp.dll", "ragemp-d.dll", "rage-mp.dll",
+        "scripthookv.dll", "scripthookvdotnet.dll",
+        "dinput8.dll", "dsound.dll", "version.dll",
+    };
+
+    // ─── Known-legitimate alt:V DLL names ───────────────────────────────────
+    private static readonly HashSet<string> AltVLegitDlls = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "altv.dll", "altv-client.dll", "altvjs.dll", "csharp-module.dll",
+        "js-module.dll", "js-bytecode-module.dll", "dotnet-module.dll",
+    };
+
+    // ─── alt:V cheat keyword list (for DLL scanning) ─────────────────────────
+    private static readonly string[] AltVCheatDllKeywords =
+    {
+        "cheat", "hack", "bypass", "inject", "exploit",
+        "spoof", "aimbot", "esp", "wallhack", "godmode", "noclip",
+    };
+
+    // ─── Search roots ─────────────────────────────────────────────────────────
+    private static string[] GetUserSearchRoots()
+    {
+        var profile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+        var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        return new[]
+        {
+            Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
+            Path.Combine(profile, "Downloads"),
+            Path.Combine(profile, "Documents"),
+            appData,
+            localAppData,
+            Path.GetTempPath(),
+        };
+    }
+
+    // ─── Entry point ─────────────────────────────────────────────────────────
 
     public async Task RunAsync(ScanContext ctx, CancellationToken ct)
     {
-        ctx.Report(0.0, Name, "Starting FiveM / RageMP / alt:V cheat network scan...");
+        await ScanFiveMPacketSpooferBinariesAsync(ctx, ct);
+        ctx.Report(0.10, "FiveM binaries", "FiveM packet spoofer binary scan complete");
 
-        var tasks = new List<Task>
-        {
-            ScanFiveMCheatNetworkAsync(ctx, ct),
-            ScanRageMpCheatArtifactsAsync(ctx, ct),
-            ScanAltVCheatArtifactsAsync(ctx, ct),
-            ScanCrossPlatformNetworkToolsAsync(ctx, ct),
-            ScanCheatNetworkConfigsAsync(ctx, ct),
-            ScanWiresharkCaptureFilesAsync(ctx, ct),
-            ScanTrafficRelayScriptsAsync(ctx, ct)
-        };
+        await ScanFiveMModdedBuildsInAppDataAsync(ctx, ct);
+        ctx.Report(0.20, "FiveM modded builds", "FiveM modded build scan complete");
 
-        await Task.WhenAll(tasks).ConfigureAwait(false);
+        await ScanFiveMResourcesAsync(ctx, ct);
+        ctx.Report(0.34, "FiveM resources", "FiveM resource and Lua scan complete");
 
-        ctx.Report(1.0, Name, "FiveM / RageMP / alt:V cheat network scan complete.");
+        await ScanFiveMConfigFilesAsync(ctx, ct);
+        ctx.Report(0.44, "FiveM configs", "FiveM cheat config file scan complete");
+
+        await ScanRageMpBinariesAsync(ctx, ct);
+        ctx.Report(0.53, "RageMP binaries", "RageMP cheat binary scan complete");
+
+        await ScanRageMpConfigFilesAsync(ctx, ct);
+        ctx.Report(0.60, "RageMP configs", "RageMP config cheat pattern scan complete");
+
+        await ScanRageMpCustomBridgeDllsAsync(ctx, ct);
+        ctx.Report(0.66, "RageMP DLLs", "RageMP custom bridge DLL scan complete");
+
+        await ScanAltVResourceScriptsAsync(ctx, ct);
+        ctx.Report(0.74, "alt:V resources", "alt:V exploit resource scan complete");
+
+        await ScanAltVPacketManipulationDllsAsync(ctx, ct);
+        ctx.Report(0.80, "alt:V DLLs", "alt:V cheat DLL scan complete");
+
+        await ScanPacketEditorToolsAsync(ctx, ct);
+        ctx.Report(0.85, "Packet editors", "Packet editor tool scan complete");
+
+        await ScanPcapFilesAsync(ctx, ct);
+        ctx.Report(0.90, "PCAP files", "Packet capture file scan complete");
+
+        await ScanProxyRelayScriptsAsync(ctx, ct);
+        ctx.Report(0.95, "Proxy scripts", "Game traffic proxy script scan complete");
+
+        await ScanVpnConfigsForGameDomainsAsync(ctx, ct);
+        ctx.Report(0.97, "VPN configs", "VPN/proxy game-domain config scan complete");
+
+        await Task.Run(() => ScanRegistryArtifacts(ctx, ct), ct);
+        ctx.Report(1.00, "Registry", "Network cheat registry artifact scan complete");
     }
 
-    // ── FiveM ───────────────────────────────────────────────────────────────────
+    // ─── FiveM packet spoofer binaries ──────────────────────────────────────
 
-    private async Task ScanFiveMCheatNetworkAsync(ScanContext ctx, CancellationToken ct)
+    private async Task ScanFiveMPacketSpooferBinariesAsync(ScanContext ctx, CancellationToken ct)
     {
-        var fivemApp = Path.Combine(LocalApp, "FiveM", "FiveM.app");
-
-        var scanDirs = new[]
+        foreach (var root in GetUserSearchRoots())
         {
-            Path.Combine(UserProfile, "Downloads"),
-            Path.Combine(UserProfile, "Desktop"),
-            Temp,
-            AppData
-        };
+            ct.ThrowIfCancellationRequested();
+            if (!Directory.Exists(root)) continue;
 
-        foreach (var dir in scanDirs)
-        {
-            if (ct.IsCancellationRequested) return;
-            if (!Directory.Exists(dir)) continue;
-
-            foreach (var file in EnumerateTextFiles(dir, 3,
-                new[] { ".exe", ".dll", ".txt", ".cfg", ".ini", ".json", ".lua", ".js" }, ct))
+            IEnumerable<string> files;
+            try
             {
-                if (ct.IsCancellationRequested) return;
-                ctx.IncrementFiles();
+                files = Directory.EnumerateFiles(root, "*.exe", SearchOption.AllDirectories);
+            }
+            catch (UnauthorizedAccessException) { continue; }
 
-                var fn = Path.GetFileName(file);
+            foreach (var file in files)
+            {
+                ct.ThrowIfCancellationRequested();
+                var fname = Path.GetFileName(file);
 
-                if (FiveMPacketSpoofFileNames.Any(n =>
-                    fn.Equals(n, StringComparison.OrdinalIgnoreCase)))
+                foreach (var knownExe in FiveMPacketSpooferExeNames)
                 {
+                    if (!fname.Equals(knownExe, StringComparison.OrdinalIgnoreCase)) continue;
+
+                    ctx.IncrementFiles(1);
                     ctx.AddFinding(new Finding
                     {
-                        Module = Name,
-                        Title = $"FiveM Packet Spoof Tool: {fn}",
+                        Module = ModuleName,
+                        Title = $"FiveM Packet Spoofer Binary: {fname}",
                         Risk = RiskLevel.Critical,
                         Location = file,
-                        FileName = fn,
-                        Reason = $"File '{fn}' matches a known FiveM packet spoofing tool name. " +
-                                 "These tools manipulate GTA network objects to spoof position, " +
-                                 "bypass net culling, and desync the player's position on the server.",
-                        Detail = $"Path: {file}"
+                        FileName = fname,
+                        Reason = $"Known FiveM packet-spoofing executable '{fname}' detected. These tools manipulate CNetworkPlayerMgr and NET_OBJ_PLAYER_APPEARANCE data to falsify player state on the server and bypass network culling (bypassNetCull).",
+                        Detail = $"Path={file}",
+                        Recommendation = Recommendation.Remove,
                     });
-                    continue;
+                    break;
                 }
 
-                if (FiveMModdedClientFileNames.Any(n =>
-                    fn.Equals(n, StringComparison.OrdinalIgnoreCase)))
+                foreach (var knownDll in FiveMCheatDllNames)
                 {
+                    if (!fname.Equals(knownDll, StringComparison.OrdinalIgnoreCase)) continue;
+
+                    ctx.IncrementFiles(1);
                     ctx.AddFinding(new Finding
                     {
-                        Module = Name,
-                        Title = $"FiveM Modded Client Executable: {fn}",
+                        Module = ModuleName,
+                        Title = $"FiveM Cheat DLL: {fname}",
                         Risk = RiskLevel.Critical,
                         Location = file,
-                        FileName = fn,
-                        Reason = $"File '{fn}' matches a known FiveM modded/patched client name. " +
-                                 "Modified FiveM clients are used to bypass anticheat, inject cheats " +
-                                 "at the client binary level, or spoof authentication tokens.",
-                        Detail = $"Path: {file}"
-                    });
-                    continue;
-                }
-
-                // Check .exe files in Downloads that contain "FiveM" and bypass/patch/spoof/crack
-                var ext = Path.GetExtension(file);
-                if (ext.Equals(".exe", StringComparison.OrdinalIgnoreCase) &&
-                    dir.Equals(Path.Combine(UserProfile, "Downloads"), StringComparison.OrdinalIgnoreCase))
-                {
-                    if (fn.Contains("FiveM", StringComparison.OrdinalIgnoreCase) &&
-                        (fn.Contains("bypass", StringComparison.OrdinalIgnoreCase) ||
-                         fn.Contains("patch", StringComparison.OrdinalIgnoreCase) ||
-                         fn.Contains("spoof", StringComparison.OrdinalIgnoreCase) ||
-                         fn.Contains("crack", StringComparison.OrdinalIgnoreCase)))
-                    {
-                        ctx.AddFinding(new Finding
-                        {
-                            Module = Name,
-                            Title = $"FiveM Bypass/Patch Executable in Downloads: {fn}",
-                            Risk = RiskLevel.Critical,
-                            Location = file,
-                            FileName = fn,
-                            Reason = $"Executable '{fn}' in Downloads folder contains 'FiveM' and a bypass/patch/spoof/crack " +
-                                     "keyword in its filename. This pattern is characteristic of FiveM cheat loaders, " +
-                                     "anticheat bypass patchers, and authentication spoofers.",
-                            Detail = $"Path: {file}"
-                        });
-                        continue;
-                    }
-                }
-
-                if (!ext.Equals(".exe", StringComparison.OrdinalIgnoreCase) &&
-                    !ext.Equals(".dll", StringComparison.OrdinalIgnoreCase))
-                {
-                    try
-                    {
-                        string content;
-                        using var fs = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-                        using var sr = new StreamReader(fs);
-                        content = await sr.ReadToEndAsync().ConfigureAwait(false);
-
-                        var matched = FiveMPacketSpoofContentStrings.FirstOrDefault(s =>
-                            content.Contains(s, StringComparison.OrdinalIgnoreCase));
-                        if (matched is not null)
-                        {
-                            ctx.AddFinding(new Finding
-                            {
-                                Module = Name,
-                                Title = $"FiveM Packet Spoof String in File: {fn}",
-                                Risk = RiskLevel.High,
-                                Location = file,
-                                FileName = fn,
-                                Reason = $"File '{fn}' contains the FiveM packet spoofing string '{matched}'. " +
-                                         "This string is associated with tools that manipulate GTA network objects, " +
-                                         "fake player coordinates, or bypass network culling checks.",
-                                Detail = $"Matched string: {matched} | Path: {file}"
-                            });
-                        }
-                    }
-                    catch (UnauthorizedAccessException) { }
-                    catch (IOException) { }
-                }
-            }
-        }
-
-        var resourcesRoot = Path.Combine(fivemApp, "data", "resources");
-        var cacheServers = Path.Combine(fivemApp, "cache", "servers");
-
-        if (Directory.Exists(resourcesRoot))
-        {
-            await ScanFiveMResourcesAsync(ctx, resourcesRoot, ct).ConfigureAwait(false);
-            await ScanFiveMBannedResourceNamesAsync(ctx, resourcesRoot, ct).ConfigureAwait(false);
-        }
-
-        if (Directory.Exists(cacheServers))
-            await ScanFiveMResourcesAsync(ctx, cacheServers, ct).ConfigureAwait(false);
-
-        await ScanFiveMCitizenFolderAsync(ctx, ct).ConfigureAwait(false);
-    }
-
-    private async Task ScanFiveMResourcesAsync(ScanContext ctx, string resourcesRoot, CancellationToken ct)
-    {
-        if (!Directory.Exists(resourcesRoot)) return;
-
-        string[] resourceDirs = Array.Empty<string>();
-        try { resourceDirs = Directory.GetDirectories(resourcesRoot); }
-        catch (UnauthorizedAccessException) { return; }
-        catch (IOException) { return; }
-
-        foreach (var resourceDir in resourceDirs)
-        {
-            if (ct.IsCancellationRequested) return;
-            var resourceName = Path.GetFileName(resourceDir);
-
-            foreach (var file in EnumerateTextFiles(resourceDir, 4,
-                new[] { ".lua", ".js" }, ct))
-            {
-                if (ct.IsCancellationRequested) return;
-                ctx.IncrementFiles();
-                await ScanFiveMResourceFileAsync(ctx, file, resourceName, ct).ConfigureAwait(false);
-            }
-        }
-    }
-
-    private async Task ScanFiveMResourceFileAsync(ScanContext ctx, string filePath,
-        string resourceName, CancellationToken ct)
-    {
-        string content;
-        try
-        {
-            using var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-            using var sr = new StreamReader(fs);
-            content = await sr.ReadToEndAsync().ConfigureAwait(false);
-        }
-        catch (UnauthorizedAccessException) { return; }
-        catch (IOException) { return; }
-
-        var fn = Path.GetFileName(filePath);
-
-        // TriggerServerEvent flooding: TriggerServerEvent inside while/for loop
-        if (content.Contains("TriggerServerEvent", StringComparison.OrdinalIgnoreCase))
-        {
-            var lines = content.Split('\n');
-            for (int i = 0; i < lines.Length; i++)
-            {
-                if (ct.IsCancellationRequested) return;
-                if (!lines[i].Contains("TriggerServerEvent", StringComparison.OrdinalIgnoreCase))
-                    continue;
-
-                int start = Math.Max(0, i - 5);
-                int end = Math.Min(lines.Length - 1, i + 5);
-                bool hasLoop = false;
-                for (int j = start; j <= end; j++)
-                {
-                    if (lines[j].Contains("while", StringComparison.OrdinalIgnoreCase) ||
-                        lines[j].Contains("for ", StringComparison.OrdinalIgnoreCase) ||
-                        lines[j].Contains("for(", StringComparison.OrdinalIgnoreCase))
-                    {
-                        hasLoop = true;
-                        break;
-                    }
-                }
-
-                if (hasLoop)
-                {
-                    ctx.AddFinding(new Finding
-                    {
-                        Module = Name,
-                        Title = $"FiveM TriggerServerEvent Flooding in Resource '{resourceName}': {fn}",
-                        Risk = RiskLevel.High,
-                        Location = filePath,
-                        FileName = fn,
-                        Reason = $"File '{fn}' in resource '{resourceName}' contains TriggerServerEvent " +
-                                 "called inside a loop structure (within 5 lines of a while/for). " +
-                                 "This pattern is used by event-flooding exploits to spam the server " +
-                                 "with events, causing denial of service or bypassing rate limiting.",
-                        Detail = $"Resource: {resourceName} | File: {fn}"
+                        FileName = fname,
+                        Reason = $"Known FiveM cheat injection DLL '{fname}' found. Used to hook CitizenFX network callbacks and manipulate game state synchronisation packets sent to the server.",
+                        Detail = $"Path={file}",
+                        Recommendation = Recommendation.Remove,
                     });
                     break;
                 }
             }
         }
-
-        // ESX money exploit
-        bool hasEsxMoneyTrigger =
-            content.Contains("xPlayer.addMoney", StringComparison.OrdinalIgnoreCase) ||
-            content.Contains("TriggerServerEvent('esx:setAccountMoney'", StringComparison.OrdinalIgnoreCase) ||
-            content.Contains("TriggerServerEvent(\"esx:setAccountMoney\"", StringComparison.OrdinalIgnoreCase);
-        if (hasEsxMoneyTrigger && content.Contains("999999", StringComparison.OrdinalIgnoreCase))
-        {
-            ctx.AddFinding(new Finding
-            {
-                Module = Name,
-                Title = $"ESX Money Exploit Pattern in Resource '{resourceName}': {fn}",
-                Risk = RiskLevel.Critical,
-                Location = filePath,
-                FileName = fn,
-                Reason = $"File '{fn}' in resource '{resourceName}' contains ESX money exploit patterns: " +
-                         "xPlayer.addMoney or esx:setAccountMoney combined with a suspicious large value (999999). " +
-                         "This is a well-known FiveM ESX economy exploit used to give players unlimited money.",
-                Detail = $"Resource: {resourceName} | File: {fn}"
-            });
-        }
-
-        // QBCore money exploit
-        bool hasQbCoreMoney =
-            content.Contains("exports['qb-core']:GetCoreObject()", StringComparison.OrdinalIgnoreCase) ||
-            content.Contains("exports[\"qb-core\"]:GetCoreObject()", StringComparison.OrdinalIgnoreCase) ||
-            content.Contains("QBCore.Functions.GetPlayer", StringComparison.OrdinalIgnoreCase);
-        if (hasQbCoreMoney && content.Contains("999999", StringComparison.OrdinalIgnoreCase))
-        {
-            ctx.AddFinding(new Finding
-            {
-                Module = Name,
-                Title = $"QBCore Money Exploit Pattern in Resource '{resourceName}': {fn}",
-                Risk = RiskLevel.Critical,
-                Location = filePath,
-                FileName = fn,
-                Reason = $"File '{fn}' in resource '{resourceName}' contains QBCore money exploit patterns: " +
-                         "QBCore.Functions.GetPlayer or qb-core:GetCoreObject combined with suspicious large values. " +
-                         "This pattern is used by QBCore economy dupe and money-injection exploits.",
-                Detail = $"Resource: {resourceName} | File: {fn}"
-            });
-        }
-
-        // Godmode bypass
-        bool hasInvincible = content.Contains("SetEntityInvincible", StringComparison.OrdinalIgnoreCase);
-        bool hasGodmodeContext =
-            content.Contains("true", StringComparison.OrdinalIgnoreCase) ||
-            content.Contains("ExecuteCommand", StringComparison.OrdinalIgnoreCase);
-        if (hasInvincible && hasGodmodeContext)
-        {
-            ctx.AddFinding(new Finding
-            {
-                Module = Name,
-                Title = $"Godmode Bypass Pattern in Resource '{resourceName}': {fn}",
-                Risk = RiskLevel.High,
-                Location = filePath,
-                FileName = fn,
-                Reason = $"File '{fn}' in resource '{resourceName}' contains SetEntityInvincible " +
-                         "combined with 'true' or ExecuteCommand. This is a godmode bypass pattern " +
-                         "used to make players invincible on FiveM servers that should block this call.",
-                Detail = $"Resource: {resourceName} | File: {fn}"
-            });
-        }
-
-        // Aimbot pattern: GetPlayerPed + GetEntityCoords + (TaskGoToCoordAnyMeans or SetEntityCoords)
-        bool hasAimbotPed = content.Contains("GetPlayerPed", StringComparison.OrdinalIgnoreCase);
-        bool hasAimbotCoords = content.Contains("GetEntityCoords", StringComparison.OrdinalIgnoreCase);
-        bool hasAimbotAction =
-            content.Contains("TaskGoToCoordAnyMeans", StringComparison.OrdinalIgnoreCase) ||
-            content.Contains("SetEntityCoords", StringComparison.OrdinalIgnoreCase);
-        if (hasAimbotPed && hasAimbotCoords && hasAimbotAction)
-        {
-            ctx.AddFinding(new Finding
-            {
-                Module = Name,
-                Title = $"Aimbot/Teleport Pattern in Resource '{resourceName}': {fn}",
-                Risk = RiskLevel.High,
-                Location = filePath,
-                FileName = fn,
-                Reason = $"File '{fn}' in resource '{resourceName}' contains all three aimbot/teleport " +
-                         "indicators: GetPlayerPed, GetEntityCoords, and TaskGoToCoordAnyMeans or SetEntityCoords. " +
-                         "This combination is used by FiveM aimbots and teleport cheats that track " +
-                         "enemy positions and move the local player or aim toward them.",
-                Detail = $"Resource: {resourceName} | File: {fn}"
-            });
-        }
+        await Task.CompletedTask;
     }
 
-    private async Task ScanFiveMBannedResourceNamesAsync(ScanContext ctx, string resourcesRoot,
-        CancellationToken ct)
+    // ─── FiveM modded builds in AppData ─────────────────────────────────────
+
+    private async Task ScanFiveMModdedBuildsInAppDataAsync(ScanContext ctx, CancellationToken ct)
     {
-        if (!Directory.Exists(resourcesRoot)) return;
-
-        string[] resourceDirs = Array.Empty<string>();
-        try { resourceDirs = Directory.GetDirectories(resourcesRoot); }
-        catch (UnauthorizedAccessException) { return; }
-        catch (IOException) { return; }
-
-        foreach (var resourceDir in resourceDirs)
+        var appDataRoots = new[]
         {
-            if (ct.IsCancellationRequested) return;
-            var resourceName = Path.GetFileName(resourceDir);
-
-            if (FiveMBannedResourceNames.Contains(resourceName))
-            {
-                ctx.AddFinding(new Finding
-                {
-                    Module = Name,
-                    Title = $"Banned FiveM Resource Name: '{resourceName}'",
-                    Risk = RiskLevel.Critical,
-                    Location = resourceDir,
-                    FileName = resourceName,
-                    Reason = $"A FiveM resource folder named '{resourceName}' was found. " +
-                             "This name appears on the known-bad resource list for FiveM cheat resources " +
-                             "that provide godmode, money duplication, vehicle spawning bypass, " +
-                             "mass teleport, or server crash functionality.",
-                    Detail = $"Path: {resourceDir}"
-                });
-            }
-        }
-
-        await Task.CompletedTask.ConfigureAwait(false);
-    }
-
-    private async Task ScanFiveMCitizenFolderAsync(ScanContext ctx, CancellationToken ct)
-    {
-        var citizenRoot = Path.Combine(LocalApp, "FiveM", "FiveM.app", "citizen");
-        if (!Directory.Exists(citizenRoot)) return;
-
-        // Unexpected DLLs in citizen folder not from CitizenFX/Cfx.re
-        foreach (var file in EnumerateTextFiles(citizenRoot, 4, new[] { ".dll" }, ct))
-        {
-            if (ct.IsCancellationRequested) return;
-            ctx.IncrementFiles();
-
-            var fn = Path.GetFileName(file);
-            bool isKnownCitizen = KnownCitizenDllPatterns.Any(p =>
-                fn.Contains(p, StringComparison.OrdinalIgnoreCase));
-
-            if (!isKnownCitizen)
-            {
-                ctx.AddFinding(new Finding
-                {
-                    Module = Name,
-                    Title = $"Unexpected DLL in FiveM citizen folder: {fn}",
-                    Risk = RiskLevel.High,
-                    Location = file,
-                    FileName = fn,
-                    Reason = $"DLL '{fn}' found in the FiveM citizen folder does not match any " +
-                             "expected CitizenFX/Cfx.re DLL naming pattern. Cheat injectors and " +
-                             "anticheat bypass DLLs are sometimes placed in the citizen folder to " +
-                             "load automatically when FiveM starts.",
-                    Detail = $"Path: {file}"
-                });
-            }
-        }
-
-        // Check scripting/lua folder for modified or unauthorized Lua files
-        var luaScriptingDir = Path.Combine(citizenRoot, "scripting", "lua");
-        if (!Directory.Exists(luaScriptingDir)) return;
-
-        foreach (var file in EnumerateTextFiles(luaScriptingDir, 3, new[] { ".lua" }, ct))
-        {
-            if (ct.IsCancellationRequested) return;
-            ctx.IncrementFiles();
-
-            var fn = Path.GetFileName(file);
-            bool isKnown = fn.Equals("scripting_gta.lua", StringComparison.OrdinalIgnoreCase) ||
-                           fn.Equals("scripting_natives.lua", StringComparison.OrdinalIgnoreCase) ||
-                           fn.Equals("scripting_server.lua", StringComparison.OrdinalIgnoreCase) ||
-                           fn.Equals("scripting_shared.lua", StringComparison.OrdinalIgnoreCase);
-
-            if (!isKnown)
-            {
-                ctx.AddFinding(new Finding
-                {
-                    Module = Name,
-                    Title = $"Unauthorized Lua File in FiveM citizen/scripting/lua: {fn}",
-                    Risk = RiskLevel.High,
-                    Location = file,
-                    FileName = fn,
-                    Reason = $"Unexpected Lua file '{fn}' found in FiveM citizen/scripting/lua/. " +
-                             "This directory contains the official FiveM Lua scripting runtime. " +
-                             "Placing unauthorized Lua files here allows cheats to override native " +
-                             "mappings and inject code into every FiveM resource.",
-                    Detail = $"Path: {file}"
-                });
-                continue;
-            }
-
-            // Size/content anomaly check for known files
-            await CheckLuaFileForCheatPatternsAsync(ctx, file, ct).ConfigureAwait(false);
-        }
-    }
-
-    // ── RageMP ──────────────────────────────────────────────────────────────────
-
-    private async Task ScanRageMpCheatArtifactsAsync(ScanContext ctx, CancellationToken ct)
-    {
-        var scanDirs = new[]
-        {
-            Path.Combine(UserProfile, "Downloads"),
-            Temp,
-            Path.Combine(UserProfile, "Desktop")
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         };
 
-        foreach (var dir in scanDirs)
+        foreach (var root in appDataRoots)
         {
-            if (ct.IsCancellationRequested) return;
-            if (!Directory.Exists(dir)) continue;
+            ct.ThrowIfCancellationRequested();
+            if (!Directory.Exists(root)) continue;
 
-            foreach (var file in EnumerateTextFiles(dir, 2,
-                new[] { ".exe", ".ini", ".cfg", ".json", ".txt" }, ct))
+            IEnumerable<string> files;
+            try
             {
-                if (ct.IsCancellationRequested) return;
-                ctx.IncrementFiles();
-
-                var fn = Path.GetFileName(file);
-
-                if (RageMpPacketInjectionToolNames.Any(n =>
-                    fn.Equals(n, StringComparison.OrdinalIgnoreCase)))
-                {
-                    ctx.AddFinding(new Finding
-                    {
-                        Module = Name,
-                        Title = $"RageMP Packet Injection Tool: {fn}",
-                        Risk = RiskLevel.Critical,
-                        Location = file,
-                        FileName = fn,
-                        Reason = $"File '{fn}' matches a known RageMP packet injection or spoofing tool name. " +
-                                 "These tools intercept and modify RageMP network packets to fake positions, " +
-                                 "inject money, or bypass server-side anticheat checks.",
-                        Detail = $"Path: {file}"
-                    });
-                    continue;
-                }
-
-                var ext = Path.GetExtension(file);
-                if (ext.Equals(".ini", StringComparison.OrdinalIgnoreCase) ||
-                    ext.Equals(".cfg", StringComparison.OrdinalIgnoreCase) ||
-                    ext.Equals(".json", StringComparison.OrdinalIgnoreCase) ||
-                    ext.Equals(".txt", StringComparison.OrdinalIgnoreCase))
-                {
-                    try
-                    {
-                        string content;
-                        using var fs = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-                        using var sr = new StreamReader(fs);
-                        content = await sr.ReadToEndAsync().ConfigureAwait(false);
-
-                        var matched = RageMpConfigKeywords.FirstOrDefault(k =>
-                            content.Contains(k, StringComparison.OrdinalIgnoreCase));
-                        if (matched is not null)
-                        {
-                            ctx.AddFinding(new Finding
-                            {
-                                Module = Name,
-                                Title = $"RageMP Cheat Config Keyword in: {fn}",
-                                Risk = RiskLevel.High,
-                                Location = file,
-                                FileName = fn,
-                                Reason = $"Config file '{fn}' contains the RageMP cheat keyword '{matched}'. " +
-                                         "This keyword is associated with packet spoofing tools and position " +
-                                         "desync exploits targeting the RageMP GTA multiplayer platform.",
-                                Detail = $"Matched: {matched} | Path: {file}"
-                            });
-                        }
-                    }
-                    catch (UnauthorizedAccessException) { }
-                    catch (IOException) { }
-                }
+                files = Directory.EnumerateFiles(root, "*.exe", SearchOption.AllDirectories);
             }
-        }
-
-        var rageMpRoot = Path.Combine(AppData, "RAGE Multiplayer");
-        if (Directory.Exists(rageMpRoot))
-        {
-            await ScanRageMpBridgeDllsAsync(ctx, ct).ConfigureAwait(false);
-
-            var packages = Path.Combine(rageMpRoot, "packages");
-            var clientPackages = Path.Combine(rageMpRoot, "client_packages");
-
-            if (Directory.Exists(packages))
-                await ScanRageMpClientPackagesAsync(ctx, packages, ct).ConfigureAwait(false);
-            if (Directory.Exists(clientPackages))
-                await ScanRageMpClientPackagesAsync(ctx, clientPackages, ct).ConfigureAwait(false);
-        }
-    }
-
-    private async Task ScanRageMpBridgeDllsAsync(ScanContext ctx, CancellationToken ct)
-    {
-        var rageMpRoot = Path.Combine(AppData, "RAGE Multiplayer");
-        if (!Directory.Exists(rageMpRoot)) return;
-
-        // Check the root folder and immediate subdirs
-        var dirsToCheck = new List<string> { rageMpRoot };
-        try
-        {
-            foreach (var sub in Directory.GetDirectories(rageMpRoot))
-                dirsToCheck.Add(sub);
-        }
-        catch (UnauthorizedAccessException) { }
-        catch (IOException) { }
-
-        foreach (var dir in dirsToCheck)
-        {
-            if (ct.IsCancellationRequested) return;
-
-            string[] files = Array.Empty<string>();
-            try { files = Directory.GetFiles(dir, "*.dll"); }
             catch (UnauthorizedAccessException) { continue; }
-            catch (IOException) { continue; }
 
             foreach (var file in files)
             {
-                if (ct.IsCancellationRequested) return;
-                ctx.IncrementFiles();
+                ct.ThrowIfCancellationRequested();
+                var fname = Path.GetFileName(file);
 
-                var fn = Path.GetFileName(file);
-                if (!RageMpKnownDlls.Contains(fn))
+                foreach (var moddedName in FiveMModdedBuildNames)
                 {
+                    if (!fname.Equals(moddedName, StringComparison.OrdinalIgnoreCase)) continue;
+
+                    ctx.IncrementFiles(1);
                     ctx.AddFinding(new Finding
                     {
-                        Module = Name,
-                        Title = $"Suspicious DLL in RageMP Directory: {fn}",
-                        Risk = RiskLevel.High,
+                        Module = ModuleName,
+                        Title = $"FiveM Modded Build in AppData: {fname}",
+                        Risk = RiskLevel.Critical,
                         Location = file,
-                        FileName = fn,
-                        Reason = $"DLL '{fn}' found in the RAGE Multiplayer folder does not match " +
-                                 "any known-good RageMP DLL. Unknown DLLs in the RageMP directory " +
-                                 "are often custom bridge DLLs used by cheats to hook into the " +
-                                 "RageMP client bridge and intercept or modify network communications.",
-                        Detail = $"Path: {file} | Expected DLLs: {string.Join(", ", RageMpKnownDlls)}"
+                        FileName = fname,
+                        Reason = $"Patched or modified FiveM executable '{fname}' found in AppData. Modded FiveM builds bypass CitizenFX integrity checks, certificate pinning on the citizen:// protocol, and network packet authentication.",
+                        Detail = $"Path={file}",
+                        Recommendation = Recommendation.Remove,
                     });
+                    break;
                 }
             }
         }
-
-        // Check client_packages for suspicious DLLs (not standard JS/resource files)
-        var clientPackages = Path.Combine(rageMpRoot, "client_packages");
-        if (!Directory.Exists(clientPackages)) return;
-
-        foreach (var file in EnumerateTextFiles(clientPackages, 3, new[] { ".dll" }, ct))
-        {
-            if (ct.IsCancellationRequested) return;
-            ctx.IncrementFiles();
-
-            var fn = Path.GetFileName(file);
-            ctx.AddFinding(new Finding
-            {
-                Module = Name,
-                Title = $"Suspicious DLL in RageMP client_packages: {fn}",
-                Risk = RiskLevel.High,
-                Location = file,
-                FileName = fn,
-                Reason = $"DLL '{fn}' found in RageMP client_packages directory. " +
-                         "This directory should contain only JavaScript resource files. " +
-                         "DLLs here are not expected and may be cheat bridge components " +
-                         "or injectors masquerading as client packages.",
-                Detail = $"Path: {file}"
-            });
-        }
-
-        await Task.CompletedTask.ConfigureAwait(false);
+        await Task.CompletedTask;
     }
 
-    private async Task ScanRageMpClientPackagesAsync(ScanContext ctx, string packagesRoot,
-        CancellationToken ct)
-    {
-        if (!Directory.Exists(packagesRoot)) return;
+    // ─── FiveM resources (manifests + Lua) ───────────────────────────────────
 
-        foreach (var file in EnumerateTextFiles(packagesRoot, 4, new[] { ".js" }, ct))
+    private async Task ScanFiveMResourcesAsync(ScanContext ctx, CancellationToken ct)
+    {
+        var fivemResourceRoots = new[]
         {
-            if (ct.IsCancellationRequested) return;
-            ctx.IncrementFiles();
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                "CitizenFX", "cache", "resources"),
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "FiveM", "FiveM.app", "data", "resources"),
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                "FiveM", "data", "resources"),
+        };
+
+        foreach (var resourceRoot in fivemResourceRoots)
+        {
+            ct.ThrowIfCancellationRequested();
+            if (!Directory.Exists(resourceRoot)) continue;
+
+            IEnumerable<string> dirs;
+            try
+            {
+                dirs = Directory.EnumerateDirectories(resourceRoot, "*", SearchOption.TopDirectoryOnly);
+            }
+            catch (UnauthorizedAccessException) { continue; }
+
+            foreach (var resourceDir in dirs)
+            {
+                ct.ThrowIfCancellationRequested();
+                var resourceName = Path.GetFileName(resourceDir);
+
+                foreach (var bannedName in FiveMBannedResourceNames)
+                {
+                    if (!resourceName.Equals(bannedName, StringComparison.OrdinalIgnoreCase)) continue;
+
+                    ctx.AddFinding(new Finding
+                    {
+                        Module = ModuleName,
+                        Title = $"FiveM Banned Resource: {resourceName}",
+                        Risk = RiskLevel.Critical,
+                        Location = resourceDir,
+                        FileName = resourceName,
+                        Reason = $"FiveM resource directory '{resourceName}' matches a banned cheat resource name. Known exploit, money duplication, god-mode, teleport, or mass-kill resource.",
+                        Detail = $"ResourceDir={resourceDir}",
+                        Recommendation = Recommendation.Remove,
+                    });
+                    break;
+                }
+
+                await ScanFiveMResourceManifestAsync(ctx, resourceDir, resourceName, ct);
+                await ScanFiveMLuaFilesInResourceAsync(ctx, resourceDir, resourceName, ct);
+            }
+        }
+    }
+
+    private async Task ScanFiveMResourceManifestAsync(
+        ScanContext ctx, string resourceDir, string resourceName, CancellationToken ct)
+    {
+        var manifestPaths = new[]
+        {
+            Path.Combine(resourceDir, "fxmanifest.lua"),
+            Path.Combine(resourceDir, "__resource.lua"),
+            Path.Combine(resourceDir, "resource.json"),
+        };
+
+        foreach (var manifestPath in manifestPaths)
+        {
+            if (!File.Exists(manifestPath)) continue;
 
             string content;
             try
             {
-                using var fs = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                using var fs = new FileStream(manifestPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
                 using var sr = new StreamReader(fs);
-                content = await sr.ReadToEndAsync().ConfigureAwait(false);
+                content = await sr.ReadToEndAsync(ct);
             }
-            catch (UnauthorizedAccessException) { continue; }
             catch (IOException) { continue; }
 
-            var fn = Path.GetFileName(file);
+            ctx.IncrementFiles(1);
 
-            // mp.events.add combined with server sync manipulation
-            bool hasMpEvents = content.Contains("mp.events.add", StringComparison.OrdinalIgnoreCase);
-            bool hasServerSyncManip =
-                content.Contains("mp.players.local.position", StringComparison.OrdinalIgnoreCase) ||
-                content.Contains("syncedMeta", StringComparison.OrdinalIgnoreCase) ||
-                content.Contains("bypassSync", StringComparison.OrdinalIgnoreCase);
-            if (hasMpEvents && hasServerSyncManip)
+            foreach (var banned in FiveMBannedResourceNames)
             {
+                if (!content.Contains(banned, StringComparison.OrdinalIgnoreCase)) continue;
+
                 ctx.AddFinding(new Finding
                 {
-                    Module = Name,
-                    Title = $"RageMP Server Sync Manipulation in: {fn}",
+                    Module = ModuleName,
+                    Title = $"FiveM Manifest References Banned Resource: {banned}",
                     Risk = RiskLevel.High,
-                    Location = file,
-                    FileName = fn,
-                    Reason = $"File '{fn}' combines mp.events.add with server synchronisation " +
-                             "manipulation patterns (mp.players.local.position, syncedMeta bypass). " +
-                             "This is used by RageMP exploits to desync the player's server-side " +
-                             "position or manipulate synced metadata for cheating purposes.",
-                    Detail = $"Path: {file}"
+                    Location = manifestPath,
+                    FileName = Path.GetFileName(manifestPath),
+                    Reason = $"FiveM resource manifest in '{resourceName}' imports or depends on banned cheat resource '{banned}'. The manifest references a known exploit script.",
+                    Detail = $"Manifest={manifestPath}; BannedResource={banned}",
+                    Recommendation = Recommendation.Remove,
                 });
-                continue;
+                break;
             }
+        }
+    }
 
-            // mp.players.local.position set via exploit patterns
-            if (content.Contains("mp.players.local.position", StringComparison.OrdinalIgnoreCase))
+    private async Task ScanFiveMLuaFilesInResourceAsync(
+        ScanContext ctx, string resourceDir, string resourceName, CancellationToken ct)
+    {
+        IEnumerable<string> luaFiles;
+        try
+        {
+            luaFiles = Directory.EnumerateFiles(resourceDir, "*.lua", SearchOption.AllDirectories);
+        }
+        catch (UnauthorizedAccessException) { return; }
+
+        foreach (var luaPath in luaFiles)
+        {
+            ct.ThrowIfCancellationRequested();
+
+            string content;
+            try
             {
+                using var fs = new FileStream(luaPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                using var sr = new StreamReader(fs);
+                content = await sr.ReadToEndAsync(ct);
+            }
+            catch (IOException) { continue; }
+
+            ctx.IncrementFiles(1);
+
+            foreach (var pattern in FiveMExploitLuaPatterns)
+            {
+                if (!content.Contains(pattern, StringComparison.OrdinalIgnoreCase)) continue;
+
                 ctx.AddFinding(new Finding
                 {
-                    Module = Name,
-                    Title = $"RageMP Local Position Override in: {fn}",
-                    Risk = RiskLevel.Medium,
-                    Location = file,
-                    FileName = fn,
-                    Reason = $"File '{fn}' sets mp.players.local.position. Directly manipulating " +
-                             "the local player position in client packages is a known technique " +
-                             "for position desync exploits and teleport cheats in RageMP.",
-                    Detail = $"Path: {file}"
+                    Module = ModuleName,
+                    Title = $"FiveM Lua Exploit Pattern: {pattern}",
+                    Risk = RiskLevel.High,
+                    Location = luaPath,
+                    FileName = Path.GetFileName(luaPath),
+                    Reason = $"FiveM Lua script in resource '{resourceName}' contains exploit pattern '{pattern}'. Indicates server-event flooding, invincibility native calls, or money injection via ESX/QBCore TriggerServerEvent abuse.",
+                    Detail = $"LuaFile={luaPath}; Pattern={pattern}",
+                    Recommendation = Recommendation.Review,
                 });
-                continue;
+                break;
             }
 
-            // mp.game.invoke in looping context
-            if (content.Contains("mp.game.invoke", StringComparison.OrdinalIgnoreCase))
+            foreach (var regex in FiveMEsxQbExploitRegexes)
             {
-                bool hasLoop =
-                    content.Contains("setInterval", StringComparison.OrdinalIgnoreCase) ||
-                    content.Contains("while(", StringComparison.OrdinalIgnoreCase) ||
-                    content.Contains("while (", StringComparison.OrdinalIgnoreCase) ||
-                    content.Contains("for(", StringComparison.OrdinalIgnoreCase) ||
-                    content.Contains("for (", StringComparison.OrdinalIgnoreCase);
-                if (hasLoop)
+                if (!regex.IsMatch(content)) continue;
+
+                ctx.AddFinding(new Finding
                 {
+                    Module = ModuleName,
+                    Title = "FiveM ESX/QBCore Server-Event Money Exploit",
+                    Risk = RiskLevel.Critical,
+                    Location = luaPath,
+                    FileName = Path.GetFileName(luaPath),
+                    Reason = $"FiveM Lua script in resource '{resourceName}' matches an ESX/QBCore exploit pattern: TriggerServerEvent flood with large currency values or admin-level server calls (xPlayer.addMoney, large numeric argument).",
+                    Detail = $"LuaFile={luaPath}; Regex={regex}",
+                    Recommendation = Recommendation.Remove,
+                });
+                break;
+            }
+        }
+    }
+
+    // ─── FiveM config file scan ───────────────────────────────────────────────
+
+    private async Task ScanFiveMConfigFilesAsync(ScanContext ctx, CancellationToken ct)
+    {
+        var configRoots = new[]
+        {
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "CitizenFX"),
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "FiveM"),
+            Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads"),
+        };
+
+        foreach (var root in configRoots)
+        {
+            ct.ThrowIfCancellationRequested();
+            if (!Directory.Exists(root)) continue;
+
+            IEnumerable<string> files;
+            try
+            {
+                files = Directory.EnumerateFiles(root, "*.*", SearchOption.AllDirectories);
+            }
+            catch (UnauthorizedAccessException) { continue; }
+
+            foreach (var file in files)
+            {
+                ct.ThrowIfCancellationRequested();
+                if (!ConfigExtensions.Contains(Path.GetExtension(file))) continue;
+
+                string content;
+                try
+                {
+                    using var fs = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                    using var sr = new StreamReader(fs);
+                    content = await sr.ReadToEndAsync(ct);
+                }
+                catch (IOException) { continue; }
+
+                ctx.IncrementFiles(1);
+
+                foreach (var pattern in FiveMCheatConfigPatterns)
+                {
+                    if (!content.Contains(pattern, StringComparison.OrdinalIgnoreCase)) continue;
+
                     ctx.AddFinding(new Finding
                     {
-                        Module = Name,
-                        Title = $"RageMP Game.Invoke in Loop Context in: {fn}",
+                        Module = ModuleName,
+                        Title = $"FiveM Cheat Config Key: {pattern}",
                         Risk = RiskLevel.High,
                         Location = file,
-                        FileName = fn,
-                        Reason = $"File '{fn}' calls mp.game.invoke (raw GTA native call) inside a " +
-                                 "looping context (setInterval, while, for). This pattern is used " +
-                                 "by RageMP cheats to repeatedly invoke game natives for godmode, " +
-                                 "speedhack, or aimbot functionality without server authorization.",
-                        Detail = $"Path: {file}"
+                        FileName = Path.GetFileName(file),
+                        Reason = $"FiveM configuration file '{Path.GetFileName(file)}' contains cheat setting '{pattern}', which enables position spoofing, fake coordinates, network culling bypass, or anti-cheat circumvention.",
+                        Detail = $"File={file}; Pattern={pattern}",
+                        Recommendation = Recommendation.Review,
                     });
+                    break;
                 }
             }
         }
     }
 
-    // ── alt:V ───────────────────────────────────────────────────────────────────
+    // ─── RageMP cheat binaries ────────────────────────────────────────────────
 
-    private async Task ScanAltVCheatArtifactsAsync(ScanContext ctx, CancellationToken ct)
+    private async Task ScanRageMpBinariesAsync(ScanContext ctx, CancellationToken ct)
     {
-        var altVRoot = Path.Combine(LocalApp, "altv");
-        if (!Directory.Exists(altVRoot))
+        foreach (var root in GetUserSearchRoots())
         {
-            // Try alternate locations
-            var altVRoots = new[]
+            ct.ThrowIfCancellationRequested();
+            if (!Directory.Exists(root)) continue;
+
+            IEnumerable<string> files;
+            try
             {
-                Path.Combine(LocalApp, "altv-launcher"),
-                Path.Combine(AppData, "altv"),
-                Path.Combine(UserProfile, "Documents", "altv"),
-                @"C:\altv",
-                @"C:\altv-launcher"
-            };
-            altVRoot = altVRoots.FirstOrDefault(Directory.Exists) ?? altVRoot;
+                files = Directory.EnumerateFiles(root, "*.exe", SearchOption.AllDirectories);
+            }
+            catch (UnauthorizedAccessException) { continue; }
+
+            foreach (var file in files)
+            {
+                ct.ThrowIfCancellationRequested();
+                var fname = Path.GetFileName(file);
+
+                foreach (var known in RageMpCheatExeNames)
+                {
+                    if (!fname.Equals(known, StringComparison.OrdinalIgnoreCase)) continue;
+
+                    ctx.IncrementFiles(1);
+                    ctx.AddFinding(new Finding
+                    {
+                        Module = ModuleName,
+                        Title = $"RageMP Cheat Binary: {fname}",
+                        Risk = RiskLevel.Critical,
+                        Location = file,
+                        FileName = fname,
+                        Reason = $"Known RageMP cheat executable '{fname}' found. RageMP packet injection tools manipulate position synchronisation, money events, and teleportation at the network layer.",
+                        Detail = $"Path={file}",
+                        Recommendation = Recommendation.Remove,
+                    });
+                    break;
+                }
+            }
         }
+        await Task.CompletedTask;
+    }
 
-        if (!Directory.Exists(altVRoot)) return;
+    // ─── RageMP config files ─────────────────────────────────────────────────
 
-        var resourcesRoot = Path.Combine(altVRoot, "resources");
-        if (Directory.Exists(resourcesRoot))
+    private async Task ScanRageMpConfigFilesAsync(ScanContext ctx, CancellationToken ct)
+    {
+        var rageMpRoots = new[]
         {
-            await ScanAltVResourcesAsync(ctx, resourcesRoot, ct).ConfigureAwait(false);
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                "RAGE Multiplayer"),
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                "RAGEMultiplayer"),
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "RAGE Multiplayer"),
+        };
 
-            // Check for banned alt:V resource folder names
-            string[] resourceDirs = Array.Empty<string>();
-            try { resourceDirs = Directory.GetDirectories(resourcesRoot); }
-            catch (UnauthorizedAccessException) { }
-            catch (IOException) { }
+        foreach (var root in rageMpRoots)
+        {
+            ct.ThrowIfCancellationRequested();
+            if (!Directory.Exists(root)) continue;
+
+            IEnumerable<string> files;
+            try
+            {
+                files = Directory.EnumerateFiles(root, "*.*", SearchOption.AllDirectories);
+            }
+            catch (UnauthorizedAccessException) { continue; }
+
+            foreach (var file in files)
+            {
+                ct.ThrowIfCancellationRequested();
+                if (!ConfigExtensions.Contains(Path.GetExtension(file))) continue;
+
+                string content;
+                try
+                {
+                    using var fs = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                    using var sr = new StreamReader(fs);
+                    content = await sr.ReadToEndAsync(ct);
+                }
+                catch (IOException) { continue; }
+
+                ctx.IncrementFiles(1);
+
+                foreach (var pattern in RageMpCheatConfigPatterns)
+                {
+                    if (!content.Contains(pattern, StringComparison.OrdinalIgnoreCase)) continue;
+
+                    ctx.AddFinding(new Finding
+                    {
+                        Module = ModuleName,
+                        Title = $"RageMP Cheat Config: {pattern}",
+                        Risk = RiskLevel.High,
+                        Location = file,
+                        FileName = Path.GetFileName(file),
+                        Reason = $"RageMP configuration file '{Path.GetFileName(file)}' contains cheat setting '{pattern}'. Enables packet-level teleportation (teleport_via_packet), money sync exploit, or anti-cheat bypass.",
+                        Detail = $"File={file}; Pattern={pattern}",
+                        Recommendation = Recommendation.Review,
+                    });
+                    break;
+                }
+            }
+        }
+    }
+
+    // ─── RageMP custom bridge DLLs ──────────────────────────────────────────
+
+    private async Task ScanRageMpCustomBridgeDllsAsync(ScanContext ctx, CancellationToken ct)
+    {
+        var rageMpDirs = new[]
+        {
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                "RAGE Multiplayer"),
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                "RAGEMultiplayer"),
+        };
+
+        foreach (var rageMpDir in rageMpDirs)
+        {
+            ct.ThrowIfCancellationRequested();
+            if (!Directory.Exists(rageMpDir)) continue;
+
+            IEnumerable<string> dllFiles;
+            try
+            {
+                dllFiles = Directory.EnumerateFiles(rageMpDir, "*.dll", SearchOption.AllDirectories);
+            }
+            catch (UnauthorizedAccessException) { continue; }
+
+            foreach (var dll in dllFiles)
+            {
+                ct.ThrowIfCancellationRequested();
+                var fname = Path.GetFileName(dll);
+
+                if (RageMpLegitDlls.Contains(fname)) continue;
+
+                foreach (var knownCheatDll in RageMpCheatDllNames)
+                {
+                    if (!fname.Equals(knownCheatDll, StringComparison.OrdinalIgnoreCase)) continue;
+
+                    ctx.IncrementFiles(1);
+                    ctx.AddFinding(new Finding
+                    {
+                        Module = ModuleName,
+                        Title = $"RageMP Custom Cheat Bridge DLL: {fname}",
+                        Risk = RiskLevel.Critical,
+                        Location = dll,
+                        FileName = fname,
+                        Reason = $"Known RageMP cheat bridge DLL '{fname}' found inside the RAGE Multiplayer AppData directory. These DLLs hook the RAGE SDK to intercept and manipulate network synchronisation events.",
+                        Detail = $"Path={dll}",
+                        Recommendation = Recommendation.Remove,
+                    });
+                    break;
+                }
+            }
+        }
+        await Task.CompletedTask;
+    }
+
+    // ─── alt:V exploit resource scripts ─────────────────────────────────────
+
+    private async Task ScanAltVResourceScriptsAsync(ScanContext ctx, CancellationToken ct)
+    {
+        var altVResourceRoots = new[]
+        {
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                "altv", "resources"),
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "altv", "resources"),
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                "alt-v", "resources"),
+        };
+
+        foreach (var root in altVResourceRoots)
+        {
+            ct.ThrowIfCancellationRequested();
+            if (!Directory.Exists(root)) continue;
+
+            IEnumerable<string> resourceDirs;
+            try
+            {
+                resourceDirs = Directory.EnumerateDirectories(root, "*", SearchOption.TopDirectoryOnly);
+            }
+            catch (UnauthorizedAccessException) { continue; }
 
             foreach (var resourceDir in resourceDirs)
             {
-                if (ct.IsCancellationRequested) return;
+                ct.ThrowIfCancellationRequested();
                 var resourceName = Path.GetFileName(resourceDir);
 
-                if (AltVBannedResourceNames.Contains(resourceName))
+                foreach (var bannedPattern in AltVBannedResourcePatterns)
                 {
+                    if (!resourceName.Contains(bannedPattern, StringComparison.OrdinalIgnoreCase)) continue;
+
                     ctx.AddFinding(new Finding
                     {
-                        Module = Name,
-                        Title = $"Banned alt:V Resource Name: '{resourceName}'",
+                        Module = ModuleName,
+                        Title = $"alt:V Banned Resource: {resourceName}",
                         Risk = RiskLevel.Critical,
                         Location = resourceDir,
                         FileName = resourceName,
-                        Reason = $"alt:V resource folder '{resourceName}' matches a known cheat resource name. " +
-                                 "This resource name is associated with ESP, aimbot, wallhack, speedhack, " +
-                                 "unlimited vehicle spawning, money hacks, godmode, server crash, " +
-                                 "or mass kick functionality.",
-                        Detail = $"Path: {resourceDir}"
+                        Reason = $"alt:V resource directory '{resourceName}' matches banned cheat pattern '{bannedPattern}'. Performs mass entity spawning, player list dumping, god-mode, or exploit actions.",
+                        Detail = $"ResourceDir={resourceDir}; Pattern={bannedPattern}",
+                        Recommendation = Recommendation.Remove,
                     });
+                    break;
                 }
 
-                // Check for banned cheat JS files inside each resource folder
-                foreach (var bannedFileName in AltVBannedResourceFileNames)
-                {
-                    var bannedPath = Path.Combine(resourceDir, bannedFileName);
-                    if (!File.Exists(bannedPath)) continue;
-
-                    ctx.IncrementFiles();
-                    ctx.AddFinding(new Finding
-                    {
-                        Module = Name,
-                        Title = $"Cheat Script in alt:V Resource '{resourceName}': {bannedFileName}",
-                        Risk = RiskLevel.Critical,
-                        Location = bannedPath,
-                        FileName = bannedFileName,
-                        Reason = $"File '{bannedFileName}' found inside alt:V resource '{resourceName}'. " +
-                                 "Files with this name are strongly associated with cheat functionality " +
-                                 "in alt:V resources (ESP, aimbot, exploit, bypass scripts).",
-                        Detail = $"Path: {bannedPath}"
-                    });
-                }
+                await ScanAltVJsFilesInResourceAsync(ctx, resourceDir, resourceName, ct);
             }
         }
-
-        await ScanAltVDllsAsync(ctx, altVRoot, ct).ConfigureAwait(false);
     }
 
-    private async Task ScanAltVResourcesAsync(ScanContext ctx, string resourcesRoot, CancellationToken ct)
+    private async Task ScanAltVJsFilesInResourceAsync(
+        ScanContext ctx, string resourceDir, string resourceName, CancellationToken ct)
     {
-        if (!Directory.Exists(resourcesRoot)) return;
-
-        foreach (var file in EnumerateTextFiles(resourcesRoot, 5, new[] { ".js", ".ts" }, ct))
+        IEnumerable<string> jsFiles;
+        try
         {
-            if (ct.IsCancellationRequested) return;
-            ctx.IncrementFiles();
-            await CheckJsFileForCheatPatternsAsync(ctx, file, "alt:V", ct).ConfigureAwait(false);
+            jsFiles = Directory.EnumerateFiles(resourceDir, "*.js", SearchOption.AllDirectories);
         }
-    }
+        catch (UnauthorizedAccessException) { return; }
 
-    private async Task ScanAltVDllsAsync(ScanContext ctx, string altVRoot, CancellationToken ct)
-    {
-        if (!Directory.Exists(altVRoot)) return;
-
-        foreach (var file in EnumerateTextFiles(altVRoot, 3, new[] { ".dll" }, ct))
+        foreach (var jsFile in jsFiles)
         {
-            if (ct.IsCancellationRequested) return;
-            ctx.IncrementFiles();
+            ct.ThrowIfCancellationRequested();
 
-            var fn = Path.GetFileName(file);
-            if (!AltVKnownDlls.Contains(fn))
+            string content;
+            try
             {
+                using var fs = new FileStream(jsFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                using var sr = new StreamReader(fs);
+                content = await sr.ReadToEndAsync(ct);
+            }
+            catch (IOException) { continue; }
+
+            ctx.IncrementFiles(1);
+
+            foreach (var pattern in AltVExploitJsPatterns)
+            {
+                if (!content.Contains(pattern, StringComparison.OrdinalIgnoreCase)) continue;
+
+                var isLoop = pattern.Contains("setInterval", StringComparison.OrdinalIgnoreCase) ||
+                             pattern.Contains("while", StringComparison.OrdinalIgnoreCase) ||
+                             pattern.Contains("for", StringComparison.OrdinalIgnoreCase);
+
                 ctx.AddFinding(new Finding
                 {
-                    Module = Name,
-                    Title = $"Unexpected DLL in alt:V Directory: {fn}",
-                    Risk = RiskLevel.High,
-                    Location = file,
-                    FileName = fn,
-                    Reason = $"DLL '{fn}' found in the alt:V directory does not match any expected " +
-                             "alt:V module DLL. Unknown DLLs in the alt:V root are characteristic " +
-                             "of packet manipulation tools or cheat modules that hook the alt:V " +
-                             "client's network layer.",
-                    Detail = $"Path: {file} | Expected: {string.Join(", ", AltVKnownDlls)}"
+                    Module = ModuleName,
+                    Title = $"alt:V JS Exploit Pattern: {pattern}",
+                    Risk = isLoop ? RiskLevel.Critical : RiskLevel.High,
+                    Location = jsFile,
+                    FileName = Path.GetFileName(jsFile),
+                    Reason = $"alt:V client-side JavaScript resource '{resourceName}' contains exploit pattern '{pattern}'. Loop-based patterns indicate server-event flooding; native-call patterns indicate god-mode, teleport, or weapon-spawn cheats.",
+                    Detail = $"JsFile={jsFile}; Pattern={pattern}; LoopPattern={isLoop}",
+                    Recommendation = Recommendation.Review,
                 });
+                break;
             }
         }
-
-        await Task.CompletedTask.ConfigureAwait(false);
     }
 
-    // ── Cross-platform network tools ─────────────────────────────────────────────
+    // ─── alt:V packet manipulation DLLs ─────────────────────────────────────
 
-    private async Task ScanCrossPlatformNetworkToolsAsync(ScanContext ctx, CancellationToken ct)
+    private async Task ScanAltVPacketManipulationDllsAsync(ScanContext ctx, CancellationToken ct)
     {
-        var scanDirs = new[]
+        var altVDirs = new[]
         {
-            Path.Combine(UserProfile, "Downloads"),
-            Path.Combine(UserProfile, "Desktop"),
-            Temp
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "altv"),
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "altv"),
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "alt-v"),
         };
 
-        foreach (var dir in scanDirs)
+        foreach (var altVDir in altVDirs)
         {
-            if (ct.IsCancellationRequested) return;
-            if (!Directory.Exists(dir)) continue;
+            ct.ThrowIfCancellationRequested();
+            if (!Directory.Exists(altVDir)) continue;
 
-            string[] files = Array.Empty<string>();
-            try { files = Directory.GetFiles(dir, "*", SearchOption.TopDirectoryOnly); }
+            IEnumerable<string> dllFiles;
+            try
+            {
+                dllFiles = Directory.EnumerateFiles(altVDir, "*.dll", SearchOption.AllDirectories);
+            }
             catch (UnauthorizedAccessException) { continue; }
-            catch (IOException) { continue; }
+
+            foreach (var dll in dllFiles)
+            {
+                ct.ThrowIfCancellationRequested();
+                var fname = Path.GetFileName(dll);
+
+                if (AltVLegitDlls.Contains(fname)) continue;
+
+                foreach (var keyword in AltVCheatDllKeywords)
+                {
+                    if (!fname.Contains(keyword, StringComparison.OrdinalIgnoreCase)) continue;
+
+                    ctx.IncrementFiles(1);
+                    ctx.AddFinding(new Finding
+                    {
+                        Module = ModuleName,
+                        Title = $"alt:V Cheat-Keyword DLL: {fname}",
+                        Risk = RiskLevel.Critical,
+                        Location = dll,
+                        FileName = fname,
+                        Reason = $"Unexpected DLL '{fname}' with cheat keyword '{keyword}' found in alt:V data directory. Unexpected DLLs in the alt:V directory hook network events and inject game state manipulation code.",
+                        Detail = $"Path={dll}; Keyword={keyword}",
+                        Recommendation = Recommendation.Remove,
+                    });
+                    break;
+                }
+            }
+        }
+        await Task.CompletedTask;
+    }
+
+    // ─── Packet editor tools ─────────────────────────────────────────────────
+
+    private async Task ScanPacketEditorToolsAsync(ScanContext ctx, CancellationToken ct)
+    {
+        foreach (var root in GetUserSearchRoots())
+        {
+            ct.ThrowIfCancellationRequested();
+            if (!Directory.Exists(root)) continue;
+
+            IEnumerable<string> files;
+            try
+            {
+                files = Directory.EnumerateFiles(root, "*.exe", SearchOption.AllDirectories);
+            }
+            catch (UnauthorizedAccessException) { continue; }
 
             foreach (var file in files)
             {
-                if (ct.IsCancellationRequested) return;
-                ctx.IncrementFiles();
+                ct.ThrowIfCancellationRequested();
+                var fname = Path.GetFileName(file);
 
-                var fn = Path.GetFileName(file);
-
-                // Packet editor tool names
-                if (PacketEditorToolNames.Contains(fn))
+                foreach (var knownTool in PacketEditorExeNames)
                 {
+                    if (!fname.Equals(knownTool, StringComparison.OrdinalIgnoreCase)) continue;
+
+                    ctx.IncrementFiles(1);
                     ctx.AddFinding(new Finding
                     {
-                        Module = Name,
-                        Title = $"Packet Editor Tool Found: {fn}",
+                        Module = ModuleName,
+                        Title = $"Packet Editor / Sender Tool: {fname}",
                         Risk = RiskLevel.High,
                         Location = file,
-                        FileName = fn,
-                        Reason = $"Packet editor tool '{fn}' found in {Path.GetFileName(dir)}. " +
-                                 "Packet editing and sending tools are used by cheat developers and users " +
-                                 "to manipulate game server traffic, replay packets, or inject crafted " +
-                                 "network messages to bypass server-side validation.",
-                        Detail = $"Path: {file}"
+                        FileName = fname,
+                        Reason = $"Packet editor or sender tool '{fname}' detected. Tools such as WPE Pro, PacketEditor, and PacketSender intercept, modify, and replay game network traffic for position spoofing, money injection, and anti-cheat bypass.",
+                        Detail = $"Path={file}",
+                        Recommendation = Recommendation.Review,
                     });
-                    continue;
+                    break;
+                }
+            }
+        }
+        await Task.CompletedTask;
+    }
+
+    // ─── PCAP / packet capture files ────────────────────────────────────────
+
+    private async Task ScanPcapFilesAsync(ScanContext ctx, CancellationToken ct)
+    {
+        var recentThreshold = DateTime.UtcNow.AddDays(-30);
+
+        foreach (var root in GetUserSearchRoots())
+        {
+            ct.ThrowIfCancellationRequested();
+            if (!Directory.Exists(root)) continue;
+
+            IEnumerable<string> files;
+            try
+            {
+                files = Directory.EnumerateFiles(root, "*.*", SearchOption.AllDirectories);
+            }
+            catch (UnauthorizedAccessException) { continue; }
+
+            foreach (var file in files)
+            {
+                ct.ThrowIfCancellationRequested();
+                var ext = Path.GetExtension(file);
+                var fname = Path.GetFileName(file);
+
+                var isPcap = false;
+                foreach (var pcapExt in PcapExtensions)
+                {
+                    if (ext.Equals(pcapExt, StringComparison.OrdinalIgnoreCase))
+                    {
+                        isPcap = true;
+                        break;
+                    }
                 }
 
-                // MITM proxy configs mentioning game domains
-                var ext = Path.GetExtension(file);
-                if (ext.Equals(".json", StringComparison.OrdinalIgnoreCase) ||
-                    ext.Equals(".yml", StringComparison.OrdinalIgnoreCase) ||
-                    ext.Equals(".yaml", StringComparison.OrdinalIgnoreCase) ||
-                    ext.Equals(".conf", StringComparison.OrdinalIgnoreCase) ||
-                    ext.Equals(".txt", StringComparison.OrdinalIgnoreCase))
+                if (!isPcap) continue;
+
+                FileInfo fi;
+                try { fi = new FileInfo(file); }
+                catch (IOException) { continue; }
+
+                var hasGameKeyword = false;
+                foreach (var keyword in PcapGameKeywords)
                 {
+                    if (fname.Contains(keyword, StringComparison.OrdinalIgnoreCase) ||
+                        file.Contains(keyword, StringComparison.OrdinalIgnoreCase))
+                    {
+                        hasGameKeyword = true;
+                        break;
+                    }
+                }
+
+                var isRecent = fi.LastWriteTimeUtc >= recentThreshold;
+                if (!hasGameKeyword && !isRecent) continue;
+
+                ctx.IncrementFiles(1);
+                ctx.AddFinding(new Finding
+                {
+                    Module = ModuleName,
+                    Title = $"Game Packet Capture File: {fname}",
+                    Risk = hasGameKeyword ? RiskLevel.High : RiskLevel.Medium,
+                    Location = file,
+                    FileName = fname,
+                    Reason = $"Packet capture file '{fname}' ({ext}) found. PCAP files of game traffic are used to analyse and reverse-engineer FiveM/RageMP/alt:V network protocols to build packet injection cheats. GameKeyword={hasGameKeyword}; RecentFile(30d)={isRecent}.",
+                    Detail = $"Path={file}; LastWrite={fi.LastWriteTimeUtc:u}; Size={fi.Length} bytes",
+                    Recommendation = Recommendation.Review,
+                });
+            }
+        }
+        await Task.CompletedTask;
+    }
+
+    // ─── Custom proxy / relay scripts ────────────────────────────────────────
+
+    private async Task ScanProxyRelayScriptsAsync(ScanContext ctx, CancellationToken ct)
+    {
+        foreach (var root in GetUserSearchRoots())
+        {
+            ct.ThrowIfCancellationRequested();
+            if (!Directory.Exists(root)) continue;
+
+            IEnumerable<string> files;
+            try
+            {
+                files = Directory.EnumerateFiles(root, "*.*", SearchOption.AllDirectories);
+            }
+            catch (UnauthorizedAccessException) { continue; }
+
+            foreach (var file in files)
+            {
+                ct.ThrowIfCancellationRequested();
+                var ext = Path.GetExtension(file);
+                if (!ext.Equals(".py", StringComparison.OrdinalIgnoreCase) &&
+                    !ext.Equals(".js", StringComparison.OrdinalIgnoreCase)) continue;
+
+                var fname = Path.GetFileName(file);
+
+                foreach (var proxyName in ProxyScriptFileNames)
+                {
+                    if (!fname.Equals(proxyName, StringComparison.OrdinalIgnoreCase)) continue;
+
+                    string content;
                     try
                     {
-                        string content;
                         using var fs = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
                         using var sr = new StreamReader(fs);
-                        content = await sr.ReadToEndAsync().ConfigureAwait(false);
+                        content = await sr.ReadToEndAsync(ct);
+                    }
+                    catch (IOException) { break; }
 
-                        bool hasProxy = content.Contains("proxy", StringComparison.OrdinalIgnoreCase);
-                        if (hasProxy)
-                        {
-                            var matchedDomain = GameDomainFragments.FirstOrDefault(d =>
-                                content.Contains(d, StringComparison.OrdinalIgnoreCase));
-                            if (matchedDomain is not null)
-                            {
-                                ctx.AddFinding(new Finding
-                                {
-                                    Module = Name,
-                                    Title = $"MITM Proxy Config Targeting Game Domain in: {fn}",
-                                    Risk = RiskLevel.High,
-                                    Location = file,
-                                    FileName = fn,
-                                    Reason = $"File '{fn}' contains both 'proxy' and the game domain keyword '{matchedDomain}'. " +
-                                             "MITM proxy configurations targeting FiveM, RageMP, or alt:V server domains " +
-                                             "are used to intercept, inspect, and modify encrypted game server traffic " +
-                                             "for the purpose of cheating or server exploitation.",
-                                    Detail = $"Domain matched: {matchedDomain} | Path: {file}"
-                                });
-                                continue;
-                            }
-                        }
+                    ctx.IncrementFiles(1);
+                    ctx.AddFinding(new Finding
+                    {
+                        Module = ModuleName,
+                        Title = $"Game Traffic Proxy/Relay Script: {fname}",
+                        Risk = RiskLevel.High,
+                        Location = file,
+                        FileName = fname,
+                        Reason = $"Custom TCP/UDP proxy or relay script '{fname}' detected. Python/Node scripts named after game proxy patterns act as man-in-the-middle relays for FiveM, RageMP, or alt:V traffic, enabling packet inspection, modification, and replay.",
+                        Detail = $"Path={file}; ContentLength={content.Length}",
+                        Recommendation = Recommendation.Review,
+                    });
+                    break;
+                }
+            }
+        }
+    }
 
-                        // mitmproxy config files
-                        if (fn.Equals("options.yml", StringComparison.OrdinalIgnoreCase) ||
-                            fn.Equals("config.yaml", StringComparison.OrdinalIgnoreCase))
+    // ─── VPN / proxy configs referencing game domains ────────────────────────
+
+    private async Task ScanVpnConfigsForGameDomainsAsync(ScanContext ctx, CancellationToken ct)
+    {
+        foreach (var root in GetUserSearchRoots())
+        {
+            ct.ThrowIfCancellationRequested();
+            if (!Directory.Exists(root)) continue;
+
+            IEnumerable<string> files;
+            try
+            {
+                files = Directory.EnumerateFiles(root, "*.*", SearchOption.AllDirectories);
+            }
+            catch (UnauthorizedAccessException) { continue; }
+
+            foreach (var file in files)
+            {
+                ct.ThrowIfCancellationRequested();
+                if (!VpnConfigExtensions.Contains(Path.GetExtension(file))) continue;
+
+                string content;
+                try
+                {
+                    using var fs = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                    using var sr = new StreamReader(fs);
+                    content = await sr.ReadToEndAsync(ct);
+                }
+                catch (IOException) { continue; }
+
+                ctx.IncrementFiles(1);
+
+                var hasVpnDirective = false;
+                foreach (var directive in VpnDirectiveKeywords)
+                {
+                    if (content.Contains(directive, StringComparison.OrdinalIgnoreCase))
+                    {
+                        hasVpnDirective = true;
+                        break;
+                    }
+                }
+
+                if (!hasVpnDirective) continue;
+
+                foreach (var domain in VpnGameDomainKeywords)
+                {
+                    if (!content.Contains(domain, StringComparison.OrdinalIgnoreCase)) continue;
+
+                    ctx.AddFinding(new Finding
+                    {
+                        Module = ModuleName,
+                        Title = $"VPN/Proxy Config with Game Platform Domain: {domain}",
+                        Risk = RiskLevel.Medium,
+                        Location = file,
+                        FileName = Path.GetFileName(file),
+                        Reason = $"VPN or proxy configuration file '{Path.GetFileName(file)}' references game platform domain '{domain}'. Cheat tools route game traffic through custom VPN/proxy configurations to hide packet manipulation from anti-cheat network monitoring.",
+                        Detail = $"File={file}; GameDomain={domain}",
+                        Recommendation = Recommendation.Review,
+                    });
+                    break;
+                }
+            }
+        }
+    }
+
+    // ─── Registry artifacts ───────────────────────────────────────────────────
+
+    private void ScanRegistryArtifacts(ScanContext ctx, CancellationToken ct)
+    {
+        ScanUninstallRegistryForNetworkCheatTools(ctx, ct);
+        ScanRunKeysForNetworkCheatTools(ctx, ct);
+    }
+
+    private void ScanUninstallRegistryForNetworkCheatTools(ScanContext ctx, CancellationToken ct)
+    {
+        var cheatToolKeywords = new[]
+        {
+            "fivem cheat", "fivem hack", "fivem bypass", "fivem spoofer",
+            "ragemp cheat", "ragemp hack", "ragemp bypass", "rage multiplayer cheat",
+            "altv cheat", "altv hack", "alt-v bypass",
+            "packet editor", "wpe pro", "packet sender", "packet spoof",
+            "gta network cheat", "netcull bypass",
+        };
+
+        var uninstallRoots = new[]
+        {
+            @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall",
+            @"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall",
+        };
+
+        foreach (var uninstallKey in uninstallRoots)
+        {
+            ct.ThrowIfCancellationRequested();
+            try
+            {
+                using var baseKey = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Default);
+                using var root = baseKey.OpenSubKey(uninstallKey, writable: false);
+                if (root is null) continue;
+
+                foreach (var subKeyName in root.GetSubKeyNames())
+                {
+                    ct.ThrowIfCancellationRequested();
+                    try
+                    {
+                        using var subKey = root.OpenSubKey(subKeyName, writable: false);
+                        if (subKey is null) continue;
+
+                        ctx.IncrementRegistryKeys(1);
+
+                        var displayName = subKey.GetValue("DisplayName")?.ToString() ?? string.Empty;
+                        var installLocation = subKey.GetValue("InstallLocation")?.ToString() ?? string.Empty;
+
+                        foreach (var keyword in cheatToolKeywords)
                         {
-                            if (content.Contains("upstream_cert", StringComparison.OrdinalIgnoreCase) ||
-                                content.Contains("upstream", StringComparison.OrdinalIgnoreCase))
+                            if (!displayName.Contains(keyword, StringComparison.OrdinalIgnoreCase) &&
+                                !installLocation.Contains(keyword, StringComparison.OrdinalIgnoreCase)) continue;
+
+                            ctx.AddFinding(new Finding
                             {
-                                var gameDomain = GameDomainFragments.FirstOrDefault(d =>
-                                    content.Contains(d, StringComparison.OrdinalIgnoreCase));
-                                if (gameDomain is not null)
-                                {
-                                    ctx.AddFinding(new Finding
-                                    {
-                                        Module = Name,
-                                        Title = $"mitmproxy Config Targeting Game Server: {fn}",
-                                        Risk = RiskLevel.High,
-                                        Location = file,
-                                        FileName = fn,
-                                        Reason = $"mitmproxy config file '{fn}' references upstream proxy settings " +
-                                                 $"and the game domain '{gameDomain}'. " +
-                                                 "mitmproxy is used by cheat developers to inspect and modify " +
-                                                 "HTTPS/TCP game server communications for exploit development.",
-                                        Detail = $"Domain: {gameDomain} | Path: {file}"
-                                    });
-                                }
-                            }
+                                Module = ModuleName,
+                                Title = $"Network Cheat Tool in Uninstall Registry: {displayName}",
+                                Risk = RiskLevel.High,
+                                Location = $@"HKLM\{uninstallKey}\{subKeyName}",
+                                Reason = $"Windows uninstall registry entry '{displayName}' matches network cheat tool keyword '{keyword}'. Even if uninstalled, this entry confirms prior installation of a packet-injection or cheat tool.",
+                                Detail = $"DisplayName={displayName}; InstallLocation={installLocation}",
+                                Recommendation = Recommendation.Review,
+                            });
+                            break;
                         }
                     }
                     catch (UnauthorizedAccessException) { }
-                    catch (IOException) { }
                 }
             }
-        }
-    }
-
-    private async Task ScanCheatNetworkConfigsAsync(ScanContext ctx, CancellationToken ct)
-    {
-        var scanDirs = new[]
-        {
-            Path.Combine(UserProfile, "Downloads"),
-            AppData,
-            Temp,
-            Path.Combine(UserProfile, "Desktop")
-        };
-
-        foreach (var dir in scanDirs)
-        {
-            if (ct.IsCancellationRequested) return;
-            if (!Directory.Exists(dir)) continue;
-
-            foreach (var file in EnumerateTextFiles(dir, 3,
-                new[] { ".ini", ".cfg", ".json", ".xml", ".txt" }, ct))
-            {
-                if (ct.IsCancellationRequested) return;
-                ctx.IncrementFiles();
-
-                string content;
-                try
-                {
-                    using var fs = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-                    using var sr = new StreamReader(fs);
-                    content = await sr.ReadToEndAsync().ConfigureAwait(false);
-                }
-                catch (UnauthorizedAccessException) { continue; }
-                catch (IOException) { continue; }
-
-                var fn = Path.GetFileName(file);
-
-                var matched = CheatNetworkConfigKeywords.FirstOrDefault(k =>
-                    content.Contains(k, StringComparison.OrdinalIgnoreCase));
-                if (matched is not null)
-                {
-                    ctx.AddFinding(new Finding
-                    {
-                        Module = Name,
-                        Title = $"Cheat Network Config Keyword in: {fn}",
-                        Risk = RiskLevel.High,
-                        Location = file,
-                        FileName = fn,
-                        Reason = $"Config file '{fn}' contains the cheat network keyword '{matched}'. " +
-                                 "These keywords appear in configuration files for network-layer cheat tools " +
-                                 "that bypass anticheat network surveillance, spoof packet contents, " +
-                                 "or intercept and replay game server messages.",
-                        Detail = $"Matched keyword: {matched} | Path: {file}"
-                    });
-                    continue;
-                }
-
-                // OpenVPN configs (.ovpn) with game server domains in remote
-                var ext = Path.GetExtension(file);
-                if (ext.Equals(".ovpn", StringComparison.OrdinalIgnoreCase))
-                {
-                    var gameDomain = GameDomainFragments.FirstOrDefault(d =>
-                        content.Contains(d, StringComparison.OrdinalIgnoreCase));
-                    if (gameDomain is not null)
-                    {
-                        ctx.AddFinding(new Finding
-                        {
-                            Module = Name,
-                            Title = $"OpenVPN Config Referencing Game Domain: {fn}",
-                            Risk = RiskLevel.Medium,
-                            Location = file,
-                            FileName = fn,
-                            Reason = $"OpenVPN config '{fn}' references game domain '{gameDomain}'. " +
-                                     "VPN configurations that route traffic through game server IP ranges " +
-                                     "can be used to disguise packet injection tools or route cheat traffic " +
-                                     "through a controlled intermediary.",
-                            Detail = $"Domain matched: {gameDomain} | Path: {file}"
-                        });
-                        continue;
-                    }
-                }
-
-                // WireGuard configs (.conf) mentioning game domains
-                if (ext.Equals(".conf", StringComparison.OrdinalIgnoreCase) &&
-                    (content.Contains("[Interface]", StringComparison.OrdinalIgnoreCase) ||
-                     content.Contains("[Peer]", StringComparison.OrdinalIgnoreCase)))
-                {
-                    var gameDomain = GameDomainFragments.FirstOrDefault(d =>
-                        content.Contains(d, StringComparison.OrdinalIgnoreCase));
-                    if (gameDomain is not null)
-                    {
-                        ctx.AddFinding(new Finding
-                        {
-                            Module = Name,
-                            Title = $"WireGuard Config Referencing Game Domain: {fn}",
-                            Risk = RiskLevel.Medium,
-                            Location = file,
-                            FileName = fn,
-                            Reason = $"WireGuard config '{fn}' references game domain '{gameDomain}'. " +
-                                     "WireGuard tunnels targeting game server domains may be used to " +
-                                     "route cheat tool traffic through a controlled relay, masking " +
-                                     "the cheat operator's identity or enabling packet manipulation.",
-                            Detail = $"Domain matched: {gameDomain} | Path: {file}"
-                        });
-                    }
-                }
-            }
-        }
-    }
-
-    private async Task ScanWiresharkCaptureFilesAsync(ScanContext ctx, CancellationToken ct)
-    {
-        var scanDirs = new[]
-        {
-            Path.Combine(UserProfile, "Desktop"),
-            Path.Combine(UserProfile, "Downloads"),
-            Path.Combine(UserProfile, "Documents")
-        };
-
-        foreach (var dir in scanDirs)
-        {
-            if (ct.IsCancellationRequested) return;
-            if (!Directory.Exists(dir)) continue;
-
-            foreach (var file in EnumerateTextFiles(dir, 2,
-                new[] { ".pcap", ".pcapng" }, ct))
-            {
-                if (ct.IsCancellationRequested) return;
-                ctx.IncrementFiles();
-
-                var fn = Path.GetFileName(file);
-                ctx.AddFinding(new Finding
-                {
-                    Module = Name,
-                    Title = $"Wireshark Capture File Near Game Session Directory: {fn}",
-                    Risk = RiskLevel.Medium,
-                    Location = file,
-                    FileName = fn,
-                    Reason = $"Network capture file '{fn}' (.pcap/.pcapng) found in {Path.GetFileName(dir)}. " +
-                             "Wireshark capture files on the Desktop, Downloads, or Documents folder " +
-                             "during or after a gaming session indicate that game server network traffic " +
-                             "was being captured. This is a prerequisite for packet-based network cheats " +
-                             "and ESP tools that decode server-sent entity position data.",
-                    Detail = $"Path: {file} | Modified: {SafeGetLastWriteTime(file):yyyy-MM-dd HH:mm}"
-                });
-            }
-        }
-
-        await Task.CompletedTask.ConfigureAwait(false);
-    }
-
-    private async Task ScanTrafficRelayScriptsAsync(ScanContext ctx, CancellationToken ct)
-    {
-        var scanDirs = new[]
-        {
-            Path.Combine(UserProfile, "Downloads"),
-            Path.Combine(UserProfile, "Desktop"),
-            Temp
-        };
-
-        foreach (var dir in scanDirs)
-        {
-            if (ct.IsCancellationRequested) return;
-            if (!Directory.Exists(dir)) continue;
-
-            // Python relay scripts
-            foreach (var file in EnumerateTextFiles(dir, 3, new[] { ".py" }, ct))
-            {
-                if (ct.IsCancellationRequested) return;
-                ctx.IncrementFiles();
-
-                string content;
-                try
-                {
-                    using var fs = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-                    using var sr = new StreamReader(fs);
-                    content = await sr.ReadToEndAsync().ConfigureAwait(false);
-                }
-                catch (UnauthorizedAccessException) { continue; }
-                catch (IOException) { continue; }
-
-                var fn = Path.GetFileName(file);
-
-                bool hasSocketLib =
-                    content.Contains("socket", StringComparison.OrdinalIgnoreCase) ||
-                    content.Contains("asyncio", StringComparison.OrdinalIgnoreCase);
-                bool hasBindListen =
-                    content.Contains("bind", StringComparison.OrdinalIgnoreCase) ||
-                    content.Contains("listen", StringComparison.OrdinalIgnoreCase);
-                bool hasForward =
-                    content.Contains("sendto", StringComparison.OrdinalIgnoreCase) ||
-                    content.Contains("forward", StringComparison.OrdinalIgnoreCase);
-                bool hasGameKeyword = TrafficRelayGameKeywords.Any(k =>
-                    content.Contains(k, StringComparison.OrdinalIgnoreCase));
-
-                if (hasSocketLib && hasBindListen && hasForward && hasGameKeyword)
-                {
-                    var matchedGameKw = TrafficRelayGameKeywords.First(k =>
-                        content.Contains(k, StringComparison.OrdinalIgnoreCase));
-                    ctx.AddFinding(new Finding
-                    {
-                        Module = Name,
-                        Title = $"Python Game Traffic Relay Script: {fn}",
-                        Risk = RiskLevel.High,
-                        Location = file,
-                        FileName = fn,
-                        Reason = $"Python script '{fn}' contains patterns indicating a custom TCP/UDP relay " +
-                                 $"targeting game platforms (matched keyword: '{matchedGameKw}'). " +
-                                 "The combination of socket/asyncio bind/listen with sendto/forward and a " +
-                                 "game platform keyword indicates a custom traffic relay or modifier " +
-                                 "used to intercept, modify, or replay game server packets.",
-                        Detail = $"Game keyword: {matchedGameKw} | Path: {file}"
-                    });
-                }
-            }
-
-            // Node.js relay scripts
-            foreach (var file in EnumerateTextFiles(dir, 3, new[] { ".js" }, ct))
-            {
-                if (ct.IsCancellationRequested) return;
-
-                // Skip altV resource .js files already scanned elsewhere
-                if (file.Contains(Path.Combine(LocalApp, "altv"), StringComparison.OrdinalIgnoreCase))
-                    continue;
-
-                ctx.IncrementFiles();
-
-                string content;
-                try
-                {
-                    using var fs = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-                    using var sr = new StreamReader(fs);
-                    content = await sr.ReadToEndAsync().ConfigureAwait(false);
-                }
-                catch (UnauthorizedAccessException) { continue; }
-                catch (IOException) { continue; }
-
-                var fn = Path.GetFileName(file);
-
-                bool hasNetServer =
-                    content.Contains("net.createServer", StringComparison.OrdinalIgnoreCase) ||
-                    content.Contains("dgram.createSocket", StringComparison.OrdinalIgnoreCase);
-                bool hasConnectForward =
-                    content.Contains("connect", StringComparison.OrdinalIgnoreCase) ||
-                    content.Contains("forward", StringComparison.OrdinalIgnoreCase);
-                bool hasGameKw = TrafficRelayGameKeywords.Any(k =>
-                    content.Contains(k, StringComparison.OrdinalIgnoreCase));
-
-                if (hasNetServer && hasConnectForward && hasGameKw)
-                {
-                    var matchedKw = TrafficRelayGameKeywords.First(k =>
-                        content.Contains(k, StringComparison.OrdinalIgnoreCase));
-                    ctx.AddFinding(new Finding
-                    {
-                        Module = Name,
-                        Title = $"Node.js Game Traffic Relay Script: {fn}",
-                        Risk = RiskLevel.High,
-                        Location = file,
-                        FileName = fn,
-                        Reason = $"Node.js script '{fn}' contains patterns matching a custom TCP/UDP relay " +
-                                 $"targeting game platforms (keyword: '{matchedKw}'). " +
-                                 "net.createServer or dgram.createSocket combined with connect/forward " +
-                                 "and a game platform keyword indicates traffic interception or relay " +
-                                 "infrastructure used by network-layer cheat tools.",
-                        Detail = $"Game keyword: {matchedKw} | Path: {file}"
-                    });
-                }
-            }
-        }
-    }
-
-    // ── Per-file content checkers ────────────────────────────────────────────────
-
-    private async Task CheckLuaFileForCheatPatternsAsync(ScanContext ctx, string path,
-        CancellationToken ct)
-    {
-        if (ct.IsCancellationRequested) return;
-
-        string content;
-        try
-        {
-            using var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-            using var sr = new StreamReader(fs);
-            content = await sr.ReadToEndAsync().ConfigureAwait(false);
-        }
-        catch (UnauthorizedAccessException) { return; }
-        catch (IOException) { return; }
-
-        var fn = Path.GetFileName(path);
-
-        var luaCheatSignals = new[]
-        {
-            "SetEntityInvincible", "AddExplosion", "SetEntityCoords",
-            "GiveWeaponToPed", "NetworkResurrectLocalPlayer",
-            "SetPedMaxSpeed", "SetEntityHealth",
-            "TriggerServerEvent", "ExecuteCommand",
-            "mem.read", "mem.write", "hook.create", "inject",
-            "bypass", "aimbot", "esp.", "wallhack"
-        };
-
-        var matches = luaCheatSignals
-            .Where(s => content.Contains(s, StringComparison.OrdinalIgnoreCase))
-            .ToList();
-
-        if (matches.Count == 0) return;
-
-        var risk = matches.Count >= 3 ? RiskLevel.Critical
-                 : matches.Count >= 2 ? RiskLevel.High
-                 : RiskLevel.Medium;
-
-        ctx.AddFinding(new Finding
-        {
-            Module = Name,
-            Title = $"Cheat Lua Pattern in FiveM citizen scripting: {fn}",
-            Risk = risk,
-            Location = path,
-            FileName = fn,
-            Reason = $"Lua file '{fn}' in the FiveM citizen scripting directory contains " +
-                     $"{matches.Count} cheat-associated pattern(s): " +
-                     string.Join(", ", matches.Take(4).Select(m => $"'{m}'")) +
-                     (matches.Count > 4 ? " ..." : "") +
-                     ". Modifications to the citizen scripting Lua files can override native " +
-                     "mappings, disable anticheat checks, or inject cheat functionality into " +
-                     "every running FiveM resource.",
-            Detail = $"Matched ({matches.Count}): {string.Join(", ", matches.Take(6))}"
-        });
-    }
-
-    private async Task CheckJsFileForCheatPatternsAsync(ScanContext ctx, string path,
-        string platform, CancellationToken ct)
-    {
-        if (ct.IsCancellationRequested) return;
-
-        string content;
-        try
-        {
-            using var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-            using var sr = new StreamReader(fs);
-            content = await sr.ReadToEndAsync().ConfigureAwait(false);
-        }
-        catch (UnauthorizedAccessException) { return; }
-        catch (IOException) { return; }
-
-        var fn = Path.GetFileName(path);
-        var resourceName = TryGetResourceName(path);
-
-        // alt:V specific checks
-        if (platform.Equals("alt:V", StringComparison.OrdinalIgnoreCase))
-        {
-            // alt.emitServer inside setInterval or while loop (server flooding)
-            if (content.Contains("alt.emitServer", StringComparison.OrdinalIgnoreCase))
-            {
-                bool hasLoopContext =
-                    content.Contains("setInterval", StringComparison.OrdinalIgnoreCase) ||
-                    content.Contains("while(", StringComparison.OrdinalIgnoreCase) ||
-                    content.Contains("while (", StringComparison.OrdinalIgnoreCase);
-                if (hasLoopContext)
-                {
-                    ctx.AddFinding(new Finding
-                    {
-                        Module = Name,
-                        Title = $"alt:V Server Event Flooding Pattern in: {fn}",
-                        Risk = RiskLevel.High,
-                        Location = path,
-                        FileName = fn,
-                        Reason = $"File '{fn}' calls alt.emitServer inside a setInterval or while loop. " +
-                                 "This pattern is used by alt:V exploit resources to flood the server " +
-                                 "with events, bypassing rate limiting or triggering server-side bugs " +
-                                 "through repeated event emission.",
-                        Detail = $"Platform: alt:V | Resource: {resourceName} | Path: {path}"
-                    });
-                    return;
-                }
-            }
-
-            // Position desync exploits: setWaypointPosition or native.setEntityCoords in suspicious context
-            bool hasPosDesync =
-                content.Contains("alt.setWaypointPosition", StringComparison.OrdinalIgnoreCase) ||
-                content.Contains("native.setEntityCoords", StringComparison.OrdinalIgnoreCase);
-            if (hasPosDesync)
-            {
-                bool hasSuspiciousContext =
-                    content.Contains("setInterval", StringComparison.OrdinalIgnoreCase) ||
-                    content.Contains("while", StringComparison.OrdinalIgnoreCase) ||
-                    content.Contains("exploit", StringComparison.OrdinalIgnoreCase) ||
-                    content.Contains("bypass", StringComparison.OrdinalIgnoreCase);
-                if (hasSuspiciousContext)
-                {
-                    ctx.AddFinding(new Finding
-                    {
-                        Module = Name,
-                        Title = $"alt:V Position Desync Exploit Pattern in: {fn}",
-                        Risk = RiskLevel.High,
-                        Location = path,
-                        FileName = fn,
-                        Reason = $"File '{fn}' uses alt.setWaypointPosition or native.setEntityCoords " +
-                                 "in a suspicious context (loop, exploit, bypass keyword). " +
-                                 "This pattern is associated with alt:V position desync exploits that " +
-                                 "move the player to arbitrary coordinates without server authorization.",
-                        Detail = $"Platform: alt:V | Resource: {resourceName} | Path: {path}"
-                    });
-                    return;
-                }
-            }
-
-            // Player enumeration combined with dump/external endpoint
-            bool hasPlayerEnum =
-                content.Contains("alt.getAllPlayers", StringComparison.OrdinalIgnoreCase) ||
-                content.Contains("alt.Player.all", StringComparison.OrdinalIgnoreCase);
-            if (hasPlayerEnum)
-            {
-                bool hasExfiltration =
-                    content.Contains("dump", StringComparison.OrdinalIgnoreCase) ||
-                    content.Contains("fetch(", StringComparison.OrdinalIgnoreCase) ||
-                    content.Contains("XMLHttpRequest", StringComparison.OrdinalIgnoreCase) ||
-                    content.Contains("http://", StringComparison.OrdinalIgnoreCase) ||
-                    content.Contains("https://", StringComparison.OrdinalIgnoreCase);
-                if (hasExfiltration)
-                {
-                    ctx.AddFinding(new Finding
-                    {
-                        Module = Name,
-                        Title = $"alt:V Player Data Exfiltration Pattern in: {fn}",
-                        Risk = RiskLevel.Critical,
-                        Location = path,
-                        FileName = fn,
-                        Reason = $"File '{fn}' enumerates all players via alt.getAllPlayers or alt.Player.all " +
-                                 "and combines this with external data sending (fetch, XMLHttpRequest, HTTP URL, dump). " +
-                                 "This pattern is used by alt:V resources to exfiltrate player lists " +
-                                 "to external cheat infrastructure or leak player identifiers.",
-                        Detail = $"Platform: alt:V | Resource: {resourceName} | Path: {path}"
-                    });
-                    return;
-                }
-            }
-
-            // LocalStorage combined with data exfiltration
-            if (content.Contains("alt.LocalStorage", StringComparison.OrdinalIgnoreCase))
-            {
-                bool hasExfil =
-                    content.Contains("fetch(", StringComparison.OrdinalIgnoreCase) ||
-                    content.Contains("http://", StringComparison.OrdinalIgnoreCase) ||
-                    content.Contains("https://", StringComparison.OrdinalIgnoreCase) ||
-                    content.Contains("XMLHttpRequest", StringComparison.OrdinalIgnoreCase);
-                if (hasExfil)
-                {
-                    ctx.AddFinding(new Finding
-                    {
-                        Module = Name,
-                        Title = $"alt:V LocalStorage Exfiltration Pattern in: {fn}",
-                        Risk = RiskLevel.High,
-                        Location = path,
-                        FileName = fn,
-                        Reason = $"File '{fn}' accesses alt.LocalStorage and sends data to an external " +
-                                 "endpoint. This pattern can be used to exfiltrate stored credentials, " +
-                                 "session tokens, or player identifiers from the alt:V local storage " +
-                                 "to external cheat operators.",
-                        Detail = $"Platform: alt:V | Resource: {resourceName} | Path: {path}"
-                    });
-                    return;
-                }
-            }
-
-            // Mass entity spawning in rapid loop
-            bool hasSpawnLoop =
-                (content.Contains("createVehicle", StringComparison.OrdinalIgnoreCase) ||
-                 content.Contains("createObject", StringComparison.OrdinalIgnoreCase)) &&
-                (content.Contains("setInterval", StringComparison.OrdinalIgnoreCase) ||
-                 content.Contains("for(", StringComparison.OrdinalIgnoreCase) ||
-                 content.Contains("for (", StringComparison.OrdinalIgnoreCase) ||
-                 content.Contains("while(", StringComparison.OrdinalIgnoreCase));
-            if (hasSpawnLoop)
-            {
-                ctx.AddFinding(new Finding
-                {
-                    Module = Name,
-                    Title = $"alt:V Mass Entity Spawn Loop in: {fn}",
-                    Risk = RiskLevel.High,
-                    Location = path,
-                    FileName = fn,
-                    Reason = $"File '{fn}' calls createVehicle or createObject inside a rapid loop " +
-                             "(setInterval, for, while). This pattern is used by alt:V server crash " +
-                             "resources that spawn massive numbers of entities to overload the server " +
-                             "or cause client-side lag for all connected players.",
-                    Detail = $"Platform: alt:V | Resource: {resourceName} | Path: {path}"
-                });
-            }
-        }
-    }
-
-    // ── Helpers ──────────────────────────────────────────────────────────────────
-
-    private IEnumerable<string> EnumerateTextFiles(string dir, int maxDepth,
-        string[] extensions, CancellationToken ct)
-    {
-        var stack = new Stack<(string path, int depth)>();
-        stack.Push((dir, 0));
-
-        while (stack.Count > 0)
-        {
-            if (ct.IsCancellationRequested) yield break;
-            var (current, depth) = stack.Pop();
-
-            string[] files = Array.Empty<string>();
-            try { files = Directory.GetFiles(current); }
             catch (UnauthorizedAccessException) { }
-            catch (IOException) { }
-
-            foreach (var file in files)
-            {
-                if (ct.IsCancellationRequested) yield break;
-                var ext = Path.GetExtension(file);
-                if (extensions.Any(e => ext.Equals(e, StringComparison.OrdinalIgnoreCase)))
-                    yield return file;
-            }
-
-            if (depth >= maxDepth) continue;
-
-            string[] subs = Array.Empty<string>();
-            try { subs = Directory.GetDirectories(current); }
-            catch (UnauthorizedAccessException) { continue; }
-            catch (IOException) { continue; }
-
-            foreach (var sub in subs)
-                stack.Push((sub, depth + 1));
         }
     }
 
-    private static string TryGetResourceName(string filePath)
+    private void ScanRunKeysForNetworkCheatTools(ScanContext ctx, CancellationToken ct)
     {
-        try
+        var runKeys = new[]
         {
-            var parts = filePath.Split(Path.DirectorySeparatorChar);
-            var resourcesIdx = Array.FindLastIndex(parts, p =>
-                p.Equals("resources", StringComparison.OrdinalIgnoreCase));
-            if (resourcesIdx >= 0 && resourcesIdx + 1 < parts.Length)
-                return parts[resourcesIdx + 1];
-        }
-        catch { }
-        return Path.GetDirectoryName(filePath) ?? string.Empty;
-    }
+            @"SOFTWARE\Microsoft\Windows\CurrentVersion\Run",
+            @"SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce",
+        };
 
-    private static DateTime SafeGetLastWriteTime(string path)
-    {
-        try { return File.GetLastWriteTime(path); }
-        catch { return DateTime.MinValue; }
+        var cheatKeywords = new[]
+        {
+            "fivem_patch", "fivem_bypass", "fivem_hack", "fivem_cheat",
+            "fivem_spoof", "fivempacketspoof", "ragemp_hack", "ragemp_bypass",
+            "altv_hack", "altv_bypass", "packet_spoof", "packeteditor",
+            "wpe_pro", "netcull_bypass",
+        };
+
+        foreach (var runKey in runKeys)
+        {
+            ct.ThrowIfCancellationRequested();
+            try
+            {
+                using var key = Registry.CurrentUser.OpenSubKey(runKey, writable: false);
+                if (key is null) continue;
+
+                foreach (var valueName in key.GetValueNames())
+                {
+                    ct.ThrowIfCancellationRequested();
+                    ctx.IncrementRegistryKeys(1);
+
+                    var value = key.GetValue(valueName)?.ToString() ?? string.Empty;
+
+                    foreach (var keyword in cheatKeywords)
+                    {
+                        if (!valueName.Contains(keyword, StringComparison.OrdinalIgnoreCase) &&
+                            !value.Contains(keyword, StringComparison.OrdinalIgnoreCase)) continue;
+
+                        ctx.AddFinding(new Finding
+                        {
+                            Module = ModuleName,
+                            Title = $"Network Cheat Tool in Run Key: {valueName}",
+                            Risk = RiskLevel.Critical,
+                            Location = $@"HKCU\{runKey}\{valueName}",
+                            Reason = $"Windows Run key entry '{valueName}' with command '{value}' matches network cheat keyword '{keyword}'. Indicates a packet-injection or protocol-bypass tool configured for automatic startup.",
+                            Detail = $"ValueName={valueName}; Value={value}",
+                            Recommendation = Recommendation.Remove,
+                        });
+                        break;
+                    }
+                }
+            }
+            catch (UnauthorizedAccessException) { }
+        }
     }
 }
