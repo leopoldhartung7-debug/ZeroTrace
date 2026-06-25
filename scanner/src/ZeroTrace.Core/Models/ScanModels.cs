@@ -924,6 +924,18 @@ public sealed class ScanOptions
     /// legitimate capture applications, and FPGA PCI device IDs in the device registry.</summary>
     public bool ScanSuspiciousNetworkAdapters { get; set; } = true;
 
+    /// <summary>Detect anti-cheat processes (EasyAntiCheat, BattlEye, Vanguard, FACEIT) running with
+    /// IDLE or BELOW_NORMAL CPU priority class, or with process affinity pinned to a single CPU core
+    /// on multi-core systems. SetPriorityClass and SetProcessAffinityMask require no elevation —
+    /// cheat loaders use them to throttle AC scanning threads and isolate AC to one core.</summary>
+    public bool ScanAcPriorityAbuse { get; set; } = true;
+
+    /// <summary>Detect anti-cheat process threads in SUSPENDED state via NtQuerySystemInformation
+    /// (SystemProcessInformation). The 'thread-freeze bypass' technique calls SuspendThread() on
+    /// every AC thread — the AC process remains alive (server sees heartbeat) but all scan
+    /// routines are frozen. All or majority of AC threads suspended = critical finding.</summary>
+    public bool ScanSuspendedAcThreads { get; set; } = true;
+
     /// <summary>
     /// When false (default) the drive module only walks targeted, high-signal
     /// directories (profile, temp, downloads, appdata). When true it walks the
@@ -1191,6 +1203,8 @@ public static class ScanProfiles
         ScanSleepMasking = false,             // VirtualQueryEx memory scan — slow
         ScanActiveCheatConnections = true,    // GetExtendedTcpTable ALL — fast
         ScanDxVtableHooks = false,            // cross-process vtable read — slow
+        ScanAcPriorityAbuse = true,           // GetPriorityClass + GetProcessAffinityMask — fast
+        ScanSuspendedAcThreads = true,        // NtQuerySystemInformation class 5 — fast
         DeepDriveScan = false,
         ModuleTimeoutSeconds = 60,
     };

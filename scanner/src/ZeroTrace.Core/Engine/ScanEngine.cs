@@ -314,6 +314,8 @@ public sealed class ScanEngine
         if (o.ScanNamedPipeCheatIpc) modules.Add(new NamedPipeCheatIpcScanModule());
         if (o.ScanSleepMasking) modules.Add(new SleepMaskingDetectionScanModule());
         if (o.ScanDxVtableHooks) modules.Add(new DirectXVtableHookScanModule());
+        if (o.ScanAcPriorityAbuse) modules.Add(new AntiCheatProcessPriorityAbuseScanModule());
+        if (o.ScanSuspendedAcThreads) modules.Add(new SuspendedAntiCheatThreadScanModule());
 
         // ── Group 3: registry / WMI / driver queries ──────────────────────────
         if (o.ScanRegistry) modules.Add(new RegistryScanModule());
