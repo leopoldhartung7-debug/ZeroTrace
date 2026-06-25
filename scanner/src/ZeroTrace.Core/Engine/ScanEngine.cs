@@ -625,6 +625,9 @@ public sealed class ScanEngine
         if (o.ScanHearthstoneCheat) modules.Add(new HearthstoneCheatScanModule());
         if (o.ScanCheatDiscordArtifact) modules.Add(new CheatDiscordArtifactScanModule());
         if (o.ScanCheatEngineDeepForensic) modules.Add(new CheatEngineDeepForensicScanModule());
+        if (o.ScanRageMPMoneyGlitch) modules.Add(new RageMPMoneyGlitchScanModule());
+        if (o.ScanMappingDriverForensic) modules.Add(new MappingDriverForensicScanModule());
+        if (o.ScanSteamCheatWorkshop) modules.Add(new SteamCheatWorkshopScanModule());
         if (o.ScanCheatSourceCodeRepo) modules.Add(new CheatSourceCodeRepoScanModule());
 
         // ── Group 5: forensic / trace artefacts ──────────────────────────────
