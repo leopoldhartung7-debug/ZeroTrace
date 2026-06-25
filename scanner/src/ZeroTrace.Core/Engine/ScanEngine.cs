@@ -428,6 +428,9 @@ public sealed class ScanEngine
         if (o.ScanAcServiceTamper) modules.Add(new AnticheatServiceTamperScanModule());
         if (o.ScanShadowCopyState) modules.Add(new ShadowCopyCheatArtifactScanModule());
         if (o.ScanAntiVirusTamper) modules.Add(new AntiVirusTamperScanModule());
+        if (o.ScanRawAccelDriver) modules.Add(new RawAccelDriverScanModule());
+        if (o.ScanVulnerableDriverFiles) modules.Add(new VulnerableDriverFilesScanModule());
+        if (o.ScanSearchHistoryForensics) modules.Add(new WindowsSearchHistoryForensicScanModule());
         if (o.ScanWslAbuse) modules.Add(new WindowsSubsystemLinuxAbuseScanModule());
         if (o.ScanEfiVariables) modules.Add(new EfiVariableAnomalyScanModule());
         if (o.ScanSuspiciousNetworkAdapters) modules.Add(new SuspiciousNetworkAdapterScanModule());
@@ -471,6 +474,9 @@ public sealed class ScanEngine
         if (o.ScanAccountCorrelation) modules.Add(new CheaterAccountCorrelationScanModule());
         if (o.ScanCryptoPayment) modules.Add(new CryptoPaymentCheatScanModule());
         if (o.ScanGameFileIntegrity) modules.Add(new GameFileIntegrityScanModule());
+        if (o.ScanCheatPayloadStaging) modules.Add(new CheatPayloadStagingScanModule());
+        if (o.ScanWindowsNotificationForensics) modules.Add(new WindowsNotificationCheatScanModule());
+        if (o.ScanSteamUserdataForensics) modules.Add(new SteamAchievementCheatScanModule());
 
         // ── Group 5: forensic / trace artefacts ──────────────────────────────
         if (o.ScanForensicTraces) modules.Add(new ForensicTraceScanModule());

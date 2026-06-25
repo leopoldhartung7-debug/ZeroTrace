@@ -771,6 +771,42 @@ public sealed class ScanOptions
     /// Uses OpenProcessToken + GetTokenInformation(TokenPrivileges) on all running processes.</summary>
     public bool ScanSeDebugPrivilege { get; set; } = true;
 
+    /// <summary>Detect RawAccel kernel driver (mouse sensitivity manipulation for aim assistance),
+    /// Graficaster companion tool, and povohat mouse acceleration driver. RawAccel modifies
+    /// mouse input at the HID driver level — invisible to in-game sensitivity settings and
+    /// software AC. Checks service registry, filesystem, and running processes.</summary>
+    public bool ScanRawAccelDriver { get; set; } = true;
+
+    /// <summary>Scan filesystem (System32\drivers, Temp, Downloads, AppData, game directories)
+    /// for known vulnerable BYOVD driver files: mhyprot2.sys, RTCore64.sys, WinRing0x64.sys,
+    /// gdrv.sys, dbutil_2_3.sys, cpuz143.sys, AsIO3.sys, and 30+ more documented BYOVD
+    /// drivers used by cheat tools for Ring-0 access to kernel memory.</summary>
+    public bool ScanVulnerableDriverFiles { get; set; } = true;
+
+    /// <summary>Forensic scan of Windows registry search/navigation history: TypedURLs (address
+    /// bar history), WordWheelQuery (Explorer file search), RunMRU (Win+R dialog), and
+    /// OpenSavePidlMRU (file-picker dialog history). All persist after browser/file cleanup
+    /// and are primary forensic sources used by Ocean/detect.ac.</summary>
+    public bool ScanSearchHistoryForensics { get; set; } = true;
+
+    /// <summary>Scan %TEMP% and Downloads for staged cheat payload artifacts: DLL files with
+    /// cheat names, injector executables, cheat config JSON/INI with CVars (aimbot_fov,
+    /// esp_enabled), injection log files (injected=true, bypass active), and license token
+    /// files. Cheat loaders routinely leave these staging artifacts behind.</summary>
+    public bool ScanCheatPayloadStaging { get; set; } = true;
+
+    /// <summary>Scan Windows Notification Platform database (wpndatabase.db) for cheat-related
+    /// toast notification content; check Windows.old directory for cheat remnants from previous
+    /// Windows installation; byte-grep Windows Search index (Windows.edb) for cheat file paths
+    /// indexed before deletion.</summary>
+    public bool ScanWindowsNotificationForensics { get; set; } = true;
+
+    /// <summary>Scan Steam userdata for cheat correlation: sharedconfig.vdf workshop subscriptions
+    /// with cheat-keyword mod names, Steam Cloud save files (remote/) containing cheat CVars,
+    /// and Steam config files for cheat-related settings. Steam Cloud syncs cheat configs across
+    /// reinstalls — a high-value forensic source.</summary>
+    public bool ScanSteamUserdataForensics { get; set; } = true;
+
     /// <summary>Scan game directories (Steam, Epic, user-specified) for BepInEx, Unity Doorstop,
     /// and MelonLoader code injection frameworks. Detects: doorstop_config.ini (enabled=true),
     /// winhttp.dll Doorstop proxy in game root, BepInEx/plugins/ DLLs with cheat keywords,
@@ -1448,6 +1484,12 @@ public static class ScanProfiles
         ScanCryptoPayment = true,             // browser history byte-grep — bounded
         ScanAntiVirusTamper = true,           // Defender registry check — fast
         ScanGameFileIntegrity = false,        // game directory file walk — slow
+        ScanRawAccelDriver = true,            // service registry + process check — fast
+        ScanVulnerableDriverFiles = false,    // recursive filesystem scan — slow
+        ScanSearchHistoryForensics = true,    // registry forensic keys — fast (Ocean signature)
+        ScanCheatPayloadStaging = false,      // Temp/Downloads file walk — slow
+        ScanWindowsNotificationForensics = true, // wpndatabase.db byte-grep — fast
+        ScanSteamUserdataForensics = false,   // Steam userdata walk — slow
         DeepDriveScan = false,
         // No per-module timeout — every Quick module runs to completion. Quick stays
         // fast because slow modules are individually disabled above, not because they
