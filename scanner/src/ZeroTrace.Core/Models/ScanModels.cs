@@ -261,6 +261,22 @@ public sealed class ScanOptions
     /// missing binaries (tombstones), and suspicious service binary paths.</summary>
     public bool ScanSuspiciousServices { get; set; } = true;
 
+    /// <summary>Detect active TCP connections from game processes to unusual external IPs
+    /// and connections from processes with cheat keywords in their name.</summary>
+    public bool ScanNetworkConnections { get; set; } = true;
+
+    /// <summary>Hash files in high-risk directories (Temp, Downloads, Desktop) and compare
+    /// against a blocklist of known cheat tool SHA-256 hashes.</summary>
+    public bool ScanKnownHashes { get; set; } = true;
+
+    /// <summary>Deep-scan PowerShell execution history for download cradles, AMSI bypass,
+    /// AV disabling, shadow copy deletion, and cheat-specific commands.</summary>
+    public bool ScanPowerShellHistoryDeep { get; set; } = true;
+
+    /// <summary>Detect heap spray and large private RWX memory allocations in game processes
+    /// indicative of shellcode injection, cheat overlays, or ESP buffer allocation.</summary>
+    public bool ScanHeapSpray { get; set; } = true;
+
     /// <summary>
     /// When false (default) the drive module only walks targeted, high-signal
     /// directories (profile, temp, downloads, appdata). When true it walks the
@@ -400,6 +416,10 @@ public static class ScanProfiles
         ScanBootConfig = true,           // registry — fast
         ScanThreadStartAddress = false,  // NT thread query — slow
         ScanSuspiciousServices = true,   // registry + WMI — fast
+        ScanNetworkConnections = true,   // IP helper API — fast
+        ScanKnownHashes = false,         // file hashing — slow
+        ScanPowerShellHistoryDeep = true, // text file read — fast
+        ScanHeapSpray = false,           // memory walk — slow
         DeepDriveScan = false,
         ModuleTimeoutSeconds = 60,
     };
