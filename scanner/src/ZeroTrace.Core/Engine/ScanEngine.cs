@@ -349,6 +349,7 @@ public sealed class ScanEngine
         if (o.ScanInputDeviceFilter) modules.Add(new InputDeviceFilterScanModule());
         if (o.ScanUacBypassArtifacts) modules.Add(new UacBypassArtifactScanModule());
         if (o.ScanAntiCheatServiceIntegrity) modules.Add(new AntiCheatServiceIntegrityScanModule());
+        if (o.ScanVulkanLayerInjection) modules.Add(new VulkanLayerInjectionScanModule());
         if (o.ScanWmiPersistence) modules.Add(new WmiPersistenceScanModule());
         if (o.ScanScheduledTasks) modules.Add(new ScheduledTaskScanModule());
         if (o.ScanKernelDrivers) modules.Add(new DriverScanModule());

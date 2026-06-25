@@ -723,6 +723,14 @@ public sealed class ScanOptions
     /// to prevent the AC from loading at game startup.</summary>
     public bool ScanAntiCheatServiceIntegrity { get; set; } = true;
 
+    /// <summary>Detect cheat tools installed as Vulkan implicit or explicit layers: reads
+    /// HKLM/HKCU SOFTWARE\Khronos\Vulkan\ImplicitLayers registry to find non-system Vulkan
+    /// layer JSON manifests. Implicit layers are loaded into every Vulkan-enabled game
+    /// automatically without the application's knowledge — abused by cheat overlays (ESP,
+    /// crosshair, radar) to access the full graphics pipeline. Validates manifest paths,
+    /// reads the "name" field from layer JSON, and flags cheat-keyword names and paths.</summary>
+    public bool ScanVulkanLayerInjection { get; set; } = true;
+
     /// <summary>
     /// When false (default) the drive module only walks targeted, high-signal
     /// directories (profile, temp, downloads, appdata). When true it walks the
@@ -960,6 +968,7 @@ public static class ScanProfiles
         ScanPackedModules = false,          // process module walk — slow
         ScanUacBypassArtifacts = true,      // HKCU registry — fast
         ScanAntiCheatServiceIntegrity = true, // registry — fast
+        ScanVulkanLayerInjection = true,      // registry + JSON file read — fast
         DeepDriveScan = false,
         ModuleTimeoutSeconds = 60,
     };
