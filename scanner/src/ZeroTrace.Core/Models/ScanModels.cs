@@ -1065,6 +1065,30 @@ public sealed class ScanOptions
     /// AI aimbots (WSL2 + Python + CUDA). VM driver services are checked.</summary>
     public bool ScanVmHypervisor { get; set; } = true;
 
+    /// <summary>Mine Windows Event Logs (System, Security, CodeIntegrity/Operational)
+    /// for cheat-specific events: Event 7045 (new kernel driver service), 1102 (Security
+    /// log cleared), 4719 (audit policy disabled), CodeIntegrity 3065/3066 (driver
+    /// blocked — DSE bypass attempt). Ocean/detect.ac mine EVTX as primary forensic source.</summary>
+    public bool ScanEventLogCheat { get; set; } = true;
+
+    /// <summary>Detect debuggers and reverse-engineering tools running or installed:
+    /// x64dbg, WinDbg, IDA Pro, Scylla, ReClass, x32dbg. On gaming PCs these tools
+    /// indicate cheat development or AC reverse-engineering. Checks running processes,
+    /// installed software registry, and Prefetch for prior execution.</summary>
+    public bool ScanAntiDebugTools { get; set; } = true;
+
+    /// <summary>Scan Windows Task Scheduler XML files (%SystemRoot%\System32\Tasks)
+    /// and TaskCache registry for cheat-related task names and elevated tasks running
+    /// from AppData/Temp paths. Cheat loaders use scheduled tasks for auto-start
+    /// persistence without UAC prompts.</summary>
+    public bool ScanScheduledTaskCheat { get; set; } = true;
+
+    /// <summary>Scan PowerShell PSReadLine history, profile scripts, and transcripts
+    /// for Defender-exclusion commands, cheat download URLs, AMSI bypass code, and
+    /// obfuscated execution. PowerShell history is a primary forensic signal for
+    /// cheat setup steps (Set-MpPreference, bcdedit, Invoke-WebRequest to cheat sites).</summary>
+    public bool ScanPowerShellHistory { get; set; } = true;
+
     /// <summary>
     /// When false (default) the drive module only walks targeted, high-signal
     /// directories (profile, temp, downloads, appdata). When true it walks the
@@ -1357,6 +1381,10 @@ public static class ScanProfiles
         ScanCheatTools = true,                // installed software + Prefetch — fast
         ScanNetworkCheatSetup = true,         // SMB shares + network adapters — fast
         ScanVmHypervisor = true,              // VM software + drivers — fast
+        ScanEventLogCheat = true,             // EVTX event ID mining — bounded
+        ScanAntiDebugTools = true,            // RE tools installed/running — fast
+        ScanScheduledTaskCheat = true,        // Task XML + TaskCache — fast
+        ScanPowerShellHistory = true,         // PSReadLine history + profiles — fast
         DeepDriveScan = false,
         // No per-module timeout — every Quick module runs to completion. Quick stays
         // fast because slow modules are individually disabled above, not because they

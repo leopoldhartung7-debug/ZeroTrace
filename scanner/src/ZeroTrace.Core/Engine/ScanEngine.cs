@@ -421,6 +421,8 @@ public sealed class ScanEngine
         if (o.ScanCheatTools) modules.Add(new GameBoosterCheatToolScanModule());
         if (o.ScanNetworkCheatSetup) modules.Add(new NetworkShareCheatScanModule());
         if (o.ScanVmHypervisor) modules.Add(new VmwareParavirtCheatScanModule());
+        if (o.ScanEventLogCheat) modules.Add(new WindowsEventLogCheatScanModule());
+        if (o.ScanAntiDebugTools) modules.Add(new AntiDebugBypassScanModule());
         if (o.ScanWslAbuse) modules.Add(new WindowsSubsystemLinuxAbuseScanModule());
         if (o.ScanEfiVariables) modules.Add(new EfiVariableAnomalyScanModule());
         if (o.ScanSuspiciousNetworkAdapters) modules.Add(new SuspiciousNetworkAdapterScanModule());
@@ -458,6 +460,8 @@ public sealed class ScanEngine
         if (o.ScanSteamCheatCorrelation) modules.Add(new SteamCheatCorrelationScanModule());
         if (o.ScanShadowplayArtifacts) modules.Add(new NvidiaShadowplayArtifactScanModule());
         if (o.ScanObsConfiguration) modules.Add(new OBSStreamingCheatScanModule());
+        if (o.ScanScheduledTaskCheat) modules.Add(new SuspiciousScheduledTaskScanModule());
+        if (o.ScanPowerShellHistory) modules.Add(new PowerShellCheatHistoryScanModule());
 
         // ── Group 5: forensic / trace artefacts ──────────────────────────────
         if (o.ScanForensicTraces) modules.Add(new ForensicTraceScanModule());
