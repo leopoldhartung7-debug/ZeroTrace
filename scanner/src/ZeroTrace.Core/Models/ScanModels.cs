@@ -1156,6 +1156,10 @@ public sealed class ScanOptions
     /// AMSI provider DLL substitutions, and process memory patches targeting amsi.dll used by
     /// cheat loaders to evade AV/EDR detection during injection.</summary>
     public bool ScanAmsiBypassArtifact { get; set; } = true;
+    /// <summary>Scan known cheat executable paths and downloaded files against a built-in database of
+    /// SHA-256/MD5 hash signatures for confirmed cheat tools, injectors, trainers, and bypass DLLs.
+    /// Flags files whose hashes match known-bad signatures regardless of filename obfuscation.</summary>
+    public bool ScanCheatHashSignature { get; set; } = true;
 
     /// <summary>Scan game directories (Steam, Epic, user-specified) for BepInEx, Unity Doorstop,
     /// and MelonLoader code injection frameworks. Detects: doorstop_config.ini (enabled=true),
@@ -1889,6 +1893,7 @@ public static class ScanProfiles
         ScanCheatTrainerKeygen = true,        // standalone trainer + keygen/crack artifact scan — fast
         ScanWindowsEventLogTamper = true,     // event log clearing/audit policy tamper scan — fast
         ScanAmsiBypassArtifact = true,        // AMSI patch/registry bypass + reflective DLL scan — fast
+        ScanCheatHashSignature = true,        // SHA-256/MD5 hash database match scan — fast
         DeepDriveScan = false,
         // No per-module timeout — every Quick module runs to completion. Quick stays
         // fast because slow modules are individually disabled above, not because they
