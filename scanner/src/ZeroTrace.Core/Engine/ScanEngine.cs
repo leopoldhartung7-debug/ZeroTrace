@@ -359,6 +359,7 @@ public sealed class ScanEngine
         if (o.ScanPebLdrInconsistency) modules.Add(new PebLdrInconsistencyScanModule());
         if (o.ScanDirectInputVtableHooks) modules.Add(new DirectInputVtableHookScanModule());
         if (o.ScanHwndCheatWindows) modules.Add(new HwndCheatWindowScanModule());
+        if (o.ScanHandleInheritance) modules.Add(new ProcessHandleInheritanceScanModule());
 
         // ── Group 3: registry / WMI / driver queries ──────────────────────────
         if (o.ScanRegistry) modules.Add(new RegistryScanModule());
@@ -437,6 +438,8 @@ public sealed class ScanEngine
         if (o.ScanRegistryForensicArtifacts) modules.Add(new RegistryForensicArtifactScanModule());
         if (o.ScanThirdPartyGameOverlay) modules.Add(new ThirdPartyGameOverlayScanModule());
         if (o.ScanAntiCheatTelemetryBlock) modules.Add(new AntiCheatTelemetryBlockScanModule());
+        if (o.ScanKernelCodesignBypass) modules.Add(new KernelDriverCodesignBypassScanModule());
+        if (o.ScanDmaCheatInfrastructure) modules.Add(new DmaCheatInfrastructureScanModule());
         if (o.ScanWslAbuse) modules.Add(new WindowsSubsystemLinuxAbuseScanModule());
         if (o.ScanEfiVariables) modules.Add(new EfiVariableAnomalyScanModule());
         if (o.ScanSuspiciousNetworkAdapters) modules.Add(new SuspiciousNetworkAdapterScanModule());
@@ -484,6 +487,8 @@ public sealed class ScanEngine
         if (o.ScanWindowsNotificationForensics) modules.Add(new WindowsNotificationCheatScanModule());
         if (o.ScanSteamUserdataForensics) modules.Add(new SteamAchievementCheatScanModule());
         if (o.ScanGameSaveCheatMods) modules.Add(new GameSaveCheatModScanModule());
+        if (o.ScanScreenRecordingArtifacts) modules.Add(new ScreenRecordingCheatArtifactScanModule());
+        if (o.ScanCheatLicenseArtifacts) modules.Add(new CheatLicenseKeygenScanModule());
 
         // ── Group 5: forensic / trace artefacts ──────────────────────────────
         if (o.ScanForensicTraces) modules.Add(new ForensicTraceScanModule());

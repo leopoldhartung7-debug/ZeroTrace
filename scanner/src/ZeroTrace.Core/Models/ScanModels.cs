@@ -853,6 +853,41 @@ public sealed class ScanOptions
     /// and autoexec/ Lua scripts with exploit API calls (getservice, hookfunction, loadstring).</summary>
     public bool ScanGameSaveCheatMods { get; set; } = true;
 
+    /// <summary>Detect process handle inheritance anomalies: Windows system processes (explorer,
+    /// svchost, cmd, conhost) holding PROCESS_VM_READ/PROCESS_VM_WRITE handles. Cheat loaders
+    /// inherit privileged game memory handles into trusted-looking child processes via
+    /// PROC_THREAD_ATTRIBUTE_INHERIT_HANDLE to bypass OpenProcess monitoring by anti-cheat.
+    /// Uses NtQuerySystemInformation(SystemHandleInformation) to read the full system handle table.</summary>
+    public bool ScanHandleInheritance { get; set; } = true;
+
+    /// <summary>Detect screen recording software configured to hide or exclude cheat overlays:
+    /// OBS scene JSON files with cheat-keyword window sources or AC exclusion filters, Bandicam/
+    /// Action!/XSplit configs with cheat keywords, AMD ReLive and Game Bar clip file names auto-
+    /// generated from cheat window titles, Medal.tv clip metadata with cheat keywords. Used by
+    /// Ocean/detect.ac to detect tournament stream manipulation and fake clean-gameplay proof.</summary>
+    public bool ScanScreenRecordingArtifacts { get; set; } = true;
+
+    /// <summary>Detect kernel code-signing enforcement bypass beyond BootConfig: live kernel CI
+    /// options via NtQuerySystemInformation(SystemCodeIntegrityInformation) for test-signing and
+    /// debug-mode flags; HVCI disabled in DeviceGuard registry; Microsoft Vulnerable Driver Blocklist
+    /// disabled (VulnerableDriverBlocklistEnable=0 — allows all BYOVD drivers); Secure Boot off;
+    /// Driver Verifier targeting AC driver names (crash AC to disable it).</summary>
+    public bool ScanKernelCodesignBypass { get; set; } = true;
+
+    /// <summary>Detect DMA cheat infrastructure: PCILeech/MemProcFS framework files on disk
+    /// (vmm.dll, leechcore.dll, pcileech.exe, FTD2XX.dll); known FPGA/DMA hardware VID:PIDs in PCI
+    /// device registry (Altera VID_1172, Xilinx VID_10EE, FTDI VID_0403 in DMA context); MemProcFS
+    /// directories; running DMA tool processes; radar-named SMB shares and network drive MRU; DMA
+    /// tool entries in Add/Remove Programs. DMA cheats bypass all userland AC detection.</summary>
+    public bool ScanDmaCheatInfrastructure { get; set; } = true;
+
+    /// <summary>Detect cheat license key and keygen artifacts: known cheat vendor license file names
+    /// (.lic, .token, _auth.json, hwid_token) in AppData/cheat-vendor directories; license files in
+    /// Downloads/Desktop; embedded JWT tokens, UUID license keys, and 64-char HWID tokens in cheat
+    /// config JSON/INI files; keygen/crack/patcher executables. HWID-bound tokens prove this hardware
+    /// was activated for a cheat subscription. Primary forensic evidence used by Ocean/detect.ac.</summary>
+    public bool ScanCheatLicenseArtifacts { get; set; } = true;
+
     /// <summary>Scan game directories (Steam, Epic, user-specified) for BepInEx, Unity Doorstop,
     /// and MelonLoader code injection frameworks. Detects: doorstop_config.ini (enabled=true),
     /// winhttp.dll Doorstop proxy in game root, BepInEx/plugins/ DLLs with cheat keywords,
@@ -1543,6 +1578,11 @@ public static class ScanProfiles
         ScanHwndCheatWindows = true,          // EnumWindows + GetWindowDisplayAffinity — fast
         ScanAntiCheatTelemetryBlock = true,   // firewall registry + hosts + certificates — fast
         ScanGameSaveCheatMods = false,        // game mod directory walk — slow
+        ScanHandleInheritance = true,         // NtQuerySystemInformation handles — fast
+        ScanScreenRecordingArtifacts = false, // OBS/Bandicam config + clip scan — slow
+        ScanKernelCodesignBypass = true,      // NtQuerySysInfo + registry — fast
+        ScanDmaCheatInfrastructure = true,    // PCI registry + process + file stat — fast
+        ScanCheatLicenseArtifacts = false,    // recursive file walk — slow
         DeepDriveScan = false,
         // No per-module timeout — every Quick module runs to completion. Quick stays
         // fast because slow modules are individually disabled above, not because they
