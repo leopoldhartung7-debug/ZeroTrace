@@ -909,6 +909,20 @@ public sealed class ScanOptions
     /// registry artifacts (Technitium MAC Changer, Boreal keys); spoofers in Add/Remove Programs.</summary>
     public bool ScanSpooferArtifacts { get; set; } = true;
 
+    /// <summary>Detect AC bypass indicators specific to each anti-cheat system: VAC ("-insecure"/
+    /// "sv_pure 0" in Steam launch options per AppID, localconfig.vdf); EAC log bypass messages,
+    /// EAC service disabled; BattlEye BEService disabled, BEClient.dll replaced with stub (too small);
+    /// Vanguard (vgc/vgk) services disabled, TPM/Secure Boot bypass registry; FACEIT service disabled;
+    /// NProtect GameGuard .des files replaced with stubs. System-specific AC bypass detection.</summary>
+    public bool ScanAntiCheatGameVersion { get; set; } = true;
+
+    /// <summary>Deep Steam cache forensic scan: Steam client logs (content_log.txt, network_log.txt)
+    /// for cheat domain connections and keyword mentions; Steam Workshop .acf manifests for cheat-keyword
+    /// subscribed mods (persist after unsubscribing); app manifest files for cheat-development AppIDs
+    /// (Source SDK 211, 218) and cheat keywords; Steam userdata controller configs for cheat bindings.
+    /// Steam log forensics is a primary Ocean/detect.ac detection source.</summary>
+    public bool ScanSteamCacheArtifacts { get; set; } = true;
+
     /// <summary>Scan game directories (Steam, Epic, user-specified) for BepInEx, Unity Doorstop,
     /// and MelonLoader code injection frameworks. Detects: doorstop_config.ini (enabled=true),
     /// winhttp.dll Doorstop proxy in game root, BepInEx/plugins/ DLLs with cheat keywords,
@@ -1607,6 +1621,8 @@ public static class ScanProfiles
         ScanCheatForumArtifacts = true,       // cookie DB byte-grep + Downloads stat — bounded
         ScanMouseFirmwareAnomaly = true,      // USB/HID registry scan — fast
         ScanSpooferArtifacts = true,          // file stat + NIC registry + installed software — fast
+        ScanAntiCheatGameVersion = true,      // AC service registry + Steam LaunchOptions — fast
+        ScanSteamCacheArtifacts = false,      // Steam log + workshop .acf scan — slow
         DeepDriveScan = false,
         // No per-module timeout — every Quick module runs to completion. Quick stays
         // fast because slow modules are individually disabled above, not because they
