@@ -285,6 +285,7 @@ public sealed class ScanEngine
         if (o.ScanAntiDebugEvasion) modules.Add(new AntiDebugEvasionScanModule());
         if (o.ScanLoadedKernelModules) modules.Add(new LoadedKernelModuleScanModule());
         if (o.ScanNamedPipes) modules.Add(new NamedPipeScanModule());
+        if (o.ScanMemoryMappedFiles) modules.Add(new MemoryMappedFileScanModule());
 
         // ── Group 3: registry / WMI / driver queries ──────────────────────────
         if (o.ScanRegistry) modules.Add(new RegistryScanModule());
@@ -301,6 +302,9 @@ public sealed class ScanEngine
         if (o.ScanBootConfig) modules.Add(new BootConfigScanModule());
         if (o.ScanSuspiciousServices) modules.Add(new SuspiciousServiceScanModule());
         if (o.ScanNetworkConnections) modules.Add(new NetworkConnectionScanModule());
+        if (o.ScanAppInitDlls) modules.Add(new AppInitDllScanModule());
+        if (o.ScanLsaPlugins) modules.Add(new LsaPluginScanModule());
+        if (o.ScanPrintSpoolerPersistence) modules.Add(new PrintSpoolerPersistenceScanModule());
         if (o.ScanWmiPersistence) modules.Add(new WmiPersistenceScanModule());
         if (o.ScanScheduledTasks) modules.Add(new ScheduledTaskScanModule());
         if (o.ScanKernelDrivers) modules.Add(new DriverScanModule());

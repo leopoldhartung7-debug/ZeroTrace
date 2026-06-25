@@ -293,6 +293,23 @@ public sealed class ScanOptions
     /// tools (4688), service install (4697/7045), AC service stopped (7036), PS scripts (4104).</summary>
     public bool ScanEventLogDeep { get; set; } = true;
 
+    /// <summary>Detect malicious use of AppInit_DLLs registry mechanism to inject DLLs
+    /// into every User32-importing process, including games. Also checks LoadAppInit_DLLs
+    /// and RequireSignedAppInit_DLLs security settings.</summary>
+    public bool ScanAppInitDlls { get; set; } = true;
+
+    /// <summary>Detect unauthorized LSA authentication packages, Security Support Providers,
+    /// and notification packages running in lsass.exe — used for credential theft and persistence.</summary>
+    public bool ScanLsaPlugins { get; set; } = true;
+
+    /// <summary>Detect malicious print monitor and print processor DLLs running as SYSTEM
+    /// in spoolsv.exe — a stealthy persistence technique used by cheat tools and APT groups.</summary>
+    public bool ScanPrintSpoolerPersistence { get; set; } = true;
+
+    /// <summary>Scan Windows Object Manager namespace (\BaseNamedObjects\) for named Sections,
+    /// Events, Semaphores, and Mutants with cheat-keyword names used for IPC between cheat components.</summary>
+    public bool ScanMemoryMappedFiles { get; set; } = true;
+
     /// <summary>
     /// When false (default) the drive module only walks targeted, high-signal
     /// directories (profile, temp, downloads, appdata). When true it walks the
@@ -440,6 +457,10 @@ public static class ScanProfiles
         ScanInstalledFonts = true,      // registry + files — fast
         ScanNamedPipes = true,          // pipe enum — fast
         ScanEventLogDeep = false,       // event log read — slow
+        ScanAppInitDlls = true,           // registry — fast
+        ScanLsaPlugins = true,            // registry — fast
+        ScanPrintSpoolerPersistence = true, // registry — fast
+        ScanMemoryMappedFiles = true,     // NT syscall — fast
         DeepDriveScan = false,
         ModuleTimeoutSeconds = 60,
     };
