@@ -597,6 +597,21 @@ public sealed class ScanOptions
     /// small private executable allocations (shellcode stager pattern), and guard page removal.</summary>
     public bool ScanMemoryAllocatorAnomaly { get; set; } = true;
 
+    /// <summary>Detect suspicious parent-child process tree relationships: anti-cheat processes
+    /// spawning command interpreters, game processes spawning LOLBINs (mshta/wscript/certutil/rundll32),
+    /// and LOLBIN chains indicating cheat loaders executing code under trusted process names.</summary>
+    public bool ScanSuspiciousChildProcesses { get; set; } = true;
+
+    /// <summary>Verify Steam API DLL integrity in game processes: compare steam_api64.dll export
+    /// function prologues in memory against on-disk PE, detect Steam emulator DLLs (Goldberg,
+    /// CreamAPI, SmokeAPI, Koaloader) replacing the legitimate Valve steam_api to bypass VAC/DRM.</summary>
+    public bool ScanSteamApiIntegrity { get; set; } = true;
+
+    /// <summary>Detect processes with open PROCESS_VM_READ handles on game processes by enumerating
+    /// all system handles via NtQuerySystemInformation — the core technique used by external cheats
+    /// (ESP, aimbot, radar) to continuously read game state from another process.</summary>
+    public bool ScanGameMemoryReadAccess { get; set; } = true;
+
     /// <summary>
     /// When false (default) the drive module only walks targeted, high-signal
     /// directories (profile, temp, downloads, appdata). When true it walks the
@@ -815,6 +830,9 @@ public static class ScanProfiles
         ScanCheatFileArtifacts = false,     // recursive file walk — slow
         ScanAcBypassTools = true,           // process + registry check — fast
         ScanMemoryAllocatorAnomaly = false, // full VirtualQueryEx walk — slow
+        ScanSuspiciousChildProcesses = true, // process tree query — fast
+        ScanSteamApiIntegrity = false,      // process memory compare — slow
+        ScanGameMemoryReadAccess = true,    // NtQuerySystemInformation — medium
         DeepDriveScan = false,
         ModuleTimeoutSeconds = 60,
     };

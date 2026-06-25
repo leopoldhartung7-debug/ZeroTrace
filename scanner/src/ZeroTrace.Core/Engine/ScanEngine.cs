@@ -297,6 +297,8 @@ public sealed class ScanEngine
         if (o.ScanPpidSpoofing) modules.Add(new PpidSpoofingDetectionScanModule());
         if (o.ScanExternalOverlay) modules.Add(new ExternalOverlayDetectionScanModule());
         if (o.ScanAcBypassTools) modules.Add(new AntiCheatBypassToolsScanModule());
+        if (o.ScanSuspiciousChildProcesses) modules.Add(new SuspiciousChildProcessScanModule());
+        if (o.ScanGameMemoryReadAccess) modules.Add(new GameMemoryReadAccessScanModule());
 
         // ── Group 3: registry / WMI / driver queries ──────────────────────────
         if (o.ScanRegistry) modules.Add(new RegistryScanModule());
@@ -422,6 +424,7 @@ public sealed class ScanEngine
         if (o.ScanPebAnomalies) modules.Add(new ProcessEnvironmentBlockScanModule());
         if (o.ScanModuleStomping) modules.Add(new ProcessModuleStompingScanModule());
         if (o.ScanMemoryAllocatorAnomaly) modules.Add(new MemoryAllocatorAnomalyScanModule());
+        if (o.ScanSteamApiIntegrity) modules.Add(new SteamApiIntegrityScanModule());
         if (o.ScanHeapSpray) modules.Add(new HeapSprayScanModule());
         if (o.ScanKnownHashes) modules.Add(new KnownHashScanModule());
         if (o.ScanMemory) modules.Add(new MemoryScanModule());
