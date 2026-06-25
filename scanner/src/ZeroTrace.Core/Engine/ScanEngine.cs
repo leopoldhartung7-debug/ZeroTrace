@@ -598,11 +598,13 @@ public sealed class ScanEngine
         if (o.ScanRootKitUserModeArtifact) modules.Add(new RootKitUserModeArtifactScanModule());
         if (o.ScanGTA5OnlineCheat) modules.Add(new GTA5OnlineCheatScanModule());
         if (o.ScanRustApexCheat) modules.Add(new RustApexCheatScanModule());
-        if (o.ScanEscapeFromTarkovCheat) modules.Add(new EscapeFromTarkovCheatScanModule());
-        if (o.ScanMinecraftCheatDeep) modules.Add(new MinecraftCheatDeepScanModule());
         if (o.ScanFortniteWarzoneCheat) modules.Add(new FortniteWarzoneCheatScanModule());
         if (o.ScanFortniteCheatDetection) modules.Add(new FortniteCheatDetectionScanModule());
-        if (o.ScanRainbowSixSiegeCheat) modules.Add(new RainbowSixSiegeCheatScanModule());
+        if (o.ScanFiveMKernelExploit) modules.Add(new FiveMKernelExploitScanModule());
+        if (o.ScanRustCheatDetection) modules.Add(new RustCheatDetectionScanModule());
+        if (o.ScanCS2Cheat) modules.Add(new CS2CheatScanModule());
+        if (o.ScanDayZCheat) modules.Add(new DayZCheatScanModule());
+        if (o.ScanMinecraftCheat) modules.Add(new MinecraftCheatScanModule());
         if (o.ScanCheatSourceCodeRepo) modules.Add(new CheatSourceCodeRepoScanModule());
 
         // ── Group 5: forensic / trace artefacts ──────────────────────────────

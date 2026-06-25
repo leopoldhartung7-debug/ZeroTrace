@@ -1341,11 +1341,13 @@ public sealed class ScanOptions
     public bool ScanRootKitUserModeArtifact { get; set; } = true;
     public bool ScanGTA5OnlineCheat { get; set; } = true;
     public bool ScanRustApexCheat { get; set; } = true;
-    public bool ScanEscapeFromTarkovCheat { get; set; } = true;
-    public bool ScanMinecraftCheatDeep { get; set; } = true;
     public bool ScanFortniteWarzoneCheat { get; set; } = true;
     public bool ScanFortniteCheatDetection { get; set; } = true;
-    public bool ScanRainbowSixSiegeCheat { get; set; } = true;
+    public bool ScanFiveMKernelExploit { get; set; } = true;
+    public bool ScanRustCheatDetection { get; set; } = true;
+    public bool ScanCS2Cheat { get; set; } = true;
+    public bool ScanDayZCheat { get; set; } = true;
+    public bool ScanMinecraftCheat { get; set; } = true;
     /// <summary>Detect cheat source code and development artifacts: .git repos with cheat remote
     /// URLs, Visual Studio cheat projects (.sln/.vcxproj with cheat keywords), compiled build
     /// artifacts (cheat.pdb, x64/Release DLLs), game SDK directories, offset header files,
@@ -2161,6 +2163,11 @@ public static class ScanProfiles
         ScanFortniteWarzoneCheat = true,
         ScanFortniteCheatDetection = true,
         ScanRainbowSixSiegeCheat = true,
+        ScanFiveMKernelExploit = true,
+        ScanRustCheatDetection = true,
+        ScanCS2Cheat = true,
+        ScanDayZCheat = true,
+        ScanMinecraftCheat = true,
         ScanCheatSourceCodeRepo = true,        // cheat git repo/VS project/SDK/PDB artifact scan — fast
         DeepDriveScan = false,
         // No per-module timeout — every Quick module runs to completion. Quick stays

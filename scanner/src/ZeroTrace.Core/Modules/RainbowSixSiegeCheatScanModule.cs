@@ -7,1577 +7,1516 @@ namespace ZeroTrace.Core.Modules;
 public sealed class RainbowSixSiegeCheatScanModule : IScanModule
 {
     public string Name => "Rainbow Six Siege Cheat Detection";
-    public double Weight => 4.1;
+    public double Weight => 4.3;
     public int ParallelGroup => 4;
 
-    private static readonly string LocalAppData =
+    // -------------------------------------------------------------------------
+    // Known Rainbow Six Siege cheat executable / DLL names (80+ variants)
+    // -------------------------------------------------------------------------
+    private static readonly HashSet<string> KnownCheatFileNames = new(StringComparer.OrdinalIgnoreCase)
+    {
+        // r6_ prefix EXE variants
+        "r6_hack.exe",
+        "r6_cheat.exe",
+        "r6_aimbot.exe",
+        "r6_esp.exe",
+        "r6_wallhack.exe",
+        "r6_radar.exe",
+        "r6_no_recoil.exe",
+        "r6_no_spread.exe",
+        "r6_triggerbot.exe",
+        "r6_speed.exe",
+        "r6_god.exe",
+        "r6_silent_aim.exe",
+        "r6_spoofer.exe",
+        "r6_injector.exe",
+        "r6_loader.exe",
+        "r6_bypass.exe",
+        "r6_trainer.exe",
+        "r6_external.exe",
+        "r6_internal.exe",
+        "r6_menu.exe",
+        "r6_drone.exe",
+        "r6_rapid_fire.exe",
+        "r6_macro.exe",
+        // r6siege_ prefix EXE variants
+        "r6siege_hack.exe",
+        "r6siege_cheat.exe",
+        "r6siege_aimbot.exe",
+        "r6siege_esp.exe",
+        "r6siege_wallhack.exe",
+        "r6siege_no_recoil.exe",
+        "r6siege_triggerbot.exe",
+        "r6siege_trainer.exe",
+        "r6siege_spoofer.exe",
+        "r6siege_injector.exe",
+        "r6siege_loader.exe",
+        "r6siege_bypass.exe",
+        "r6siege_external.exe",
+        "r6siege_internal.exe",
+        // siege_ prefix EXE variants
+        "siege_hack.exe",
+        "siege_cheat.exe",
+        "siege_aimbot.exe",
+        "siege_esp.exe",
+        "siege_wallhack.exe",
+        "siege_no_recoil.exe",
+        "siege_triggerbot.exe",
+        "siege_trainer.exe",
+        "siege_spoofer.exe",
+        "siege_injector.exe",
+        "siege_loader.exe",
+        "siege_bypass.exe",
+        "siege_external.exe",
+        "siege_internal.exe",
+        "siege_drone.exe",
+        "siege_camera.exe",
+        "siege_radar.exe",
+        "siege_speed.exe",
+        "siege_god.exe",
+        // rainbowsix_ / rainbow6_ prefix EXE variants
+        "rainbowsix_hack.exe",
+        "rainbowsix_cheat.exe",
+        "rainbowsix_aimbot.exe",
+        "rainbowsix_esp.exe",
+        "rainbowsix_wallhack.exe",
+        "rainbowsix_loader.exe",
+        "rainbowsix_injector.exe",
+        "rainbow6_hack.exe",
+        "rainbow6_cheat.exe",
+        "rainbow6_aimbot.exe",
+        "rainbow6_esp.exe",
+        "rainbow6_wallhack.exe",
+        "rainbow6_loader.exe",
+        // drone / camera / thermal hack tools
+        "drone_hack.exe",
+        "camera_hack.exe",
+        "thermal_hack.exe",
+        "drone_esp.exe",
+        "camera_esp.exe",
+        // rapid fire / macro tools
+        "r6_rapid_fire.exe",
+        "r6_macro.exe",
+        "rapid_fire.ahk",
+        "no_recoil.ahk",
+        "r6_no_recoil.ahk",
+        "r6_triggerbot.ahk",
+        "siege_macro.ahk",
+        // DLL variants
+        "r6_hack.dll",
+        "r6_cheat.dll",
+        "r6_aimbot.dll",
+        "r6_esp.dll",
+        "r6_internal.dll",
+        "r6_external.dll",
+        "r6_injector.dll",
+        "r6_bypass.dll",
+        "r6siege_hack.dll",
+        "r6siege_cheat.dll",
+        "r6siege_aimbot.dll",
+        "r6siege_esp.dll",
+        "siege_hack.dll",
+        "siege_cheat.dll",
+        "siege_aimbot.dll",
+        "siege_esp.dll",
+        "siege_internal.dll",
+        "siege_bypass.dll",
+        "rainbowsix_hack.dll",
+        "rainbowsix_cheat.dll",
+        // known brand loaders / menus targeting R6S
+        "gamesense_r6.exe",
+        "aimware_r6.exe",
+        "skycheats_r6.exe",
+        "interwebz_r6.exe",
+        "streamline_r6.exe",
+        "layla_r6.exe",
+        "synapse_r6.exe",
+    };
+
+    // -------------------------------------------------------------------------
+    // Cheat config / settings keywords found inside JSON / INI / CFG files
+    // -------------------------------------------------------------------------
+    private static readonly string[] CheatConfigKeywords =
+    {
+        "aimbot",
+        "esp",
+        "wallhack",
+        "no_recoil",
+        "laser_sight",
+        "drone_esp",
+        "through_smoke",
+        "see_through_gadget",
+        "no_spread",
+        "silent_aim",
+        "bone_aimbot",
+        "fov_circle",
+        "prediction_enabled",
+        "operator_esp",
+        "thermal_vision",
+        "through_wall",
+        "camera_hack",
+        "rapid_fire",
+        "triggerbot",
+    };
+
+    // -------------------------------------------------------------------------
+    // Known R6S cheat community / brand name strings found inside files
+    // -------------------------------------------------------------------------
+    private static readonly string[] KnownCheatCommunityStrings =
+    {
+        "gamesense r6",
+        "aimware r6",
+        "skycheats r6",
+        "interwebz r6",
+        "streamline r6",
+        "layla r6",
+        "r6 external cheat",
+        "r6 internal cheat",
+        "siege aimbot loader",
+        "siege esp loader",
+        "rainbow six siege hack",
+        "rainbow six siege cheat",
+        "r6s aimbot",
+        "r6s wallhack",
+        "r6s no recoil",
+    };
+
+    // -------------------------------------------------------------------------
+    // Ubisoft Connect DLL names that cheat tools replace with stubs
+    // -------------------------------------------------------------------------
+    private static readonly string[] UbisoftIntegrityDlls =
+    {
+        "uplay_r2.dll",
+        "ubi_services.dll",
+        "upc_r2.dll",
+        "uplaypc_r2.dll",
+        "uplay_r2_loader.dll",
+        "ubisoft_connect.dll",
+    };
+
+    // -------------------------------------------------------------------------
+    // R6S data / config directory base paths
+    // -------------------------------------------------------------------------
+    private static readonly string LocalApp =
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-    private static readonly string RoamingAppData =
+
+    private static readonly string AppData =
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-    private static readonly string UserProfile =
-        Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+
     private static readonly string ProgramFiles =
         Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
+
     private static readonly string ProgramFilesX86 =
         Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
 
-    private static readonly string[] R6InstallPaths =
+    // -------------------------------------------------------------------------
+    // Script extensions to scan for macro content
+    // -------------------------------------------------------------------------
+    private static readonly string[] ScriptExtensions =
     {
-        Path.Combine(ProgramFiles, "Ubisoft", "Ubisoft Game Launcher", "games", "Tom Clancy's Rainbow Six Siege"),
-        Path.Combine(ProgramFiles, "Ubisoft", "Ubisoft Game Launcher", "games", "Rainbow Six Siege"),
-        Path.Combine(ProgramFilesX86, "Ubisoft", "Ubisoft Game Launcher", "games", "Tom Clancy's Rainbow Six Siege"),
-        Path.Combine(ProgramFilesX86, "Ubisoft", "Rainbow Six Siege"),
-        Path.Combine(ProgramFiles, "Ubisoft", "Rainbow Six Siege"),
-        Path.Combine(ProgramFiles, "Ubisoft Connect", "games", "Tom Clancy's Rainbow Six Siege"),
-        Path.Combine(LocalAppData, "Ubisoft Game Launcher", "games", "Tom Clancy's Rainbow Six Siege"),
-        @"C:\Ubisoft\Tom Clancy's Rainbow Six Siege",
-        @"C:\Games\Rainbow Six Siege",
-        @"D:\Ubisoft\Tom Clancy's Rainbow Six Siege",
-        @"D:\Games\Rainbow Six Siege",
-        Path.Combine(ProgramFiles, "Steam", "steamapps", "common", "Tom Clancy's Rainbow Six Siege"),
-        Path.Combine(ProgramFilesX86, "Steam", "steamapps", "common", "Tom Clancy's Rainbow Six Siege"),
-        @"C:\SteamLibrary\steamapps\common\Tom Clancy's Rainbow Six Siege",
-        @"D:\SteamLibrary\steamapps\common\Tom Clancy's Rainbow Six Siege",
-        @"E:\SteamLibrary\steamapps\common\Tom Clancy's Rainbow Six Siege",
+        ".ahk", ".au3", ".lua", ".py", ".bat", ".ps1",
     };
 
-    private static readonly string[] KnownCheatExeNames =
+    // -------------------------------------------------------------------------
+    // Registry Run/RunOnce paths
+    // -------------------------------------------------------------------------
+    private static readonly string[] RunKeyPaths =
     {
-        "R6Cheat.exe",
-        "SiegeCheat.exe",
-        "R6Hack.exe",
-        "RainbowCheat.exe",
-        "SiegeExternal.exe",
-        "R6External.exe",
-        "R6Aimbot.exe",
-        "SiegeAimbot.exe",
-        "R6ESP.exe",
-        "SiegeESP.exe",
-        "R6Wallhack.exe",
-        "SiegeWallhack.exe",
-        "r6_wallhack.exe",
-        "siege_esp.exe",
-        "r6_radar.exe",
-        "siege_gadget.exe",
-        "r6_gadget_bypass.exe",
-        "siege_speed.exe",
-        "r6_speedhack.exe",
-        "r6_cheat.exe",
-        "siege_cheat.exe",
-        "rainbow_cheat.exe",
-        "r6_hack.exe",
-        "siege_hack.exe",
-        "r6_loader.exe",
-        "siege_loader.exe",
-        "R6Loader.exe",
-        "SiegeLoader.exe",
-        "OxideR6.exe",
-        "Oxide_R6.exe",
-        "GreazySiege.exe",
-        "Greazy.exe",
-        "HxCheats.exe",
-        "Hx-Cheats.exe",
-        "R6S-ESP.exe",
-        "Siege-Aimbot.exe",
-        "SiegeAim.exe",
-        "r6_aimassist.exe",
-        "siege_aimassist.exe",
-        "r6_triggerbot.exe",
-        "siege_triggerbot.exe",
-        "r6_norecoil.exe",
-        "siege_norecoil.exe",
-        "r6_godmode.exe",
-        "siege_godmode.exe",
-        "R6Bypass.exe",
-        "SiegeBypass.exe",
-        "uplay_bypass.exe",
-        "ubisoft_bypass.exe",
-        "r6_menu.exe",
-        "siege_menu.exe",
-        "R6Menu.exe",
-        "SiegeMenu.exe",
-        "r6_overlay.exe",
-        "siege_overlay.exe",
-        "R6Overlay.exe",
-        "SiegeOverlay.exe",
-        "FairFightBypass.exe",
-        "fairfight_bypass.exe",
-        "r6_fairfight.exe",
-        "r6sharp.exe",
-        "R6Sharp.exe",
-        "siege_operator_esp.exe",
-        "r6_operator_hack.exe",
-        "SiegeVulkanHook.exe",
-        "r6_vulkan_hook.exe",
+        @"SOFTWARE\Microsoft\Windows\CurrentVersion\Run",
+        @"SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce",
+        @"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Run",
+        @"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\RunOnce",
     };
 
-    private static readonly string[] KnownCheatDllNames =
+    // -------------------------------------------------------------------------
+    // Entry point
+    // -------------------------------------------------------------------------
+    public Task RunAsync(ScanContext ctx, CancellationToken ct)
     {
-        "R6Sharp.dll",
-        "R6Cheat.dll",
-        "SiegeCheat.dll",
-        "SiegeInternal.dll",
-        "R6Internal.dll",
-        "R6Hook.dll",
-        "SiegeHook.dll",
-        "r6_cheat.dll",
-        "siege_cheat.dll",
-        "r6_hook.dll",
-        "siege_hook.dll",
-        "R6Inject.dll",
-        "SiegeInject.dll",
-        "r6_inject.dll",
-        "siege_inject.dll",
-        "ubisoft_bypass.dll",
-        "uplay_r2_loader64.dll",
-        "uplay_r2_loader.dll",
-        "BattlEyeBypass.dll",
-        "be_bypass_r6.dll",
-        "r6_bypass.dll",
-        "siege_bypass.dll",
-        "SiegeVulkanLayer.dll",
-        "r6_vulkan_layer.dll",
-        "R6VulkanHook.dll",
-        "dxgi_hook_r6.dll",
-        "d3d11_hook_r6.dll",
-        "FairFightBypass.dll",
-    };
+        ctx.Report(0.0, Name, "Starting Rainbow Six Siege cheat artifact scan...");
 
-    private static readonly string[] KnownCheatProcessNames =
-    {
-        "R6Cheat",
-        "SiegeCheat",
-        "R6Hack",
-        "RainbowCheat",
-        "SiegeExternal",
-        "R6External",
-        "R6Aimbot",
-        "SiegeAimbot",
-        "R6ESP",
-        "SiegeESP",
-        "r6_cheat",
-        "siege_cheat",
-        "r6_hack",
-        "siege_hack",
-        "R6Loader",
-        "SiegeLoader",
-        "OxideR6",
-        "Greazy",
-        "HxCheats",
-        "R6Sharp",
-        "R6Bypass",
-        "SiegeBypass",
-        "uplay_bypass",
-        "FairFightBypass",
-        "R6Overlay",
-        "SiegeOverlay",
-        "R6Menu",
-        "SiegeMenu",
-    };
-
-    private static readonly string[] CheatConfigKeywords =
-    {
-        "pick_operator",
-        "auto_plant",
-        "auto_defuse",
-        "god_mode_siege",
-        "god_mode",
-        "no_recoil",
-        "no_sway",
-        "no_spread",
-        "esp_enabled",
-        "player_esp",
-        "wallhack_enabled",
-        "operator_esp",
-        "gadget_esp",
-        "drone_esp",
-        "camera_esp",
-        "aimbot_enabled",
-        "aimbot_key",
-        "aimbot_bone",
-        "aimbot_fov",
-        "aimbot_smooth",
-        "triggerbot_enabled",
-        "silent_aim",
-        "prediction_enabled",
-        "speed_hack",
-        "speed_multiplier",
-        "infinite_health",
-        "no_flash",
-        "no_smoke",
-        "rapid_fire",
-        "auto_fire",
-        "drone_hack",
-        "camera_hack",
-        "unlimited_gadget",
-        "infinite_ammo",
-        "anti_flash",
-        "skeleton_esp",
-        "health_bar",
-        "distance_esp",
-        "name_esp",
-        "chams_enabled",
-        "r6_wallhack",
-        "siege_wallhack",
-        "operator_unlock",
-    };
-
-    private static readonly string[] R6OffsetKeywords =
-    {
-        "ACE_SDK",
-        "ACE::Player",
-        "ACE::Entity",
-        "ACE::Pawn",
-        "ACE::Camera",
-        "GameBase",
-        "GameManager",
-        "PlayerBase",
-        "LocalPlayer",
-        "AllEntities",
-        "EntityList",
-        "Bone::Head",
-        "Bone::Neck",
-        "Bone::Chest",
-        "WorldToScreen",
-        "ViewMatrix",
-        "ViewAngle",
-        "Health",
-        "MaxHealth",
-        "Team",
-        "IsAlive",
-        "IsVisible",
-        "Gadget",
-        "Operator",
-        "PlayerController",
-        "CameraManager",
-        "GameState",
-        "MatchState",
-        "Rappel",
-        "SiegePlayer",
-        "SiegeEngine",
-        "AnvilEngine",
-    };
-
-    private static readonly string[] LogCheatSignatures =
-    {
-        "aimbot initialized",
-        "esp enabled",
-        "cheat loaded",
-        "siege cheat",
-        "r6 cheat",
-        "battleye bypass",
-        "be bypass",
-        "injection successful",
-        "hook installed",
-        "oxide loaded",
-        "greazy loaded",
-        "r6sharp initialized",
-        "hxcheats",
-        "fairfight bypass",
-        "uplay bypass",
-        "wallhack enabled",
-        "no recoil enabled",
-        "operator esp active",
-        "gadget esp active",
-        "triggerbot active",
-        "silent aim active",
-        "speed hack enabled",
-        "vulkan hook installed",
-        "dxgi hook installed",
-    };
-
-    private static readonly string[] UbisoftBypassArtifacts =
-    {
-        "uplay_r2_loader64.dll",
-        "uplay_r2_loader.dll",
-        "uplay_r1_loader64.dll",
-        "uplay_r1_loader.dll",
-        "upc_r1_loader64.dll",
-        "ubisoft_bypass.dll",
-        "uplay_bypass.dll",
-        "uplay_bypass.exe",
-        "ubi_bypass.dll",
-        "ubisoft_bypass.exe",
-    };
-
-    private static readonly string[] ScanDirectories;
-
-    static RainbowSixSiegeCheatScanModule()
-    {
-        ScanDirectories = new[]
-        {
-            Path.Combine(UserProfile, "Desktop"),
-            Path.Combine(UserProfile, "Downloads"),
-            Path.Combine(UserProfile, "Documents"),
-            Path.GetTempPath(),
-            Path.Combine(LocalAppData, "Temp"),
-            RoamingAppData,
-            LocalAppData,
-        };
+        return Task.WhenAll(
+            CheckKnownCheatFiles(ctx, ct),
+            CheckBattleEyeBypassArtifacts(ctx, ct),
+            CheckR6SDataDirectories(ctx, ct),
+            CheckCheatConfigFiles(ctx, ct),
+            CheckDroneCameraHackTools(ctx, ct),
+            CheckRapidFireMacroTools(ctx, ct),
+            CheckUbisoftConnectIntegrity(ctx, ct),
+            CheckRegistryMuiCache(ctx, ct),
+            CheckRegistryUserAssist(ctx, ct),
+            CheckRegistryRunKeys(ctx, ct),
+            CheckRegistryUninstallRecords(ctx, ct)
+        );
     }
 
-    public async Task RunAsync(ScanContext ctx, CancellationToken ct)
+    // -------------------------------------------------------------------------
+    // Sub-check: known cheat EXE / DLL names on all fixed drives
+    // -------------------------------------------------------------------------
+    private Task CheckKnownCheatFiles(ScanContext ctx, CancellationToken ct)
     {
-        ctx.Report(0.02, Name, "Scanning for known R6 Siege cheat executables...");
-        await ScanForKnownCheatFilesAsync(ctx, ct).ConfigureAwait(false);
+        return Task.Run(async () =>
+        {
+            ctx.Report(0.05, Name, "Scanning drives for known R6S cheat files...");
 
-        ct.ThrowIfCancellationRequested();
-        ctx.Report(0.18, Name, "Scanning R6 Siege install directories for tampering...");
-        await ScanR6InstallDirectoriesAsync(ctx, ct).ConfigureAwait(false);
+            var searchRoots = new List<string>();
+            foreach (var drive in DriveInfo.GetDrives())
+            {
+                if (ct.IsCancellationRequested) return;
+                if (drive.DriveType != DriveType.Fixed) continue;
+                try { if (!drive.IsReady) continue; } catch { continue; }
+                searchRoots.Add(drive.RootDirectory.FullName);
+            }
 
-        ct.ThrowIfCancellationRequested();
-        ctx.Report(0.30, Name, "Scanning for Ubisoft/BattlEye bypass artifacts...");
-        await ScanForAntiCheatBypassArtifactsAsync(ctx, ct).ConfigureAwait(false);
+            // High-priority drop locations
+            var priorityDirs = new[]
+            {
+                Path.Combine(LocalApp,  "Temp"),
+                Path.Combine(AppData,   "Temp"),
+                Path.Combine(LocalApp,  "Programs"),
+                Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads"),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Documents"),
+            };
 
-        ct.ThrowIfCancellationRequested();
-        ctx.Report(0.42, Name, "Scanning for cheat configuration files...");
-        await ScanForCheatConfigFilesAsync(ctx, ct).ConfigureAwait(false);
+            foreach (var dir in priorityDirs)
+            {
+                if (Directory.Exists(dir) && !searchRoots.Any(r =>
+                        dir.StartsWith(r, StringComparison.OrdinalIgnoreCase)))
+                    searchRoots.Add(dir);
+            }
 
-        ct.ThrowIfCancellationRequested();
-        ctx.Report(0.55, Name, "Scanning for R6 memory offset files...");
-        await ScanForOffsetFilesAsync(ctx, ct).ConfigureAwait(false);
-
-        ct.ThrowIfCancellationRequested();
-        ctx.Report(0.65, Name, "Scanning R6 AppData directories...");
-        await ScanR6AppDataAsync(ctx, ct).ConfigureAwait(false);
-
-        ct.ThrowIfCancellationRequested();
-        ctx.Report(0.75, Name, "Scanning for Vulkan/DirectX hook DLLs...");
-        await ScanForVulkanAndDxHookDllsAsync(ctx, ct).ConfigureAwait(false);
-
-        ct.ThrowIfCancellationRequested();
-        ctx.Report(0.85, Name, "Scanning running processes...");
-        ScanRunningProcesses(ctx, ct);
-
-        ct.ThrowIfCancellationRequested();
-        ctx.Report(0.93, Name, "Scanning registry for R6 cheat entries...");
-        ScanRegistry(ctx, ct);
-
-        ctx.Report(1.0, Name, "Rainbow Six Siege cheat scan complete.");
+            foreach (var root in searchRoots)
+            {
+                if (ct.IsCancellationRequested) return;
+                await ScanDirectoryForCheatFiles(root, ctx, ct);
+            }
+        }, ct);
     }
 
-    private async Task ScanForKnownCheatFilesAsync(ScanContext ctx, CancellationToken ct)
+    private static async Task ScanDirectoryForCheatFiles(string root, ScanContext ctx, CancellationToken ct)
     {
-        foreach (var dir in ScanDirectories)
+        var stack = new Stack<string>();
+        stack.Push(root);
+
+        while (stack.Count > 0)
         {
-            ct.ThrowIfCancellationRequested();
-            if (!Directory.Exists(dir)) continue;
+            if (ct.IsCancellationRequested) return;
+            var dir = stack.Pop();
 
-            await ScanDirectoryForCheatFilesAsync(ctx, ct, dir).ConfigureAwait(false);
-
-            string[] subdirs;
+            string[] files = Array.Empty<string>();
             try
             {
-                subdirs = Directory.GetDirectories(dir, "*", SearchOption.TopDirectoryOnly);
+                files = Directory.GetFiles(dir);
             }
-            catch (UnauthorizedAccessException)
-            {
-                continue;
-            }
-
-            foreach (var sub in subdirs)
-            {
-                ct.ThrowIfCancellationRequested();
-                await ScanDirectoryForCheatFilesAsync(ctx, ct, sub).ConfigureAwait(false);
-            }
-
-            await Task.Yield();
-        }
-    }
-
-    private async Task ScanDirectoryForCheatFilesAsync(ScanContext ctx, CancellationToken ct, string dir)
-    {
-        string[] files;
-        try
-        {
-            files = Directory.GetFiles(dir, "*.*", SearchOption.TopDirectoryOnly);
-        }
-        catch (UnauthorizedAccessException)
-        {
-            return;
-        }
-
-        foreach (var file in files)
-        {
-            ct.ThrowIfCancellationRequested();
-            ctx.IncrementFiles();
-
-            var fileName = Path.GetFileName(file);
-
-            foreach (var cheatExe in KnownCheatExeNames)
-            {
-                if (!fileName.Equals(cheatExe, StringComparison.OrdinalIgnoreCase)) continue;
-
-                long fileSize = 0;
-                try { fileSize = new FileInfo(file).Length; } catch { }
-
-                ctx.AddFinding(new Finding
-                {
-                    Module = Name,
-                    Title = $"Known R6 Siege cheat executable found: {fileName}",
-                    Risk = RiskLevel.Critical,
-                    Location = file,
-                    FileName = fileName,
-                    Reason = $"The file '{fileName}' matches the name of a known Rainbow Six Siege " +
-                             "cheat application. This file should not be present on the system of a " +
-                             "legitimate player.",
-                    Detail = $"Directory: {dir} | File size: {fileSize} bytes"
-                });
-                break;
-            }
-
-            foreach (var cheatDll in KnownCheatDllNames)
-            {
-                if (!fileName.Equals(cheatDll, StringComparison.OrdinalIgnoreCase)) continue;
-
-                long fileSize = 0;
-                try { fileSize = new FileInfo(file).Length; } catch { }
-
-                ctx.AddFinding(new Finding
-                {
-                    Module = Name,
-                    Title = $"Known R6 Siege cheat DLL found: {fileName}",
-                    Risk = RiskLevel.Critical,
-                    Location = file,
-                    FileName = fileName,
-                    Reason = $"The file '{fileName}' matches the name of a known Rainbow Six Siege " +
-                             "cheat library used for process injection, Vulkan hooking, or DirectX hooking.",
-                    Detail = $"Directory: {dir} | File size: {fileSize} bytes"
-                });
-                break;
-            }
-
-            foreach (var bypassDll in UbisoftBypassArtifacts)
-            {
-                if (!fileName.Equals(bypassDll, StringComparison.OrdinalIgnoreCase)) continue;
-
-                long fileSize = 0;
-                try { fileSize = new FileInfo(file).Length; } catch { }
-
-                ctx.AddFinding(new Finding
-                {
-                    Module = Name,
-                    Title = $"Ubisoft/Uplay bypass DLL found in user directory: {fileName}",
-                    Risk = RiskLevel.High,
-                    Location = file,
-                    FileName = fileName,
-                    Reason = $"The file '{fileName}' in '{dir}' matches the naming convention of a " +
-                             "Uplay/Ubisoft Connect bypass DLL. These DLLs are used to bypass Ubisoft's " +
-                             "authentication and can also be used to evade Ubisoft's server-side anti-cheat.",
-                    Detail = $"Directory: {dir} | File size: {fileSize} bytes"
-                });
-                break;
-            }
-        }
-
-        await Task.Yield();
-    }
-
-    private async Task ScanR6InstallDirectoriesAsync(ScanContext ctx, CancellationToken ct)
-    {
-        foreach (var r6Path in R6InstallPaths)
-        {
-            ct.ThrowIfCancellationRequested();
-            if (!Directory.Exists(r6Path)) continue;
-
-            await ScanR6InstallForTamperingAsync(ctx, ct, r6Path).ConfigureAwait(false);
-        }
-    }
-
-    private async Task ScanR6InstallForTamperingAsync(ScanContext ctx, CancellationToken ct, string r6Path)
-    {
-        var battleEyeDir = Path.Combine(r6Path, "BattlEye");
-        if (Directory.Exists(battleEyeDir))
-        {
-            await ScanR6BattleEyeDirAsync(ctx, ct, battleEyeDir).ConfigureAwait(false);
-        }
-
-        string[] topFiles;
-        try
-        {
-            topFiles = Directory.GetFiles(r6Path, "*.dll", SearchOption.TopDirectoryOnly);
-        }
-        catch (UnauthorizedAccessException)
-        {
-            return;
-        }
-
-        var expectedDlls = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-        {
-            "RainbowSix.exe", "RainbowSix_BE.exe", "vulkan-1.dll",
-            "EasyAntiCheat.dll", "steam_api64.dll", "uplay_r2_loader64.dll",
-        };
-
-        foreach (var file in topFiles)
-        {
-            ct.ThrowIfCancellationRequested();
-            ctx.IncrementFiles();
-
-            var fileName = Path.GetFileName(file);
-
-            foreach (var cheatDll in KnownCheatDllNames)
-            {
-                if (!fileName.Equals(cheatDll, StringComparison.OrdinalIgnoreCase)) continue;
-
-                ctx.AddFinding(new Finding
-                {
-                    Module = Name,
-                    Title = $"Cheat DLL placed in R6 Siege install directory: {fileName}",
-                    Risk = RiskLevel.Critical,
-                    Location = file,
-                    FileName = fileName,
-                    Reason = $"The known R6 cheat DLL '{fileName}' was found inside the Rainbow Six " +
-                             $"Siege installation directory '{r6Path}'. DLLs placed in the game directory " +
-                             "are often loaded automatically by the game executable via DLL hijacking.",
-                    Detail = $"R6 install path: {r6Path}"
-                });
-                break;
-            }
-
-            if (fileName.Equals("uplay_r2_loader64.dll", StringComparison.OrdinalIgnoreCase) ||
-                fileName.Equals("uplay_r2_loader.dll", StringComparison.OrdinalIgnoreCase))
-            {
-                long fileSize = 0;
-                try { fileSize = new FileInfo(file).Length; } catch { }
-
-                if (fileSize < 50 * 1024)
-                {
-                    ctx.AddFinding(new Finding
-                    {
-                        Module = Name,
-                        Title = $"Suspiciously small uplay_r2_loader DLL in R6 directory: {fileName}",
-                        Risk = RiskLevel.High,
-                        Location = file,
-                        FileName = fileName,
-                        Reason = $"The file '{fileName}' in the R6 Siege directory is only {fileSize} bytes, " +
-                                 "which is far smaller than the legitimate Uplay loader DLL. A fake or stub " +
-                                 "uplay_r2_loader64.dll is a common technique to bypass Ubisoft authentication " +
-                                 "checks and disable anti-cheat integration.",
-                        Detail = $"File size: {fileSize} bytes | R6 path: {r6Path}"
-                    });
-                }
-            }
-        }
-
-        await Task.Yield();
-    }
-
-    private async Task ScanR6BattleEyeDirAsync(ScanContext ctx, CancellationToken ct, string battleEyeDir)
-    {
-        string[] files;
-        try
-        {
-            files = Directory.GetFiles(battleEyeDir, "*.*", SearchOption.TopDirectoryOnly);
-        }
-        catch (UnauthorizedAccessException)
-        {
-            return;
-        }
-
-        var legitimateBEFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-        {
-            "BEClient_x64.dll", "BEClient.dll", "BEService.exe",
-            "BEService_x64.exe", "BattlEye.dll", "BELauncher.exe",
-        };
-
-        foreach (var file in files)
-        {
-            ct.ThrowIfCancellationRequested();
-            ctx.IncrementFiles();
-
-            var fileName = Path.GetFileName(file);
-
-            if (legitimateBEFiles.Contains(fileName))
-            {
-                long fileSize = 0;
-                try { fileSize = new FileInfo(file).Length; } catch { }
-
-                if (fileSize < 10 * 1024)
-                {
-                    ctx.AddFinding(new Finding
-                    {
-                        Module = Name,
-                        Title = $"BattlEye file suspiciously small in R6 Siege directory: {fileName}",
-                        Risk = RiskLevel.High,
-                        Location = file,
-                        FileName = fileName,
-                        Reason = $"The BattlEye file '{fileName}' in R6 Siege's BattlEye directory is only " +
-                                 $"{fileSize} bytes — far too small for a legitimate BattlEye binary. " +
-                                 "This indicates the file may have been replaced with a stub or empty file " +
-                                 "to disable BattlEye protection in Rainbow Six Siege.",
-                        Detail = $"File size: {fileSize} bytes | BattlEye dir: {battleEyeDir}"
-                    });
-                }
-            }
-            else
-            {
-                if (fileName.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) ||
-                    fileName.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
-                {
-                    ctx.AddFinding(new Finding
-                    {
-                        Module = Name,
-                        Title = $"Unexpected executable in R6 Siege BattlEye directory: {fileName}",
-                        Risk = RiskLevel.High,
-                        Location = file,
-                        FileName = fileName,
-                        Reason = $"An unexpected executable or library '{fileName}' was found inside the " +
-                                 $"R6 Siege BattlEye directory '{battleEyeDir}'. This directory should only " +
-                                 "contain official BattlEye files. Extra DLLs/EXEs here can be used for " +
-                                 "BattlEye bypass injection when the game starts.",
-                        Detail = $"BattlEye dir: {battleEyeDir}"
-                    });
-                }
-            }
-        }
-
-        await Task.Yield();
-    }
-
-    private async Task ScanForAntiCheatBypassArtifactsAsync(ScanContext ctx, CancellationToken ct)
-    {
-        foreach (var dir in ScanDirectories)
-        {
-            ct.ThrowIfCancellationRequested();
-            if (!Directory.Exists(dir)) continue;
-
-            string[] beFiles;
-            try
-            {
-                beFiles = Directory.GetFiles(dir, "*battleye*", SearchOption.TopDirectoryOnly);
-            }
-            catch (UnauthorizedAccessException)
-            {
-                continue;
-            }
-
-            foreach (var file in beFiles)
-            {
-                ct.ThrowIfCancellationRequested();
-                ctx.IncrementFiles();
-
-                var fileName = Path.GetFileName(file);
-
-                if (fileName.Contains("bypass", StringComparison.OrdinalIgnoreCase) ||
-                    fileName.Contains("patch", StringComparison.OrdinalIgnoreCase) ||
-                    fileName.Contains("nulled", StringComparison.OrdinalIgnoreCase) ||
-                    fileName.Contains("stub", StringComparison.OrdinalIgnoreCase))
-                {
-                    ctx.AddFinding(new Finding
-                    {
-                        Module = Name,
-                        Title = $"BattlEye bypass artifact found: {fileName}",
-                        Risk = RiskLevel.Critical,
-                        Location = file,
-                        FileName = fileName,
-                        Reason = $"The file '{fileName}' in '{dir}' appears to be a BattlEye bypass artifact. " +
-                                 "BattlEye is one of two anti-cheat layers in Rainbow Six Siege. Bypassing it " +
-                                 "is a prerequisite for running most R6 cheats.",
-                        Detail = $"Directory: {dir}"
-                    });
-                }
-            }
-
-            string[] fairFightFiles;
-            try
-            {
-                fairFightFiles = Directory.GetFiles(dir, "*fairfight*", SearchOption.TopDirectoryOnly);
-            }
-            catch (UnauthorizedAccessException)
-            {
-                fairFightFiles = Array.Empty<string>();
-            }
-
-            foreach (var file in fairFightFiles)
-            {
-                ct.ThrowIfCancellationRequested();
-                ctx.IncrementFiles();
-
-                var fileName = Path.GetFileName(file);
-
-                if (fileName.Contains("bypass", StringComparison.OrdinalIgnoreCase) ||
-                    fileName.Contains("evade", StringComparison.OrdinalIgnoreCase) ||
-                    fileName.Contains("spoof", StringComparison.OrdinalIgnoreCase))
-                {
-                    ctx.AddFinding(new Finding
-                    {
-                        Module = Name,
-                        Title = $"FairFight bypass artifact found: {fileName}",
-                        Risk = RiskLevel.Critical,
-                        Location = file,
-                        FileName = fileName,
-                        Reason = $"The file '{fileName}' appears to target FairFight, Ubisoft's server-side " +
-                                 "statistical anti-cheat system used in Rainbow Six Siege. FairFight evasion " +
-                                 "tools are specifically designed to keep cheat behavior under FairFight's " +
-                                 "statistical detection thresholds.",
-                        Detail = $"Directory: {dir}"
-                    });
-                }
-            }
-
-            string[] ubisoftBypassFiles;
-            try
-            {
-                ubisoftBypassFiles = Directory.GetFiles(dir, "*uplay*bypass*", SearchOption.TopDirectoryOnly);
-            }
-            catch (UnauthorizedAccessException)
-            {
-                ubisoftBypassFiles = Array.Empty<string>();
-            }
-
-            foreach (var file in ubisoftBypassFiles)
-            {
-                ct.ThrowIfCancellationRequested();
-                ctx.IncrementFiles();
-
-                ctx.AddFinding(new Finding
-                {
-                    Module = Name,
-                    Title = $"Uplay bypass artifact found: {Path.GetFileName(file)}",
-                    Risk = RiskLevel.High,
-                    Location = file,
-                    FileName = Path.GetFileName(file),
-                    Reason = $"The file '{Path.GetFileName(file)}' in '{dir}' contains 'uplay' and 'bypass' " +
-                             "in its name, matching the pattern of Uplay/Ubisoft Connect bypass tools used " +
-                             "to circumvent Ubisoft's platform-level anti-cheat checks in R6 Siege.",
-                    Detail = $"Directory: {dir}"
-                });
-            }
-
-            await Task.Yield();
-        }
-    }
-
-    private async Task ScanForCheatConfigFilesAsync(ScanContext ctx, CancellationToken ct)
-    {
-        var configPatterns = new[] { "*.json", "*.cfg", "*.ini", "*.xml", "*.yaml", "*.yml" };
-
-        foreach (var dir in ScanDirectories)
-        {
-            ct.ThrowIfCancellationRequested();
-            if (!Directory.Exists(dir)) continue;
-
-            foreach (var pattern in configPatterns)
-            {
-                string[] files;
-                try
-                {
-                    files = Directory.GetFiles(dir, pattern, SearchOption.TopDirectoryOnly);
-                }
-                catch (UnauthorizedAccessException)
-                {
-                    continue;
-                }
-
-                foreach (var file in files)
-                {
-                    ct.ThrowIfCancellationRequested();
-                    ctx.IncrementFiles();
-
-                    await InspectConfigFileForCheatKeywordsAsync(ctx, ct, file).ConfigureAwait(false);
-                }
-            }
-
-            string[] subdirs;
-            try
-            {
-                subdirs = Directory.GetDirectories(dir, "*", SearchOption.TopDirectoryOnly);
-            }
-            catch (UnauthorizedAccessException)
-            {
-                continue;
-            }
-
-            foreach (var sub in subdirs)
-            {
-                ct.ThrowIfCancellationRequested();
-
-                foreach (var pattern in configPatterns)
-                {
-                    string[] files;
-                    try
-                    {
-                        files = Directory.GetFiles(sub, pattern, SearchOption.TopDirectoryOnly);
-                    }
-                    catch (UnauthorizedAccessException)
-                    {
-                        continue;
-                    }
-
-                    foreach (var file in files)
-                    {
-                        ct.ThrowIfCancellationRequested();
-                        ctx.IncrementFiles();
-
-                        await InspectConfigFileForCheatKeywordsAsync(ctx, ct, file).ConfigureAwait(false);
-                    }
-                }
-            }
-
-            await Task.Yield();
-        }
-    }
-
-    private async Task InspectConfigFileForCheatKeywordsAsync(ScanContext ctx, CancellationToken ct, string filePath)
-    {
-        string content;
-        try
-        {
-            using var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-            using var sr = new StreamReader(fs);
-            content = await sr.ReadToEndAsync().ConfigureAwait(false);
-        }
-        catch (IOException)
-        {
-            return;
-        }
-        catch (UnauthorizedAccessException)
-        {
-            return;
-        }
-
-        if (string.IsNullOrWhiteSpace(content)) return;
-
-        var matchedKeywords = new List<string>();
-
-        foreach (var keyword in CheatConfigKeywords)
-        {
-            if (content.Contains(keyword, StringComparison.OrdinalIgnoreCase))
-                matchedKeywords.Add(keyword);
-        }
-
-        if (matchedKeywords.Count >= 2)
-        {
-            var fileName = Path.GetFileName(filePath);
-            ctx.AddFinding(new Finding
-            {
-                Module = Name,
-                Title = $"R6 Siege cheat configuration file detected: {fileName}",
-                Risk = matchedKeywords.Count >= 4 ? RiskLevel.Critical : RiskLevel.High,
-                Location = filePath,
-                FileName = fileName,
-                Reason = $"The file '{fileName}' contains {matchedKeywords.Count} keywords associated with " +
-                         "Rainbow Six Siege cheat configuration, including aimbot, ESP, operator hacks, " +
-                         "gadget bypasses, and anti-recoil parameters.",
-                Detail = $"Matched keywords ({matchedKeywords.Count}): {string.Join(", ", matchedKeywords.Take(10))}"
-            });
-        }
-    }
-
-    private async Task ScanForOffsetFilesAsync(ScanContext ctx, CancellationToken ct)
-    {
-        var offsetFilePatterns = new[] { "*offset*", "*sdk*", "*dump*" };
-
-        foreach (var dir in ScanDirectories)
-        {
-            ct.ThrowIfCancellationRequested();
-            if (!Directory.Exists(dir)) continue;
-
-            foreach (var pattern in offsetFilePatterns)
-            {
-                string[] files;
-                try
-                {
-                    files = Directory.GetFiles(dir, pattern, SearchOption.TopDirectoryOnly);
-                }
-                catch (UnauthorizedAccessException)
-                {
-                    continue;
-                }
-
-                foreach (var file in files)
-                {
-                    ct.ThrowIfCancellationRequested();
-                    ctx.IncrementFiles();
-
-                    await InspectFileForR6OffsetsAsync(ctx, ct, file).ConfigureAwait(false);
-                }
-            }
-
-            await Task.Yield();
-        }
-    }
-
-    private async Task InspectFileForR6OffsetsAsync(ScanContext ctx, CancellationToken ct, string filePath)
-    {
-        string content;
-        try
-        {
-            using var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-            using var sr = new StreamReader(fs);
-            content = await sr.ReadToEndAsync().ConfigureAwait(false);
-        }
-        catch (IOException)
-        {
-            return;
-        }
-        catch (UnauthorizedAccessException)
-        {
-            return;
-        }
-
-        if (string.IsNullOrWhiteSpace(content)) return;
-
-        var matched = new List<string>();
-        foreach (var keyword in R6OffsetKeywords)
-        {
-            if (content.Contains(keyword, StringComparison.OrdinalIgnoreCase))
-                matched.Add(keyword);
-        }
-
-        if (matched.Count >= 3)
-        {
-            var fileName = Path.GetFileName(filePath);
-            ctx.AddFinding(new Finding
-            {
-                Module = Name,
-                Title = $"R6 Siege memory offset file detected: {fileName}",
-                Risk = RiskLevel.Critical,
-                Location = filePath,
-                FileName = fileName,
-                Reason = $"The file '{fileName}' contains {matched.Count} Rainbow Six Siege-specific " +
-                         "memory class names and offsets used for cheat development (ESP, aimbot). " +
-                         "These are produced by memory dumping tools targeting R6's ACE engine.",
-                Detail = $"R6-specific identifiers ({matched.Count}): {string.Join(", ", matched.Take(8))}"
-            });
-        }
-    }
-
-    private async Task ScanR6AppDataAsync(ScanContext ctx, CancellationToken ct)
-    {
-        var r6AppDataPaths = new[]
-        {
-            Path.Combine(RoamingAppData, "Rainbow Six Siege"),
-            Path.Combine(RoamingAppData, "Ubisoft", "Rainbow Six Siege"),
-            Path.Combine(LocalAppData, "Rainbow Six Siege"),
-            Path.Combine(LocalAppData, "Ubisoft", "Rainbow Six Siege"),
-            Path.Combine(RoamingAppData, "R6Cheat"),
-            Path.Combine(RoamingAppData, "SiegeCheat"),
-            Path.Combine(RoamingAppData, "Oxide"),
-            Path.Combine(RoamingAppData, "Greazy"),
-            Path.Combine(RoamingAppData, "HxCheats"),
-            Path.Combine(RoamingAppData, "R6Sharp"),
-            Path.Combine(LocalAppData, "R6Cheat"),
-            Path.Combine(LocalAppData, "SiegeCheat"),
-            Path.Combine(LocalAppData, "Oxide"),
-            Path.Combine(LocalAppData, "Greazy"),
-        };
-
-        foreach (var appDataPath in r6AppDataPaths)
-        {
-            ct.ThrowIfCancellationRequested();
-            if (!Directory.Exists(appDataPath)) continue;
-
-            var dirName = Path.GetFileName(appDataPath);
-            var isKnownCheatDir =
-                dirName.Equals("R6Cheat", StringComparison.OrdinalIgnoreCase) ||
-                dirName.Equals("SiegeCheat", StringComparison.OrdinalIgnoreCase) ||
-                dirName.Equals("Oxide", StringComparison.OrdinalIgnoreCase) ||
-                dirName.Equals("Greazy", StringComparison.OrdinalIgnoreCase) ||
-                dirName.Equals("HxCheats", StringComparison.OrdinalIgnoreCase) ||
-                dirName.Equals("R6Sharp", StringComparison.OrdinalIgnoreCase);
-
-            if (isKnownCheatDir)
-            {
-                ctx.AddFinding(new Finding
-                {
-                    Module = Name,
-                    Title = $"Known R6 cheat AppData directory found: {dirName}",
-                    Risk = RiskLevel.Critical,
-                    Location = appDataPath,
-                    Reason = $"A directory named '{dirName}' was found in AppData, matching the name of a " +
-                             "known Rainbow Six Siege cheat tool. This directory is created by the cheat " +
-                             "software to store configuration, logs, and cache files.",
-                    Detail = $"Path: {appDataPath}"
-                });
-            }
-
-            string[] files;
-            try
-            {
-                files = Directory.GetFiles(appDataPath, "*.*", SearchOption.AllDirectories);
-            }
-            catch (UnauthorizedAccessException)
-            {
-                continue;
-            }
+            catch (UnauthorizedAccessException) { }
+            catch (IOException) { }
 
             foreach (var file in files)
             {
-                ct.ThrowIfCancellationRequested();
-                ctx.IncrementFiles();
-
-                var fileName = Path.GetFileName(file);
-
-                if (fileName.EndsWith(".log", StringComparison.OrdinalIgnoreCase))
-                {
-                    await InspectLogFileForCheatSignaturesAsync(ctx, ct, file).ConfigureAwait(false);
-                }
-
-                if (fileName.EndsWith(".json", StringComparison.OrdinalIgnoreCase) ||
-                    fileName.EndsWith(".cfg", StringComparison.OrdinalIgnoreCase) ||
-                    fileName.EndsWith(".ini", StringComparison.OrdinalIgnoreCase))
-                {
-                    await InspectConfigFileForCheatKeywordsAsync(ctx, ct, file).ConfigureAwait(false);
-                }
-
-                foreach (var cheatExe in KnownCheatExeNames)
-                {
-                    if (!fileName.Equals(cheatExe, StringComparison.OrdinalIgnoreCase)) continue;
-
-                    ctx.AddFinding(new Finding
-                    {
-                        Module = Name,
-                        Title = $"R6 cheat executable in AppData: {fileName}",
-                        Risk = RiskLevel.Critical,
-                        Location = file,
-                        FileName = fileName,
-                        Reason = $"The known R6 Siege cheat executable '{fileName}' was found in the " +
-                                 $"AppData directory '{appDataPath}'. Cheats stored in AppData are often " +
-                                 "designed to run without elevated privileges.",
-                        Detail = $"AppData path: {appDataPath}"
-                    });
-                    break;
-                }
-            }
-
-            await Task.Yield();
-        }
-    }
-
-    private async Task InspectLogFileForCheatSignaturesAsync(ScanContext ctx, CancellationToken ct, string logFile)
-    {
-        string content;
-        try
-        {
-            using var fs = new FileStream(logFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-            using var sr = new StreamReader(fs);
-            content = await sr.ReadToEndAsync().ConfigureAwait(false);
-        }
-        catch (IOException)
-        {
-            return;
-        }
-        catch (UnauthorizedAccessException)
-        {
-            return;
-        }
-
-        if (string.IsNullOrWhiteSpace(content)) return;
-
-        var matchedSignatures = new List<string>();
-
-        foreach (var sig in LogCheatSignatures)
-        {
-            if (content.Contains(sig, StringComparison.OrdinalIgnoreCase))
-                matchedSignatures.Add(sig);
-        }
-
-        if (matchedSignatures.Count >= 1)
-        {
-            var fileName = Path.GetFileName(logFile);
-            ctx.AddFinding(new Finding
-            {
-                Module = Name,
-                Title = $"R6 Siege cheat log signatures detected: {fileName}",
-                Risk = RiskLevel.High,
-                Location = logFile,
-                FileName = fileName,
-                Reason = $"The log file '{fileName}' contains {matchedSignatures.Count} text signatures " +
-                         "associated with R6 Siege cheat software, including Oxide, Greazy, R6Sharp, " +
-                         "BattlEye bypass confirmations, and ESP/aimbot activation messages.",
-                Detail = $"Matched signatures ({matchedSignatures.Count}): {string.Join(", ", matchedSignatures.Take(5))}"
-            });
-        }
-    }
-
-    private async Task ScanForVulkanAndDxHookDllsAsync(ScanContext ctx, CancellationToken ct)
-    {
-        var vulkanAndDxHookNames = new[]
-        {
-            "vulkan-1.dll",
-            "VkLayer_r6_esp.dll",
-            "VkLayer_siege_hack.dll",
-            "VkLayer_cheat.dll",
-            "SiegeVulkanLayer.dll",
-            "r6_vulkan_layer.dll",
-            "R6VulkanHook.dll",
-            "dxgi.dll",
-            "d3d11.dll",
-            "d3d12.dll",
-            "dxgi_hook_r6.dll",
-            "d3d11_hook_r6.dll",
-            "d3d12_hook_r6.dll",
-            "dxgi_r6.dll",
-        };
-
-        var suspiciousDllContexts = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-        {
-            "VkLayer_r6_esp.dll",
-            "VkLayer_siege_hack.dll",
-            "VkLayer_cheat.dll",
-            "SiegeVulkanLayer.dll",
-            "r6_vulkan_layer.dll",
-            "R6VulkanHook.dll",
-            "dxgi_hook_r6.dll",
-            "d3d11_hook_r6.dll",
-            "d3d12_hook_r6.dll",
-            "dxgi_r6.dll",
-        };
-
-        foreach (var r6Path in R6InstallPaths)
-        {
-            ct.ThrowIfCancellationRequested();
-            if (!Directory.Exists(r6Path)) continue;
-
-            foreach (var hookDll in vulkanAndDxHookNames)
-            {
-                var fullPath = Path.Combine(r6Path, hookDll);
-                if (!File.Exists(fullPath)) continue;
+                if (ct.IsCancellationRequested) return;
+                var fn = Path.GetFileName(file);
+                if (!KnownCheatFileNames.Contains(fn)) continue;
 
                 ctx.IncrementFiles();
-
-                if (suspiciousDllContexts.Contains(hookDll))
-                {
-                    ctx.AddFinding(new Finding
-                    {
-                        Module = Name,
-                        Title = $"Vulkan/DX hook cheat DLL in R6 install: {hookDll}",
-                        Risk = RiskLevel.Critical,
-                        Location = fullPath,
-                        FileName = hookDll,
-                        Reason = $"The file '{hookDll}' found in the Rainbow Six Siege installation directory " +
-                                 $"'{r6Path}' is a Vulkan or DirectX hook DLL used for rendering-level " +
-                                 "wallhack and ESP overlays. R6 Siege uses Vulkan, making Vulkan layer " +
-                                 "injection a common vector for visual cheats.",
-                        Detail = $"R6 install path: {r6Path}"
-                    });
-                }
-                else if (hookDll.Equals("dxgi.dll", StringComparison.OrdinalIgnoreCase) ||
-                         hookDll.Equals("d3d11.dll", StringComparison.OrdinalIgnoreCase) ||
-                         hookDll.Equals("d3d12.dll", StringComparison.OrdinalIgnoreCase))
-                {
-                    ctx.AddFinding(new Finding
-                    {
-                        Module = Name,
-                        Title = $"Potentially proxied DirectX DLL in R6 Siege directory: {hookDll}",
-                        Risk = RiskLevel.High,
-                        Location = fullPath,
-                        FileName = hookDll,
-                        Reason = $"The file '{hookDll}' was found in the R6 Siege directory. While this " +
-                                 "file name is a standard Windows DirectX component, its presence inside " +
-                                 "the game directory indicates a DLL proxy technique commonly used to " +
-                                 "inject wallhack and ESP overlays into the game's render pipeline.",
-                        Detail = $"R6 install path: {r6Path}"
-                    });
-                }
-            }
-
-            await Task.Yield();
-        }
-
-        var vulkanLayerPaths = new[]
-        {
-            Path.Combine(UserProfile, ".vulkan", "explicit_layer.d"),
-            Path.Combine(UserProfile, ".vulkan", "implicit_layer.d"),
-            Path.Combine(LocalAppData, "vulkan", "explicit_layer.d"),
-            Path.Combine(LocalAppData, "vulkan", "implicit_layer.d"),
-        };
-
-        foreach (var layerPath in vulkanLayerPaths)
-        {
-            ct.ThrowIfCancellationRequested();
-            if (!Directory.Exists(layerPath)) continue;
-
-            string[] layerFiles;
-            try
-            {
-                layerFiles = Directory.GetFiles(layerPath, "*.json", SearchOption.TopDirectoryOnly);
-            }
-            catch (UnauthorizedAccessException)
-            {
-                continue;
-            }
-
-            foreach (var layerFile in layerFiles)
-            {
-                ct.ThrowIfCancellationRequested();
-                ctx.IncrementFiles();
-
-                await InspectVulkanLayerManifestAsync(ctx, ct, layerFile).ConfigureAwait(false);
-            }
-
-            await Task.Yield();
-        }
-    }
-
-    private async Task InspectVulkanLayerManifestAsync(ScanContext ctx, CancellationToken ct, string filePath)
-    {
-        string content;
-        try
-        {
-            using var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-            using var sr = new StreamReader(fs);
-            content = await sr.ReadToEndAsync().ConfigureAwait(false);
-        }
-        catch (IOException)
-        {
-            return;
-        }
-        catch (UnauthorizedAccessException)
-        {
-            return;
-        }
-
-        if (string.IsNullOrWhiteSpace(content)) return;
-
-        var suspiciousLayerKeywords = new[]
-        {
-            "esp", "wallhack", "cheat", "hack", "siege_layer", "r6_layer",
-            "rainbow", "siege", "overlay_hack", "aimbot", "r6s_hook",
-        };
-
-        var matched = new List<string>();
-        foreach (var kw in suspiciousLayerKeywords)
-        {
-            if (content.Contains(kw, StringComparison.OrdinalIgnoreCase))
-                matched.Add(kw);
-        }
-
-        if (matched.Count >= 1)
-        {
-            var fileName = Path.GetFileName(filePath);
-            ctx.AddFinding(new Finding
-            {
-                Module = Name,
-                Title = $"Suspicious Vulkan layer manifest referencing R6 Siege: {fileName}",
-                Risk = RiskLevel.Critical,
-                Location = filePath,
-                FileName = fileName,
-                Reason = $"The Vulkan layer manifest '{fileName}' contains {matched.Count} keywords " +
-                         "associated with Rainbow Six Siege cheating (wallhack, ESP, overlay injection). " +
-                         "Implicit Vulkan layers are loaded for every Vulkan application and can inject " +
-                         "code into R6 Siege's rendering pipeline without requiring process injection.",
-                Detail = $"Matched keywords ({matched.Count}): {string.Join(", ", matched)}"
-            });
-        }
-    }
-
-    private void ScanRunningProcesses(ScanContext ctx, CancellationToken ct)
-    {
-        System.Diagnostics.Process[] processes;
-        try
-        {
-            processes = System.Diagnostics.Process.GetProcesses();
-        }
-        catch
-        {
-            return;
-        }
-
-        foreach (var proc in processes)
-        {
-            ct.ThrowIfCancellationRequested();
-            ctx.IncrementProcesses();
-
-            string procName;
-            try
-            {
-                procName = proc.ProcessName;
-            }
-            catch
-            {
-                proc.Dispose();
-                continue;
-            }
-
-            foreach (var cheatProc in KnownCheatProcessNames)
-            {
-                if (!procName.Equals(cheatProc, StringComparison.OrdinalIgnoreCase)) continue;
-
-                string procPath = string.Empty;
-                try { procPath = proc.MainModule?.FileName ?? string.Empty; } catch { }
-
                 ctx.AddFinding(new Finding
                 {
-                    Module = Name,
-                    Title = $"R6 Siege cheat process currently running: {procName}",
-                    Risk = RiskLevel.Critical,
-                    Location = procPath,
-                    FileName = procName + ".exe",
-                    Reason = $"The process '{procName}' (PID: {proc.Id}) is currently running and matches " +
-                             "the name of a known Rainbow Six Siege cheat tool. An active cheat process " +
-                             "indicates real-time cheat use or readiness.",
-                    Detail = $"PID: {proc.Id} | Path: {(string.IsNullOrEmpty(procPath) ? "unavailable" : procPath)}"
+                    Module   = "Rainbow Six Siege Cheat Detection",
+                    Title    = $"Known R6S cheat file: {fn}",
+                    Risk     = RiskLevel.Critical,
+                    Location = file,
+                    FileName = fn,
+                    Reason   = $"File '{fn}' matches a known Rainbow Six Siege cheat executable or DLL name. " +
+                               "This file is associated with aimbot, ESP, wallhack, no-recoil, drone ESP " +
+                               "or trigger-bot functionality targeting Rainbow Six Siege / Ubisoft.",
+                    Detail   = $"Full path: {file}",
                 });
-                break;
             }
 
-            proc.Dispose();
-        }
-    }
-
-    private void ScanRegistry(ScanContext ctx, CancellationToken ct)
-    {
-        ct.ThrowIfCancellationRequested();
-        ScanRunKey(ctx, ct);
-
-        ct.ThrowIfCancellationRequested();
-        ScanIfeoForR6Binaries(ctx, ct);
-
-        ct.ThrowIfCancellationRequested();
-        ScanBattleEyeServiceKey(ctx);
-
-        ct.ThrowIfCancellationRequested();
-        ScanUninstallForCheatSoftware(ctx, ct);
-
-        ct.ThrowIfCancellationRequested();
-        ScanVulkanRegistryLayers(ctx, ct);
-    }
-
-    private void ScanRunKey(ScanContext ctx, CancellationToken ct)
-    {
-        var runKeys = new[]
-        {
-            @"SOFTWARE\Microsoft\Windows\CurrentVersion\Run",
-            @"SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce",
-        };
-
-        foreach (var keyPath in runKeys)
-        {
-            ct.ThrowIfCancellationRequested();
-
+            string[] subdirs = Array.Empty<string>();
             try
             {
-                using var key = Registry.CurrentUser.OpenSubKey(keyPath, writable: false);
-                if (key is null) continue;
+                subdirs = Directory.GetDirectories(dir);
+            }
+            catch (UnauthorizedAccessException) { }
+            catch (IOException) { }
 
-                ctx.IncrementRegistryKeys();
+            foreach (var sub in subdirs)
+                stack.Push(sub);
+        }
 
-                foreach (var valueName in key.GetValueNames())
+        await Task.CompletedTask;
+    }
+
+    // -------------------------------------------------------------------------
+    // Sub-check: BattlEye bypass artifacts specific to R6S
+    // -------------------------------------------------------------------------
+    private Task CheckBattleEyeBypassArtifacts(ScanContext ctx, CancellationToken ct)
+    {
+        return Task.Run(async () =>
+        {
+            ctx.Report(0.13, Name, "Checking BattlEye integrity for Rainbow Six Siege...");
+
+            // R6S game directory candidates
+            var r6GameRoots = new[]
+            {
+                Path.Combine(ProgramFiles,    "Ubisoft", "Ubisoft Game Launcher", "games",
+                             "Tom Clancy's Rainbow Six Siege"),
+                Path.Combine(ProgramFilesX86, "Ubisoft", "Ubisoft Game Launcher", "games",
+                             "Tom Clancy's Rainbow Six Siege"),
+                Path.Combine(ProgramFiles,    "Rainbow Six Siege"),
+                Path.Combine(ProgramFilesX86, "Rainbow Six Siege"),
+            };
+
+            // BattlEye expected files within the game's BattlEye subdirectory
+            var beExpectedFiles = new[]
+            {
+                "BEClient.dll",
+                "BEClient_x64.dll",
+                "BEService.exe",
+                "BEService_x64.exe",
+                "BattlEye.dll",
+                "Battleye_launcher.exe",
+            };
+
+            // Known BattlEye bypass file names dropped into R6S directories
+            var beBypassNames = new[]
+            {
+                "BEClient_bypass.dll",
+                "BEClient_stub.dll",
+                "BEClient_patch.dll",
+                "BEService_bypass.exe",
+                "BEService_stub.exe",
+                "battleye_bypass.dll",
+                "battleye_patch.dll",
+                "be_bypass.dll",
+                "be_hook.dll",
+                "anticheat_bypass.exe",
+                "be_disable.exe",
+            };
+
+            foreach (var gameRoot in r6GameRoots)
+            {
+                if (ct.IsCancellationRequested) return;
+                if (!Directory.Exists(gameRoot)) continue;
+
+                var beDir = Path.Combine(gameRoot, "BattlEye");
+
+                // Check that BattlEye directory exists at all
+                if (!Directory.Exists(beDir))
                 {
-                    ct.ThrowIfCancellationRequested();
-                    ctx.IncrementRegistryKeys();
-
-                    var value = key.GetValue(valueName)?.ToString() ?? string.Empty;
-
-                    foreach (var cheatExe in KnownCheatExeNames)
+                    ctx.AddFinding(new Finding
                     {
-                        if (!value.Contains(cheatExe, StringComparison.OrdinalIgnoreCase)) continue;
+                        Module   = "Rainbow Six Siege Cheat Detection",
+                        Title    = "BattlEye directory missing from R6S installation",
+                        Risk     = RiskLevel.Critical,
+                        Location = gameRoot,
+                        FileName = "BattlEye",
+                        Reason   = "The BattlEye anti-cheat directory is absent from the Rainbow Six Siege " +
+                                   $"installation at '{gameRoot}'. BattlEye bypass tools sometimes remove or " +
+                                   "rename the entire BattlEye directory to prevent the anti-cheat from loading.",
+                        Detail   = $"Expected: {beDir}",
+                    });
+                    continue;
+                }
 
+                // Check each expected BE file
+                foreach (var binaryName in beExpectedFiles)
+                {
+                    if (ct.IsCancellationRequested) return;
+                    var binaryPath = Path.Combine(beDir, binaryName);
+
+                    if (!File.Exists(binaryPath))
+                    {
+                        ctx.IncrementFiles();
                         ctx.AddFinding(new Finding
                         {
-                            Module = Name,
-                            Title = $"R6 Siege cheat registered in startup Run key: {valueName}",
-                            Risk = RiskLevel.Critical,
-                            Location = $@"HKCU\{keyPath}\{valueName}",
-                            Reason = $"The registry autorun value '{valueName}' under '{keyPath}' references " +
-                                     $"the known R6 Siege cheat '{cheatExe}'. This ensures the cheat launches " +
-                                     "automatically with Windows before Rainbow Six Siege starts.",
-                            Detail = $"Registry value: {TruncateString(value, 200)}"
+                            Module   = "Rainbow Six Siege Cheat Detection",
+                            Title    = $"BattlEye binary missing in R6S: {binaryName}",
+                            Risk     = RiskLevel.High,
+                            Location = beDir,
+                            FileName = binaryName,
+                            Reason   = $"BattlEye file '{binaryName}' is absent from the R6S BattlEye " +
+                                       $"directory '{beDir}'. BattlEye bypass tools delete or replace these " +
+                                       "files to disable kernel-level anti-cheat protection.",
+                            Detail   = $"Expected: {binaryPath}",
                         });
-                        break;
+                        continue;
+                    }
+
+                    ctx.IncrementFiles();
+
+                    // Check for stub files (implausibly small)
+                    try
+                    {
+                        var fi = new FileInfo(binaryPath);
+                        if (fi.Length < 8_192)
+                        {
+                            ctx.AddFinding(new Finding
+                            {
+                                Module   = "Rainbow Six Siege Cheat Detection",
+                                Title    = $"Suspiciously small BattlEye binary: {binaryName}",
+                                Risk     = RiskLevel.Critical,
+                                Location = binaryPath,
+                                FileName = binaryName,
+                                Reason   = $"BattlEye file '{binaryName}' exists but is only {fi.Length} bytes. " +
+                                           "Legitimate BattlEye binaries are significantly larger. " +
+                                           "Bypass tools replace them with stub files that do nothing, " +
+                                           "disabling anti-cheat scanning for Rainbow Six Siege.",
+                                Detail   = $"File size: {fi.Length} bytes | Path: {binaryPath}",
+                            });
+                        }
+                    }
+                    catch (IOException) { }
+                }
+
+                // Check whether BEService is disabled in registry
+                try
+                {
+                    ctx.IncrementRegistryKeys();
+                    using var beServiceKey = Registry.LocalMachine.OpenSubKey(
+                        @"SYSTEM\CurrentControlSet\Services\BEService", writable: false);
+                    if (beServiceKey is not null)
+                    {
+                        var startType = beServiceKey.GetValue("Start") as int?;
+                        if (startType.HasValue && startType.Value == 4) // 4 = Disabled
+                        {
+                            ctx.AddFinding(new Finding
+                            {
+                                Module   = "Rainbow Six Siege Cheat Detection",
+                                Title    = "BattlEye service (BEService) is disabled",
+                                Risk     = RiskLevel.Critical,
+                                Location = @"HKLM\SYSTEM\CurrentControlSet\Services\BEService",
+                                Reason   = "The BattlEye service 'BEService' is configured as Disabled " +
+                                           "(Start=4) in the registry. BattlEye bypass tools disable this " +
+                                           "service to prevent the kernel-level anti-cheat from running " +
+                                           "when Rainbow Six Siege is launched.",
+                                Detail   = $"Start type: {startType} (4 = Disabled)",
+                            });
+                        }
                     }
                 }
-            }
-            catch (UnauthorizedAccessException) { }
-        }
-    }
+                catch { }
 
-    private void ScanIfeoForR6Binaries(ScanContext ctx, CancellationToken ct)
-    {
-        const string ifeoBase = @"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options";
-        var r6Binaries = new[]
-        {
-            "RainbowSix.exe",
-            "RainbowSix_BE.exe",
-            "BEService.exe",
-        };
-
-        foreach (var binary in r6Binaries)
-        {
-            ct.ThrowIfCancellationRequested();
-
-            try
-            {
-                using var key = Registry.LocalMachine.OpenSubKey(
-                    Path.Combine(ifeoBase, binary), writable: false);
-
-                ctx.IncrementRegistryKeys();
-                if (key is null) continue;
-
-                var debugger = key.GetValue("Debugger")?.ToString();
-                ctx.IncrementRegistryKeys();
-
-                if (!string.IsNullOrWhiteSpace(debugger))
+                // Look for known BE bypass DLLs / patches inside the game tree
+                foreach (var bypassName in beBypassNames)
                 {
+                    if (ct.IsCancellationRequested) return;
+                    string? bypassFile = null;
+                    try
+                    {
+                        bypassFile = Directory.GetFiles(gameRoot, bypassName, SearchOption.AllDirectories)
+                                              .FirstOrDefault();
+                    }
+                    catch (UnauthorizedAccessException) { }
+                    catch (IOException) { }
+
+                    if (bypassFile is null) continue;
+
+                    ctx.IncrementFiles();
                     ctx.AddFinding(new Finding
                     {
-                        Module = Name,
-                        Title = $"IFEO debugger set for R6 Siege binary: {binary}",
-                        Risk = RiskLevel.Critical,
-                        Location = $@"HKLM\{ifeoBase}\{binary}",
-                        Reason = $"An Image File Execution Options debugger entry was found for '{binary}'. " +
-                                 "When the R6 Siege executable or BattlEye starts, Windows will launch the " +
-                                 "specified debugger instead, which is used to bypass anti-cheat or inject cheats.",
-                        Detail = $"Debugger path: {debugger}"
+                        Module   = "Rainbow Six Siege Cheat Detection",
+                        Title    = $"BattlEye bypass artifact in R6S directory: {bypassName}",
+                        Risk     = RiskLevel.Critical,
+                        Location = bypassFile,
+                        FileName = bypassName,
+                        Reason   = $"Known BattlEye bypass file '{bypassName}' found inside the " +
+                                   $"Rainbow Six Siege game directory. This file is used to neutralise " +
+                                   "BattlEye's kernel-level anti-cheat, enabling cheats that would " +
+                                   "otherwise be detected and result in a ban.",
+                        Detail   = $"Path: {bypassFile}",
                     });
                 }
             }
-            catch (UnauthorizedAccessException) { }
-        }
+
+            await Task.CompletedTask;
+        }, ct);
     }
 
-    private void ScanBattleEyeServiceKey(ScanContext ctx)
+    // -------------------------------------------------------------------------
+    // Sub-check: R6S data directories —
+    //   %LOCALAPPDATA%\Ubisoft Game Launcher
+    //   %APPDATA%\Ubisoft
+    //   %LOCALAPPDATA%\Rainbow Six Siege
+    // -------------------------------------------------------------------------
+    private Task CheckR6SDataDirectories(ScanContext ctx, CancellationToken ct)
     {
-        const string beServiceKey = @"SYSTEM\CurrentControlSet\Services\BEService";
-
-        try
+        return Task.Run(async () =>
         {
-            using var key = Registry.LocalMachine.OpenSubKey(beServiceKey, writable: false);
-            ctx.IncrementRegistryKeys();
+            ctx.Report(0.24, Name, "Inspecting R6S and Ubisoft data directories...");
 
-            if (key is null) return;
-
-            var startValue = key.GetValue("Start");
-            ctx.IncrementRegistryKeys();
-
-            if (startValue is int startInt && startInt == 4)
+            var dataDirs = new[]
             {
+                Path.Combine(LocalApp, "Ubisoft Game Launcher"),
+                Path.Combine(LocalApp, "Ubisoft"),
+                Path.Combine(LocalApp, "Rainbow Six Siege"),
+                Path.Combine(AppData,  "Ubisoft"),
+                Path.Combine(AppData,  "Ubisoft Game Launcher"),
+            };
+
+            var suspiciousExtensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ".exe", ".dll", ".sys", ".drv", ".asi",
+            };
+
+            // DLL/EXE names that are legitimately part of Ubisoft Connect
+            var legitimateUbisoftFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                "UbisoftGameLauncher.exe",
+                "UplayWebCore.exe",
+                "UbisoftConnect.exe",
+                "upc.exe",
+                "uplay_r2.dll",
+                "ubi_services.dll",
+                "upc_r2.dll",
+                "uplaypc_r2.dll",
+                "EOSSDK-Win64-Shipping.dll",
+                "EOSSDK-Win32-Shipping.dll",
+            };
+
+            foreach (var dataDir in dataDirs)
+            {
+                if (ct.IsCancellationRequested) return;
+                if (!Directory.Exists(dataDir)) continue;
+
+                // Check cache / temp / log subdirectories for dropped executables
+                var suspectSubdirs = new[] { "cache", "temp", "logs", "tmp", "data" };
+                foreach (var sub in suspectSubdirs)
+                {
+                    if (ct.IsCancellationRequested) return;
+                    var subPath = Path.Combine(dataDir, sub);
+                    if (!Directory.Exists(subPath)) continue;
+
+                    string[] files = Array.Empty<string>();
+                    try { files = Directory.GetFiles(subPath, "*", SearchOption.AllDirectories); }
+                    catch (UnauthorizedAccessException) { }
+                    catch (IOException) { }
+
+                    foreach (var file in files)
+                    {
+                        if (ct.IsCancellationRequested) return;
+                        var fn = Path.GetFileName(file);
+                        var ext = Path.GetExtension(file);
+
+                        if (!suspiciousExtensions.Contains(ext)) continue;
+                        if (legitimateUbisoftFiles.Contains(fn)) continue;
+
+                        ctx.IncrementFiles();
+                        ctx.AddFinding(new Finding
+                        {
+                            Module   = "Rainbow Six Siege Cheat Detection",
+                            Title    = $"Suspicious executable in Ubisoft/R6S data directory: {fn}",
+                            Risk     = RiskLevel.High,
+                            Location = file,
+                            FileName = fn,
+                            Reason   = $"Executable file '{fn}' found inside the Ubisoft/R6S data " +
+                                       $"directory '{subPath}'. Executables in launcher cache, log or " +
+                                       "temp subdirectories are abnormal and may indicate a cheat dropper " +
+                                       "or injector placed alongside Ubisoft Connect files to evade detection.",
+                            Detail   = $"Directory: {sub} | Full path: {file}",
+                        });
+                    }
+                }
+
+                // Scan for cheat config files inside the Ubisoft / R6S data tree
+                await ScanDirectoryForCheatConfigs(dataDir, ctx, ct, maxDepth: 5);
+            }
+        }, ct);
+    }
+
+    // -------------------------------------------------------------------------
+    // Sub-check: R6S cheat configuration files
+    // -------------------------------------------------------------------------
+    private Task CheckCheatConfigFiles(ScanContext ctx, CancellationToken ct)
+    {
+        return Task.Run(async () =>
+        {
+            ctx.Report(0.35, Name, "Scanning for R6S cheat configuration files...");
+
+            var cheatConfigNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                "r6_config.json",
+                "r6_config.ini",
+                "siege_config.json",
+                "siege_config.ini",
+                "r6siege_config.json",
+                "r6siege_config.ini",
+                "r6_settings.json",
+                "siege_settings.json",
+                "r6_aimbot.json",
+                "r6_esp.json",
+                "r6_wallhack.json",
+                "r6_cheat.json",
+                "r6_cheat.ini",
+                "cheat_config.json",
+                "cheat_config.ini",
+                "hack_config.json",
+                "loader_config.json",
+                "aimbot_settings.json",
+                "aimbot_settings.ini",
+                "esp_settings.json",
+                "config.json",
+                "settings.json",
+                "settings.ini",
+                "config.ini",
+            };
+
+            var searchDirs = new[]
+            {
+                Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads"),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Documents"),
+                Path.Combine(LocalApp, "Temp"),
+                Path.Combine(AppData,  "Temp"),
+                Path.Combine(LocalApp, "Ubisoft Game Launcher"),
+                Path.Combine(LocalApp, "Rainbow Six Siege"),
+                Path.Combine(AppData,  "Ubisoft"),
+            };
+
+            foreach (var dir in searchDirs)
+            {
+                if (ct.IsCancellationRequested) return;
+                if (!Directory.Exists(dir)) continue;
+
+                string[] files = Array.Empty<string>();
+                try { files = Directory.GetFiles(dir, "*", SearchOption.AllDirectories); }
+                catch (UnauthorizedAccessException) { }
+                catch (IOException) { }
+
+                foreach (var file in files)
+                {
+                    if (ct.IsCancellationRequested) return;
+                    var fn = Path.GetFileName(file);
+                    var ext = Path.GetExtension(file);
+
+                    bool isNamedCheatConfig = cheatConfigNames.Contains(fn);
+                    bool isTextFile = ext.Equals(".json", StringComparison.OrdinalIgnoreCase)
+                                   || ext.Equals(".ini",  StringComparison.OrdinalIgnoreCase)
+                                   || ext.Equals(".cfg",  StringComparison.OrdinalIgnoreCase)
+                                   || ext.Equals(".txt",  StringComparison.OrdinalIgnoreCase);
+
+                    if (!isNamedCheatConfig && !isTextFile) continue;
+
+                    string content;
+                    try
+                    {
+                        using var fs = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                        using var sr = new StreamReader(fs);
+                        content = await sr.ReadToEndAsync(ct);
+                    }
+                    catch (IOException) { continue; }
+                    catch (UnauthorizedAccessException) { continue; }
+
+                    var hitKeyword = CheatConfigKeywords.FirstOrDefault(k =>
+                        content.Contains(k, StringComparison.OrdinalIgnoreCase));
+
+                    if (hitKeyword is null)
+                    {
+                        hitKeyword = KnownCheatCommunityStrings.FirstOrDefault(k =>
+                            content.Contains(k, StringComparison.OrdinalIgnoreCase));
+                    }
+
+                    if (hitKeyword is null && !isNamedCheatConfig) continue;
+
+                    ctx.IncrementFiles();
+                    ctx.AddFinding(new Finding
+                    {
+                        Module   = "Rainbow Six Siege Cheat Detection",
+                        Title    = hitKeyword is not null
+                            ? $"R6S cheat config keyword found: {fn}"
+                            : $"Suspicious R6S cheat config file: {fn}",
+                        Risk     = RiskLevel.High,
+                        Location = file,
+                        FileName = fn,
+                        Reason   = hitKeyword is not null
+                            ? $"Config file '{fn}' contains the cheat keyword '{hitKeyword}', which is " +
+                              "characteristic of Rainbow Six Siege aimbot, ESP, wallhack, no-recoil, " +
+                              "drone ESP, laser-sight or through-smoke configuration files."
+                            : $"File '{fn}' has a name matching a known R6S cheat configuration " +
+                              "file pattern and may contain cheat settings.",
+                        Detail   = hitKeyword is not null
+                            ? $"Keyword: '{hitKeyword}' | Path: {file}"
+                            : $"Path: {file}",
+                    });
+                }
+            }
+        }, ct);
+    }
+
+    // -------------------------------------------------------------------------
+    // Helper: scan a directory tree for cheat config content
+    // -------------------------------------------------------------------------
+    private static async Task ScanDirectoryForCheatConfigs(
+        string root, ScanContext ctx, CancellationToken ct, int maxDepth = 4)
+    {
+        var stack = new Stack<(string dir, int depth)>();
+        stack.Push((root, 0));
+
+        while (stack.Count > 0)
+        {
+            if (ct.IsCancellationRequested) return;
+            var (dir, depth) = stack.Pop();
+
+            string[] files = Array.Empty<string>();
+            try { files = Directory.GetFiles(dir); }
+            catch (UnauthorizedAccessException) { }
+            catch (IOException) { }
+
+            foreach (var file in files)
+            {
+                if (ct.IsCancellationRequested) return;
+                var ext = Path.GetExtension(file);
+                if (!ext.Equals(".json", StringComparison.OrdinalIgnoreCase)
+                 && !ext.Equals(".ini",  StringComparison.OrdinalIgnoreCase)
+                 && !ext.Equals(".cfg",  StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                string content;
+                try
+                {
+                    using var fs = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                    using var sr = new StreamReader(fs);
+                    content = await sr.ReadToEndAsync(ct);
+                }
+                catch (IOException) { continue; }
+
+                var hitKeyword = CheatConfigKeywords.FirstOrDefault(k =>
+                    content.Contains(k, StringComparison.OrdinalIgnoreCase))
+                    ?? KnownCheatCommunityStrings.FirstOrDefault(k =>
+                    content.Contains(k, StringComparison.OrdinalIgnoreCase));
+
+                if (hitKeyword is null) continue;
+
+                ctx.IncrementFiles();
                 ctx.AddFinding(new Finding
                 {
-                    Module = Name,
-                    Title = "BattlEye service (BEService) disabled in registry",
-                    Risk = RiskLevel.High,
-                    Location = $@"HKLM\{beServiceKey}",
-                    Reason = "The BattlEye service (BEService) is set to Disabled (Start=4) in the registry. " +
-                             "Rainbow Six Siege uses BattlEye as one of its anti-cheat layers. Disabling " +
-                             "this service is a standard step in setting up many R6 cheats.",
-                    Detail = $"Start value: {startInt} (Disabled=4)"
+                    Module   = "Rainbow Six Siege Cheat Detection",
+                    Title    = $"R6S cheat config in Ubisoft data directory: {Path.GetFileName(file)}",
+                    Risk     = RiskLevel.High,
+                    Location = file,
+                    FileName = Path.GetFileName(file),
+                    Reason   = $"File '{Path.GetFileName(file)}' in the R6S / Ubisoft data tree " +
+                               $"contains the cheat keyword '{hitKeyword}'. This suggests a cheat tool " +
+                               "dropped its configuration alongside legitimate Ubisoft files.",
+                    Detail   = $"Keyword: '{hitKeyword}' | Path: {file}",
                 });
             }
+
+            if (depth >= maxDepth) continue;
+            string[] subdirs = Array.Empty<string>();
+            try { subdirs = Directory.GetDirectories(dir); }
+            catch (UnauthorizedAccessException) { }
+            catch (IOException) { }
+
+            foreach (var sub in subdirs)
+                stack.Push((sub, depth + 1));
         }
-        catch (UnauthorizedAccessException) { }
     }
 
-    private void ScanUninstallForCheatSoftware(ScanContext ctx, CancellationToken ct)
+    // -------------------------------------------------------------------------
+    // Sub-check: drone / camera / thermal hack artifacts
+    // -------------------------------------------------------------------------
+    private Task CheckDroneCameraHackTools(ScanContext ctx, CancellationToken ct)
     {
-        const string uninstallKey = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall";
-
-        var cheatAppNames = new[]
+        return Task.Run(async () =>
         {
-            "r6cheat", "siegecheat", "r6hack", "rainbowcheat", "oxide r6",
-            "greazy", "hxcheats", "r6sharp", "r6s-esp", "siege-aimbot",
-            "r6 esp", "siege esp", "rainbow six cheat", "r6 siege cheat",
-            "siege aimbot", "r6 aimbot", "uplay bypass", "ubisoft bypass",
-        };
+            ctx.Report(0.47, Name, "Scanning for R6S drone/camera hack tools...");
 
-        foreach (var hive in new[] { Registry.LocalMachine, Registry.CurrentUser })
-        {
-            try
+            var droneCameraHackNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
             {
-                using var key = hive.OpenSubKey(uninstallKey, writable: false);
-                if (key is null) continue;
+                "drone_hack.exe",
+                "camera_hack.exe",
+                "thermal_hack.exe",
+                "drone_esp.exe",
+                "camera_esp.exe",
+                "r6_drone_hack.exe",
+                "r6_camera_hack.exe",
+                "siege_drone_hack.exe",
+                "siege_camera_hack.exe",
+                "drone_wallhack.exe",
+                "thermal_vision.exe",
+                "r6_thermal.exe",
+                "siege_thermal.exe",
+                "drone_bypass.exe",
+                "operator_esp.exe",
+                "r6_operator_esp.exe",
+                "siege_operator.exe",
+            };
 
-                ctx.IncrementRegistryKeys();
+            var droneCameraKeywords = new[]
+            {
+                "drone_esp",
+                "camera_hack",
+                "thermal_vision",
+                "operator_esp",
+                "see_through_gadget",
+                "through_smoke",
+                "camera_esp",
+                "drone_hack",
+                "drone_wallhack",
+                "see_drones",
+                "show_operators",
+            };
 
-                foreach (var subKeyName in key.GetSubKeyNames())
+            var searchDirs = new[]
+            {
+                Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads"),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Documents"),
+                Path.Combine(LocalApp, "Temp"),
+                Path.Combine(AppData,  "Temp"),
+                Path.Combine(LocalApp, "Programs"),
+            };
+
+            foreach (var dir in searchDirs)
+            {
+                if (ct.IsCancellationRequested) return;
+                if (!Directory.Exists(dir)) continue;
+
+                string[] files = Array.Empty<string>();
+                try { files = Directory.GetFiles(dir, "*", SearchOption.AllDirectories); }
+                catch (UnauthorizedAccessException) { }
+                catch (IOException) { }
+
+                foreach (var file in files)
                 {
-                    ct.ThrowIfCancellationRequested();
+                    if (ct.IsCancellationRequested) return;
+                    var fn = Path.GetFileName(file);
+                    var ext = Path.GetExtension(file);
+
+                    if (droneCameraHackNames.Contains(fn))
+                    {
+                        ctx.IncrementFiles();
+                        ctx.AddFinding(new Finding
+                        {
+                            Module   = "Rainbow Six Siege Cheat Detection",
+                            Title    = $"R6S drone/camera hack file: {fn}",
+                            Risk     = RiskLevel.Critical,
+                            Location = file,
+                            FileName = fn,
+                            Reason   = $"File '{fn}' matches a known Rainbow Six Siege drone ESP, " +
+                                       "camera hack or thermal vision cheat tool. These tools give " +
+                                       "players unfair visibility through cameras, drones and gadgets.",
+                            Detail   = $"Full path: {file}",
+                        });
+                        continue;
+                    }
+
+                    bool isScript = ScriptExtensions.Any(e =>
+                        ext.Equals(e, StringComparison.OrdinalIgnoreCase));
+                    if (!isScript) continue;
+
+                    string content;
+                    try
+                    {
+                        using var fs = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                        using var sr = new StreamReader(fs);
+                        content = await sr.ReadToEndAsync(ct);
+                    }
+                    catch (IOException) { continue; }
+
+                    var hitKeyword = droneCameraKeywords.FirstOrDefault(k =>
+                        content.Contains(k, StringComparison.OrdinalIgnoreCase));
+                    if (hitKeyword is null) continue;
+
+                    ctx.IncrementFiles();
+                    ctx.AddFinding(new Finding
+                    {
+                        Module   = "Rainbow Six Siege Cheat Detection",
+                        Title    = $"R6S drone/camera hack keyword in script: {fn}",
+                        Risk     = RiskLevel.High,
+                        Location = file,
+                        FileName = fn,
+                        Reason   = $"Script '{fn}' contains the keyword '{hitKeyword}', indicating a " +
+                                   "Rainbow Six Siege drone ESP, camera hack, thermal vision or " +
+                                   "through-smoke cheat tool.",
+                        Detail   = $"Keyword: '{hitKeyword}' | Path: {file}",
+                    });
+                }
+            }
+        }, ct);
+    }
+
+    // -------------------------------------------------------------------------
+    // Sub-check: rapid fire / no-recoil macro tools
+    // -------------------------------------------------------------------------
+    private Task CheckRapidFireMacroTools(ScanContext ctx, CancellationToken ct)
+    {
+        return Task.Run(async () =>
+        {
+            ctx.Report(0.57, Name, "Scanning for R6S rapid fire and no-recoil macro tools...");
+
+            var rapidFireKeywords = new[]
+            {
+                "rapid_fire",
+                "no_recoil",
+                "no recoil",
+                "rapidfire",
+                "norecoil",
+                "r6_macro",
+                "siege_macro",
+                "triggerbot",
+                "trigger_bot",
+                "r6_triggerbot",
+                "siege_triggerbot",
+                "rapid fire",
+                "no_spread",
+                "no spread",
+                "rainbow six",
+                "r6siege",
+                "siege_fire",
+                "r6_fire",
+            };
+
+            var scriptDirs = new[]
+            {
+                Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads"),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Documents"),
+                Path.Combine(AppData, "AutoHotkey"),
+                Path.Combine(AppData, "Logitech", "GHUB", "profiles"),
+                Path.Combine(AppData, "Logitech Gaming Software", "profiles"),
+                Path.Combine(LocalApp, "Programs"),
+                Path.Combine(LocalApp, "Temp"),
+            };
+
+            foreach (var dir in scriptDirs)
+            {
+                if (ct.IsCancellationRequested) return;
+                if (!Directory.Exists(dir)) continue;
+
+                string[] files = Array.Empty<string>();
+                try { files = Directory.GetFiles(dir, "*", SearchOption.AllDirectories); }
+                catch (UnauthorizedAccessException) { }
+                catch (IOException) { }
+
+                foreach (var file in files)
+                {
+                    if (ct.IsCancellationRequested) return;
+                    var fn = Path.GetFileName(file);
+                    var ext = Path.GetExtension(file);
+
+                    bool isScript = ScriptExtensions.Any(e =>
+                        ext.Equals(e, StringComparison.OrdinalIgnoreCase));
+                    if (!isScript) continue;
+
+                    bool fileNameHit = fn.Contains("r6", StringComparison.OrdinalIgnoreCase)
+                                    || fn.Contains("siege", StringComparison.OrdinalIgnoreCase)
+                                    || fn.Contains("rainbow", StringComparison.OrdinalIgnoreCase)
+                                    || fn.Contains("no_recoil", StringComparison.OrdinalIgnoreCase)
+                                    || fn.Contains("rapid_fire", StringComparison.OrdinalIgnoreCase)
+                                    || fn.Contains("triggerbot", StringComparison.OrdinalIgnoreCase);
+
+                    string content;
+                    try
+                    {
+                        using var fs = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                        using var sr = new StreamReader(fs);
+                        content = await sr.ReadToEndAsync(ct);
+                    }
+                    catch (IOException) { continue; }
+
+                    var hitKeyword = rapidFireKeywords.FirstOrDefault(k =>
+                        content.Contains(k, StringComparison.OrdinalIgnoreCase));
+
+                    if (hitKeyword is null && !fileNameHit) continue;
+
+                    ctx.IncrementFiles();
+                    ctx.AddFinding(new Finding
+                    {
+                        Module   = "Rainbow Six Siege Cheat Detection",
+                        Title    = $"R6S rapid fire / no-recoil macro: {fn}",
+                        Risk     = RiskLevel.High,
+                        Location = file,
+                        FileName = fn,
+                        Reason   = hitKeyword is not null
+                            ? $"Script '{fn}' contains the keyword '{hitKeyword}', indicating a " +
+                              "Rainbow Six Siege rapid fire, no-recoil or triggerbot macro. " +
+                              "Automated inputs violate Ubisoft's terms of service and BattlEye policies."
+                            : $"Script '{fn}' has a name referencing R6S macros or automation. " +
+                              "Such scripts are used for rapid fire, no-recoil and triggerbots.",
+                        Detail   = hitKeyword is not null
+                            ? $"Keyword: '{hitKeyword}' | Path: {file}"
+                            : $"Path: {file}",
+                    });
+                }
+            }
+        }, ct);
+    }
+
+    // -------------------------------------------------------------------------
+    // Sub-check: Ubisoft Connect integrity — modified uplay_r2.dll / ubi_services.dll
+    // -------------------------------------------------------------------------
+    private Task CheckUbisoftConnectIntegrity(ScanContext ctx, CancellationToken ct)
+    {
+        return Task.Run(() =>
+        {
+            ctx.Report(0.65, Name, "Checking Ubisoft Connect DLL integrity...");
+
+            var ubisoftRoots = new[]
+            {
+                Path.Combine(ProgramFiles,    "Ubisoft", "Ubisoft Game Launcher"),
+                Path.Combine(ProgramFilesX86, "Ubisoft", "Ubisoft Game Launcher"),
+                Path.Combine(ProgramFiles,    "Ubisoft Connect"),
+                Path.Combine(ProgramFilesX86, "Ubisoft Connect"),
+            };
+
+            var r6GameRoots = new[]
+            {
+                Path.Combine(ProgramFiles,    "Ubisoft", "Ubisoft Game Launcher", "games",
+                             "Tom Clancy's Rainbow Six Siege"),
+                Path.Combine(ProgramFilesX86, "Ubisoft", "Ubisoft Game Launcher", "games",
+                             "Tom Clancy's Rainbow Six Siege"),
+                Path.Combine(ProgramFiles,    "Rainbow Six Siege"),
+                Path.Combine(ProgramFilesX86, "Rainbow Six Siege"),
+            };
+
+            var allRoots = ubisoftRoots.Concat(r6GameRoots).ToArray();
+
+            foreach (var root in allRoots)
+            {
+                if (ct.IsCancellationRequested) return;
+                if (!Directory.Exists(root)) continue;
+
+                foreach (var dllName in UbisoftIntegrityDlls)
+                {
+                    if (ct.IsCancellationRequested) return;
+
+                    string? dllPath = null;
+                    try
+                    {
+                        dllPath = Directory.GetFiles(root, dllName, SearchOption.AllDirectories)
+                                           .FirstOrDefault();
+                    }
+                    catch (UnauthorizedAccessException) { }
+                    catch (IOException) { }
+
+                    if (dllPath is null) continue;
+                    ctx.IncrementFiles();
 
                     try
                     {
-                        using var subKey = key.OpenSubKey(subKeyName, writable: false);
-                        if (subKey is null) continue;
+                        var fi = new FileInfo(dllPath);
 
-                        ctx.IncrementRegistryKeys();
-
-                        var displayName = subKey.GetValue("DisplayName")?.ToString() ?? string.Empty;
-
-                        foreach (var cheatApp in cheatAppNames)
+                        // A legitimate uplay_r2.dll is typically > 1 MB; stub is tiny
+                        if (fi.Length < 65_536)
                         {
-                            if (!displayName.Contains(cheatApp, StringComparison.OrdinalIgnoreCase)) continue;
-
                             ctx.AddFinding(new Finding
                             {
-                                Module = Name,
-                                Title = $"R6 Siege cheat software found in installed programs: {displayName}",
-                                Risk = RiskLevel.Critical,
-                                Location = $@"{uninstallKey}\{subKeyName}",
-                                Reason = $"The installed program '{displayName}' matches the name of a known " +
-                                         "Rainbow Six Siege cheat application. This was formally installed " +
-                                         "on this system.",
-                                Detail = $"Display name: {displayName} | Registry key: {subKeyName}"
+                                Module   = "Rainbow Six Siege Cheat Detection",
+                                Title    = $"Suspiciously small Ubisoft Connect DLL: {dllName}",
+                                Risk     = RiskLevel.Critical,
+                                Location = dllPath,
+                                FileName = dllName,
+                                Reason   = $"Ubisoft Connect library '{dllName}' at '{dllPath}' is only " +
+                                           $"{fi.Length} bytes. Legitimate versions are hundreds of kilobytes " +
+                                           "or larger. Cheat tools replace these DLLs with stub versions that " +
+                                           "bypass authentication and anti-cheat checks.",
+                                Detail   = $"File size: {fi.Length} bytes | Path: {dllPath}",
                             });
-                            break;
+                        }
+
+                        // Recently modified outside a game update window is suspicious
+                        var daysSinceModified = (DateTime.UtcNow - fi.LastWriteTimeUtc).TotalDays;
+                        if (daysSinceModified < 1)
+                        {
+                            var launcherExes = new[] { "UbisoftGameLauncher.exe", "UbisoftConnect.exe", "upc.exe" };
+                            bool launcherAlsoUpdated = false;
+                            foreach (var exeName in launcherExes)
+                            {
+                                var exePath = Path.Combine(root, exeName);
+                                if (!File.Exists(exePath)) continue;
+                                try
+                                {
+                                    launcherAlsoUpdated =
+                                        (DateTime.UtcNow - new FileInfo(exePath).LastWriteTimeUtc).TotalDays < 1;
+                                    if (launcherAlsoUpdated) break;
+                                }
+                                catch (IOException) { }
+                            }
+
+                            if (!launcherAlsoUpdated)
+                            {
+                                ctx.AddFinding(new Finding
+                                {
+                                    Module   = "Rainbow Six Siege Cheat Detection",
+                                    Title    = $"Ubisoft Connect DLL modified outside update: {dllName}",
+                                    Risk     = RiskLevel.High,
+                                    Location = dllPath,
+                                    FileName = dllName,
+                                    Reason   = $"Ubisoft Connect DLL '{dllName}' was modified within the " +
+                                               "last 24 hours but the launcher executable was not updated " +
+                                               "at the same time. Cheat bypass tools patch or replace these " +
+                                               "DLLs to disable signature verification and bypass BattlEye.",
+                                    Detail   = $"Last modified: {fi.LastWriteTime:yyyy-MM-dd HH:mm} | " +
+                                               "Launcher update: No",
+                                });
+                            }
                         }
                     }
-                    catch (UnauthorizedAccessException) { }
+                    catch (IOException) { }
                 }
             }
-            catch (UnauthorizedAccessException) { }
-        }
+        }, ct);
     }
 
-    private void ScanVulkanRegistryLayers(ScanContext ctx, CancellationToken ct)
+    // -------------------------------------------------------------------------
+    // Sub-check: MUICache — records names of launched executables
+    // -------------------------------------------------------------------------
+    private Task CheckRegistryMuiCache(ScanContext ctx, CancellationToken ct)
     {
-        var vulkanLayerKeys = new[]
+        return Task.Run(() =>
         {
-            @"SOFTWARE\Khronos\Vulkan\ImplicitLayers",
-            @"SOFTWARE\Khronos\Vulkan\ExplicitLayers",
-            @"SOFTWARE\WOW6432Node\Khronos\Vulkan\ImplicitLayers",
-            @"SOFTWARE\WOW6432Node\Khronos\Vulkan\ExplicitLayers",
-        };
+            ctx.Report(0.73, Name, "Checking MUICache for R6S cheat execution evidence...");
 
-        var cheatLayerKeywords = new[]
-        {
-            "esp", "wallhack", "cheat", "hack", "siege", "rainbow", "r6",
-            "aimbot", "overlay_hack", "r6s", "cheater",
-        };
-
-        foreach (var keyPath in vulkanLayerKeys)
-        {
-            ct.ThrowIfCancellationRequested();
-
-            try
+            var muiPaths = new[]
             {
-                using var key = Registry.LocalMachine.OpenSubKey(keyPath, writable: false);
-                if (key is null) continue;
+                @"SOFTWARE\Classes\Local Settings\Software\Microsoft\Windows\Shell\MuiCache",
+                @"SOFTWARE\Microsoft\Windows\ShellNoRoam\MUICache",
+            };
 
-                ctx.IncrementRegistryKeys();
+            foreach (var muiPath in muiPaths)
+            {
+                if (ct.IsCancellationRequested) return;
 
-                foreach (var valueName in key.GetValueNames())
+                RegistryKey? key = null;
+                try
                 {
-                    ct.ThrowIfCancellationRequested();
-                    ctx.IncrementRegistryKeys();
+                    key = Registry.CurrentUser.OpenSubKey(muiPath, writable: false);
+                    if (key is null) continue;
 
-                    foreach (var kw in cheatLayerKeywords)
+                    foreach (var valueName in key.GetValueNames())
                     {
-                        if (!valueName.Contains(kw, StringComparison.OrdinalIgnoreCase)) continue;
+                        if (ct.IsCancellationRequested) break;
+                        ctx.IncrementRegistryKeys();
+
+                        var fn = Path.GetFileName(valueName);
+                        if (!KnownCheatFileNames.Contains(fn))
+                        {
+                            var valueNameLower = valueName.ToLowerInvariant();
+                            bool hasCheatKeyword =
+                                   valueNameLower.Contains("r6_hack", StringComparison.OrdinalIgnoreCase)
+                                || valueNameLower.Contains("r6_cheat", StringComparison.OrdinalIgnoreCase)
+                                || valueNameLower.Contains("siege_hack", StringComparison.OrdinalIgnoreCase)
+                                || valueNameLower.Contains("siege_cheat", StringComparison.OrdinalIgnoreCase)
+                                || valueNameLower.Contains("r6_aimbot", StringComparison.OrdinalIgnoreCase)
+                                || valueNameLower.Contains("siege_aimbot", StringComparison.OrdinalIgnoreCase)
+                                || valueNameLower.Contains("r6siege_hack", StringComparison.OrdinalIgnoreCase)
+                                || valueNameLower.Contains("rainbowsix_hack", StringComparison.OrdinalIgnoreCase)
+                                || valueNameLower.Contains("r6_esp", StringComparison.OrdinalIgnoreCase)
+                                || valueNameLower.Contains("drone_hack", StringComparison.OrdinalIgnoreCase)
+                                || valueNameLower.Contains("camera_hack", StringComparison.OrdinalIgnoreCase)
+                                || valueNameLower.Contains("r6_loader", StringComparison.OrdinalIgnoreCase)
+                                || valueNameLower.Contains("r6_injector", StringComparison.OrdinalIgnoreCase);
+
+                            if (!hasCheatKeyword) continue;
+                        }
+
+                        var displayName = key.GetValue(valueName) as string ?? string.Empty;
 
                         ctx.AddFinding(new Finding
                         {
-                            Module = Name,
-                            Title = $"Suspicious Vulkan layer registered with R6-related name: {valueName}",
-                            Risk = RiskLevel.Critical,
-                            Location = $@"HKLM\{keyPath}\{valueName}",
-                            Reason = $"A Vulkan layer manifest registered at '{keyPath}' has a path containing " +
-                                     $"the keyword '{kw}', associated with R6 Siege cheating. Implicit Vulkan " +
-                                     "layers load into every Vulkan application automatically, including " +
-                                     "Rainbow Six Siege, and can be used for wallhack and ESP injection.",
-                            Detail = $"Layer path: {valueName}"
+                            Module   = "Rainbow Six Siege Cheat Detection",
+                            Title    = $"MUICache: R6S cheat execution evidence: {fn}",
+                            Risk     = RiskLevel.High,
+                            Location = $@"HKCU\{muiPath}",
+                            FileName = fn,
+                            Reason   = $"MUICache entry '{valueName}' references a known or suspected " +
+                                       "Rainbow Six Siege cheat tool. MUICache records applications that " +
+                                       "were launched by the user, providing evidence of prior execution " +
+                                       "even if the file has since been deleted.",
+                            Detail   = $"MUICache value: '{valueName}' | Display name: '{displayName}'",
                         });
-                        break;
                     }
                 }
+                catch { }
+                finally { key?.Dispose(); }
             }
-            catch (UnauthorizedAccessException) { }
-        }
+        }, ct);
     }
 
-    private static string TruncateString(string input, int maxLength)
+    // -------------------------------------------------------------------------
+    // Sub-check: UserAssist (ROT13-encoded execution history)
+    // -------------------------------------------------------------------------
+    private Task CheckRegistryUserAssist(ScanContext ctx, CancellationToken ct)
     {
-        if (string.IsNullOrEmpty(input)) return string.Empty;
-        return input.Length <= maxLength ? input : input[..maxLength] + "...";
+        return Task.Run(() =>
+        {
+            ctx.Report(0.80, Name, "Checking UserAssist for R6S cheat execution history...");
+
+            const string userAssistGuid =
+                @"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\UserAssist";
+
+            RegistryKey? uaRoot = null;
+            try
+            {
+                uaRoot = Registry.CurrentUser.OpenSubKey(userAssistGuid, writable: false);
+                if (uaRoot is null) return;
+
+                foreach (var guidName in uaRoot.GetSubKeyNames())
+                {
+                    if (ct.IsCancellationRequested) break;
+
+                    RegistryKey? countKey = null;
+                    try
+                    {
+                        countKey = uaRoot.OpenSubKey(Path.Combine(guidName, "Count"), writable: false);
+                        if (countKey is null) continue;
+
+                        foreach (var valueName in countKey.GetValueNames())
+                        {
+                            if (ct.IsCancellationRequested) break;
+                            ctx.IncrementRegistryKeys();
+
+                            var decoded = Rot13Decode(valueName);
+                            var decodedLower = decoded.ToLowerInvariant();
+                            var fn = Path.GetFileName(decoded);
+
+                            bool isKnownCheat = KnownCheatFileNames.Contains(fn);
+                            bool hasCheatKeyword = !isKnownCheat && (
+                                   decodedLower.Contains("r6_hack", StringComparison.OrdinalIgnoreCase)
+                                || decodedLower.Contains("r6_cheat", StringComparison.OrdinalIgnoreCase)
+                                || decodedLower.Contains("siege_hack", StringComparison.OrdinalIgnoreCase)
+                                || decodedLower.Contains("siege_cheat", StringComparison.OrdinalIgnoreCase)
+                                || decodedLower.Contains("r6_aimbot", StringComparison.OrdinalIgnoreCase)
+                                || decodedLower.Contains("siege_aimbot", StringComparison.OrdinalIgnoreCase)
+                                || decodedLower.Contains("r6siege_hack", StringComparison.OrdinalIgnoreCase)
+                                || decodedLower.Contains("rainbowsix_hack", StringComparison.OrdinalIgnoreCase)
+                                || decodedLower.Contains("r6_loader", StringComparison.OrdinalIgnoreCase)
+                                || decodedLower.Contains("r6_injector", StringComparison.OrdinalIgnoreCase)
+                                || decodedLower.Contains("drone_hack", StringComparison.OrdinalIgnoreCase)
+                                || decodedLower.Contains("camera_hack", StringComparison.OrdinalIgnoreCase));
+
+                            if (!isKnownCheat && !hasCheatKeyword) continue;
+
+                            ctx.AddFinding(new Finding
+                            {
+                                Module   = "Rainbow Six Siege Cheat Detection",
+                                Title    = $"UserAssist: R6S cheat execution record: {fn}",
+                                Risk     = RiskLevel.High,
+                                Location = $@"HKCU\{userAssistGuid}\{guidName}\Count",
+                                FileName = fn,
+                                Reason   = $"UserAssist entry (ROT13-decoded: '{decoded}') indicates that " +
+                                           "a known or suspected Rainbow Six Siege cheat application was " +
+                                           "executed by the user. UserAssist tracks GUI application launches " +
+                                           "and persists even after the cheat tool has been deleted.",
+                                Detail   = $"ROT13 raw: '{valueName}' | Decoded: '{decoded}'",
+                            });
+                        }
+                    }
+                    catch { }
+                    finally { countKey?.Dispose(); }
+                }
+            }
+            catch { }
+            finally { uaRoot?.Dispose(); }
+        }, ct);
+    }
+
+    // -------------------------------------------------------------------------
+    // Sub-check: Run / RunOnce startup keys
+    // -------------------------------------------------------------------------
+    private Task CheckRegistryRunKeys(ScanContext ctx, CancellationToken ct)
+    {
+        return Task.Run(() =>
+        {
+            ctx.Report(0.87, Name, "Checking Run/RunOnce keys for R6S cheat persistence...");
+
+            var hives = new[] { Registry.LocalMachine, Registry.CurrentUser };
+
+            foreach (var hive in hives)
+            {
+                foreach (var runPath in RunKeyPaths)
+                {
+                    if (ct.IsCancellationRequested) return;
+
+                    RegistryKey? key = null;
+                    try
+                    {
+                        key = hive.OpenSubKey(runPath, writable: false);
+                        if (key is null) continue;
+
+                        foreach (var valueName in key.GetValueNames())
+                        {
+                            if (ct.IsCancellationRequested) break;
+                            ctx.IncrementRegistryKeys();
+
+                            var value = key.GetValue(valueName) as string ?? string.Empty;
+                            var valueLower = value.ToLowerInvariant();
+                            var fn = Path.GetFileName(value.Trim('"').Split(' ')[0]);
+
+                            bool isKnownCheat = KnownCheatFileNames.Contains(fn);
+                            bool hasCheatKeyword = !isKnownCheat && (
+                                   valueLower.Contains("r6_hack", StringComparison.OrdinalIgnoreCase)
+                                || valueLower.Contains("r6_cheat", StringComparison.OrdinalIgnoreCase)
+                                || valueLower.Contains("siege_hack", StringComparison.OrdinalIgnoreCase)
+                                || valueLower.Contains("siege_cheat", StringComparison.OrdinalIgnoreCase)
+                                || valueLower.Contains("r6_aimbot", StringComparison.OrdinalIgnoreCase)
+                                || valueLower.Contains("siege_aimbot", StringComparison.OrdinalIgnoreCase)
+                                || valueLower.Contains("r6siege_hack", StringComparison.OrdinalIgnoreCase)
+                                || valueLower.Contains("rainbowsix_hack", StringComparison.OrdinalIgnoreCase)
+                                || valueLower.Contains("r6_loader", StringComparison.OrdinalIgnoreCase)
+                                || valueLower.Contains("r6_injector", StringComparison.OrdinalIgnoreCase)
+                                || valueLower.Contains("drone_hack", StringComparison.OrdinalIgnoreCase)
+                                || valueLower.Contains("camera_hack", StringComparison.OrdinalIgnoreCase));
+
+                            if (!isKnownCheat && !hasCheatKeyword) continue;
+
+                            var hivePrefix = ReferenceEquals(hive, Registry.LocalMachine) ? "HKLM" : "HKCU";
+
+                            ctx.AddFinding(new Finding
+                            {
+                                Module   = "Rainbow Six Siege Cheat Detection",
+                                Title    = $"Run key: R6S cheat autostart entry: {valueName}",
+                                Risk     = RiskLevel.Critical,
+                                Location = $@"{hivePrefix}\{runPath}",
+                                FileName = fn,
+                                Reason   = $"Autostart registry entry '{valueName}' in '{hivePrefix}\\{runPath}' " +
+                                           $"points to a suspected R6S cheat tool: '{value}'. " +
+                                           "Run/RunOnce keys cause the cheat tool to launch automatically " +
+                                           "at Windows startup, establishing cheat persistence.",
+                                Detail   = $"Value name: '{valueName}' | Command: '{value}'",
+                            });
+                        }
+                    }
+                    catch { }
+                    finally { key?.Dispose(); }
+                }
+            }
+        }, ct);
+    }
+
+    // -------------------------------------------------------------------------
+    // Sub-check: Uninstall records for known R6S cheat software
+    // -------------------------------------------------------------------------
+    private Task CheckRegistryUninstallRecords(ScanContext ctx, CancellationToken ct)
+    {
+        return Task.Run(() =>
+        {
+            ctx.Report(0.93, Name, "Checking uninstall records for R6S cheat software...");
+
+            var uninstallPaths = new[]
+            {
+                @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall",
+                @"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall",
+            };
+
+            var cheatUninstallKeywords = new[]
+            {
+                "r6 hack",
+                "r6 cheat",
+                "r6 aimbot",
+                "r6 esp",
+                "siege hack",
+                "siege cheat",
+                "siege aimbot",
+                "siege esp",
+                "rainbow six hack",
+                "rainbow six cheat",
+                "r6siege hack",
+                "r6siege cheat",
+                "r6_hack",
+                "r6_cheat",
+                "r6_aimbot",
+                "siege_hack",
+                "siege_cheat",
+                "drone hack",
+                "drone esp",
+                "camera hack",
+                "r6 bypass",
+                "siege bypass",
+                "battleye bypass",
+                "gamesense r6",
+                "aimware r6",
+                "skycheats r6",
+                "interwebz r6",
+                "streamline r6",
+            };
+
+            var hives = new[] { Registry.LocalMachine, Registry.CurrentUser };
+
+            foreach (var hive in hives)
+            {
+                foreach (var uninstallPath in uninstallPaths)
+                {
+                    if (ct.IsCancellationRequested) return;
+
+                    RegistryKey? uninstallKey = null;
+                    try
+                    {
+                        uninstallKey = hive.OpenSubKey(uninstallPath, writable: false);
+                        if (uninstallKey is null) continue;
+
+                        foreach (var subKeyName in uninstallKey.GetSubKeyNames())
+                        {
+                            if (ct.IsCancellationRequested) break;
+                            ctx.IncrementRegistryKeys();
+
+                            RegistryKey? appKey = null;
+                            try
+                            {
+                                appKey = uninstallKey.OpenSubKey(subKeyName, writable: false);
+                                if (appKey is null) continue;
+
+                                var displayName    = appKey.GetValue("DisplayName")    as string ?? string.Empty;
+                                var publisher      = appKey.GetValue("Publisher")      as string ?? string.Empty;
+                                var installLocation= appKey.GetValue("InstallLocation")as string ?? string.Empty;
+                                var displayNameLower = displayName.ToLowerInvariant();
+
+                                var hitKeyword = cheatUninstallKeywords.FirstOrDefault(k =>
+                                    displayNameLower.Contains(k, StringComparison.OrdinalIgnoreCase));
+
+                                if (hitKeyword is null)
+                                {
+                                    var locationLower = installLocation.ToLowerInvariant();
+                                    hitKeyword = cheatUninstallKeywords.FirstOrDefault(k =>
+                                        locationLower.Contains(k, StringComparison.OrdinalIgnoreCase));
+                                }
+
+                                if (hitKeyword is null) continue;
+
+                                var hivePrefix = ReferenceEquals(hive, Registry.LocalMachine) ? "HKLM" : "HKCU";
+
+                                ctx.AddFinding(new Finding
+                                {
+                                    Module   = "Rainbow Six Siege Cheat Detection",
+                                    Title    = $"Uninstall record: R6S cheat software: {displayName}",
+                                    Risk     = RiskLevel.High,
+                                    Location = $@"{hivePrefix}\{uninstallPath}\{subKeyName}",
+                                    Reason   = $"Uninstall registry entry '{displayName}' matches R6S cheat " +
+                                               $"software keyword '{hitKeyword}'. Even if the software was " +
+                                               "uninstalled, the registry record confirms it was previously " +
+                                               "installed on this system.",
+                                    Detail   = $"DisplayName: '{displayName}' | Publisher: '{publisher}' | " +
+                                               $"InstallLocation: '{installLocation}' | Key: {subKeyName}",
+                                });
+                            }
+                            catch { }
+                            finally { appKey?.Dispose(); }
+                        }
+                    }
+                    catch { }
+                    finally { uninstallKey?.Dispose(); }
+                }
+            }
+        }, ct);
+    }
+
+    // -------------------------------------------------------------------------
+    // Helper: ROT13 decode for UserAssist
+    // -------------------------------------------------------------------------
+    private static string Rot13Decode(string input)
+    {
+        var chars = input.ToCharArray();
+        for (int i = 0; i < chars.Length; i++)
+        {
+            char c = chars[i];
+            if (c >= 'A' && c <= 'Z')
+                chars[i] = (char)('A' + (c - 'A' + 13) % 26);
+            else if (c >= 'a' && c <= 'z')
+                chars[i] = (char)('a' + (c - 'a' + 13) % 26);
+        }
+        return new string(chars);
     }
 }

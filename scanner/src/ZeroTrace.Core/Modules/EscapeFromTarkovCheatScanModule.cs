@@ -7,7 +7,7 @@ namespace ZeroTrace.Core.Modules;
 public sealed class EscapeFromTarkovCheatScanModule : IScanModule
 {
     public string Name => "Escape from Tarkov Cheat Detection";
-    public double Weight => 4.2;
+    public double Weight => 4.4;
     public int ParallelGroup => 4;
 
     private static readonly string LocalAppData =
@@ -108,6 +108,64 @@ public sealed class EscapeFromTarkovCheatScanModule : IScanModule
         "RadarEFT.exe",
         "WebRadarEFT.exe",
         "EFTWebRadar.exe",
+        "tarkov_loot_esp.exe",
+        "tarkov_player_esp.exe",
+        "tarkov_no_recoil.exe",
+        "tarkov_infinite_ammo.exe",
+        "tarkov_god_mode.exe",
+        "tarkov_speed.exe",
+        "tarkov_teleport.exe",
+        "tarkov_item.exe",
+        "tarkov_ruble.exe",
+        "tarkov_account.exe",
+        "eft_trainer.exe",
+        "shoreline_cheat.exe",
+        "woods_cheat.exe",
+        "customs_cheat.exe",
+        "streets_cheat.exe",
+        "labs_cheat.exe",
+        "factory_cheat.exe",
+        "reserve_cheat.exe",
+        "tarkov_external.exe",
+        "tarkov_internal.exe",
+        "tarkovesp.exe",
+        "tarkovbot.exe",
+        "tarkovaim.exe",
+        "eft_memory.exe",
+        "eft_reader.exe",
+        "tarkov_memory.exe",
+        "tarkov_chams.exe",
+        "eft_chams.exe",
+        "tarkov_spoofer.exe",
+        "eft_spoofer.exe",
+        "tarkov_triggerbot.exe",
+        "eft_triggerbot.exe",
+        "tarkov_silent.exe",
+        "tarkov_silent_aim.exe",
+        "eft_silent_aim.exe",
+        "tarkov_nametag.exe",
+        "tarkov_healthhack.exe",
+        "eft_healthhack.exe",
+        "tarkov_stamina.exe",
+        "eft_stamina.exe",
+        "tarkov_norecoil.exe",
+        "eft_norecoil.exe",
+        "tarkov_novibration.exe",
+        "eft_novibration.exe",
+        "tarkov_spread.exe",
+        "tarkov_fov.exe",
+        "tarkov_brightness.exe",
+        "eft_brightness.exe",
+        "tarkov_nightvision.exe",
+        "eft_nightvision.exe",
+        "tarkov_thermalvision.exe",
+        "tarkov_loot_filter.exe",
+        "eft_loot_filter.exe",
+        "tarkov_item_teleport.exe",
+        "eft_item_teleport.exe",
+        "radar_eft.exe",
+        "eft_radar_tool.exe",
+        "tarkov_map_radar.exe",
     };
 
     private static readonly string[] KnownCheatDllNames =
@@ -1323,6 +1381,137 @@ public sealed class EscapeFromTarkovCheatScanModule : IScanModule
 
         ct.ThrowIfCancellationRequested();
         ScanUninstallForCheatSoftware(ctx, ct);
+
+        ct.ThrowIfCancellationRequested();
+        ScanMuiCacheForEftCheats(ctx, ct);
+
+        ct.ThrowIfCancellationRequested();
+        ScanUserAssistForEftCheats(ctx, ct);
+    }
+
+    private static readonly string[] MuiCacheEftCheatFragments =
+    {
+        "tarkovcheat", "eftcheat", "tarkovhack", "efthack",
+        "tarkovesp", "tarkovbot", "tarkovaim", "eftesp",
+        "eftaimbot", "eftradar", "tarkovradar", "tarkovbypass",
+        "eftbypass", "tarkovloader", "eftloader", "tarkovtrainer",
+        "efttrainer", "tarkovexternal", "eftexternal", "tarkovinternal",
+        "eftinternal", "radareft", "tarkovmemory", "eftmemory",
+        "eftradar", "tarkov_cheat", "eft_cheat", "tarkov_hack",
+        "eft_hack", "tarkov_esp", "eft_esp", "tarkov_aimbot",
+        "eft_aimbot", "tarkov_radar", "eft_radar", "tarkov_bypass",
+        "eft_bypass", "tarkov_loader", "eft_loader", "tarkov_trainer",
+        "eft_trainer", "tarkov_spoofer", "eft_spoofer",
+        "hakurai", "t-rex-eft", "trexeft",
+    };
+
+    private void ScanMuiCacheForEftCheats(ScanContext ctx, CancellationToken ct)
+    {
+        const string muiCacheKey = @"SOFTWARE\Classes\Local Settings\Software\Microsoft\Windows\Shell\MuiCache";
+
+        try
+        {
+            using var key = Registry.CurrentUser.OpenSubKey(muiCacheKey, writable: false);
+            if (key is null) return;
+
+            foreach (string valueName in key.GetValueNames())
+            {
+                ct.ThrowIfCancellationRequested();
+                ctx.IncrementRegistryKeys();
+
+                string vLower = valueName.ToLowerInvariant();
+                foreach (string frag in MuiCacheEftCheatFragments)
+                {
+                    if (vLower.Contains(frag, StringComparison.OrdinalIgnoreCase))
+                    {
+                        ctx.AddFinding(new Finding
+                        {
+                            Module = Name,
+                            Title = $"EFT Cheat Tool Execution in MUICache: {Path.GetFileName(valueName)}",
+                            Risk = RiskLevel.High,
+                            Location = $@"HKCU\{muiCacheKey}",
+                            FileName = Path.GetFileName(valueName),
+                            Reason = $"MUICache registry entry '{valueName}' matches known EFT cheat tool name " +
+                                     $"pattern '{frag}'. MUICache records friendly names of recently executed programs, " +
+                                     "indicating this EFT cheat tool was previously launched on this system.",
+                            Detail = $"Registry value: {valueName} | Matched fragment: {frag}"
+                        });
+                        break;
+                    }
+                }
+            }
+        }
+        catch (UnauthorizedAccessException) { }
+        catch { }
+    }
+
+    private static string Rot13Decode(string input)
+    {
+        var sb = new System.Text.StringBuilder(input.Length);
+        foreach (char c in input)
+        {
+            if (c >= 'a' && c <= 'z')
+                sb.Append((char)('a' + (c - 'a' + 13) % 26));
+            else if (c >= 'A' && c <= 'Z')
+                sb.Append((char)('A' + (c - 'A' + 13) % 26));
+            else
+                sb.Append(c);
+        }
+        return sb.ToString();
+    }
+
+    private void ScanUserAssistForEftCheats(ScanContext ctx, CancellationToken ct)
+    {
+        const string userAssistBase = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\UserAssist";
+
+        try
+        {
+            using var baseKey = Registry.CurrentUser.OpenSubKey(userAssistBase, writable: false);
+            if (baseKey is null) return;
+
+            foreach (string guidName in baseKey.GetSubKeyNames())
+            {
+                ct.ThrowIfCancellationRequested();
+                try
+                {
+                    using var countKey = baseKey.OpenSubKey(guidName + @"\Count", writable: false);
+                    if (countKey is null) continue;
+
+                    foreach (string valueName in countKey.GetValueNames())
+                    {
+                        ct.ThrowIfCancellationRequested();
+                        ctx.IncrementRegistryKeys();
+
+                        string decoded = Rot13Decode(valueName);
+                        string decodedLower = decoded.ToLowerInvariant();
+
+                        foreach (string frag in MuiCacheEftCheatFragments)
+                        {
+                            if (decodedLower.Contains(frag, StringComparison.OrdinalIgnoreCase))
+                            {
+                                ctx.AddFinding(new Finding
+                                {
+                                    Module = Name,
+                                    Title = $"EFT Cheat Tool in UserAssist History: {Path.GetFileName(decoded)}",
+                                    Risk = RiskLevel.High,
+                                    Location = $@"HKCU\{userAssistBase}\{guidName}\Count",
+                                    FileName = Path.GetFileName(decoded),
+                                    Reason = $"UserAssist registry entry decodes (ROT13) to '{decoded}', matching " +
+                                             $"EFT cheat tool pattern '{frag}'. UserAssist records program execution history, " +
+                                             "confirming this EFT cheat tool was previously run on this user account.",
+                                    Detail = $"ROT13 encoded value: {valueName} | Decoded: {decoded}"
+                                });
+                                break;
+                            }
+                        }
+                    }
+                }
+                catch (UnauthorizedAccessException) { }
+                catch { }
+            }
+        }
+        catch (UnauthorizedAccessException) { }
+        catch { }
     }
 
     private void ScanRunKey(ScanContext ctx, CancellationToken ct)
