@@ -601,6 +601,7 @@ public sealed class ScanEngine
         if (o.ScanEscapeFromTarkovCheat) modules.Add(new EscapeFromTarkovCheatScanModule());
         if (o.ScanMinecraftCheatDeep) modules.Add(new MinecraftCheatDeepScanModule());
         if (o.ScanFortniteWarzoneCheat) modules.Add(new FortniteWarzoneCheatScanModule());
+        if (o.ScanFortniteCheatDetection) modules.Add(new FortniteCheatDetectionScanModule());
         if (o.ScanRainbowSixSiegeCheat) modules.Add(new RainbowSixSiegeCheatScanModule());
         if (o.ScanCheatSourceCodeRepo) modules.Add(new CheatSourceCodeRepoScanModule());
 

@@ -1344,6 +1344,7 @@ public sealed class ScanOptions
     public bool ScanEscapeFromTarkovCheat { get; set; } = true;
     public bool ScanMinecraftCheatDeep { get; set; } = true;
     public bool ScanFortniteWarzoneCheat { get; set; } = true;
+    public bool ScanFortniteCheatDetection { get; set; } = true;
     public bool ScanRainbowSixSiegeCheat { get; set; } = true;
     /// <summary>Detect cheat source code and development artifacts: .git repos with cheat remote
     /// URLs, Visual Studio cheat projects (.sln/.vcxproj with cheat keywords), compiled build
@@ -2158,6 +2159,7 @@ public static class ScanProfiles
         ScanEscapeFromTarkovCheat = true,
         ScanMinecraftCheatDeep = true,
         ScanFortniteWarzoneCheat = true,
+        ScanFortniteCheatDetection = true,
         ScanRainbowSixSiegeCheat = true,
         ScanCheatSourceCodeRepo = true,        // cheat git repo/VS project/SDK/PDB artifact scan — fast
         DeepDriveScan = false,
