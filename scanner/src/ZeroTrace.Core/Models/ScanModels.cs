@@ -968,6 +968,40 @@ public sealed class ScanOptions
     /// and survives normal cheat uninstallation — a high-signal source used by Ocean/detect.ac.</summary>
     public bool ScanTimelineActivity { get; set; } = true;
 
+    /// <summary>Detect USB aim-assist hardware: Cronus Zen/Max, XIM Apex/Matrix/4, MaxAim DI,
+    /// Titan One/Two, ReaSnow S1, Brook Universal Fighting Board, KeyMander. Matches VID/PID
+    /// pairs against the Windows USB/HID enumeration registry hive — persists after device
+    /// is unplugged.</summary>
+    public bool ScanAimAssistHardware { get; set; } = true;
+
+    /// <summary>Forensic scan of $Recycle.Bin\&lt;SID&gt; for $I metadata files that reveal the
+    /// original paths of deleted cheat tools. $I files persist after emptying the bin until
+    /// the file itself is overwritten — extracts cheat-keyword-matching original paths.</summary>
+    public bool ScanRecycleBinForensics { get; set; } = true;
+
+    /// <summary>Scan %USERPROFILE%\AppData\LocalLow for cheat directories and signature files.
+    /// LocalLow is overlooked by manual cleanup attempts (Explorer hides AppData) and is
+    /// deliberately used by cheats for license tokens and config that survive uninstalls.</summary>
+    public bool ScanAppDataLocalLow { get; set; } = true;
+
+    /// <summary>Detect Driver Signature Enforcement (DSE) bypass: BCD testsigning=Yes,
+    /// nointegritychecks=Yes, DISABLE_INTEGRITY_CHECKS loadoptions, custom WDAC CI policy
+    /// files, Secure Boot disabled, and recent bcdedit.exe execution via Prefetch.
+    /// Indicates BYOVD / unsigned cheat driver loading capability.</summary>
+    public bool ScanDseBypass { get; set; } = true;
+
+    /// <summary>Scan saved Wi-Fi profiles (C:\ProgramData\Microsoft\Wlansvc\Profiles via netsh
+    /// fallback) for SSIDs matching cheat-LAN, Wi-Fi Pineapple, and rogue-AP patterns. WLAN
+    /// profiles persist forever unless manually deleted — a forensic correlator for past
+    /// shared-network access with banned accounts.</summary>
+    public bool ScanWifiHistory { get; set; } = true;
+
+    /// <summary>Scan browser bookmark files (Chromium-family Bookmarks JSON + Firefox
+    /// places.sqlite) for entries pointing to cheat marketplaces and known cheat-suite
+    /// domains. Bookmarks survive "Clear browsing history" — permanent record of user
+    /// interest in cheat tools used by Ocean/detect.ac.</summary>
+    public bool ScanBrowserBookmarks { get; set; } = true;
+
     /// <summary>
     /// When false (default) the drive module only walks targeted, high-signal
     /// directories (profile, temp, downloads, appdata). When true it walks the
@@ -1242,11 +1276,17 @@ public static class ScanProfiles
         ScanJumpListForensics = true,         // small folder, byte-grep — fast (Ocean/detect.ac signature)
         ScanCloudSyncCheatArtifacts = false,  // potentially huge cloud folder walk — slow
         ScanTimelineActivity = true,          // single .db file byte-grep — fast (Ocean/detect.ac signature)
+        ScanAimAssistHardware = true,         // USB/HID enum registry — fast
+        ScanRecycleBinForensics = true,       // small $I files — fast
+        ScanAppDataLocalLow = true,           // small folder — fast
+        ScanDseBypass = true,                 // registry + bcdedit + Prefetch stat — fast
+        ScanWifiHistory = true,               // netsh wlan show profiles — fast
+        ScanBrowserBookmarks = true,          // bookmark JSON parse — fast
         DeepDriveScan = false,
-        // Quick profile aims for sub-30s wall-clock on a typical machine (Ocean/detect.ac
-        // benchmark). Per-module budget set tight — modules that can't finish in 30s are
-        // genuinely too slow for Quick and would have been disabled above anyway.
-        ModuleTimeoutSeconds = 30,
+        // No per-module timeout — every Quick module runs to completion. Quick stays
+        // fast because slow modules are individually disabled above, not because they
+        // get cut off mid-scan.
+        ModuleTimeoutSeconds = 0,
     };
 
     public static ScanOptions Standard() => new ScanOptions(); // defaults
@@ -1256,10 +1296,10 @@ public static class ScanProfiles
         Profile = ScanProfile.Deep,
         // All true (inherit defaults) plus:
         DeepDriveScan = true,
-        // 60-second per-module budget keeps the whole Deep scan snappy while still
-        // running every detection module. Modules that hit the budget are skipped
-        // individually (recorded as Low note) — the scan never freezes.
-        ModuleTimeoutSeconds = 60,
+        // No per-module timeout in Deep — every module runs to completion no matter
+        // how long. Slow modules (deep memory walks, full drive scans, hash baselines)
+        // need this to finish their work; skipping would create false negatives.
+        ModuleTimeoutSeconds = 0,
         MaxDepth = 20,
     };
 
