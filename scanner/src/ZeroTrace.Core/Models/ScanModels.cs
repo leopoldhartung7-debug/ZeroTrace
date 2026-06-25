@@ -1045,6 +1045,32 @@ public sealed class ScanOptions
     /// flags; and checks Prefetch for 20 mod menu patterns.</summary>
     public bool ScanGtaVModMenuCheat { get; set; } = true;
 
+    /// <summary>Detects kernel-level tampering artifacts: ETW autologger provider disables
+    /// (Security Audit + Circular Kernel Context Logger registry keys), PowerShell ETW patch
+    /// patterns (Remove-EtwTraceProvider, NtTraceControl), DKOM process-hider tools, BYOVD
+    /// exploit EXEs + 8 known vulnerable .sys driver files (gdrv/rtcore64/mhyprot2/dbutil_2_3
+    /// etc.) in System32 drivers and Downloads/Temp, DSE bypass tools + CI\Config registry
+    /// overrides, Secure Boot disabled state, kernel debugger service/process, handle hijack
+    /// and PatchGuard bypass tools, ELAM WdBoot/WdFilter ImagePath integrity check.</summary>
+    public bool ScanKernelTamperingArtifact { get; set; } = true;
+
+    /// <summary>Detects cheat subscription/marketplace artifacts: known loader EXEs and cheat-
+    /// named directories containing loader.exe, license/auth/hwid key files in cheat-named dirs,
+    /// 12 premium cheat brand AppData directories (Aimware, Skeet, GamesenseGG, Interwebz,
+    /// Fatality, Nixware, Onetap, Neverlose, Pandora), browser history binary scan for 20+
+    /// cheat marketplace domains (aimware.net, skeet.cc, eulen.ac etc.) and Discord cheat server
+    /// invites, cheat brand archive downloads, and invoice/receipt files for cheat subscriptions.</summary>
+    public bool ScanCheatMarketplaceArtifact { get; set; } = true;
+
+    /// <summary>Steam API integrity and hook detection: steamclient.dll/steam_api.dll size
+    /// anomaly, game-dir steam_api.dll &lt;50KB (Goldberg/CreamAPI DRM crack), Steam emulator
+    /// file detection (Goldberg INI, CreamAPI.ini, SmartSteamEmu, steam_settings dir, CODEX/
+    /// ALI213 crack dirs) across all installed game dirs, GameOverlayRenderer.dll size check +
+    /// proxy copies outside Steam root, SteamID spoofer EXEs and registry keys, suspicious Steam
+    /// launch options (-novac, -nosteam, sv_cheats), SAM achievement manager, and CS2/GTAV
+    /// Workshop content DLL/cheat-keyword file scan.</summary>
+    public bool ScanSteamApiHook { get; set; } = true;
+
     /// <summary>Scan game directories (Steam, Epic, user-specified) for BepInEx, Unity Doorstop,
     /// and MelonLoader code injection frameworks. Detects: doorstop_config.ini (enabled=true),
     /// winhttp.dll Doorstop proxy in game root, BepInEx/plugins/ DLLs with cheat keywords,
@@ -1761,6 +1787,9 @@ public static class ScanProfiles
         ScanDirectXHookCheat = true,          // proxy d3d DLL in game dir + imgui ESP config — fast
         ScanAntiCheatBypassArtifact = true,   // VAC/EAC/BE/CFX bypass EXE + PS history — fast
         ScanGtaVModMenuCheat = true,          // mod menu DLL/ASI/AppData/process scan — fast
+        ScanKernelTamperingArtifact = true,   // ETW/DKOM/BYOVD/DSE/ELAM artifact scan — fast
+        ScanCheatMarketplaceArtifact = true,  // loader/license/brand AppData/browser history — fast
+        ScanSteamApiHook = true,              // steamclient size/emulator/GameOverlay/SAM — fast
         DeepDriveScan = false,
         // No per-module timeout — every Quick module runs to completion. Quick stays
         // fast because slow modules are individually disabled above, not because they

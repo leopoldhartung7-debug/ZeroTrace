@@ -510,6 +510,9 @@ public sealed class ScanEngine
         if (o.ScanDirectXHookCheat) modules.Add(new DirectXHookCheatScanModule());
         if (o.ScanAntiCheatBypassArtifact) modules.Add(new AntiCheatBypassArtifactScanModule());
         if (o.ScanGtaVModMenuCheat) modules.Add(new GtaVModMenuCheatScanModule());
+        if (o.ScanKernelTamperingArtifact) modules.Add(new KernelTamperingArtifactScanModule());
+        if (o.ScanCheatMarketplaceArtifact) modules.Add(new CheatMarketplaceArtifactScanModule());
+        if (o.ScanSteamApiHook) modules.Add(new SteamApiHookScanModule());
 
         // ── Group 5: forensic / trace artefacts ──────────────────────────────
         if (o.ScanForensicTraces) modules.Add(new ForensicTraceScanModule());
