@@ -537,6 +537,11 @@ public sealed class ScanEngine
         if (o.ScanByovdVulnerableDriver) modules.Add(new ByovdVulnerableDriverScanModule());
         if (o.ScanEtwBypassTelemetry) modules.Add(new EtwBypassTelemetryScanModule());
         if (o.ScanEasyAntiCheatBypass) modules.Add(new EasyAntiCheatBypassScanModule());
+        if (o.ScanBattlEyeBypass) modules.Add(new BattlEyeBypassScanModule());
+        if (o.ScanVacFaceitBypass) modules.Add(new VacFaceitBypassScanModule());
+        if (o.ScanProcessInjectionTechnique) modules.Add(new ProcessInjectionTechniqueScanModule());
+        if (o.ScanFiveMRageMpAltVCheatNetwork) modules.Add(new FiveMRageMpAltVCheatNetworkScanModule());
+        if (o.ScanHypervisorCheatDetection) modules.Add(new HypervisorCheatDetectionScanModule());
 
         // ── Group 5: forensic / trace artefacts ──────────────────────────────
         if (o.ScanForensicTraces) modules.Add(new ForensicTraceScanModule());

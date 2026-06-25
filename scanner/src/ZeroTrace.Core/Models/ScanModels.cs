@@ -1206,6 +1206,31 @@ public sealed class ScanOptions
     /// RTCore64.sys, dbutil_2_3.sys etc.), EAC certificate store tampering, modified EAC directory
     /// structures, ETW patch artifacts targeting EAC telemetry, and KDMapper tooling alongside EAC.</summary>
     public bool ScanEasyAntiCheatBypass { get; set; } = true;
+    /// <summary>Detect BattlEye (BE) bypass techniques: BEService registry manipulation, BEDaisy.sys
+    /// anomalies, BattlEye folder tampering in PUBG/DayZ/Arma/Rainbow Six, 60+ bypass tool names,
+    /// BYOVD drivers targeting BE callbacks, hosts file blocking anti-cheat.battleye.com, Wireshark
+    /// session captures, and cheat loader timing-based injection markers.</summary>
+    public bool ScanBattlEyeBypass { get; set; } = true;
+    /// <summary>Detect VAC and FACEIT Anti-Cheat bypass: Steam emulators (SmartSteamEmu, GreenLuma,
+    /// CreamAPI, Goldberg), FACEIT AC service disable, 40+ bypass tool names, fake steam_api64.dll,
+    /// modified gameoverlayrenderer64.dll, CS2 -insecure launch options, gameinfo.gi tampering,
+    /// and PowerShell history with FACEIT/VAC tamper commands.</summary>
+    public bool ScanVacFaceitBypass { get; set; } = true;
+    /// <summary>Detect process injection artifacts: DLL/manual map/process hollowing/reflective/APC
+    /// injection tools, ntdll.dll backup copies (EDR hook bypass), direct syscall stubs, Heaven's
+    /// Gate configs, AtomBombing tools, SetWindowsHookEx abuse, 60+ loader/injector EXE names,
+    /// and injection config files referencing crt/hollow/reflective/manual_map methods.</summary>
+    public bool ScanProcessInjectionTechnique { get; set; } = true;
+    /// <summary>Detect FiveM/RageMP/alt:V network-layer cheats: packet spoofing tools, ESX/QBCore
+    /// exploit scripts (TriggerServerEvent floods, money injection), banned cheat resource names,
+    /// RageMP bridge DLLs, alt:V JS exploit scripts, cross-platform packet editors (WPE Pro,
+    /// PacketSender), Wireshark captures from gaming sessions, and TCP/UDP relay scripts.</summary>
+    public bool ScanFiveMRageMpAltVCheatNetwork { get; set; } = true;
+    /// <summary>Detect DMA and hypervisor-based cheats: PCILeech/MemProcFS artifacts, DMA FPGA
+    /// firmware files (Squirrel, ScatterRead), Qemu PCIe passthrough configs, leechcore/vmm.dll
+    /// outside legitimate context, Xilinx/Altera FPGA PCI device registry entries, and
+    /// anti-VM-detection evasion configs used to bypass anti-cheat VM detection.</summary>
+    public bool ScanHypervisorCheatDetection { get; set; } = true;
 
     /// <summary>Scan game directories (Steam, Epic, user-specified) for BepInEx, Unity Doorstop,
     /// and MelonLoader code injection frameworks. Detects: doorstop_config.ini (enabled=true),
@@ -1949,7 +1974,12 @@ public static class ScanProfiles
         ScanRagePluginHookCheat = true,        // RPH cheat plugin/bypass/console history scan — fast
         ScanByovdVulnerableDriver = true,      // 80+ CVE-exploited driver BYOVD artifact scan — fast
         ScanEtwBypassTelemetry = true,         // ETW patch/WD policy/telemetry disable scan — fast
-        ScanEasyAntiCheatBypass = true,        // EAC service/BYOVD/cert/ETW bypass scan — fast
+        ScanEasyAntiCheatBypass = true,         // EAC service/BYOVD/cert/ETW bypass scan — fast
+        ScanBattlEyeBypass = true,             // BE service/BYOVD/hosts/pcap bypass scan — fast
+        ScanVacFaceitBypass = true,            // Steam emu/FACEIT disable/bypass tool scan — fast
+        ScanProcessInjectionTechnique = true,  // DLL/manual-map/hollow/reflective inject scan — fast
+        ScanFiveMRageMpAltVCheatNetwork = true, // FiveM/RageMP/altV packet/exploit network scan — fast
+        ScanHypervisorCheatDetection = true,   // PCILeech/DMA/FPGA/Qemu hypervisor cheat scan — fast
         DeepDriveScan = false,
         // No per-module timeout — every Quick module runs to completion. Quick stays
         // fast because slow modules are individually disabled above, not because they
