@@ -1040,6 +1040,31 @@ public sealed class ScanOptions
     /// used in AI-based aimbot setups.</summary>
     public bool ScanGpuComputeCheat { get; set; } = true;
 
+    /// <summary>Scan OBS Studio scene collections and profiles for cheat-related source
+    /// names (ESP overlay, radar window, cheat menu window capture). OBS is used to hide
+    /// cheat overlays from streams while keeping them visible in-game.</summary>
+    public bool ScanObsConfiguration { get; set; } = true;
+
+    /// <summary>Scan MSI Afterburner profiles and RivaTuner Statistics Server plugin
+    /// registry for cheat-related macro targets and third-party plugin DLLs loaded via
+    /// RTSS's kernel injection mechanism.</summary>
+    public bool ScanAfterburnerRtss { get; set; } = true;
+
+    /// <summary>Detect known cheat-adjacent tools installed or executed: Process Hacker,
+    /// HWID Spoofers/Changers, VAC/EAC/BattlEye bypass utilities, and AC-killer scripts.
+    /// Also checks Prefetch for prior execution of these tools.</summary>
+    public bool ScanCheatTools { get; set; } = true;
+
+    /// <summary>Detect network artifacts of multi-PC cheat setups: SMB shares named
+    /// "radar" or "esp", VPN adapters (Hamachi/ZeroTier/Tailscale) used to connect
+    /// external cheat PCs, and network MRU with cheat-keyword paths.</summary>
+    public bool ScanNetworkCheatSetup { get; set; } = true;
+
+    /// <summary>Detect VMware / VirtualBox / Hyper-V / WSL2 used for hypervisor cheats
+    /// (run below Windows kernel, invisible to AC) or as deployment environment for
+    /// AI aimbots (WSL2 + Python + CUDA). VM driver services are checked.</summary>
+    public bool ScanVmHypervisor { get; set; } = true;
+
     /// <summary>
     /// When false (default) the drive module only walks targeted, high-signal
     /// directories (profile, temp, downloads, appdata). When true it walks the
@@ -1327,6 +1352,11 @@ public static class ScanProfiles
         ScanShadowplayArtifacts = true,       // clip file names — fast
         ScanVirtualAudioDevices = true,       // registry enum — fast
         ScanGpuComputeCheat = true,           // process + pip packages + dirs — fast
+        ScanObsConfiguration = true,          // OBS JSON config scan — fast
+        ScanAfterburnerRtss = true,           // Afterburner/RTSS config + registry — fast
+        ScanCheatTools = true,                // installed software + Prefetch — fast
+        ScanNetworkCheatSetup = true,         // SMB shares + network adapters — fast
+        ScanVmHypervisor = true,              // VM software + drivers — fast
         DeepDriveScan = false,
         // No per-module timeout — every Quick module runs to completion. Quick stays
         // fast because slow modules are individually disabled above, not because they

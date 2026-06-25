@@ -417,6 +417,10 @@ public sealed class ScanEngine
         if (o.ScanWifiHistory) modules.Add(new WiFiNetworkHistoryScanModule());
         if (o.ScanVirtualAudioDevices) modules.Add(new VirtualAudioDeviceScanModule());
         if (o.ScanGpuComputeCheat) modules.Add(new GpuComputeCheatProcessScanModule());
+        if (o.ScanAfterburnerRtss) modules.Add(new MSIAfterburnerRTSSScanModule());
+        if (o.ScanCheatTools) modules.Add(new GameBoosterCheatToolScanModule());
+        if (o.ScanNetworkCheatSetup) modules.Add(new NetworkShareCheatScanModule());
+        if (o.ScanVmHypervisor) modules.Add(new VmwareParavirtCheatScanModule());
         if (o.ScanWslAbuse) modules.Add(new WindowsSubsystemLinuxAbuseScanModule());
         if (o.ScanEfiVariables) modules.Add(new EfiVariableAnomalyScanModule());
         if (o.ScanSuspiciousNetworkAdapters) modules.Add(new SuspiciousNetworkAdapterScanModule());
@@ -453,6 +457,7 @@ public sealed class ScanEngine
         if (o.ScanMacroSoftware) modules.Add(new MacroSoftwareCheatScanModule());
         if (o.ScanSteamCheatCorrelation) modules.Add(new SteamCheatCorrelationScanModule());
         if (o.ScanShadowplayArtifacts) modules.Add(new NvidiaShadowplayArtifactScanModule());
+        if (o.ScanObsConfiguration) modules.Add(new OBSStreamingCheatScanModule());
 
         // ── Group 5: forensic / trace artefacts ──────────────────────────────
         if (o.ScanForensicTraces) modules.Add(new ForensicTraceScanModule());
