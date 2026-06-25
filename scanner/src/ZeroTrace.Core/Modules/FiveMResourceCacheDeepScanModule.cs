@@ -396,29 +396,30 @@ public sealed class FiveMResourceCacheDeepScanModule : IScanModule
         if (File.Exists(bannedServersFile))
         {
             ctx.IncrementFiles();
-            FileInfo fi;
-            try { fi = new FileInfo(bannedServersFile); } catch { goto SkipBannedServers; }
-
-            // A modified banned_servers.json (unusual: empty, tiny, or with 0-byte entries)
-            // indicates the file has been tampered with to unban the user from servers.
-            if (fi.Length == 0 || fi.Length < 10)
+            try
             {
-                ctx.AddFinding(new Finding
+                var bsFi = new FileInfo(bannedServersFile);
+                // A modified banned_servers.json (unusual: empty, tiny, or with 0-byte entries)
+                // indicates the file has been tampered with to unban the user from servers.
+                if (bsFi.Length == 0 || bsFi.Length < 10)
                 {
-                    Module   = Name,
-                    Title    = "Empty or truncated banned_servers.json",
-                    Risk     = RiskLevel.High,
-                    Location = bannedServersFile,
-                    FileName = "banned_servers.json",
-                    Reason   = "The CitizenFX banned_servers.json file is empty or truncated. " +
-                               "This file is modified by anti-ban tools to remove server bans, " +
-                               "allowing access to servers from which the player has been banned.",
-                    Detail   = $"File size: {fi.Length} bytes",
-                });
+                    ctx.AddFinding(new Finding
+                    {
+                        Module   = Name,
+                        Title    = "Empty or truncated banned_servers.json",
+                        Risk     = RiskLevel.High,
+                        Location = bannedServersFile,
+                        FileName = "banned_servers.json",
+                        Reason   = "The CitizenFX banned_servers.json file is empty or truncated. " +
+                                   "This file is modified by anti-ban tools to remove server bans, " +
+                                   "allowing access to servers from which the player has been banned.",
+                        Detail   = $"File size: {bsFi.Length} bytes",
+                    });
+                }
             }
+            catch { }
         }
 
-        SkipBannedServers:
         if (ct.IsCancellationRequested) return;
 
         // Check settings.json for spoofed display names
@@ -492,9 +493,11 @@ public sealed class FiveMResourceCacheDeepScanModule : IScanModule
         int filesScanned = 0;
         const int maxFilesTotal = 2000;
 
+        bool hitFileLimit = false;
         foreach (var dir in searchDirs)
         {
             if (ct.IsCancellationRequested) return;
+            if (hitFileLimit) break;
             if (!Directory.Exists(dir)) continue;
 
             IEnumerable<string> dirFiles;
@@ -508,7 +511,7 @@ public sealed class FiveMResourceCacheDeepScanModule : IScanModule
             foreach (var file in dirFiles)
             {
                 if (ct.IsCancellationRequested) return;
-                if (filesScanned >= maxFilesTotal) goto DoneFileSearch;
+                if (filesScanned >= maxFilesTotal) { hitFileLimit = true; break; }
 
                 ctx.IncrementFiles();
                 filesScanned++;
@@ -556,7 +559,6 @@ public sealed class FiveMResourceCacheDeepScanModule : IScanModule
             }
         }
 
-        DoneFileSearch:
         if (ct.IsCancellationRequested) return;
 
         // Check registry for CitizenFX override values

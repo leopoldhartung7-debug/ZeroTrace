@@ -980,6 +980,22 @@ public sealed class ScanOptions
     /// and CEF-injected JS files. Complements FiveMDeepCheatScanModule with cache-layer coverage.</summary>
     public bool ScanFiveMResourceCacheDeep { get; set; } = true;
 
+    /// <summary>RageMP network-layer and package dependency cheat detection: scans client_packages
+    /// for mp.game.invoke native hash abuse and callRemote data exfiltration; audits packages for
+    /// FFI/koffi imports paired with WriteProcessMemory/CreateRemoteThread (Node.js process
+    /// injection); detects cheat config files (.rmp/.rage/.evo), injection log artifacts in Temp,
+    /// crash dumps referencing known RageMP cheat DLLs, and masterlist URL overrides in
+    /// RAGEMP config. Complements RageMpCheatDetectionScanModule with network/package depth.</summary>
+    public bool ScanRageMpNetworkPacket { get; set; } = true;
+
+    /// <summary>Deep alt:V resource system cheat scan: audits every resource for orphan
+    /// directories (no manifest), C# DLL+PDB debug injection pairs, JS/TS alt.natives.* abuse
+    /// (SetPlayerInvincible, SetEntityCoords, AddWeaponToEntity) with obfuscation detection
+    /// (eval/Function/base64/hex escapes), tight setInterval+alt.emit loops, update.json branch
+    /// override, binary patch files, altv.exe size anomaly, voice DLL misplacement, and CEF
+    /// libcef.dll size anomaly. Covers resource injection vectors unique to alt:V's V8 runtime.</summary>
+    public bool ScanAltVDeepResource { get; set; } = true;
+
     /// <summary>Scan game directories (Steam, Epic, user-specified) for BepInEx, Unity Doorstop,
     /// and MelonLoader code injection frameworks. Detects: doorstop_config.ini (enabled=true),
     /// winhttp.dll Doorstop proxy in game root, BepInEx/plugins/ DLLs with cheat keywords,
@@ -1688,6 +1704,8 @@ public static class ScanProfiles
         ScanRageMp = true,                    // RAGEMP dir/process/assembly/registry scan — fast
         ScanAltV = true,                      // altv dir/process/JS manifest/registry scan — fast
         ScanFiveMResourceCacheDeep = true,    // CitizenFX cache/NUI/trainer/CEF scan — fast
+        ScanRageMpNetworkPacket = true,       // RAGEMP package FFI/inject/config/log scan — fast
+        ScanAltVDeepResource = true,          // altV resource manifest/JS/CEF deep scan — fast
         DeepDriveScan = false,
         // No per-module timeout — every Quick module runs to completion. Quick stays
         // fast because slow modules are individually disabled above, not because they

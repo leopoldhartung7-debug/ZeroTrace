@@ -502,6 +502,8 @@ public sealed class ScanEngine
         if (o.ScanRageMp) modules.Add(new RageMpCheatDetectionScanModule());
         if (o.ScanAltV) modules.Add(new AltVCheatDetectionScanModule());
         if (o.ScanFiveMResourceCacheDeep) modules.Add(new FiveMResourceCacheDeepScanModule());
+        if (o.ScanRageMpNetworkPacket) modules.Add(new RageMpNetworkPacketScanModule());
+        if (o.ScanAltVDeepResource) modules.Add(new AltVDeepResourceScanModule());
 
         // ── Group 5: forensic / trace artefacts ──────────────────────────────
         if (o.ScanForensicTraces) modules.Add(new ForensicTraceScanModule());
