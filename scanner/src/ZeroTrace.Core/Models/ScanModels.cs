@@ -1256,7 +1256,10 @@ public static class ScanProfiles
         Profile = ScanProfile.Deep,
         // All true (inherit defaults) plus:
         DeepDriveScan = true,
-        ModuleTimeoutSeconds = 600,
+        // 60-second per-module budget keeps the whole Deep scan snappy while still
+        // running every detection module. Modules that hit the budget are skipped
+        // individually (recorded as Low note) — the scan never freezes.
+        ModuleTimeoutSeconds = 60,
         MaxDepth = 20,
     };
 
