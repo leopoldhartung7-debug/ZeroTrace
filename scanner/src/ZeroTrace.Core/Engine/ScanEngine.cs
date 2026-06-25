@@ -546,6 +546,9 @@ public sealed class ScanEngine
         if (o.ScanAntiDebugBypassArtifact) modules.Add(new AntiDebugBypassArtifactScanModule());
         if (o.ScanGtaOnlineModder) modules.Add(new GtaOnlineModderDetectionScanModule());
         if (o.ScanHwidSpoofDeep) modules.Add(new HwidSpoofDeepScanModule());
+        if (o.ScanCheatDiscordC2) modules.Add(new CheatDiscordC2ScanModule());
+        if (o.ScanMpghNprotectBypass) modules.Add(new MpghNprotectBypassScanModule());
+        if (o.ScanPrefetchCheatForensic) modules.Add(new PrefetchCheatForensicScanModule());
         if (o.ScanCheatSourceCodeRepo) modules.Add(new CheatSourceCodeRepoScanModule());
 
         // ── Group 5: forensic / trace artefacts ──────────────────────────────

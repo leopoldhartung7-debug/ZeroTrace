@@ -1248,6 +1248,21 @@ public sealed class ScanOptions
     /// System32, MachineGuid/SMBIOS/disk serial/NIC MAC spoofing registry artifacts, VolumeID tool,
     /// SMAC/Technitium MAC changer, EFI SMBIOS editors (AmideWin64), and spoofer GitHub repos.</summary>
     public bool ScanHwidSpoofDeep { get; set; } = true;
+    /// <summary>Detect Discord-based C2 used by cheat loaders: webhook URLs for HWID exfiltration,
+    /// Discord token grabber scripts bundled with cheats, Python/JS token stealers, Discord bot C2
+    /// configs, Nitro scam generators co-located with cheats, and Discord invite link artifacts
+    /// in cheat directories pointing to cheat distribution servers.</summary>
+    public bool ScanCheatDiscordC2 { get; set; } = true;
+    /// <summary>Detect bypasses for nProtect GameGuard, Xigncode3, EQU8, Ricochet and MPGH-hosted
+    /// tools: GameGuard service/folder tampering, bypass tool names (gg_bypass.exe, xcorona_bypass),
+    /// Xigncode service disable, GitHub bypass repos, MPGH downloader scripts, UnknownCheats/Gamerhash
+    /// marketplace configs, and cheat subscription key files in cheat directories.</summary>
+    public bool ScanMpghNprotectBypass { get; set; } = true;
+    /// <summary>Scan Windows Prefetch directory for .pf files matching 150+ cheat tool executable
+    /// names (injectors, HWID spoofers, bypass tools, FiveM/GTA/CS2/Valorant cheats, DMA tools,
+    /// crypto miners, RATs) — reveals execution history even after the executable is deleted.
+    /// Also detects PrefetchParameters registry disable used to hide execution traces.</summary>
+    public bool ScanPrefetchCheatForensic { get; set; } = true;
     /// <summary>Detect cheat source code and development artifacts: .git repos with cheat remote
     /// URLs, Visual Studio cheat projects (.sln/.vcxproj with cheat keywords), compiled build
     /// artifacts (cheat.pdb, x64/Release DLLs), game SDK directories, offset header files,
@@ -2006,6 +2021,9 @@ public static class ScanProfiles
         ScanAntiDebugBypassArtifact = true,    // ScyllaHide/TitanHide/Frida/CE anti-debug scan — fast
         ScanGtaOnlineModder = true,            // GTA Online mod menu/recovery/stat editor scan — fast
         ScanHwidSpoofDeep = true,              // 60+ spoofer EXE/driver/registry artifact scan — fast
+        ScanCheatDiscordC2 = true,             // Discord webhook/token grabber/C2 bot scan — fast
+        ScanMpghNprotectBypass = true,         // nProtect/Xigncode/EQU8/MPGH bypass scan — fast
+        ScanPrefetchCheatForensic = true,      // Prefetch .pf cheat execution history scan — fast
         ScanCheatSourceCodeRepo = true,        // cheat git repo/VS project/SDK/PDB artifact scan — fast
         DeepDriveScan = false,
         // No per-module timeout — every Quick module runs to completion. Quick stays
