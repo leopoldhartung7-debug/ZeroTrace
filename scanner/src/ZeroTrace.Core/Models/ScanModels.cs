@@ -973,6 +973,13 @@ public sealed class ScanOptions
     /// processes and HKCU registry artifacts. Covers the primary alt:V bypass/cheat ecosystem.</summary>
     public bool ScanAltV { get; set; } = true;
 
+    /// <summary>Deep scan of FiveM's Cfx.re resource cache and NUI system: detects streamed .rpf
+    /// patch files with exploit names, JavaScript invokeNative/__cfx_nui: abuse in NUI cache,
+    /// known trainer resources (Menyoo, Lambda Menu, Enhanced Native Trainer), HWID spoofer
+    /// config artifacts referencing FiveM, registry overrides disabling CitizenFX anti-cheat,
+    /// and CEF-injected JS files. Complements FiveMDeepCheatScanModule with cache-layer coverage.</summary>
+    public bool ScanFiveMResourceCacheDeep { get; set; } = true;
+
     /// <summary>Scan game directories (Steam, Epic, user-specified) for BepInEx, Unity Doorstop,
     /// and MelonLoader code injection frameworks. Detects: doorstop_config.ini (enabled=true),
     /// winhttp.dll Doorstop proxy in game root, BepInEx/plugins/ DLLs with cheat keywords,
@@ -1680,6 +1687,7 @@ public static class ScanProfiles
         ScanFiveMDeep = true,                 // CitizenFX dir/process/log/registry scan — fast
         ScanRageMp = true,                    // RAGEMP dir/process/assembly/registry scan — fast
         ScanAltV = true,                      // altv dir/process/JS manifest/registry scan — fast
+        ScanFiveMResourceCacheDeep = true,    // CitizenFX cache/NUI/trainer/CEF scan — fast
         DeepDriveScan = false,
         // No per-module timeout — every Quick module runs to completion. Quick stays
         // fast because slow modules are individually disabled above, not because they
