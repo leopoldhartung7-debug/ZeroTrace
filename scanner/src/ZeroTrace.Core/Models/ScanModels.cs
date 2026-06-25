@@ -1089,6 +1089,24 @@ public sealed class ScanOptions
     /// cheat setup steps (Set-MpPreference, bcdedit, Invoke-WebRequest to cheat sites).</summary>
     public bool ScanPowerShellHistory { get; set; } = true;
 
+    /// <summary>Detect Special K (DirectX wrapper for cheat injection via Lua scripting
+    /// and texture replacement) and ReShade (depth buffer access = wallhack-style ESP).
+    /// Scans for SK installation directories, registry, and dxgi.dll/d3d9.dll placed
+    /// directly in competitive game directories (DLL hijacking injection).</summary>
+    public bool ScanSpecialKReShade { get; set; } = true;
+
+    /// <summary>Detect FPS unlockers and game exploit executors: Roblox exploit executors
+    /// (Synapse X, KRNL, JJSploit, Fluxus, Script-Ware), speed hackers, and FPS cap
+    /// removers. Checks installed software, running processes, Prefetch, and AppData
+    /// directories for executor extraction paths.</summary>
+    public bool ScanFpsUnlockerExploits { get; set; } = true;
+
+    /// <summary>Scan Windows Clipboard History (%LOCALAPPDATA%\Microsoft\Windows\Clipboard)
+    /// for cheat license keys, cheat download URLs, and injection commands. Clipboard
+    /// history persists across reboots until manually cleared — direct evidence of
+    /// copying cheat-related content.</summary>
+    public bool ScanClipboardHistory { get; set; } = true;
+
     /// <summary>
     /// When false (default) the drive module only walks targeted, high-signal
     /// directories (profile, temp, downloads, appdata). When true it walks the
@@ -1385,6 +1403,9 @@ public static class ScanProfiles
         ScanAntiDebugTools = true,            // RE tools installed/running — fast
         ScanScheduledTaskCheat = true,        // Task XML + TaskCache — fast
         ScanPowerShellHistory = true,         // PSReadLine history + profiles — fast
+        ScanSpecialKReShade = true,           // SK install dirs + game dir DLL check — fast
+        ScanFpsUnlockerExploits = true,       // installed software + Prefetch + AppData — fast
+        ScanClipboardHistory = true,          // clipboard DB byte-grep — fast
         DeepDriveScan = false,
         // No per-module timeout — every Quick module runs to completion. Quick stays
         // fast because slow modules are individually disabled above, not because they
