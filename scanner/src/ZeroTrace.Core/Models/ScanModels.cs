@@ -864,6 +864,24 @@ public sealed class ScanOptions
     /// Uses EnumWindows + GetWindowLongPtr(GWL_EXSTYLE) for overlay detection.</summary>
     public bool ScanGlobalInputHooks { get; set; } = true;
 
+    /// <summary>Detect malicious EFI/UEFI NVRAM variables used by boot-level HWID spoofers
+    /// and cheat loaders. Checks EFI Boot* entries for unexpected boot managers, vendor-specific
+    /// GUID namespaces matching known cheat spoofer DXE drivers, and known cheat variable names
+    /// via GetFirmwareEnvironmentVariable(). Also checks BootExecute registry for pre-boot entries.</summary>
+    public bool ScanEfiVariables { get; set; } = true;
+
+    /// <summary>Read the Windows DNS client cache via DnsGetCacheDataTable (dnsapi.dll) and
+    /// analyze all resolved domains against 60+ known cheat suite C2/license server domains,
+    /// cheat marketplace domains, suspicious TLD patterns, and domain label keywords.
+    /// DNS cache persists after browser history deletion and is a reliable forensic source.</summary>
+    public bool ScanDnsCacheExtended { get; set; } = true;
+
+    /// <summary>Detect network adapter anomalies used by DMA cheats and radar cheats: promiscuous
+    /// mode adapters (packet sniffing), DMA hardware (FPGA/PCILeech) registered as network devices,
+    /// MAC address spoofing (locally-administered bit on physical adapters), NpCap/WinPcap without
+    /// legitimate capture applications, and FPGA PCI device IDs in the device registry.</summary>
+    public bool ScanSuspiciousNetworkAdapters { get; set; } = true;
+
     /// <summary>
     /// When false (default) the drive module only walks targeted, high-signal
     /// directories (profile, temp, downloads, appdata). When true it walks the
@@ -1120,6 +1138,9 @@ public static class ScanProfiles
         ScanWslAbuse = true,                   // registry + process check — fast
         ScanGameConfigCheats = false,          // game cfg file walk — slow
         ScanGlobalInputHooks = true,           // EnumWindows + process enum — fast
+        ScanEfiVariables = true,              // GetFirmwareEnvironmentVariable — fast
+        ScanDnsCacheExtended = true,          // DnsGetCacheDataTable — fast
+        ScanSuspiciousNetworkAdapters = true, // GetAdaptersInfo + registry — fast
         DeepDriveScan = false,
         ModuleTimeoutSeconds = 60,
     };

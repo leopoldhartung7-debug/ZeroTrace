@@ -309,6 +309,7 @@ public sealed class ScanEngine
         if (o.ScanProcessMitigations) modules.Add(new ProcessMitigationAnomalyScanModule());
         if (o.ScanKnownCheatMutexExt) modules.Add(new KnownCheatMutexExtScanModule());
         if (o.ScanGlobalInputHooks) modules.Add(new GlobalKeyboardMouseHookScanModule());
+        if (o.ScanDnsCacheExtended) modules.Add(new DnsClientCacheExtendedScanModule());
 
         // ── Group 3: registry / WMI / driver queries ──────────────────────────
         if (o.ScanRegistry) modules.Add(new RegistryScanModule());
@@ -364,6 +365,8 @@ public sealed class ScanEngine
         if (o.ScanCompatibilityLayerBypass) modules.Add(new CompatibilityLayerBypassScanModule());
         if (o.ScanCheatToolRegistryArtifacts) modules.Add(new CheatToolRegistryArtifactsScanModule());
         if (o.ScanWslAbuse) modules.Add(new WindowsSubsystemLinuxAbuseScanModule());
+        if (o.ScanEfiVariables) modules.Add(new EfiVariableAnomalyScanModule());
+        if (o.ScanSuspiciousNetworkAdapters) modules.Add(new SuspiciousNetworkAdapterScanModule());
         if (o.ScanWmiPersistence) modules.Add(new WmiPersistenceScanModule());
         if (o.ScanScheduledTasks) modules.Add(new ScheduledTaskScanModule());
         if (o.ScanKernelDrivers) modules.Add(new DriverScanModule());
