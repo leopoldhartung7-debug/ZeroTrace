@@ -628,6 +628,10 @@ public sealed class ScanEngine
         if (o.ScanRageMPMoneyGlitch) modules.Add(new RageMPMoneyGlitchScanModule());
         if (o.ScanMappingDriverForensic) modules.Add(new MappingDriverForensicScanModule());
         if (o.ScanSteamCheatWorkshop) modules.Add(new SteamCheatWorkshopScanModule());
+        if (o.ScanAltVCrasherDetection) modules.Add(new AltVCrasherDetectionScanModule());
+        if (o.ScanAltVMoneyCheat) modules.Add(new AltVMoneyCheatScanModule());
+        if (o.ScanFiveMNativeHook) modules.Add(new FiveMNativeHookScanModule());
+        if (o.ScanRageMPScriptInjection) modules.Add(new RageMPScriptInjectionScanModule());
         if (o.ScanCheatSourceCodeRepo) modules.Add(new CheatSourceCodeRepoScanModule());
 
         // ── Group 5: forensic / trace artefacts ──────────────────────────────

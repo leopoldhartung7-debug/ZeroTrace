@@ -1,5 +1,9 @@
-using System.Diagnostics.Eventing.Reader;
-using System.Text;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Win32;
 using ZeroTrace.Core.Engine;
 using ZeroTrace.Core.Models;
@@ -8,675 +12,526 @@ namespace ZeroTrace.Core.Modules;
 
 public sealed class MappingDriverForensicScanModule : IScanModule
 {
-    public string Name => "Driver Manual Mapping Forensic Scan";
-    public double Weight => 4.6;
+    public string Name => "Manual Mapping Driver Forensic Scan";
+    public double Weight => 4.5;
     public int ParallelGroup => 4;
     public int ModuleTimeoutSeconds => 0;
 
-    private static readonly string UserProfile =
-        Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-    private static readonly string LocalAppData =
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-    private static readonly string RoamingAppData =
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-    private static readonly string Downloads =
-        Path.Combine(UserProfile, "Downloads");
-    private static readonly string Desktop =
-        Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
-    private static readonly string Documents =
-        Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-    private static readonly string WinDir =
-        Environment.GetFolderPath(Environment.SpecialFolder.Windows);
-    private static readonly string System32 =
-        Path.Combine(WinDir, "System32");
-    private static readonly string Temp =
-        Path.GetTempPath();
-    private static readonly string ProgramFiles =
-        Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
-    private static readonly string ProgramFilesX86 =
-        Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
-    private static readonly string ProgramData =
-        Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
+    // -------------------------------------------------------------------------
+    // Known mapper executable filenames (65+)
+    // -------------------------------------------------------------------------
 
-    // Known kdmapper executable variants
-    private static readonly string[] KdmapperExecutables =
+    private static readonly HashSet<string> KnownMapperExecutables = new(StringComparer.OrdinalIgnoreCase)
     {
         "kdmapper.exe",
-        "kdmapper64.exe",
         "kdmapper_v2.exe",
-        "kdmapper_modified.exe",
-        "kdmapper_test.exe",
-        "kdmapper_eac.exe",
-        "kdmapper_be.exe",
-        "kdmapper_bypass.exe",
-        "kdmapper_patched.exe",
-        "kdmapper2.exe",
-        "kd_mapper.exe",
-        "kernel_mapper.exe",
-        "kernelmapper.exe",
-        "kdmap.exe",
-    };
-
-    // ThunderingTurla and related mapper names
-    private static readonly string[] ThunderingTurlaExecutables =
-    {
-        "turla.exe",
-        "turla_driver.exe",
-        "turla_map.exe",
-        "thunderingturla.exe",
-        "thunderturla.exe",
-        "turla_mapper.exe",
-    };
-
-    // Other known driver mapper tools
-    private static readonly string[] OtherMapperExecutables =
-    {
-        "dsemap.exe",
-        "winio_mapper.exe",
+        "phydm_mapper.exe",
         "gdrv_mapper.exe",
-        "rtcore_mapper.exe",
-        "dsefix_mapper.exe",
-        "physmem_mapper.exe",
-        "mem_mapper.exe",
-        "drivermap.exe",
-        "drv_mapper.exe",
-        "capcom_mapper.exe",
-        "capcom.exe",
-        "dbutil_mapper.exe",
         "iqvw64_mapper.exe",
-        "mhyprot_mapper.exe",
+        "physmem_mapper.exe",
         "winring0_mapper.exe",
-        "physmem2profit.exe",
-        "kMapper.exe",
-        "kdrv_load.exe",
+        "cpuz_mapper.exe",
+        "msio64_mapper.exe",
+        "dbutildrv2_mapper.exe",
+        "dbutil_mapper.exe",
+        "atikmpag_mapper.exe",
+        "rttusb_mapper.exe",
+        "bsod_mapper.exe",
+        "vulfpeck_mapper.exe",
+        "directio64_mapper.exe",
+        "passmark_mapper.exe",
+        "semav6msr64_mapper.exe",
+        "elby_mapper.exe",
+        "elby_clonedrive_mapper.exe",
+        "evga_mapper.exe",
+        "msi_mapper.exe",
+        "gigabyte_mapper.exe",
+        "asus_mapper.exe",
+        "hp_mapper.exe",
+        "dell_mapper.exe",
+        "intel_mapper.exe",
+        "amd_mapper.exe",
+        "nv_mapper.exe",
         "manual_mapper.exe",
-        "manualmapper.exe",
-        "efi_mapper.exe",
-        "efi_guard.exe",
+        "kernel_mapper.exe",
+        "driver_mapper.exe",
+        "ring0_mapper.exe",
+        "kmapper.exe",
+        "kdmap.exe",
+        "physmap.exe",
+        "loadlib_mapper.exe",
+        "alloc_mapper.exe",
+        "bypass_mapper.exe",
+        "inject_mapper.exe",
+        "usermode_mapper.exe",
+        "shellcode_mapper.exe",
+        "pe_mapper.exe",
+        "dll_mapper.exe",
+        "raw_mapper.exe",
+        "memory_mapper.exe",
+        "map_driver.exe",
+        "map_kernel.exe",
+        "map_process.exe",
+        "syscall_mapper.exe",
+        "vtdh_mapper.exe",
+        "mhyprot_mapper.exe",
+        "hyperion_mapper.exe",
+        "be_mapper.exe",
+        "vac_mapper.exe",
+        "eac_mapper.exe",
+        "ac_mapper.exe",
+        "anticheat_bypass_mapper.exe",
+        "game_mapper.exe",
+        "cheat_mapper.exe",
+        "hack_mapper.exe",
+        "exploit_mapper.exe",
+        "mapper_tool.exe",
+        "mapper_v2.exe",
+        "mapper_v3.exe",
+        "mapper_x64.exe",
     };
 
-    // DSE bypass tool names
-    private static readonly string[] DseBypassExecutables =
-    {
-        "dsefix.exe",
-        "dsefix64.exe",
-        "ci_bypass.exe",
-        "kernel_ci_bypass.exe",
-        "dsesign.exe",
-        "dse_bypass.exe",
-        "ci_fix.exe",
-        "dsepatch.exe",
-        "kdse.exe",
-        "disabledse.exe",
-        "disable_dse.exe",
-        "bcdfix.exe",
-    };
+    // -------------------------------------------------------------------------
+    // Known vulnerable driver filenames — BYOVD (55+)
+    // -------------------------------------------------------------------------
 
-    // PatchGuard bypass tool names
-    private static readonly string[] PatchGuardBypassExecutables =
+    private static readonly HashSet<string> KnownVulnerableDriverFiles = new(StringComparer.OrdinalIgnoreCase)
     {
-        "patchguard_bypass.exe",
-        "pg_bypass.exe",
-        "pgbypass.exe",
-        "patchguard_patcher.exe",
-        "pg_patcher.exe",
-        "pg_patch.exe",
-        "pgpatch.exe",
-        "kernelpatch.exe",
-        "kernel_patch.exe",
-        "kpatch.exe",
-        "noPG.exe",
-        "nopatchguard.exe",
-    };
-
-    // BYOVD vulnerable driver staging files
-    private static readonly string[] ByovdVulnerableDrivers =
-    {
-        "dbutil_2_3.sys",
-        "dbutil_2_3_64.sys",
-        "gdrv.sys",
-        "winring0.sys",
-        "winring0x64.sys",
-        "rtcore64.sys",
-        "rtcore32.sys",
-        "mhyprot.sys",
-        "mhyprot2.sys",
         "iqvw64e.sys",
-        "ntiolib_x64.sys",
-        "msio64.sys",
-        "msio32.sys",
-        "asio.sys",
-        "bs_hwmio64.sys",
-        "bs_rcio64.sys",
-        "cpuz141_x64.sys",
-        "cpuz145_x64.sys",
-        "cpuz143_x64.sys",
-        "kprocesshacker.sys",
-        "WinIo64.sys",
-        "WinIo32.sys",
-        "HW.sys",
+        "gdrv.sys",
+        "gdrv2.sys",
         "physmem.sys",
-        "nicm.sys",
-        "nscm.sys",
-        "rtkio64.sys",
-        "atszio64.sys",
-        "ene.sys",
-        "amifldrv64.sys",
-        "winio.sys",
-        "lha.sys",
-        "inpoutx64.sys",
-        "msio.sys",
-        "libnicm.sys",
-        "speedfan.sys",
-        "sandra.sys",
-        "sysdrv3s.sys",
-        "wiseunlo.sys",
-        "bsflash64.sys",
+        "phydm.sys",
+        "cpuz_x64.sys",
+        "winring0x64.sys",
+        "winio64.sys",
+        "msio64.sys",
+        "dbutil_2_3.sys",
+        "dbutil_3_0.sys",
+        "dbutildrv2.sys",
+        "atikmpag.sys",
+        "rttusb.sys",
+        "vulfpeck.sys",
+        "directio64.sys",
+        "PassmarkOSDS64.sys",
+        "semav6msr64.sys",
+        "elby.sys",
+        "elby_cdrom.sys",
+        "evga_eleet.sys",
+        "HwRwDrv.sys",
         "glckio2.sys",
-        "phlash64.sys",
-        "rwdrv.sys",
+        "Asrdrv104.sys",
+        "AsrDrv106.sys",
+        "ASUS_drivers.sys",
+        "RTCore64.sys",
+        "MHYPROT2.sys",
+        "mhyprot.sys",
+        "mhyprot3.sys",
+        "ProcExp152.sys",
+        "ProcExp.sys",
+        "aswSP.sys",
+        "AsUpIO.sys",
+        "AsUpIO64.sys",
+        "MsIo64.sys",
+        "LgCoreTemp.sys",
+        "TdkLib64.sys",
+        "IOmap64.sys",
+        "MagniComp.sys",
+        "nsiom.sys",
+        "nsiom64.sys",
+        "SentinelAgent.sys",
+        "sfc64.sys",
+        "kprocesshacker.sys",
+        "kprocesshacker3.sys",
+        "MiniDriverUnlocker.sys",
+        "vmdrv.sys",
+        "vmdrv64.sys",
+        "netfilterdrv.sys",
+        "TrueSight.sys",
+        "inpoutx64.sys",
+        "inpout32.sys",
+        "winpmem.sys",
+        "pmem.sys",
+        "DumpIt.sys",
     };
 
-    // Test-signing / DSE disable batch scripts
-    private static readonly string[] TestSigningBatchNames =
+    // -------------------------------------------------------------------------
+    // Known mapper DLL filenames (45+)
+    // -------------------------------------------------------------------------
+
+    private static readonly HashSet<string> KnownMapperDlls = new(StringComparer.OrdinalIgnoreCase)
     {
-        "bcdedit_testsigning.bat",
-        "enable_testsign.bat",
-        "testsign.cmd",
-        "dsesign.bat",
-        "enable_testmode.bat",
-        "testmode.bat",
-        "nointegritychecks.bat",
-        "disable_signature.bat",
-        "disablesigning.bat",
-        "dse_off.bat",
-        "unsigned_drivers.bat",
-        "bcdedit_nointegrity.bat",
+        "mapper.dll",
+        "kdmapper.dll",
+        "physmem.dll",
+        "byovd.dll",
+        "manual_map.dll",
+        "kernel_map.dll",
+        "ring0_map.dll",
+        "driver_map.dll",
+        "inject_map.dll",
+        "bypass_map.dll",
+        "pe_inject.dll",
+        "shellcode_inject.dll",
+        "raw_inject.dll",
+        "memory_inject.dll",
+        "process_inject.dll",
+        "usermode_map.dll",
+        "syscall_map.dll",
+        "mhyprot_map.dll",
+        "eac_bypass.dll",
+        "be_bypass.dll",
+        "vac_bypass.dll",
+        "ac_bypass.dll",
+        "driver_bypass.dll",
+        "kernel_bypass.dll",
+        "ring0_bypass.dll",
+        "sign_bypass.dll",
+        "dse_bypass.dll",
+        "integrity_bypass.dll",
+        "signature_bypass.dll",
+        "driver_loader.dll",
+        "kernel_loader.dll",
+        "ring0_loader.dll",
+        "driver_inject.dll",
+        "kernel_inject.dll",
+        "process_hollow.dll",
+        "process_ghost.dll",
+        "process_doppel.dll",
+        "pe_hollow.dll",
+        "pe_ghost.dll",
+        "pe_doppel.dll",
+        "section_map.dll",
+        "memory_map.dll",
+        "viewbase_map.dll",
+        "alloc_map.dll",
+        "loadlib_map.dll",
     };
 
-    // Mapper output log file names
-    private static readonly string[] MapperLogFileNames =
-    {
-        "kdmapper_log.txt",
-        "mapper_output.txt",
-        "driver_map.log",
-        "map_status.txt",
-        "injection_log.txt",
-        "mapping_log.txt",
-        "drv_map.txt",
-        "kernel_map.log",
-        "map_result.txt",
-        "kdmap.log",
-        "mapper.log",
-        "driver_inject.log",
-        "inject_log.txt",
-        "bypass_log.txt",
-        "dse_log.txt",
-    };
+    // -------------------------------------------------------------------------
+    // Known BYOVD service names (35+)
+    // -------------------------------------------------------------------------
 
-    // Registry service names associated with mappers or vulnerable drivers being loaded
-    private static readonly string[] SuspectMapperServiceKeywords =
+    private static readonly HashSet<string> ByovdServiceNames = new(StringComparer.OrdinalIgnoreCase)
     {
-        "kdmapper",
-        "turla",
-        "thunderingturla",
-        "dsemap",
+        "iqvw64e",
         "gdrv",
-        "rtcore",
-        "dbutil_2_3",
-        "mhyprot",
-        "iqvw64",
-        "winring0",
+        "gdrv2",
         "physmem",
-        "winio",
+        "phydm",
         "cpuz",
-        "kprocesshacker",
-        "nicm",
-        "capcom",
-        "rwdrv",
-        "speedfan",
-        "sysdrv3s",
-        "glckio",
-        "amifldrv",
+        "winring0",
+        "winio64",
+        "msio64",
+        "dbutil",
+        "dbutildrv2",
+        "atikmpag",
+        "rttusb",
+        "vulfpeck",
+        "directio64",
+        "passmark",
+        "semav6msr64",
+        "elby",
+        "evga_eleet",
+        "HwRwDrv",
+        "glckio2",
+        "Asrdrv",
+        "RTCore64",
+        "MHYPROT",
+        "MHYPROT2",
+        "ProcExp",
+        "aswSP",
+        "AsUpIO",
+        "MsIo64",
+        "LgCoreTemp",
+        "TdkLib64",
+        "IOmap64",
+        "nsiom",
+        "MagniComp",
+        "netfilterdrv",
+        "TrueSight",
+        "inpoutx64",
+        "inpout32",
+        "winpmem",
+        "pmem",
     };
 
-    // MUICache / UserAssist check names for mapper tools
-    private static readonly string[] MapperMuiCacheKeywords =
+    // -------------------------------------------------------------------------
+    // Mapper config file names
+    // -------------------------------------------------------------------------
+
+    private static readonly HashSet<string> MapperConfigFileNames = new(StringComparer.OrdinalIgnoreCase)
     {
+        "mapper.ini",
+        "mapper.cfg",
+        "mapper.json",
+        "kdmapper.cfg",
+        "physmem.cfg",
+        "byovd.cfg",
+        "byovd.json",
+        "byovd.ini",
+        "mapper_config.json",
+        "driver_config.json",
+        "mapping_config.json",
+        "kernel_config.json",
+        "inject_config.json",
+        "bypass_config.json",
+    };
+
+    // Keywords that confirm a config file is mapper-related
+    private static readonly string[] MapperConfigKeywords = new[]
+    {
+        "driver", "offset", "base", "signature", "bypass", "kernel", "ring0",
+    };
+
+    // -------------------------------------------------------------------------
+    // Load script detection keywords (require 4+ matches)
+    // -------------------------------------------------------------------------
+
+    private static readonly string[] LoadScriptKeywords = new[]
+    {
+        "sc create",
+        "sc start",
+        "NtLoadDriver",
+        "ZwLoadDriver",
         "kdmapper",
-        "turla",
-        "thunderingturla",
-        "dsemap",
-        "dsefix",
-        "patchguard_bypass",
-        "pg_bypass",
-        "pgbypass",
-        "physmem2profit",
-        "gdrv_mapper",
-        "rtcore_mapper",
-        "manual_mapper",
-        "kernel_mapper",
-        "winio_mapper",
-        "capcom",
-        "manualmapper",
+        "physmem",
+        "byovd",
+        "LoadDriver",
+        "CreateService",
+        "map_driver",
+        "kernel_map",
+        "ring0",
+        "bypass_driver",
+        "disable_dse",
+        "dse_bypass",
+        "sign_bypass",
+        "bcdedit /set",
+        "testsigning",
+        "DriverEntry",
+        "MmMapIoSpace",
+        "MmAllocateNonCachedMemory",
     };
 
-    public async Task RunAsync(ScanContext ctx, CancellationToken ct)
+    // -------------------------------------------------------------------------
+    // Known mapper download archive filenames (50+)
+    // -------------------------------------------------------------------------
+
+    private static readonly HashSet<string> KnownMapperArchives = new(StringComparer.OrdinalIgnoreCase)
     {
-        ctx.Report(0.0, "Driver Manual Mapping Forensic Scan", "Starte Kernel Mapper Forensic Scan...");
+        "kdmapper.zip",
+        "kdmapper.rar",
+        "physmem_mapper.zip",
+        "byovd_toolkit.zip",
+        "byovd_toolkit.rar",
+        "manual_mapper.zip",
+        "manual_mapper.rar",
+        "driver_mapper.zip",
+        "driver_mapper.rar",
+        "mapper_tool.zip",
+        "vulnerable_driver.zip",
+        "vulnerable_driver.rar",
+        "byovd_driver.zip",
+        "byovd_driver.rar",
+        "eac_bypass_driver.zip",
+        "eac_bypass_driver.rar",
+        "be_bypass_driver.zip",
+        "vac_bypass_driver.zip",
+        "ac_bypass_driver.zip",
+        "kernel_mapper.zip",
+        "kernel_mapper.rar",
+        "mhyprot_mapper.zip",
+        "ring0_mapper.zip",
+        "pe_mapper.zip",
+        "shellcode_mapper.zip",
+        "gdrv_mapper.zip",
+        "iqvw64_mapper.zip",
+        "rtcore_mapper.zip",
+        "byovd_pack.zip",
+        "byovd_pack.rar",
+        "driver_exploit.zip",
+        "driver_exploit.rar",
+        "kernel_exploit.zip",
+        "kernel_exploit.rar",
+        "ring0_toolkit.zip",
+        "ring0_toolkit.rar",
+        "driver_loader.zip",
+        "driver_loader.rar",
+        "kernel_loader.zip",
+        "kernel_loader.rar",
+        "map_driver.zip",
+        "map_driver.rar",
+        "physmem_driver.zip",
+        "physmem_driver.rar",
+        "vulnerable_sys.zip",
+        "vulnerable_sys.rar",
+        "kdm_tool.zip",
+        "kdm_tool.rar",
+        "bypass_driver_pack.zip",
+        "byovd_collection.zip",
+        "byovd_collection.rar",
+    };
 
-        await Task.WhenAll(
-            CheckKdmapperExecutables(ctx, ct),
-            CheckThunderingTurlaArtifacts(ctx, ct),
-            CheckOtherMapperTools(ctx, ct),
-            CheckByovdVulnerableDrivers(ctx, ct),
-            CheckMapperLogFiles(ctx, ct),
-            CheckTestSigningArtifacts(ctx, ct),
-            CheckDseBypassArtifacts(ctx, ct),
-            CheckPatchGuardBypassArtifacts(ctx, ct),
-            CheckDriverImageInUnusualLocations(ctx, ct),
-            CheckMapperRegistryServices(ctx, ct),
-            CheckBcdRegistryTestSigning(ctx, ct),
-            CheckEventLogUnsignedDriverLoads(ctx, ct),
-            CheckMapperUserAssist(ctx, ct),
-            CheckMapperMuiCache(ctx, ct),
-            CheckMapperProcessArtifacts(ctx, ct),
-            CheckMapperPrefetchArtifacts(ctx, ct)
+    // -------------------------------------------------------------------------
+    // Prefetch stem keywords for mapper detection
+    // -------------------------------------------------------------------------
+
+    private static readonly string[] MapperPrefetchKeywords = new[]
+    {
+        "KDMAPPER",
+        "PHYSMEM",
+        "GDRV",
+        "BYOVD",
+        "DRVMAP",
+        "DRIVERMAPPER",
+        "KERNELMAPPER",
+        "MHYPROT",
+        "RTCORE",
+        "IQVW",
+        "CPUZBYPASS",
+        "DSEFIXER",
+        "DSEBYPASS",
+        "KSBYPASS",
+        "KPPBYPASS",
+        "TESTMODEBYPASS",
+        "MAP_DRIVER",
+        "MAP_KERNEL",
+        "LOADDRIVER",
+        "BYPASSDRV",
+        "KERNELBYPASS",
+        "DRIVERBYPASS",
+        "SIGBYPASS",
+        "SIGNBYPASS",
+        "PATCHGUARD",
+        "NTOSKRNLPATCH",
+        "KDMAP",
+        "PHYSMAP",
+        "MAPDRV",
+        "MANUALMAP",
+        "MANUALMAPPER",
+        "RING0LOADER",
+        "KERNELLOAD",
+        "DRIVERLOAD",
+        "BYPDRV",
+        "GDRVSCAN",
+        "MSIO64BYPASS",
+        "NTIOLIB64",
+        "WINIO64",
+        "WINRING0",
+        "INPOUT",
+        "CPUZSYS",
+        "ASWSP",
+        "RTCOREPATCH",
+        "MHYPROT2",
+        "PROCEXP",
+        "WINPMEM",
+        "DUMPIT",
+        "MAPPER",
+        "RING0",
+    };
+
+    // -------------------------------------------------------------------------
+    // UserAssist mapper executable names (ROT13 encoded in registry)
+    // -------------------------------------------------------------------------
+
+    private static readonly HashSet<string> MapperUserAssistNames = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "kdmapper.exe",
+        "kdmapper_v2.exe",
+        "physmem_mapper.exe",
+        "gdrv_mapper.exe",
+        "manual_mapper.exe",
+        "kernel_mapper.exe",
+        "driver_mapper.exe",
+        "ring0_mapper.exe",
+        "kmapper.exe",
+        "kdmap.exe",
+        "physmap.exe",
+        "bypass_mapper.exe",
+        "inject_mapper.exe",
+        "mhyprot_mapper.exe",
+        "be_mapper.exe",
+        "vac_mapper.exe",
+        "eac_mapper.exe",
+        "mapper_tool.exe",
+        "mapper_v2.exe",
+        "mapper_v3.exe",
+        "mapper_x64.exe",
+        "map_driver.exe",
+        "map_kernel.exe",
+    };
+
+    // -------------------------------------------------------------------------
+    // Directory paths
+    // -------------------------------------------------------------------------
+
+    private static string System32Dir =>
+        Environment.GetFolderPath(Environment.SpecialFolder.System);
+
+    private static string System32Drivers =>
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "drivers");
+
+    private static string WindowsTempDir =>
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "Temp");
+
+    private static string UserTempDir => Path.GetTempPath();
+
+    private static string DesktopDir =>
+        Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+
+    private static string DownloadsDir =>
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
+
+    private static string LocalAppDataDir =>
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+
+    private static string RoamingAppDataDir =>
+        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+
+    private static string PrefetchDir =>
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "Prefetch");
+
+    private static string WinEvtLogsDir =>
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), @"winevt\Logs");
+
+    // -------------------------------------------------------------------------
+    // RunAsync — all 10 checks in parallel
+    // -------------------------------------------------------------------------
+
+    public Task RunAsync(ScanContext ctx, CancellationToken ct)
+    {
+        ctx.Report(0.0, Name, "Starting manual mapping driver forensic scan...");
+
+        return Task.WhenAll(
+            CheckKnownMapperExecutables(ctx, ct),
+            CheckKnownVulnerableDriverFiles(ctx, ct),
+            CheckMapperConfigArtifacts(ctx, ct),
+            CheckMapperLoadScripts(ctx, ct),
+            CheckByovdRegistryArtifacts(ctx, ct),
+            CheckMapperDownloadArtifacts(ctx, ct),
+            CheckMapperPrefetchArtifacts(ctx, ct),
+            CheckMapperEventLogArtifacts(ctx, ct),
+            CheckKnownMapperDlls(ctx, ct),
+            CheckMapperTemporaryArtifacts(ctx, ct)
         );
-
-        ctx.Report(1.0, "Driver Manual Mapping Forensic Scan", "Kernel Mapper Forensic Scan abgeschlossen");
     }
 
-    private Task CheckKdmapperExecutables(ScanContext ctx, CancellationToken ct) =>
-        Task.Run(() =>
-        {
-            var searchDirs = new[]
-            {
-                Downloads,
-                Desktop,
-                Documents,
-                Temp,
-                Path.Combine(LocalAppData, "Temp"),
-                Path.Combine(WinDir, "Temp"),
-                Path.Combine(LocalAppData, "Programs"),
-                Path.Combine(UserProfile, "OneDrive"),
-                Path.Combine(UserProfile, "OneDrive", "Desktop"),
-                Path.Combine(UserProfile, "OneDrive", "Downloads"),
-                RoamingAppData,
-                LocalAppData,
-                ProgramData,
-            };
+    // -------------------------------------------------------------------------
+    // Check 1: Known mapper executables
+    // -------------------------------------------------------------------------
 
-            foreach (var dir in searchDirs)
-            {
-                if (ct.IsCancellationRequested) return;
-                if (!Directory.Exists(dir)) continue;
-
-                try
-                {
-                    foreach (var file in Directory.EnumerateFiles(dir, "*.exe", SearchOption.AllDirectories))
-                    {
-                        if (ct.IsCancellationRequested) return;
-                        var fileName = Path.GetFileName(file);
-                        bool isKdmapper = KdmapperExecutables.Any(n =>
-                            fileName.Equals(n, StringComparison.OrdinalIgnoreCase));
-                        if (!isKdmapper) continue;
-
-                        ctx.IncrementFiles();
-                        var fi = new FileInfo(file);
-                        ctx.AddFinding(new Finding
-                        {
-                            Module = Name,
-                            Title = $"kdmapper Kernel-Driver-Mapper: {fileName}",
-                            Risk = RiskLevel.Critical,
-                            Location = file,
-                            FileName = fileName,
-                            Reason = $"Das kdmapper Kernel-Treiber-Manual-Mapping-Tool '{fileName}' wurde unter " +
-                                     $"'{file}' gefunden. kdmapper laedt unsignierte Kernel-Treiber, indem es " +
-                                     "den Intel-Netzwerktreiber iqvw64e.sys oder aehnliche vulnerable " +
-                                     "signierte Treiber (BYOVD) missbraucht, um DSE (Driver Signature Enforcement) " +
-                                     "zu umgehen. Dies ist ein Standardwerkzeug fuer Kernel-Level-Cheats " +
-                                     "(Aimbot, ESP, HWID-Spoofer).",
-                            Detail = $"Groesse: {fi.Length} Bytes · Zuletzt geaendert: {fi.LastWriteTime:yyyy-MM-dd HH:mm} · " +
-                                     $"Erstellt: {fi.CreationTime:yyyy-MM-dd HH:mm}"
-                        });
-                    }
-                }
-                catch (UnauthorizedAccessException) { }
-            }
-
-            // Also search for kdmapper in system locations where it might be hidden
-            var systemSearchDirs = new[]
-            {
-                System32,
-                Path.Combine(WinDir, "SysWOW64"),
-                Path.Combine(WinDir, "System"),
-            };
-
-            foreach (var dir in systemSearchDirs)
-            {
-                if (ct.IsCancellationRequested) return;
-                if (!Directory.Exists(dir)) continue;
-
-                try
-                {
-                    foreach (var kd in KdmapperExecutables)
-                    {
-                        var kdPath = Path.Combine(dir, kd);
-                        if (!File.Exists(kdPath)) continue;
-                        ctx.IncrementFiles();
-                        ctx.AddFinding(new Finding
-                        {
-                            Module = Name,
-                            Title = $"kdmapper im System-Verzeichnis versteckt: {kd}",
-                            Risk = RiskLevel.Critical,
-                            Location = kdPath,
-                            FileName = kd,
-                            Reason = $"kdmapper '{kd}' wurde im Windows-Systemverzeichnis '{dir}' gefunden. " +
-                                     "Das Ablegen von Mapper-Tools in Systemverzeichnissen ist eine " +
-                                     "Tarntaktik, um Entdeckung zu erschweren.",
-                            Detail = $"Systemverzeichnis: {dir}"
-                        });
-                    }
-                }
-                catch (UnauthorizedAccessException) { }
-            }
-        }, ct);
-
-    private Task CheckThunderingTurlaArtifacts(ScanContext ctx, CancellationToken ct) =>
-        Task.Run(() =>
-        {
-            var searchDirs = new[]
-            {
-                Downloads,
-                Desktop,
-                Documents,
-                Temp,
-                Path.Combine(LocalAppData, "Temp"),
-                LocalAppData,
-                RoamingAppData,
-                ProgramData,
-            };
-
-            foreach (var dir in searchDirs)
-            {
-                if (ct.IsCancellationRequested) return;
-                if (!Directory.Exists(dir)) continue;
-
-                try
-                {
-                    foreach (var file in Directory.EnumerateFiles(dir, "*.exe", SearchOption.AllDirectories))
-                    {
-                        if (ct.IsCancellationRequested) return;
-                        var fileName = Path.GetFileName(file);
-                        bool isTurla = ThunderingTurlaExecutables.Any(n =>
-                            fileName.Equals(n, StringComparison.OrdinalIgnoreCase));
-                        if (!isTurla) continue;
-
-                        ctx.IncrementFiles();
-                        ctx.AddFinding(new Finding
-                        {
-                            Module = Name,
-                            Title = $"ThunderingTurla Driver Mapper: {fileName}",
-                            Risk = RiskLevel.Critical,
-                            Location = file,
-                            FileName = fileName,
-                            Reason = $"Das ThunderingTurla Kernel-Treiber-Mapping-Tool '{fileName}' wurde unter " +
-                                     $"'{file}' gefunden. ThunderingTurla ist ein fortgeschrittener " +
-                                     "manueller Treiber-Mapper, der urspruenglich in Advanced Persistent " +
-                                     "Threat (APT) Operationen eingesetzt wurde und nun im Cheat-Ecosystem " +
-                                     "verbreitet ist. Es laedt Kernel-Treiber ohne Service-Registrierung.",
-                            Detail = $"Groesse: {new FileInfo(file).Length} Bytes · " +
-                                     $"Zuletzt geaendert: {File.GetLastWriteTime(file):yyyy-MM-dd HH:mm}"
-                        });
-                    }
-                }
-                catch (UnauthorizedAccessException) { }
-            }
-
-            // Check for Turla-related log files or output artifacts
-            var turlaLogNames = new[]
-            {
-                "turla_log.txt",
-                "turla_output.txt",
-                "turla_map.log",
-                "thunderingturla.log",
-                "turla_driver.log",
-            };
-
-            foreach (var dir in searchDirs)
-            {
-                if (ct.IsCancellationRequested) return;
-                if (!Directory.Exists(dir)) continue;
-
-                try
-                {
-                    foreach (var logName in turlaLogNames)
-                    {
-                        var logPath = Path.Combine(dir, logName);
-                        if (!File.Exists(logPath)) continue;
-                        ctx.IncrementFiles();
-                        ctx.AddFinding(new Finding
-                        {
-                            Module = Name,
-                            Title = $"ThunderingTurla Log-Datei: {logName}",
-                            Risk = RiskLevel.High,
-                            Location = logPath,
-                            FileName = logName,
-                            Reason = $"Eine ThunderingTurla Ausgabe-Log-Datei wurde unter '{logPath}' gefunden. " +
-                                     "Diese Log-Datei enthaelt Ausgaben des Mapper-Tools und zeigt an, " +
-                                     "dass ThunderingTurla auf diesem System ausgefuehrt wurde.",
-                            Detail = $"Groesse: {new FileInfo(logPath).Length} Bytes"
-                        });
-                    }
-                }
-                catch (UnauthorizedAccessException) { }
-            }
-        }, ct);
-
-    private Task CheckOtherMapperTools(ScanContext ctx, CancellationToken ct) =>
-        Task.Run(() =>
-        {
-            var allOtherMappers = OtherMapperExecutables;
-            var searchDirs = new[]
-            {
-                Downloads,
-                Desktop,
-                Documents,
-                Temp,
-                Path.Combine(LocalAppData, "Temp"),
-                LocalAppData,
-                RoamingAppData,
-                ProgramData,
-                Path.Combine(WinDir, "Temp"),
-            };
-
-            foreach (var dir in searchDirs)
-            {
-                if (ct.IsCancellationRequested) return;
-                if (!Directory.Exists(dir)) continue;
-
-                try
-                {
-                    foreach (var file in Directory.EnumerateFiles(dir, "*.exe", SearchOption.AllDirectories))
-                    {
-                        if (ct.IsCancellationRequested) return;
-                        var fileName = Path.GetFileName(file);
-                        bool isMapper = allOtherMappers.Any(n =>
-                            fileName.Equals(n, StringComparison.OrdinalIgnoreCase));
-                        if (!isMapper) continue;
-
-                        ctx.IncrementFiles();
-                        var matchedName = allOtherMappers.First(n =>
-                            fileName.Equals(n, StringComparison.OrdinalIgnoreCase));
-
-                        string description = matchedName.ToLowerInvariant() switch
-                        {
-                            var n when n.Contains("dsemap") =>
-                                "DSEMap ist ein BYOVD-Mapper, der DSE-Bypass ueber vulnerable Treiber implementiert.",
-                            var n when n.Contains("gdrv") =>
-                                "GDRV-Mapper nutzt den Gigabyte-Treiber gdrv.sys (CVE-2018-19320) fuer Kernel-Zugriff.",
-                            var n when n.Contains("rtcore") =>
-                                "RTCore-Mapper missbraucht den MSI Afterburner rtcore64.sys Treiber fuer Ring-0-Zugriff.",
-                            var n when n.Contains("physmem2profit") =>
-                                "physmem2profit ist ein fortgeschrittenes BYOVD-Tool fuer physischen Speicherzugriff.",
-                            var n when n.Contains("capcom") =>
-                                "Der Capcom-Treiber (Hack.sys) ist ein beruehmt-beruechtigter vulnerable Treiber fuer Kernel-Exploits.",
-                            var n when n.Contains("winio") =>
-                                "WinIO-Mapper nutzt den WinIO-Treiber fuer direkten Kernel-Speicherzugriff.",
-                            var n when n.Contains("mhyprot") =>
-                                "mhyprot-Mapper nutzt den Genshin Impact Anti-Cheat-Treiber fuer BYOVD-Angriffe.",
-                            _ =>
-                                "Ein bekanntes Kernel-Treiber-Manual-Mapping-Tool fuer BYOVD-Angriffe wurde gefunden."
-                        };
-
-                        ctx.AddFinding(new Finding
-                        {
-                            Module = Name,
-                            Title = $"Kernel Driver Mapper: {fileName}",
-                            Risk = RiskLevel.Critical,
-                            Location = file,
-                            FileName = fileName,
-                            Reason = $"Das Kernel-Treiber-Mapping-Tool '{fileName}' wurde unter '{file}' " +
-                                     $"gefunden. {description} Manual-Mapping-Tools laden unsignierte " +
-                                     "Kernel-Treiber ohne Windows-Sicherheitskontrollen, was Kernel-Level-Cheats " +
-                                     "ermoeooglicht.",
-                            Detail = $"Groesse: {new FileInfo(file).Length} Bytes · " +
-                                     $"Zuletzt geaendert: {File.GetLastWriteTime(file):yyyy-MM-dd HH:mm}"
-                        });
-                    }
-                }
-                catch (UnauthorizedAccessException) { }
-            }
-        }, ct);
-
-    private Task CheckByovdVulnerableDrivers(ScanContext ctx, CancellationToken ct) =>
-        Task.Run(() =>
-        {
-            // BYOVD staging locations - vulnerable drivers in non-standard locations
-            var stagingDirs = new[]
-            {
-                Downloads,
-                Desktop,
-                Documents,
-                Temp,
-                Path.Combine(LocalAppData, "Temp"),
-                Path.Combine(WinDir, "Temp"),
-                LocalAppData,
-                RoamingAppData,
-                ProgramData,
-                Path.Combine(UserProfile, "AppData"),
-            };
-
-            foreach (var dir in stagingDirs)
-            {
-                if (ct.IsCancellationRequested) return;
-                if (!Directory.Exists(dir)) continue;
-
-                try
-                {
-                    foreach (var file in Directory.EnumerateFiles(dir, "*.sys", SearchOption.AllDirectories))
-                    {
-                        if (ct.IsCancellationRequested) return;
-                        var fileName = Path.GetFileName(file);
-                        bool isByovd = ByovdVulnerableDrivers.Any(n =>
-                            fileName.Equals(n, StringComparison.OrdinalIgnoreCase));
-                        if (!isByovd) continue;
-
-                        ctx.IncrementFiles();
-                        var matchedName = ByovdVulnerableDrivers.First(n =>
-                            fileName.Equals(n, StringComparison.OrdinalIgnoreCase));
-
-                        string cve = matchedName.ToLowerInvariant() switch
-                        {
-                            var n when n.Contains("dbutil_2_3") =>
-                                "CVE-2021-21551 (Dell DBUtil) - beliebter Schreibzugriff auf Kernel-Speicher",
-                            var n when n.Contains("gdrv") =>
-                                "CVE-2018-19320 (Gigabyte GDRV) - Kernel-Speicherzugriff ohne Validierung",
-                            var n when n.Contains("rtcore") =>
-                                "CVE-2019-16098 (MSI Afterburner RTCore) - beliebiger Kernel-Read/Write",
-                            var n when n.Contains("mhyprot") =>
-                                "Genshin Impact mhyprot2.sys - missbrauchter Spieltreiber fuer BYOVD",
-                            var n when n.Contains("iqvw64") =>
-                                "CVE-2015-2291 (Intel NDIS) - wird von kdmapper verwendet",
-                            var n when n.Contains("winring0") =>
-                                "WinRing0 - Open-Source Ringzugriffs-Treiber, haeufig in BYOVD-Angriffen genutzt",
-                            var n when n.Contains("cpuz") =>
-                                "CPU-Z cpuz.sys - Kernel-Level-CPU-Informationstreiber mit Exploit",
-                            var n when n.Contains("kprocesshacker") =>
-                                "kProcessHacker - Kernel-Tool fuer Prozessmanipulation",
-                            _ =>
-                                "Bekannter vulnerabler Treiber, der in BYOVD-Angriffen verwendet wird"
-                        };
-
-                        ctx.AddFinding(new Finding
-                        {
-                            Module = Name,
-                            Title = $"BYOVD Vulnerable Treiber in ungewoehnlichem Pfad: {fileName}",
-                            Risk = RiskLevel.Critical,
-                            Location = file,
-                            FileName = fileName,
-                            Reason = $"Der bekannte vulnerable Treiber '{fileName}' wurde in einem ungewoehnlichen " +
-                                     $"Verzeichnis '{file}' gefunden (nicht in System32\\drivers). " +
-                                     "Dieser Treiber wird in BYOVD-Angriffen (Bring Your Own Vulnerable Driver) " +
-                                     $"eingesetzt: {cve}. Angreifer laden diesen legitim signierten, aber " +
-                                     "vulnerablen Treiber, um Kernel-Zugriff ohne DSE-Bypass zu erlangen.",
-                            Detail = $"Groesse: {new FileInfo(file).Length} Bytes · " +
-                                     $"Erstellt: {File.GetCreationTime(file):yyyy-MM-dd HH:mm} · CVE: {cve}"
-                        });
-                    }
-                }
-                catch (UnauthorizedAccessException) { }
-            }
-
-            // Check for vulnerable drivers in System32\drivers (might have been loaded)
-            var driversDir = Path.Combine(System32, "drivers");
-            if (Directory.Exists(driversDir))
-            {
-                try
-                {
-                    foreach (var vulnDrv in ByovdVulnerableDrivers)
-                    {
-                        if (ct.IsCancellationRequested) return;
-                        var drvPath = Path.Combine(driversDir, vulnDrv);
-                        if (!File.Exists(drvPath)) continue;
-
-                        ctx.IncrementFiles();
-                        ctx.AddFinding(new Finding
-                        {
-                            Module = Name,
-                            Title = $"BYOVD Vulnerable Treiber in System-Treiberordner: {vulnDrv}",
-                            Risk = RiskLevel.High,
-                            Location = drvPath,
-                            FileName = vulnDrv,
-                            Reason = $"Der bekannte vulnerable Treiber '{vulnDrv}' wurde im " +
-                                     $"System-Treiberordner '{driversDir}' gefunden. Dies deutet darauf hin, " +
-                                     "dass er als Teil eines BYOVD-Angriffs geladen oder installiert wurde. " +
-                                     "Legitime Software liefert diese Treiber selten ohne zugehoerige " +
-                                     "Installation.",
-                            Detail = $"Systemtreiberpfad: {drvPath}"
-                        });
-                    }
-                }
-                catch (UnauthorizedAccessException) { }
-            }
-        }, ct);
-
-    private Task CheckMapperLogFiles(ScanContext ctx, CancellationToken ct) =>
+    private Task CheckKnownMapperExecutables(ScanContext ctx, CancellationToken ct) =>
         Task.Run(async () =>
         {
             var searchDirs = new[]
             {
-                Downloads,
-                Desktop,
-                Documents,
-                Temp,
-                Path.Combine(LocalAppData, "Temp"),
-                Path.Combine(WinDir, "Temp"),
-                LocalAppData,
-                RoamingAppData,
-                ProgramData,
-                UserProfile,
+                System32Dir,
+                UserTempDir,
+                WindowsTempDir,
+                DesktopDir,
+                DownloadsDir,
+                LocalAppDataDir,
+                RoamingAppDataDir,
             };
 
             foreach (var dir in searchDirs)
@@ -684,61 +539,947 @@ public sealed class MappingDriverForensicScanModule : IScanModule
                 if (ct.IsCancellationRequested) return;
                 if (!Directory.Exists(dir)) continue;
 
+                string[] files;
                 try
                 {
-                    foreach (var logName in MapperLogFileNames)
+                    files = Directory.GetFiles(dir, "*.exe", SearchOption.TopDirectoryOnly);
+                }
+                catch (UnauthorizedAccessException)
+                {
+                    continue;
+                }
+                catch (IOException)
+                {
+                    continue;
+                }
+
+                foreach (var file in files)
+                {
+                    if (ct.IsCancellationRequested) return;
+                    ctx.IncrementFiles();
+
+                    var fn = Path.GetFileName(file);
+                    if (!KnownMapperExecutables.Contains(fn)) continue;
+
+                    ctx.AddFinding(new Finding
                     {
-                        var logPath = Path.Combine(dir, logName);
-                        if (!File.Exists(logPath)) continue;
+                        Module = Name,
+                        Title = $"Known Mapper Executable Found: {fn}",
+                        Risk = RiskLevel.High,
+                        Location = file,
+                        FileName = fn,
+                        Reason = $"The file '{fn}' matches a known manual-mapping or BYOVD driver mapper tool. " +
+                                 "These tools are used to load unsigned kernel drivers by exploiting vulnerable " +
+                                 "signed drivers, bypassing Driver Signature Enforcement (DSE).",
+                        Detail = $"Path: {file} | Directory: {dir}"
+                    });
+                }
 
+                await Task.Yield();
+            }
+
+            // Check AppData subdirectories one level deep
+            foreach (var baseDir in new[] { LocalAppDataDir, RoamingAppDataDir })
+            {
+                if (ct.IsCancellationRequested) return;
+                if (!Directory.Exists(baseDir)) continue;
+
+                string[] subDirs;
+                try { subDirs = Directory.GetDirectories(baseDir); }
+                catch (UnauthorizedAccessException) { continue; }
+                catch (IOException) { continue; }
+
+                foreach (var sub in subDirs)
+                {
+                    if (ct.IsCancellationRequested) return;
+
+                    string[] subFiles;
+                    try { subFiles = Directory.GetFiles(sub, "*.exe", SearchOption.TopDirectoryOnly); }
+                    catch (UnauthorizedAccessException) { continue; }
+                    catch (IOException) { continue; }
+
+                    foreach (var file in subFiles)
+                    {
+                        if (ct.IsCancellationRequested) return;
                         ctx.IncrementFiles();
-                        string content = string.Empty;
-                        try
-                        {
-                            using var fs = new FileStream(logPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-                            using var sr = new StreamReader(fs);
-                            content = await sr.ReadToEndAsync(ct);
-                        }
-                        catch (IOException) { }
 
-                        // Check content for mapper-specific keywords
-                        var mapperKeywords = new[]
-                        {
-                            "mapped", "mapping", "loaded", "driver", "kernel", "success",
-                            "iqvw64", "dbutil", "gdrv", "rtcore", "mhyprot", "winring",
-                            "dse", "bypass", "inject", "ntoskrnl", "ntloaddriver",
-                        };
-                        var foundKeywords = mapperKeywords
-                            .Where(k => content.Contains(k, StringComparison.OrdinalIgnoreCase))
-                            .ToList();
+                        var fn = Path.GetFileName(file);
+                        if (!KnownMapperExecutables.Contains(fn)) continue;
 
                         ctx.AddFinding(new Finding
                         {
                             Module = Name,
-                            Title = $"Kernel Mapper Log-Datei gefunden: {logName}",
-                            Risk = foundKeywords.Count >= 3 ? RiskLevel.Critical : RiskLevel.High,
-                            Location = logPath,
-                            FileName = logName,
-                            Reason = $"Eine Kernel-Driver-Mapper Log-Datei wurde unter '{logPath}' gefunden. " +
-                                     "Diese Log-Dateien werden von kdmapper und aehnlichen Tools ausgegeben " +
-                                     "und enthalten Details ueber Mapping-Operationen, verwendete vulnerable " +
-                                     "Treiber und Mapping-Ergebnisse. Log-Dateien bleiben als forensische " +
-                                     "Artefakte erhalten, auch wenn der Mapper selbst geloescht wurde.",
-                            Detail = foundKeywords.Count > 0
-                                ? $"Gefundene Schluesselbegriffe: {string.Join(", ", foundKeywords)}"
-                                : $"Dateigroesse: {new FileInfo(logPath).Length} Bytes"
+                            Title = $"Known Mapper Executable in AppData Subdirectory: {fn}",
+                            Risk = RiskLevel.High,
+                            Location = file,
+                            FileName = fn,
+                            Reason = $"The file '{fn}' matches a known manual-mapping/BYOVD tool found in an AppData " +
+                                     "subdirectory. AppData subdirectories are a typical staging location for cheat " +
+                                     "loaders and mapper tools to evade superficial directory scans.",
+                            Detail = $"Path: {file}"
+                        });
+                    }
+
+                    await Task.Yield();
+                }
+            }
+        }, ct);
+
+    // -------------------------------------------------------------------------
+    // Check 2: Known vulnerable driver files (BYOVD)
+    // -------------------------------------------------------------------------
+
+    private Task CheckKnownVulnerableDriverFiles(ScanContext ctx, CancellationToken ct) =>
+        Task.Run(async () =>
+        {
+            var topLevelDirs = new[]
+            {
+                System32Drivers,
+                UserTempDir,
+                WindowsTempDir,
+                LocalAppDataDir,
+                DownloadsDir,
+            };
+
+            foreach (var dir in topLevelDirs)
+            {
+                if (ct.IsCancellationRequested) return;
+                if (!Directory.Exists(dir)) continue;
+
+                string[] files;
+                try
+                {
+                    files = Directory.GetFiles(dir, "*.sys", SearchOption.TopDirectoryOnly);
+                }
+                catch (UnauthorizedAccessException)
+                {
+                    continue;
+                }
+                catch (IOException)
+                {
+                    continue;
+                }
+
+                foreach (var file in files)
+                {
+                    if (ct.IsCancellationRequested) return;
+                    ctx.IncrementFiles();
+
+                    var fn = Path.GetFileName(file);
+                    if (!KnownVulnerableDriverFiles.Contains(fn)) continue;
+
+                    bool isInDriversDir = dir.Equals(System32Drivers, StringComparison.OrdinalIgnoreCase);
+                    var risk = RiskLevel.High;
+
+                    ctx.AddFinding(new Finding
+                    {
+                        Module = Name,
+                        Title = $"Known Vulnerable BYOVD Driver File: {fn}",
+                        Risk = risk,
+                        Location = file,
+                        FileName = fn,
+                        Reason = $"Driver file '{fn}' matches a known vulnerable driver used in BYOVD " +
+                                 "(Bring Your Own Vulnerable Driver) attacks. These drivers contain exploitable " +
+                                 "kernel-level vulnerabilities that allow usermode code to gain ring-0 access " +
+                                 "and map unsigned drivers into kernel memory without triggering DSE checks.",
+                        Detail = $"Path: {file} | " +
+                                 (isInDriversDir
+                                     ? "Found in System32\\drivers — driver may have been loaded as a service."
+                                     : "Found outside System32\\drivers — likely a staged/dropped payload.")
+                    });
+                }
+
+                await Task.Yield();
+            }
+
+            // Deep scan RoamingAppData for any .sys files
+            if (!ct.IsCancellationRequested && Directory.Exists(RoamingAppDataDir))
+            {
+                string[] appDataSysFiles;
+                try
+                {
+                    appDataSysFiles = Directory.GetFiles(RoamingAppDataDir, "*.sys",
+                        SearchOption.AllDirectories);
+                }
+                catch (UnauthorizedAccessException) { appDataSysFiles = Array.Empty<string>(); }
+                catch (IOException) { appDataSysFiles = Array.Empty<string>(); }
+
+                foreach (var file in appDataSysFiles)
+                {
+                    if (ct.IsCancellationRequested) return;
+                    ctx.IncrementFiles();
+
+                    var fn = Path.GetFileName(file);
+                    if (!KnownVulnerableDriverFiles.Contains(fn)) continue;
+
+                    ctx.AddFinding(new Finding
+                    {
+                        Module = Name,
+                        Title = $"Vulnerable BYOVD Driver in AppData: {fn}",
+                        Risk = RiskLevel.High,
+                        Location = file,
+                        FileName = fn,
+                        Reason = $"Known vulnerable driver '{fn}' was found in AppData — a non-standard location " +
+                                 "for driver files. This strongly indicates the file is a staged BYOVD payload " +
+                                 "waiting to be registered and loaded by a mapper tool.",
+                        Detail = $"Path: {file}"
+                    });
+                }
+            }
+        }, ct);
+
+    // -------------------------------------------------------------------------
+    // Check 3: Mapper config file artifacts
+    // -------------------------------------------------------------------------
+
+    private Task CheckMapperConfigArtifacts(ScanContext ctx, CancellationToken ct) =>
+        Task.Run(async () =>
+        {
+            var searchDirs = new[]
+            {
+                UserTempDir,
+                WindowsTempDir,
+                DesktopDir,
+                DownloadsDir,
+                LocalAppDataDir,
+                RoamingAppDataDir,
+            };
+
+            foreach (var dir in searchDirs)
+            {
+                if (ct.IsCancellationRequested) return;
+                if (!Directory.Exists(dir)) continue;
+
+                string[] allFiles;
+                try { allFiles = Directory.GetFiles(dir, "*", SearchOption.AllDirectories); }
+                catch (UnauthorizedAccessException) { continue; }
+                catch (IOException) { continue; }
+
+                foreach (var file in allFiles)
+                {
+                    if (ct.IsCancellationRequested) return;
+
+                    var fn = Path.GetFileName(file);
+                    if (!MapperConfigFileNames.Contains(fn)) continue;
+
+                    ctx.IncrementFiles();
+
+                    string content;
+                    try
+                    {
+                        using var fs = new FileStream(file, FileMode.Open, FileAccess.Read,
+                            FileShare.ReadWrite);
+                        using var sr = new StreamReader(fs);
+                        content = await sr.ReadToEndAsync(ct);
+                    }
+                    catch (UnauthorizedAccessException) { continue; }
+                    catch (IOException) { continue; }
+
+                    var matchedKeywords = MapperConfigKeywords
+                        .Where(k => content.Contains(k, StringComparison.OrdinalIgnoreCase))
+                        .ToList();
+
+                    if (matchedKeywords.Count == 0) continue;
+
+                    ctx.AddFinding(new Finding
+                    {
+                        Module = Name,
+                        Title = $"Mapper Configuration File: {fn}",
+                        Risk = RiskLevel.High,
+                        Location = file,
+                        FileName = fn,
+                        Reason = $"Configuration file '{fn}' associated with manual-mapping driver tools was found " +
+                                 "and its content contains keywords typical of BYOVD/mapper configurations, " +
+                                 "including driver loading parameters, kernel offsets, and bypass settings.",
+                        Detail = $"Path: {file} | Matched keywords: {string.Join(", ", matchedKeywords)}"
+                    });
+                }
+
+                await Task.Yield();
+            }
+        }, ct);
+
+    // -------------------------------------------------------------------------
+    // Check 4: Mapper driver-load scripts
+    // -------------------------------------------------------------------------
+
+    private Task CheckMapperLoadScripts(ScanContext ctx, CancellationToken ct) =>
+        Task.Run(async () =>
+        {
+            var scriptExtensions = new[] { "*.ps1", "*.bat", "*.vbs", "*.py" };
+            var searchDirs = new[]
+            {
+                UserTempDir,
+                WindowsTempDir,
+                DesktopDir,
+                DownloadsDir,
+                LocalAppDataDir,
+                RoamingAppDataDir,
+            };
+
+            foreach (var dir in searchDirs)
+            {
+                if (ct.IsCancellationRequested) return;
+                if (!Directory.Exists(dir)) continue;
+
+                foreach (var ext in scriptExtensions)
+                {
+                    string[] files;
+                    try
+                    {
+                        files = Directory.GetFiles(dir, ext, SearchOption.AllDirectories);
+                    }
+                    catch (UnauthorizedAccessException) { continue; }
+                    catch (IOException) { continue; }
+
+                    foreach (var file in files)
+                    {
+                        if (ct.IsCancellationRequested) return;
+                        ctx.IncrementFiles();
+
+                        string content;
+                        try
+                        {
+                            using var fs = new FileStream(file, FileMode.Open, FileAccess.Read,
+                                FileShare.ReadWrite);
+                            using var sr = new StreamReader(fs);
+                            content = await sr.ReadToEndAsync(ct);
+                        }
+                        catch (UnauthorizedAccessException) { continue; }
+                        catch (IOException) { continue; }
+
+                        var matchedKeywords = LoadScriptKeywords
+                            .Where(k => content.Contains(k, StringComparison.OrdinalIgnoreCase))
+                            .ToList();
+
+                        if (matchedKeywords.Count < 4) continue;
+
+                        ctx.AddFinding(new Finding
+                        {
+                            Module = Name,
+                            Title = $"Mapper Driver Load Script Found: {Path.GetFileName(file)}",
+                            Risk = RiskLevel.High,
+                            Location = file,
+                            FileName = Path.GetFileName(file),
+                            Reason = $"Script file '{Path.GetFileName(file)}' contains " +
+                                     $"{matchedKeywords.Count} keywords strongly associated with driver " +
+                                     "manual-mapping and BYOVD loading operations. These scripts automate " +
+                                     "unsigned kernel driver loading and DSE bypass configuration.",
+                            Detail = $"Path: {file} | Matched keywords ({matchedKeywords.Count}): " +
+                                     string.Join(", ", matchedKeywords.Take(10))
+                        });
+                    }
+
+                    await Task.Yield();
+                }
+            }
+        }, ct);
+
+    // -------------------------------------------------------------------------
+    // Check 5: BYOVD registry artifacts
+    // -------------------------------------------------------------------------
+
+    private Task CheckByovdRegistryArtifacts(ScanContext ctx, CancellationToken ct) =>
+        Task.Run(() =>
+        {
+            // 5a — HKLM\SYSTEM\CurrentControlSet\Services — look for BYOVD service entries
+            try
+            {
+                using var servicesKey = Registry.LocalMachine.OpenSubKey(
+                    @"SYSTEM\CurrentControlSet\Services", writable: false);
+                if (servicesKey != null)
+                {
+                    foreach (var svcName in servicesKey.GetSubKeyNames())
+                    {
+                        if (ct.IsCancellationRequested) return;
+                        ctx.IncrementRegistryKeys();
+
+                        if (!ByovdServiceNames.Contains(svcName)) continue;
+
+                        string? imagePath = null;
+                        int? startType = null;
+                        try
+                        {
+                            using var svcKey = servicesKey.OpenSubKey(svcName, writable: false);
+                            if (svcKey != null)
+                            {
+                                imagePath = svcKey.GetValue("ImagePath") as string;
+                                startType = svcKey.GetValue("Start") as int?;
+                                ctx.IncrementRegistryKeys();
+                            }
+                        }
+                        catch (IOException) { }
+
+                        ctx.AddFinding(new Finding
+                        {
+                            Module = Name,
+                            Title = $"BYOVD Vulnerable Driver Service Registered: {svcName}",
+                            Risk = RiskLevel.High,
+                            Location = $@"HKLM\SYSTEM\CurrentControlSet\Services\{svcName}",
+                            FileName = imagePath != null ? Path.GetFileName(imagePath) : null,
+                            Reason = $"Windows service '{svcName}' matches a known vulnerable driver used in BYOVD " +
+                                     "attacks. A registered service entry indicates the vulnerable driver was " +
+                                     "installed, which is a prerequisite step in the BYOVD kernel-map chain.",
+                            Detail = $"Service: {svcName} | ImagePath: {imagePath ?? "N/A"} | " +
+                                     $"StartType: {startType?.ToString() ?? "N/A"}"
                         });
                     }
                 }
+            }
+            catch (IOException) { }
+
+            // 5b — HKCU\Software — mapper tool installation remnants
+            try
+            {
+                using var hkcuSw = Registry.CurrentUser.OpenSubKey(@"Software", writable: false);
+                if (hkcuSw != null)
+                {
+                    foreach (var keyName in hkcuSw.GetSubKeyNames())
+                    {
+                        if (ct.IsCancellationRequested) return;
+                        ctx.IncrementRegistryKeys();
+
+                        bool isMapperRelated =
+                            keyName.Contains("mapper", StringComparison.OrdinalIgnoreCase) ||
+                            keyName.Contains("kdmapper", StringComparison.OrdinalIgnoreCase) ||
+                            keyName.Contains("byovd", StringComparison.OrdinalIgnoreCase) ||
+                            keyName.Contains("physmem", StringComparison.OrdinalIgnoreCase) ||
+                            keyName.Contains("ring0", StringComparison.OrdinalIgnoreCase) ||
+                            keyName.Contains("driver_map", StringComparison.OrdinalIgnoreCase) ||
+                            keyName.Contains("kernel_map", StringComparison.OrdinalIgnoreCase) ||
+                            keyName.Contains("dse_bypass", StringComparison.OrdinalIgnoreCase) ||
+                            keyName.Contains("sign_bypass", StringComparison.OrdinalIgnoreCase);
+
+                        if (!isMapperRelated) continue;
+
+                        ctx.AddFinding(new Finding
+                        {
+                            Module = Name,
+                            Title = $"Mapper Tool Registry Remnant: HKCU\\Software\\{keyName}",
+                            Risk = RiskLevel.High,
+                            Location = $@"HKCU\Software\{keyName}",
+                            Reason = $"Registry key '{keyName}' under HKCU\\Software contains keywords associated " +
+                                     "with manual-mapping or BYOVD driver tools. This is a configuration remnant " +
+                                     "left by a mapper tool that was installed or run on this system.",
+                            Detail = $"Key: HKCU\\Software\\{keyName}"
+                        });
+                    }
+                }
+            }
+            catch (IOException) { }
+
+            // 5c — UserAssist — ROT13-encoded mapper executable execution evidence
+            try
+            {
+                using var uaRoot = Registry.CurrentUser.OpenSubKey(
+                    @"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\UserAssist",
+                    writable: false);
+                if (uaRoot != null)
+                {
+                    foreach (var guidName in uaRoot.GetSubKeyNames())
+                    {
+                        if (ct.IsCancellationRequested) return;
+                        ctx.IncrementRegistryKeys();
+
+                        using var countKey = uaRoot.OpenSubKey($@"{guidName}\Count", writable: false);
+                        if (countKey == null) continue;
+
+                        foreach (var valName in countKey.GetValueNames())
+                        {
+                            if (ct.IsCancellationRequested) return;
+                            ctx.IncrementRegistryKeys();
+
+                            var decoded = Rot13Decode(valName);
+                            var fn = Path.GetFileName(decoded);
+
+                            if (!MapperUserAssistNames.Contains(fn)) continue;
+
+                            ctx.AddFinding(new Finding
+                            {
+                                Module = Name,
+                                Title = $"Mapper Executable in UserAssist: {fn}",
+                                Risk = RiskLevel.High,
+                                Location = $@"HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\UserAssist\" +
+                                           $@"{guidName}\Count",
+                                FileName = fn,
+                                Reason = $"UserAssist entry decodes to '{fn}' (ROT13), matching a known mapper tool. " +
+                                         "UserAssist records GUI program execution with run count and timestamps, " +
+                                         "providing forensic evidence even after the executable was deleted.",
+                                Detail = $"Encoded value: {valName} | Decoded: {decoded}"
+                            });
+                        }
+                    }
+                }
+            }
+            catch (IOException) { }
+
+            // 5d — MUICache — mapper execution evidence
+            var muiCachePaths = new[]
+            {
+                @"Software\Classes\Local Settings\Software\Microsoft\Windows\Shell\MuiCache",
+                @"Software\Microsoft\Windows\ShellNoRoam\MUICache",
+            };
+
+            foreach (var muiPath in muiCachePaths)
+            {
+                if (ct.IsCancellationRequested) return;
+                try
+                {
+                    using var muiKey = Registry.CurrentUser.OpenSubKey(muiPath, writable: false);
+                    if (muiKey == null) continue;
+
+                    foreach (var valName in muiKey.GetValueNames())
+                    {
+                        if (ct.IsCancellationRequested) return;
+                        ctx.IncrementRegistryKeys();
+
+                        var fn = Path.GetFileName(valName);
+                        if (!KnownMapperExecutables.Contains(fn)) continue;
+
+                        ctx.AddFinding(new Finding
+                        {
+                            Module = Name,
+                            Title = $"Mapper Executable in MUICache: {fn}",
+                            Risk = RiskLevel.High,
+                            Location = $@"HKCU\{muiPath}",
+                            FileName = fn,
+                            Reason = $"MUICache entry references the mapper executable '{fn}'. The MUICache " +
+                                     "stores the full path of every GUI application that ran, providing forensic " +
+                                     "evidence of mapper tool execution even after file deletion.",
+                            Detail = $"MUICache entry: {valName}"
+                        });
+                    }
+                }
+                catch (IOException) { }
+            }
+        }, ct);
+
+    // -------------------------------------------------------------------------
+    // Check 6: Mapper download artifacts (archives in Downloads and Desktop)
+    // -------------------------------------------------------------------------
+
+    private Task CheckMapperDownloadArtifacts(ScanContext ctx, CancellationToken ct) =>
+        Task.Run(async () =>
+        {
+            var searchDirs = new[] { DownloadsDir, DesktopDir };
+
+            foreach (var dir in searchDirs)
+            {
+                if (ct.IsCancellationRequested) return;
+                if (!Directory.Exists(dir)) continue;
+
+                string[] files;
+                try { files = Directory.GetFiles(dir, "*", SearchOption.TopDirectoryOnly); }
+                catch (UnauthorizedAccessException) { continue; }
+                catch (IOException) { continue; }
+
+                foreach (var file in files)
+                {
+                    if (ct.IsCancellationRequested) return;
+                    ctx.IncrementFiles();
+
+                    var fn = Path.GetFileName(file);
+
+                    // Exact name match
+                    if (KnownMapperArchives.Contains(fn))
+                    {
+                        ctx.AddFinding(new Finding
+                        {
+                            Module = Name,
+                            Title = $"Mapper Tool Archive in Downloads/Desktop: {fn}",
+                            Risk = RiskLevel.High,
+                            Location = file,
+                            FileName = fn,
+                            Reason = $"Archive '{fn}' matches a known mapper or BYOVD toolkit distribution " +
+                                     "package. These archives are distributed on forums and repositories that " +
+                                     "provide BYOVD exploit kits and vulnerable driver collections.",
+                            Detail = $"Path: {file}"
+                        });
+                        continue;
+                    }
+
+                    // Heuristic keyword match on archive filenames
+                    var ext = Path.GetExtension(fn).ToLowerInvariant();
+                    if (ext != ".zip" && ext != ".rar" && ext != ".7z") continue;
+
+                    bool hasMapperKeyword =
+                        fn.Contains("byovd", StringComparison.OrdinalIgnoreCase) ||
+                        fn.Contains("kdmapper", StringComparison.OrdinalIgnoreCase) ||
+                        fn.Contains("physmem_mapper", StringComparison.OrdinalIgnoreCase) ||
+                        fn.Contains("driver_mapper", StringComparison.OrdinalIgnoreCase) ||
+                        fn.Contains("vulnerable_driver", StringComparison.OrdinalIgnoreCase) ||
+                        fn.Contains("kernel_mapper", StringComparison.OrdinalIgnoreCase) ||
+                        fn.Contains("ring0_mapper", StringComparison.OrdinalIgnoreCase) ||
+                        fn.Contains("dse_bypass", StringComparison.OrdinalIgnoreCase) ||
+                        fn.Contains("sign_bypass", StringComparison.OrdinalIgnoreCase) ||
+                        fn.Contains("mhyprot_mapper", StringComparison.OrdinalIgnoreCase) ||
+                        fn.Contains("gdrv_mapper", StringComparison.OrdinalIgnoreCase) ||
+                        fn.Contains("rtcore_mapper", StringComparison.OrdinalIgnoreCase);
+
+                    if (!hasMapperKeyword) continue;
+
+                    ctx.AddFinding(new Finding
+                    {
+                        Module = Name,
+                        Title = $"Suspicious Mapper-Related Archive: {fn}",
+                        Risk = RiskLevel.High,
+                        Location = file,
+                        FileName = fn,
+                        Reason = $"Archive '{fn}' contains keywords associated with BYOVD and driver-mapping " +
+                                 "toolkit distributions. The filename pattern is characteristic of kernel " +
+                                 "exploitation framework packages.",
+                        Detail = $"Path: {file}"
+                    });
+                }
+
+                await Task.Yield();
+            }
+        }, ct);
+
+    // -------------------------------------------------------------------------
+    // Check 7: Mapper prefetch artifacts
+    // -------------------------------------------------------------------------
+
+    private Task CheckMapperPrefetchArtifacts(ScanContext ctx, CancellationToken ct) =>
+        Task.Run(async () =>
+        {
+            if (!Directory.Exists(PrefetchDir)) return;
+
+            string[] pfFiles;
+            try
+            {
+                pfFiles = Directory.GetFiles(PrefetchDir, "*.pf", SearchOption.TopDirectoryOnly);
+            }
+            catch (UnauthorizedAccessException) { return; }
+            catch (IOException) { return; }
+
+            var now = DateTime.UtcNow;
+
+            foreach (var pf in pfFiles)
+            {
+                if (ct.IsCancellationRequested) return;
+                ctx.IncrementFiles();
+
+                var pfStem = Path.GetFileNameWithoutExtension(pf).ToUpperInvariant();
+                // Strip trailing -XXXXXXXX hash suffix (exactly 9 chars: dash + 8 hex digits)
+                var dashIdx = pfStem.LastIndexOf('-');
+                var exeStem = (dashIdx >= 0 && dashIdx == pfStem.Length - 9)
+                    ? pfStem[..dashIdx]
+                    : pfStem;
+
+                var matchedKeyword = MapperPrefetchKeywords.FirstOrDefault(k =>
+                    exeStem.Contains(k, StringComparison.OrdinalIgnoreCase));
+
+                if (matchedKeyword == null) continue;
+
+                DateTime lastWrite;
+                try { lastWrite = File.GetLastWriteTimeUtc(pf); }
+                catch { lastWrite = DateTime.MinValue; }
+
+                bool isRecent = lastWrite > now.AddDays(-30);
+
+                ctx.AddFinding(new Finding
+                {
+                    Module = Name,
+                    Title = $"Mapper/BYOVD Tool in Windows Prefetch: {Path.GetFileName(pf)}",
+                    Risk = isRecent ? RiskLevel.High : RiskLevel.Medium,
+                    Location = pf,
+                    FileName = Path.GetFileName(pf),
+                    Reason = $"Prefetch file '{Path.GetFileName(pf)}' (executable stem: '{exeStem}') matches " +
+                             $"mapper/BYOVD keyword '{matchedKeyword}'. Windows Prefetch confirms this executable " +
+                             "ran on this system. Prefetch entries survive after the executable is deleted.",
+                    Detail = $"Executable stem: {exeStem} | Keyword: {matchedKeyword} | " +
+                             $"Last write: {lastWrite:yyyy-MM-dd} | " +
+                             (isRecent ? "RECENT (within 30 days)" : "Historical entry")
+                });
+
+                await Task.Yield();
+            }
+        }, ct);
+
+    // -------------------------------------------------------------------------
+    // Check 8: Mapper event log artifacts
+    // -------------------------------------------------------------------------
+
+    private Task CheckMapperEventLogArtifacts(ScanContext ctx, CancellationToken ct) =>
+        Task.Run(async () =>
+        {
+            // 8a — Binary scan System.evtx for BYOVD service-install (7045) evidence
+            var systemEvtx = Path.Combine(WinEvtLogsDir, "System.evtx");
+            if (File.Exists(systemEvtx))
+            {
+                ctx.IncrementFiles();
+                try
+                {
+                    using var fs = new FileStream(systemEvtx, FileMode.Open, FileAccess.Read,
+                        FileShare.ReadWrite);
+                    int readLen = (int)Math.Min(524288L, fs.Length);
+                    var buf = new byte[readLen];
+                    int bytesRead = 0;
+                    while (bytesRead < readLen)
+                    {
+                        int n = await fs.ReadAsync(buf, bytesRead, readLen - bytesRead, ct);
+                        if (n == 0) break;
+                        bytesRead += n;
+                    }
+
+                    var content = System.Text.Encoding.Latin1.GetString(buf, 0, bytesRead);
+
+                    // Check if event log binary contains 7045 (service install event indicator string)
+                    if (content.Contains("7045", StringComparison.Ordinal))
+                    {
+                        // Look for BYOVD driver names near service install events
+                        foreach (var driverName in ByovdServiceNames)
+                        {
+                            if (ct.IsCancellationRequested) return;
+                            if (!content.Contains(driverName, StringComparison.OrdinalIgnoreCase)) continue;
+
+                            ctx.AddFinding(new Finding
+                            {
+                                Module = Name,
+                                Title = $"BYOVD Driver Name in System Event Log: {driverName}",
+                                Risk = RiskLevel.High,
+                                Location = systemEvtx,
+                                FileName = "System.evtx",
+                                Reason = $"The Windows System event log binary contains references to the known " +
+                                         $"vulnerable driver name '{driverName}' alongside EventID 7045 " +
+                                         "(new service installed). This indicates a BYOVD driver was registered " +
+                                         "as a service, which is a prerequisite for kernel exploitation.",
+                                Detail = $"Driver name found in log: {driverName} | Log: {systemEvtx}"
+                            });
+                            break; // One finding per log file scan to avoid noise
+                        }
+                    }
+                }
                 catch (UnauthorizedAccessException) { }
+                catch (IOException) { }
             }
 
-            // Also do a broad search for .log files with mapper keywords in temp dirs
+            // 8b — Secondary Prefetch sweep for well-known mapper names
+            if (Directory.Exists(PrefetchDir))
+            {
+                var highConfidenceMapperStems = new[]
+                {
+                    "kdmapper", "physmem", "gdrv", "byovd", "drvmap", "kernelmapper",
+                    "mhyprot", "rtcore", "iqvw64", "dsebypass", "dsefixer",
+                };
+
+                string[] pfFiles;
+                try
+                {
+                    pfFiles = Directory.GetFiles(PrefetchDir, "*.pf", SearchOption.TopDirectoryOnly);
+                }
+                catch (UnauthorizedAccessException) { pfFiles = Array.Empty<string>(); }
+                catch (IOException) { pfFiles = Array.Empty<string>(); }
+
+                foreach (var pf in pfFiles)
+                {
+                    if (ct.IsCancellationRequested) return;
+                    ctx.IncrementFiles();
+
+                    var pfName = Path.GetFileName(pf).ToLowerInvariant();
+                    var matched = highConfidenceMapperStems.FirstOrDefault(n =>
+                        pfName.Contains(n, StringComparison.OrdinalIgnoreCase));
+
+                    if (matched == null) continue;
+
+                    DateTime lastWrite;
+                    try { lastWrite = File.GetLastWriteTimeUtc(pf); }
+                    catch { lastWrite = DateTime.MinValue; }
+
+                    ctx.AddFinding(new Finding
+                    {
+                        Module = Name,
+                        Title = $"High-Confidence Mapper Prefetch (EventLog Context): {Path.GetFileName(pf)}",
+                        Risk = RiskLevel.High,
+                        Location = pf,
+                        FileName = Path.GetFileName(pf),
+                        Reason = $"Prefetch file '{Path.GetFileName(pf)}' contains high-confidence mapper keyword " +
+                                 $"'{matched}'. Discovered during event log artifact analysis, corroborating " +
+                                 "evidence of mapper tool execution on this system.",
+                        Detail = $"Matched: {matched} | Last write: {lastWrite:yyyy-MM-dd}"
+                    });
+                }
+            }
+
+            // 8c — Temp directory sweep for .sys and .dmp mapper artifacts
+            foreach (var tempDir in new[] { UserTempDir, WindowsTempDir })
+            {
+                if (ct.IsCancellationRequested) return;
+                if (!Directory.Exists(tempDir)) continue;
+
+                foreach (var pattern in new[] { "*.sys", "*.dmp" })
+                {
+                    string[] files;
+                    try
+                    {
+                        files = Directory.GetFiles(tempDir, pattern, SearchOption.TopDirectoryOnly);
+                    }
+                    catch (UnauthorizedAccessException) { continue; }
+                    catch (IOException) { continue; }
+
+                    foreach (var file in files)
+                    {
+                        if (ct.IsCancellationRequested) return;
+                        ctx.IncrementFiles();
+
+                        var fn = Path.GetFileName(file);
+                        bool isKnownVuln = KnownVulnerableDriverFiles.Contains(fn);
+                        bool hasSuspiciousName =
+                            fn.Contains("mapper", StringComparison.OrdinalIgnoreCase) ||
+                            fn.Contains("byovd", StringComparison.OrdinalIgnoreCase) ||
+                            fn.Contains("kdmap", StringComparison.OrdinalIgnoreCase) ||
+                            fn.Contains("physmem", StringComparison.OrdinalIgnoreCase) ||
+                            fn.Contains("gdrv", StringComparison.OrdinalIgnoreCase) ||
+                            fn.Contains("mhyprot", StringComparison.OrdinalIgnoreCase) ||
+                            fn.Contains("rtcore", StringComparison.OrdinalIgnoreCase) ||
+                            fn.Contains("bsod", StringComparison.OrdinalIgnoreCase) ||
+                            fn.Contains("crash", StringComparison.OrdinalIgnoreCase);
+
+                        if (!isKnownVuln && !hasSuspiciousName) continue;
+
+                        long fileSize = 0;
+                        DateTime modified = DateTime.MinValue;
+                        try { var fi = new FileInfo(file); fileSize = fi.Length; modified = fi.LastWriteTime; }
+                        catch { }
+
+                        ctx.AddFinding(new Finding
+                        {
+                            Module = Name,
+                            Title = isKnownVuln
+                                ? $"Known Vulnerable Driver in Temp (EventLog Check): {fn}"
+                                : $"Mapper Crash/Temp Artifact: {fn}",
+                            Risk = isKnownVuln ? RiskLevel.High : RiskLevel.Medium,
+                            Location = file,
+                            FileName = fn,
+                            Reason = isKnownVuln
+                                ? $"Known BYOVD driver '{fn}' found in Temp. Mapper tools drop vulnerable " +
+                                  "drivers to Temp before service registration."
+                                : $"File '{fn}' in Temp matches mapper/crash patterns. Mappers leave " +
+                                  "driver and dump artifacts in Temp when they crash or fail.",
+                            Detail = $"Path: {file} | Size: {fileSize} bytes | Modified: {modified:yyyy-MM-dd}"
+                        });
+                    }
+
+                    await Task.Yield();
+                }
+            }
+        }, ct);
+
+    // -------------------------------------------------------------------------
+    // Check 9: Known mapper DLL files
+    // -------------------------------------------------------------------------
+
+    private Task CheckKnownMapperDlls(ScanContext ctx, CancellationToken ct) =>
+        Task.Run(async () =>
+        {
+            var searchDirs = new[]
+            {
+                System32Dir,
+                UserTempDir,
+                WindowsTempDir,
+                DesktopDir,
+                DownloadsDir,
+                LocalAppDataDir,
+                RoamingAppDataDir,
+            };
+
+            foreach (var dir in searchDirs)
+            {
+                if (ct.IsCancellationRequested) return;
+                if (!Directory.Exists(dir)) continue;
+
+                string[] files;
+                try
+                {
+                    files = Directory.GetFiles(dir, "*.dll", SearchOption.TopDirectoryOnly);
+                }
+                catch (UnauthorizedAccessException) { continue; }
+                catch (IOException) { continue; }
+
+                foreach (var file in files)
+                {
+                    if (ct.IsCancellationRequested) return;
+                    ctx.IncrementFiles();
+
+                    var fn = Path.GetFileName(file);
+                    if (!KnownMapperDlls.Contains(fn)) continue;
+
+                    ctx.AddFinding(new Finding
+                    {
+                        Module = Name,
+                        Title = $"Known Mapper DLL Found: {fn}",
+                        Risk = RiskLevel.High,
+                        Location = file,
+                        FileName = fn,
+                        Reason = $"DLL file '{fn}' matches a known manual-mapping or code-injection library. " +
+                                 "These DLLs implement core mapping logic for usermode-to-kernel injection, " +
+                                 "process injection techniques (hollowing, ghosting, doppelgänging), or DSE " +
+                                 "bypass routines used to load unsigned kernel drivers.",
+                        Detail = $"Path: {file} | Directory: {dir}"
+                    });
+                }
+
+                // Check AppData subdirs one level deep
+                if (dir == LocalAppDataDir || dir == RoamingAppDataDir)
+                {
+                    string[] subDirs;
+                    try { subDirs = Directory.GetDirectories(dir); }
+                    catch (UnauthorizedAccessException) { continue; }
+                    catch (IOException) { continue; }
+
+                    foreach (var sub in subDirs)
+                    {
+                        if (ct.IsCancellationRequested) return;
+
+                        string[] subFiles;
+                        try
+                        {
+                            subFiles = Directory.GetFiles(sub, "*.dll", SearchOption.TopDirectoryOnly);
+                        }
+                        catch (UnauthorizedAccessException) { continue; }
+                        catch (IOException) { continue; }
+
+                        foreach (var file in subFiles)
+                        {
+                            if (ct.IsCancellationRequested) return;
+                            ctx.IncrementFiles();
+
+                            var fn = Path.GetFileName(file);
+                            if (!KnownMapperDlls.Contains(fn)) continue;
+
+                            ctx.AddFinding(new Finding
+                            {
+                                Module = Name,
+                                Title = $"Known Mapper DLL in AppData Subdirectory: {fn}",
+                                Risk = RiskLevel.High,
+                                Location = file,
+                                FileName = fn,
+                                Reason = $"Mapper DLL '{fn}' found in an AppData subdirectory. This is a common " +
+                                         "staging location for injection libraries used by usermode mapper tools " +
+                                         "prior to loading the vulnerable driver.",
+                                Detail = $"Path: {file}"
+                            });
+                        }
+                    }
+                }
+
+                await Task.Yield();
+            }
+        }, ct);
+
+    // -------------------------------------------------------------------------
+    // Check 10: Mapper temporary directory artifacts
+    // -------------------------------------------------------------------------
+
+    private Task CheckMapperTemporaryArtifacts(ScanContext ctx, CancellationToken ct) =>
+        Task.Run(async () =>
+        {
             var tempDirs = new[]
             {
-                Temp,
-                Path.Combine(LocalAppData, "Temp"),
-                Path.Combine(WinDir, "Temp"),
+                UserTempDir,
+                WindowsTempDir,
+                Path.Combine(LocalAppDataDir, "Temp"),
             };
 
             foreach (var tempDir in tempDirs)
@@ -746,1108 +1487,184 @@ public sealed class MappingDriverForensicScanModule : IScanModule
                 if (ct.IsCancellationRequested) return;
                 if (!Directory.Exists(tempDir)) continue;
 
-                string[] logFiles;
-                try { logFiles = Directory.GetFiles(tempDir, "*.log", SearchOption.TopDirectoryOnly); }
-                catch (UnauthorizedAccessException) { continue; }
-
-                foreach (var logFile in logFiles)
-                {
-                    if (ct.IsCancellationRequested) return;
-                    var fn = Path.GetFileName(logFile).ToLowerInvariant();
-                    if (!fn.Contains("map") && !fn.Contains("drv") && !fn.Contains("inject")
-                        && !fn.Contains("kernel") && !fn.Contains("driver")) continue;
-
-                    ctx.IncrementFiles();
-                    string content = string.Empty;
-                    try
-                    {
-                        using var fs = new FileStream(logFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-                        using var sr = new StreamReader(fs);
-                        content = await sr.ReadToEndAsync(ct);
-                    }
-                    catch (IOException) { continue; }
-
-                    bool hasMappingContent = content.Contains("kdmapper", StringComparison.OrdinalIgnoreCase)
-                                         || content.Contains("iqvw64", StringComparison.OrdinalIgnoreCase)
-                                         || content.Contains("dbutil_2_3", StringComparison.OrdinalIgnoreCase)
-                                         || content.Contains("gdrv.sys", StringComparison.OrdinalIgnoreCase)
-                                         || content.Contains("rtcore64", StringComparison.OrdinalIgnoreCase)
-                                         || content.Contains("mhyprot", StringComparison.OrdinalIgnoreCase)
-                                         || content.Contains("driver manual map", StringComparison.OrdinalIgnoreCase)
-                                         || content.Contains("manual map", StringComparison.OrdinalIgnoreCase);
-                    if (!hasMappingContent) continue;
-
-                    ctx.AddFinding(new Finding
-                    {
-                        Module = Name,
-                        Title = $"Verdaechtige Log-Datei mit Mapper-Inhalt im Temp-Ordner: {Path.GetFileName(logFile)}",
-                        Risk = RiskLevel.High,
-                        Location = logFile,
-                        FileName = Path.GetFileName(logFile),
-                        Reason = $"Eine Log-Datei im Temp-Ordner '{logFile}' enthaelt Verweise auf " +
-                                 "bekannte Kernel-Driver-Mapper-Tools oder vulnerable Treiber. " +
-                                 "Dies deutet auf eine kuerzlich stattgefundene Mapping-Operation hin.",
-                        Detail = $"Dateiname: {fn} · Groesse: {new FileInfo(logFile).Length} Bytes"
-                    });
-                }
-            }
-        }, ct);
-
-    private Task CheckTestSigningArtifacts(ScanContext ctx, CancellationToken ct) =>
-        Task.Run(async () =>
-        {
-            var searchDirs = new[]
-            {
-                Downloads,
-                Desktop,
-                Documents,
-                Temp,
-                Path.Combine(LocalAppData, "Temp"),
-                LocalAppData,
-                UserProfile,
-                ProgramData,
-            };
-
-            foreach (var dir in searchDirs)
-            {
-                if (ct.IsCancellationRequested) return;
-                if (!Directory.Exists(dir)) continue;
-
-                try
-                {
-                    foreach (var batchName in TestSigningBatchNames)
-                    {
-                        var batchPath = Path.Combine(dir, batchName);
-                        if (!File.Exists(batchPath)) continue;
-
-                        ctx.IncrementFiles();
-                        string content = string.Empty;
-                        try
-                        {
-                            using var fs = new FileStream(batchPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-                            using var sr = new StreamReader(fs);
-                            content = await sr.ReadToEndAsync(ct);
-                        }
-                        catch (IOException) { }
-
-                        bool hasTestsignCommand = content.Contains("testsigning", StringComparison.OrdinalIgnoreCase)
-                                               || content.Contains("nointegritychecks", StringComparison.OrdinalIgnoreCase)
-                                               || content.Contains("bcdedit", StringComparison.OrdinalIgnoreCase);
-
-                        ctx.AddFinding(new Finding
-                        {
-                            Module = Name,
-                            Title = $"Test-Signing Aktivierungs-Script: {batchName}",
-                            Risk = RiskLevel.High,
-                            Location = batchPath,
-                            FileName = batchName,
-                            Reason = $"Ein Batch-Script zum Aktivieren des Windows Test-Signing-Modus wurde " +
-                                     $"unter '{batchPath}' gefunden. Test-Signing deaktiviert die " +
-                                     "Treiber-Signaturpruefung (DSE) fuer selbstsignierte Treiber und " +
-                                     "ermoeglicht das Laden beliebiger Kernel-Treiber. Dies ist eine " +
-                                     "verbreitete Methode, um Cheat-Treiber ohne Manual-Mapping zu laden.",
-                            Detail = hasTestsignCommand
-                                ? $"Enthaelt bcdedit/testsigning Befehle: {content[..Math.Min(200, content.Length)]}"
-                                : $"Groesse: {new FileInfo(batchPath).Length} Bytes"
-                        });
-                    }
-                }
-                catch (UnauthorizedAccessException) { }
-            }
-
-            // Also search recursively in downloads/desktop for batch files with testsigning content
-            var recursiveDirs = new[] { Downloads, Desktop, Documents };
-            foreach (var dir in recursiveDirs)
-            {
-                if (ct.IsCancellationRequested) return;
-                if (!Directory.Exists(dir)) continue;
-
-                string[] batFiles;
-                try
-                {
-                    batFiles = Directory.GetFiles(dir, "*.bat", SearchOption.AllDirectories)
-                        .Concat(Directory.GetFiles(dir, "*.cmd", SearchOption.AllDirectories))
-                        .ToArray();
-                }
-                catch (UnauthorizedAccessException) { continue; }
-
-                foreach (var batFile in batFiles)
-                {
-                    if (ct.IsCancellationRequested) return;
-                    // Skip already-caught named files
-                    var fn = Path.GetFileName(batFile);
-                    if (TestSigningBatchNames.Any(n => fn.Equals(n, StringComparison.OrdinalIgnoreCase))) continue;
-
-                    string content;
-                    try
-                    {
-                        using var fs = new FileStream(batFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-                        using var sr = new StreamReader(fs);
-                        content = await sr.ReadToEndAsync(ct);
-                    }
-                    catch (IOException) { continue; }
-
-                    bool hasTestsign = (content.Contains("testsigning on", StringComparison.OrdinalIgnoreCase)
-                                     || content.Contains("nointegritychecks on", StringComparison.OrdinalIgnoreCase))
-                                    && content.Contains("bcdedit", StringComparison.OrdinalIgnoreCase);
-                    if (!hasTestsign) continue;
-
-                    ctx.IncrementFiles();
-                    ctx.AddFinding(new Finding
-                    {
-                        Module = Name,
-                        Title = $"Batch-Script mit Test-Signing Befehlen: {fn}",
-                        Risk = RiskLevel.High,
-                        Location = batFile,
-                        FileName = fn,
-                        Reason = $"Ein Batch-Script '{fn}' unter '{batFile}' enthaelt bcdedit-Befehle " +
-                                 "zum Aktivieren von testsigning oder nointegritychecks. Diese Befehle " +
-                                 "deaktivieren die Windows-Treibersignaturueberpruefung und ermoeglichen " +
-                                 "das Laden unsignierter Kernel-Treiber.",
-                        Detail = $"Enthaelt: {content[..Math.Min(300, content.Length)]}"
-                    });
-                }
-            }
-        }, ct);
-
-    private Task CheckDseBypassArtifacts(ScanContext ctx, CancellationToken ct) =>
-        Task.Run(() =>
-        {
-            var searchDirs = new[]
-            {
-                Downloads,
-                Desktop,
-                Documents,
-                Temp,
-                Path.Combine(LocalAppData, "Temp"),
-                LocalAppData,
-                RoamingAppData,
-                ProgramData,
-            };
-
-            foreach (var dir in searchDirs)
-            {
-                if (ct.IsCancellationRequested) return;
-                if (!Directory.Exists(dir)) continue;
-
-                try
-                {
-                    foreach (var file in Directory.EnumerateFiles(dir, "*.exe", SearchOption.AllDirectories))
-                    {
-                        if (ct.IsCancellationRequested) return;
-                        var fileName = Path.GetFileName(file);
-                        bool isDseFix = DseBypassExecutables.Any(n =>
-                            fileName.Equals(n, StringComparison.OrdinalIgnoreCase));
-                        if (!isDseFix) continue;
-
-                        ctx.IncrementFiles();
-                        ctx.AddFinding(new Finding
-                        {
-                            Module = Name,
-                            Title = $"DSE-Bypass Tool gefunden: {fileName}",
-                            Risk = RiskLevel.Critical,
-                            Location = file,
-                            FileName = fileName,
-                            Reason = $"Ein DSE-Bypass-Tool '{fileName}' wurde unter '{file}' gefunden. " +
-                                     "Driver Signature Enforcement (DSE) Bypass-Tools patchen den " +
-                                     "Windows-Kernel-CI-Check (ci.dll/wdfilter.sys), um das Laden " +
-                                     "unsignierter Treiber zu ermoeglichen. DSEFix und aehnliche Tools " +
-                                     "sind Kernel-Level-Werkzeuge fuer erfahrene Cheat-Entwickler.",
-                            Detail = $"Groesse: {new FileInfo(file).Length} Bytes · " +
-                                     $"Zuletzt geaendert: {File.GetLastWriteTime(file):yyyy-MM-dd HH:mm}"
-                        });
-                    }
-                }
-                catch (UnauthorizedAccessException) { }
-            }
-
-            // Check for DSE-related DLL files that patch ci.dll
-            var dsePatchDlls = new[]
-            {
-                "ci_patch.dll",
-                "dse_patch.dll",
-                "wdfilter_patch.dll",
-                "ci_bypass.dll",
-                "dsepatch.dll",
-            };
-
-            foreach (var dir in searchDirs)
-            {
-                if (ct.IsCancellationRequested) return;
-                if (!Directory.Exists(dir)) continue;
-
-                try
-                {
-                    foreach (var dllName in dsePatchDlls)
-                    {
-                        var dllPath = Path.Combine(dir, dllName);
-                        if (!File.Exists(dllPath)) continue;
-                        ctx.IncrementFiles();
-                        ctx.AddFinding(new Finding
-                        {
-                            Module = Name,
-                            Title = $"DSE-Patch DLL: {dllName}",
-                            Risk = RiskLevel.Critical,
-                            Location = dllPath,
-                            FileName = dllName,
-                            Reason = $"Eine DSE-Patch DLL '{dllName}' wurde unter '{dllPath}' gefunden. " +
-                                     "Patch-DLLs fuer ci.dll oder wdfilter.sys werden eingesetzt, um " +
-                                     "Driver Signature Enforcement direkt im laufenden Kernel zu umgehen.",
-                            Detail = $"Groesse: {new FileInfo(dllPath).Length} Bytes"
-                        });
-                    }
-                }
-                catch (UnauthorizedAccessException) { }
-            }
-        }, ct);
-
-    private Task CheckPatchGuardBypassArtifacts(ScanContext ctx, CancellationToken ct) =>
-        Task.Run(() =>
-        {
-            var searchDirs = new[]
-            {
-                Downloads,
-                Desktop,
-                Documents,
-                Temp,
-                Path.Combine(LocalAppData, "Temp"),
-                LocalAppData,
-                RoamingAppData,
-                ProgramData,
-            };
-
-            foreach (var dir in searchDirs)
-            {
-                if (ct.IsCancellationRequested) return;
-                if (!Directory.Exists(dir)) continue;
-
-                try
-                {
-                    foreach (var file in Directory.EnumerateFiles(dir, "*.exe", SearchOption.AllDirectories))
-                    {
-                        if (ct.IsCancellationRequested) return;
-                        var fileName = Path.GetFileName(file);
-                        bool isPgBypass = PatchGuardBypassExecutables.Any(n =>
-                            fileName.Equals(n, StringComparison.OrdinalIgnoreCase));
-                        if (!isPgBypass) continue;
-
-                        ctx.IncrementFiles();
-                        ctx.AddFinding(new Finding
-                        {
-                            Module = Name,
-                            Title = $"PatchGuard Bypass Tool: {fileName}",
-                            Risk = RiskLevel.Critical,
-                            Location = file,
-                            FileName = fileName,
-                            Reason = $"Ein PatchGuard-Bypass-Tool '{fileName}' wurde unter '{file}' " +
-                                     "gefunden. PatchGuard (Kernel Patch Protection, KPP) ist der " +
-                                     "Windows-Schutzmechanismus, der Kernel-Patchversuche erkennt und " +
-                                     "das System abbricht (BSOD). PatchGuard-Bypass-Tools umgehen diesen " +
-                                     "Schutzmechanismus, um permanente Kernel-Patches durch Cheats zu " +
-                                     "ermoeglichen (z.B. SSDT-Hooks, PatchGuard-Disable).",
-                            Detail = $"Groesse: {new FileInfo(file).Length} Bytes · " +
-                                     $"Zuletzt geaendert: {File.GetLastWriteTime(file):yyyy-MM-dd HH:mm}"
-                        });
-                    }
-                }
-                catch (UnauthorizedAccessException) { }
-            }
-
-            // Check for PG-bypass config/log files
-            var pgArtifacts = new[]
-            {
-                "pg_bypass.log",
-                "patchguard.log",
-                "pg_disabled.txt",
-                "patchguard_disabled.txt",
-                "pg_bypass_status.txt",
-            };
-
-            foreach (var dir in searchDirs)
-            {
-                if (ct.IsCancellationRequested) return;
-                if (!Directory.Exists(dir)) continue;
-
-                try
-                {
-                    foreach (var artifact in pgArtifacts)
-                    {
-                        var path = Path.Combine(dir, artifact);
-                        if (!File.Exists(path)) continue;
-                        ctx.IncrementFiles();
-                        ctx.AddFinding(new Finding
-                        {
-                            Module = Name,
-                            Title = $"PatchGuard Bypass Artefakt: {artifact}",
-                            Risk = RiskLevel.High,
-                            Location = path,
-                            FileName = artifact,
-                            Reason = $"Ein PatchGuard-Bypass-Artefakt '{artifact}' wurde unter '{path}' " +
-                                     "gefunden. Diese Dateien werden von PG-Bypass-Tools ausgegeben und " +
-                                     "zeigen an, dass PatchGuard auf diesem System deaktiviert oder " +
-                                     "umgangen wurde.",
-                            Detail = $"Groesse: {new FileInfo(path).Length} Bytes"
-                        });
-                    }
-                }
-                catch (UnauthorizedAccessException) { }
-            }
-        }, ct);
-
-    private Task CheckDriverImageInUnusualLocations(ScanContext ctx, CancellationToken ct) =>
-        Task.Run(() =>
-        {
-            // .sys files found outside System32\drivers are highly suspicious for manual mapping
-            var unusualSysDirs = new[]
-            {
-                Downloads,
-                Desktop,
-                Documents,
-                Temp,
-                Path.Combine(LocalAppData, "Temp"),
-                Path.Combine(WinDir, "Temp"),
-                RoamingAppData,
-                LocalAppData,
-                ProgramData,
-                UserProfile,
-            };
-
-            var legitSysExtensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-            {
-                // Skip known-good .sys files that might legitimately live outside drivers/
-                "null"
-            };
-
-            foreach (var dir in unusualSysDirs)
-            {
-                if (ct.IsCancellationRequested) return;
-                if (!Directory.Exists(dir)) continue;
-
+                // Check for .sys files (dropped driver payloads)
                 string[] sysFiles;
-                try { sysFiles = Directory.GetFiles(dir, "*.sys", SearchOption.AllDirectories); }
-                catch (UnauthorizedAccessException) { continue; }
+                try
+                {
+                    sysFiles = Directory.GetFiles(tempDir, "*.sys", SearchOption.TopDirectoryOnly);
+                }
+                catch (UnauthorizedAccessException) { sysFiles = Array.Empty<string>(); }
+                catch (IOException) { sysFiles = Array.Empty<string>(); }
 
-                foreach (var sysFile in sysFiles)
+                foreach (var file in sysFiles)
                 {
                     if (ct.IsCancellationRequested) return;
-                    var fileName = Path.GetFileName(sysFile);
+                    ctx.IncrementFiles();
 
-                    // Skip already-caught BYOVD drivers (CheckByovdVulnerableDrivers handles those)
-                    if (ByovdVulnerableDrivers.Any(n => fileName.Equals(n, StringComparison.OrdinalIgnoreCase)))
-                        continue;
+                    var fn = Path.GetFileName(file);
+                    bool isKnownVuln = KnownVulnerableDriverFiles.Contains(fn);
+                    bool hasSuspiciousName =
+                        fn.Contains("drv", StringComparison.OrdinalIgnoreCase) ||
+                        fn.Contains("driver", StringComparison.OrdinalIgnoreCase) ||
+                        fn.Contains("mapper", StringComparison.OrdinalIgnoreCase) ||
+                        fn.Contains("bypass", StringComparison.OrdinalIgnoreCase) ||
+                        fn.Contains("inject", StringComparison.OrdinalIgnoreCase) ||
+                        fn.Contains("kernel", StringComparison.OrdinalIgnoreCase) ||
+                        fn.Contains("ring0", StringComparison.OrdinalIgnoreCase) ||
+                        fn.Contains("physmem", StringComparison.OrdinalIgnoreCase) ||
+                        fn.Contains("byovd", StringComparison.OrdinalIgnoreCase) ||
+                        fn.Contains("gdrv", StringComparison.OrdinalIgnoreCase) ||
+                        fn.Contains("mhyprot", StringComparison.OrdinalIgnoreCase);
+
+                    if (!isKnownVuln && !hasSuspiciousName) continue;
+
+                    long fileSize = 0;
+                    DateTime modified = DateTime.MinValue;
+                    try
+                    {
+                        var fi = new FileInfo(file);
+                        fileSize = fi.Length;
+                        modified = fi.LastWriteTime;
+                    }
+                    catch { }
+
+                    ctx.AddFinding(new Finding
+                    {
+                        Module = Name,
+                        Title = isKnownVuln
+                            ? $"Known Vulnerable Driver Dropped to Temp: {fn}"
+                            : $"Suspicious Driver File in Temp Directory: {fn}",
+                        Risk = isKnownVuln ? RiskLevel.High : RiskLevel.Medium,
+                        Location = file,
+                        FileName = fn,
+                        Reason = isKnownVuln
+                            ? $"Known BYOVD vulnerable driver '{fn}' found in the Temp directory. Mapper tools " +
+                              "extract the vulnerable driver to Temp before registering it as a Windows service."
+                            : $"Driver file '{fn}' in Temp has a name suggesting mapper/bypass activity. " +
+                              "Driver files do not normally reside in Temp; their presence strongly indicates " +
+                              "a staged BYOVD payload from a manual-mapping tool.",
+                        Detail = $"Path: {file} | Temp dir: {tempDir} | " +
+                                 $"Size: {fileSize} bytes | Modified: {modified:yyyy-MM-dd HH:mm:ss}"
+                    });
+                }
+
+                // Check for .dmp files (mapper crash artifacts)
+                string[] dmpFiles;
+                try
+                {
+                    dmpFiles = Directory.GetFiles(tempDir, "*.dmp", SearchOption.TopDirectoryOnly);
+                }
+                catch (UnauthorizedAccessException) { dmpFiles = Array.Empty<string>(); }
+                catch (IOException) { dmpFiles = Array.Empty<string>(); }
+
+                foreach (var file in dmpFiles)
+                {
+                    if (ct.IsCancellationRequested) return;
+                    ctx.IncrementFiles();
+
+                    var fn = Path.GetFileName(file);
+                    bool hasMapperKeyword =
+                        fn.Contains("mapper", StringComparison.OrdinalIgnoreCase) ||
+                        fn.Contains("kdmap", StringComparison.OrdinalIgnoreCase) ||
+                        fn.Contains("byovd", StringComparison.OrdinalIgnoreCase) ||
+                        fn.Contains("physmem", StringComparison.OrdinalIgnoreCase) ||
+                        fn.Contains("gdrv", StringComparison.OrdinalIgnoreCase) ||
+                        fn.Contains("mhyprot", StringComparison.OrdinalIgnoreCase) ||
+                        fn.Contains("bsod", StringComparison.OrdinalIgnoreCase) ||
+                        fn.Contains("driver_crash", StringComparison.OrdinalIgnoreCase) ||
+                        fn.Contains("kernel_crash", StringComparison.OrdinalIgnoreCase);
+
+                    if (!hasMapperKeyword) continue;
+
+                    long fileSize = 0;
+                    DateTime modified = DateTime.MinValue;
+                    try
+                    {
+                        var fi = new FileInfo(file);
+                        fileSize = fi.Length;
+                        modified = fi.LastWriteTime;
+                    }
+                    catch { }
+
+                    ctx.AddFinding(new Finding
+                    {
+                        Module = Name,
+                        Title = $"Mapper Crash Dump in Temp Directory: {fn}",
+                        Risk = RiskLevel.Medium,
+                        Location = file,
+                        FileName = fn,
+                        Reason = $"Dump file '{fn}' in Temp contains keywords associated with mapper or BYOVD " +
+                                 "tools. Mappers that cause kernel instability (failed driver loads, BSODs) " +
+                                 "leave crash dump files in Temp as forensic artifacts of exploitation attempts.",
+                        Detail = $"Path: {file} | Temp dir: {tempDir} | " +
+                                 $"Size: {fileSize} bytes | Modified: {modified:yyyy-MM-dd HH:mm:ss}"
+                    });
+                }
+
+                // Check for any files named with mapper keywords regardless of extension
+                string[] allTempFiles;
+                try
+                {
+                    allTempFiles = Directory.GetFiles(tempDir, "*", SearchOption.TopDirectoryOnly);
+                }
+                catch (UnauthorizedAccessException) { allTempFiles = Array.Empty<string>(); }
+                catch (IOException) { allTempFiles = Array.Empty<string>(); }
+
+                foreach (var file in allTempFiles)
+                {
+                    if (ct.IsCancellationRequested) return;
+
+                    var fn = Path.GetFileName(file);
+                    var ext = Path.GetExtension(fn).ToLowerInvariant();
+                    // Already handled .sys and .dmp above
+                    if (ext == ".sys" || ext == ".dmp") continue;
+
+                    bool isMapperNamed =
+                        fn.StartsWith("kdmapper", StringComparison.OrdinalIgnoreCase) ||
+                        fn.StartsWith("byovd", StringComparison.OrdinalIgnoreCase) ||
+                        fn.StartsWith("physmem_mapper", StringComparison.OrdinalIgnoreCase) ||
+                        fn.StartsWith("gdrv_mapper", StringComparison.OrdinalIgnoreCase) ||
+                        fn.StartsWith("mhyprot_mapper", StringComparison.OrdinalIgnoreCase) ||
+                        fn.StartsWith("rtcore_mapper", StringComparison.OrdinalIgnoreCase);
+
+                    if (!isMapperNamed) continue;
 
                     ctx.IncrementFiles();
-                    ctx.AddFinding(new Finding
-                    {
-                        Module = Name,
-                        Title = $"Kernel-Treiber-Image in ungewoehnlichem Pfad: {fileName}",
-                        Risk = RiskLevel.High,
-                        Location = sysFile,
-                        FileName = fileName,
-                        Reason = $"Eine Kernel-Treiber-Image-Datei (.sys) wurde in einem ungewoehnlichen " +
-                                 $"Verzeichnis '{sysFile}' gefunden. Kernel-Treiber sollten sich im " +
-                                 "System32\\drivers-Ordner befinden. Eine .sys-Datei in Temp, Downloads, " +
-                                 "AppData oder Desktop deutet auf manuelle Mapper-Staging oder BYOVD-Angriff hin.",
-                        Detail = $"Groesse: {new FileInfo(sysFile).Length} Bytes · " +
-                                 $"Erstellt: {File.GetCreationTime(sysFile):yyyy-MM-dd HH:mm} · " +
-                                 $"Zuletzt geaendert: {File.GetLastWriteTime(sysFile):yyyy-MM-dd HH:mm}"
-                    });
-                }
-            }
-        }, ct);
-
-    private Task CheckMapperRegistryServices(ScanContext ctx, CancellationToken ct) =>
-        Task.Run(() =>
-        {
-            try
-            {
-                using var hklm = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Default);
-                using var services = hklm.OpenSubKey(@"SYSTEM\CurrentControlSet\Services", writable: false);
-                if (services is null) return;
-
-                foreach (var svcName in services.GetSubKeyNames())
-                {
-                    if (ct.IsCancellationRequested) return;
-
-                    var svcLower = svcName.ToLowerInvariant();
-                    var matchedKeyword = SuspectMapperServiceKeywords.FirstOrDefault(k =>
-                        svcLower.Contains(k, StringComparison.OrdinalIgnoreCase));
-                    if (matchedKeyword is null) continue;
-
-                    try
-                    {
-                        using var svcKey = services.OpenSubKey(svcName, writable: false);
-                        if (svcKey is null) continue;
-                        ctx.IncrementRegistryKeys();
-
-                        var imagePath = svcKey.GetValue("ImagePath")?.ToString() ?? string.Empty;
-                        var displayName = svcKey.GetValue("DisplayName")?.ToString() ?? svcName;
-                        var startType = svcKey.GetValue("Start")?.ToString() ?? "?";
-
-                        // Verify image path matches known mapper/vulnerable driver patterns
-                        bool imagePathSuspect = !string.IsNullOrEmpty(imagePath) &&
-                            (imagePath.Contains("kdmapper", StringComparison.OrdinalIgnoreCase)
-                          || imagePath.Contains("dbutil_2_3", StringComparison.OrdinalIgnoreCase)
-                          || imagePath.Contains("gdrv", StringComparison.OrdinalIgnoreCase)
-                          || imagePath.Contains("rtcore", StringComparison.OrdinalIgnoreCase)
-                          || imagePath.Contains("mhyprot", StringComparison.OrdinalIgnoreCase)
-                          || imagePath.Contains("iqvw64", StringComparison.OrdinalIgnoreCase)
-                          || imagePath.Contains("winring0", StringComparison.OrdinalIgnoreCase)
-                          || imagePath.Contains("turla", StringComparison.OrdinalIgnoreCase)
-                          || imagePath.Contains("cpuz", StringComparison.OrdinalIgnoreCase)
-                          || imagePath.Contains("winio", StringComparison.OrdinalIgnoreCase));
-
-                        ctx.AddFinding(new Finding
-                        {
-                            Module = Name,
-                            Title = $"Verdaechtiger Mapper/BYOVD Dienst in Registry: {svcName}",
-                            Risk = imagePathSuspect ? RiskLevel.Critical : RiskLevel.High,
-                            Location = $@"HKLM\SYSTEM\CurrentControlSet\Services\{svcName}",
-                            FileName = string.IsNullOrEmpty(imagePath) ? null : Path.GetFileName(imagePath.Trim('"')),
-                            Reason = $"Ein Dienst-Eintrag '{svcName}' mit Mapper/BYOVD-Bezug wurde in der " +
-                                     $"Services-Registry gefunden (Muster: '{matchedKeyword}'). " +
-                                     (imagePathSuspect
-                                         ? $"Der ImagePath '{imagePath}' referenziert bekannte Mapper-/vulnerable-Treiber-Dateien. "
-                                         : "") +
-                                     "Registry-Dienst-Eintraege fuer BYOVD-Treiber oder Mapper-Tools " +
-                                     "zeigen an, dass diese als Windows-Dienst installiert wurden.",
-                            Detail = $"ImagePath: {imagePath} · DisplayName: {displayName} · StartType: {startType}"
-                        });
-                    }
-                    catch (UnauthorizedAccessException) { }
-                }
-            }
-            catch (UnauthorizedAccessException) { }
-        }, ct);
-
-    private Task CheckBcdRegistryTestSigning(ScanContext ctx, CancellationToken ct) =>
-        Task.Run(() =>
-        {
-            // Check BCD (Boot Configuration Data) registry objects for test signing / nointegritychecks
-            // BCD objects are stored under HKLM\BCD00000000
-            try
-            {
-                using var hklm = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Default);
-
-                // Check the BCD store in registry for boot options
-                var bcdPaths = new[]
-                {
-                    @"BCD00000000\Objects",
-                    @"SYSTEM\CurrentControlSet\Control\CI",
-                    @"SYSTEM\CurrentControlSet\Control\CI\Config",
-                };
-
-                foreach (var bcdPath in bcdPaths)
-                {
-                    if (ct.IsCancellationRequested) return;
-                    try
-                    {
-                        using var key = hklm.OpenSubKey(bcdPath, writable: false);
-                        if (key is null) continue;
-                        ctx.IncrementRegistryKeys();
-
-                        var valueNames = key.GetValueNames();
-                        foreach (var vn in valueNames)
-                        {
-                            if (ct.IsCancellationRequested) return;
-                            var val = key.GetValue(vn)?.ToString() ?? string.Empty;
-                            if (val.Contains("testsigning", StringComparison.OrdinalIgnoreCase)
-                             || val.Contains("nointegritychecks", StringComparison.OrdinalIgnoreCase)
-                             || vn.Contains("VulnerableDriverBlocklistEnable", StringComparison.OrdinalIgnoreCase))
-                            {
-                                ctx.AddFinding(new Finding
-                                {
-                                    Module = Name,
-                                    Title = "Test-Signing oder DSE-Deaktivierung in BCD/CI Registry",
-                                    Risk = RiskLevel.High,
-                                    Location = $@"HKLM\{bcdPath}\{vn}",
-                                    Reason = $"Ein Registry-Wert unter 'HKLM\\{bcdPath}' wurde gefunden, " +
-                                             "der Test-Signing oder NoIntegrityChecks-Konfiguration " +
-                                             "anzeigt. Diese Einstellungen deaktivieren die " +
-                                             "Windows-Treibersignaturpruefung und erlauben unsignierte " +
-                                             "Kernel-Treiber.",
-                                    Detail = $"Wert: {vn} = {val}"
-                                });
-                            }
-                        }
-                    }
-                    catch (UnauthorizedAccessException) { }
-                }
-
-                // Check for VulnerableDriverBlocklistEnable = 0 (HVCI/WDAC blockist disabled)
-                try
-                {
-                    using var ciKey = hklm.OpenSubKey(
-                        @"SYSTEM\CurrentControlSet\Control\CI\Config", writable: false);
-                    if (ciKey is not null)
-                    {
-                        ctx.IncrementRegistryKeys();
-                        var blocklistVal = ciKey.GetValue("VulnerableDriverBlocklistEnable");
-                        if (blocklistVal is int bv && bv == 0)
-                        {
-                            ctx.AddFinding(new Finding
-                            {
-                                Module = Name,
-                                Title = "Microsoft Vulnerable Driver Blocklist deaktiviert",
-                                Risk = RiskLevel.High,
-                                Location = @"HKLM\SYSTEM\CurrentControlSet\Control\CI\Config",
-                                Reason = "Der Microsoft Vulnerable Driver Blocklist ist deaktiviert " +
-                                         "(VulnerableDriverBlocklistEnable=0). Diese Liste blockiert bekannte " +
-                                         "vulnerable Treiber, die in BYOVD-Angriffen verwendet werden. " +
-                                         "Die Deaktivierung ermoeglicht das Laden von Treibern wie " +
-                                         "iqvw64e.sys, rtcore64.sys, dbutil_2_3.sys usw.",
-                                Detail = $"VulnerableDriverBlocklistEnable = {bv}"
-                            });
-                        }
-                    }
-                }
-                catch (UnauthorizedAccessException) { }
-
-                // Check for DebugFlags that indicate kernel debugging or DSE bypass
-                try
-                {
-                    using var lsa = hklm.OpenSubKey(
-                        @"SYSTEM\CurrentControlSet\Control\Lsa", writable: false);
-                    if (lsa is not null)
-                    {
-                        ctx.IncrementRegistryKeys();
-                        var testSigningValue = lsa.GetValue("TestSigning");
-                        if (testSigningValue is int tsv && tsv != 0)
-                        {
-                            ctx.AddFinding(new Finding
-                            {
-                                Module = Name,
-                                Title = "Test-Signing in LSA Registry aktiviert",
-                                Risk = RiskLevel.High,
-                                Location = @"HKLM\SYSTEM\CurrentControlSet\Control\Lsa",
-                                Reason = "Test-Signing ist in der LSA-Registry aktiviert. Dies ist " +
-                                         "eine alternative Methode zum Aktivieren des Test-Signing-Modus " +
-                                         "ohne bcdedit, die von einigen Cheat-Loadern verwendet wird.",
-                                Detail = $"TestSigning = {tsv}"
-                            });
-                        }
-                    }
-                }
-                catch (UnauthorizedAccessException) { }
-            }
-            catch (UnauthorizedAccessException) { }
-
-            // Check for bcdedit output artifact files (users sometimes save the output)
-            var bcdOutputFiles = new[]
-            {
-                Path.Combine(Downloads, "bcdedit_output.txt"),
-                Path.Combine(Desktop, "bcdedit_output.txt"),
-                Path.Combine(Documents, "bcdedit_output.txt"),
-                Path.Combine(Downloads, "bcd_settings.txt"),
-                Path.Combine(Desktop, "bcd_settings.txt"),
-                Path.Combine(Temp, "bcdedit.txt"),
-            };
-
-            foreach (var bcdFile in bcdOutputFiles)
-            {
-                if (ct.IsCancellationRequested) return;
-                if (!File.Exists(bcdFile)) continue;
-
-                ctx.IncrementFiles();
-                ctx.AddFinding(new Finding
-                {
-                    Module = Name,
-                    Title = $"bcdedit Ausgabe-Datei: {Path.GetFileName(bcdFile)}",
-                    Risk = RiskLevel.Medium,
-                    Location = bcdFile,
-                    FileName = Path.GetFileName(bcdFile),
-                    Reason = $"Eine gespeicherte bcdedit-Ausgabe-Datei wurde unter '{bcdFile}' gefunden. " +
-                             "Diese Dateien entstehen, wenn jemand bcdedit-Ausgaben in Dateien umleitet, " +
-                             "um Boot-Konfigurationsaenderungen zu dokumentieren oder zu teilen.",
-                    Detail = $"Groesse: {new FileInfo(bcdFile).Length} Bytes"
-                });
-            }
-        }, ct);
-
-    private Task CheckEventLogUnsignedDriverLoads(ScanContext ctx, CancellationToken ct) =>
-        Task.Run(() =>
-        {
-            // Event ID 219: Unsigned driver load attempt (System log)
-            try
-            {
-                var query = new EventLogQuery("System", PathType.LogName,
-                    "*[System[EventID=219]]") { ReverseDirection = true };
-                using var reader = new EventLogReader(query);
-                int n = 0;
-                var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-                EventRecord? rec;
-                while (n++ < 500 && (rec = reader.ReadEvent()) is not null)
-                {
-                    if (ct.IsCancellationRequested) { rec.Dispose(); return; }
-                    try
-                    {
-                        var msg = rec.FormatDescription() ?? string.Empty;
-                        var props = rec.Properties;
-                        string? driverPath = null;
-                        if (props.Count > 0) driverPath = props[0].Value?.ToString();
-
-                        // Deduplicate by driver path
-                        var dedupeKey = driverPath ?? msg[..Math.Min(80, msg.Length)];
-                        if (!seen.Add(dedupeKey)) continue;
-
-                        bool isSuspect = driverPath != null && (
-                            ByovdVulnerableDrivers.Any(v =>
-                                Path.GetFileName(driverPath).Equals(v, StringComparison.OrdinalIgnoreCase))
-                            || KdmapperExecutables.Any(k =>
-                                driverPath.Contains(Path.GetFileNameWithoutExtension(k),
-                                    StringComparison.OrdinalIgnoreCase))
-                            || msg.Contains("unsigned", StringComparison.OrdinalIgnoreCase)
-                            || msg.Contains("test signing", StringComparison.OrdinalIgnoreCase));
-
-                        var when = rec.TimeCreated?.ToLocalTime();
-                        ctx.AddFinding(new Finding
-                        {
-                            Module = Name,
-                            Title = isSuspect
-                                ? $"Event 219: Verdaechtiger unsignierter Treiber-Ladeversuch"
-                                : "Event 219: Unsignierter Treiber-Ladeversuch",
-                            Risk = isSuspect ? RiskLevel.Critical : RiskLevel.High,
-                            Location = "Windows Event Log: System (Event ID 219)",
-                            FileName = driverPath != null ? Path.GetFileName(driverPath) : null,
-                            Reason = $"Windows Event ID 219 zeigt einen Ladeversuch eines unsignierten " +
-                                     "Kernel-Treibers. Dies ist ein direktes Artefakt eines manuellen " +
-                                     "Treiber-Mapping-Versuchs oder BYOVD-Angriffs. Event-Log-Eintraege " +
-                                     "bleiben erhalten, auch wenn der Treiber selbst geloescht wurde.",
-                            Detail = $"Zeit: {when?.ToString("yyyy-MM-dd HH:mm") ?? "?"} · " +
-                                     $"Treiberpfad: {driverPath ?? "??"}"
-                        });
-                    }
-                    catch { }
-                    finally { rec.Dispose(); }
-                }
-            }
-            catch { }
-
-            // Event ID 7045: New service installed (System log) - catch mapper/BYOVD service installs
-            try
-            {
-                var query = new EventLogQuery("System", PathType.LogName,
-                    "*[System[EventID=7045]]") { ReverseDirection = true };
-                using var reader = new EventLogReader(query);
-                int n = 0;
-                EventRecord? rec;
-                while (n++ < 400 && (rec = reader.ReadEvent()) is not null)
-                {
-                    if (ct.IsCancellationRequested) { rec.Dispose(); return; }
-                    try
-                    {
-                        var props = rec.Properties;
-                        string? svcName = props.Count > 0 ? props[0].Value?.ToString() : null;
-                        string? imagePath = props.Count > 1 ? props[1].Value?.ToString() : null;
-
-                        if (svcName is null && imagePath is null) continue;
-
-                        bool isSuspect = SuspectMapperServiceKeywords.Any(k =>
-                            (svcName?.Contains(k, StringComparison.OrdinalIgnoreCase) ?? false)
-                            || (imagePath?.Contains(k, StringComparison.OrdinalIgnoreCase) ?? false));
-                        if (!isSuspect) continue;
-
-                        bool isByovd = imagePath != null && ByovdVulnerableDrivers.Any(v =>
-                            imagePath.Contains(Path.GetFileNameWithoutExtension(v),
-                                StringComparison.OrdinalIgnoreCase));
-
-                        var when = rec.TimeCreated?.ToLocalTime();
-                        ctx.AddFinding(new Finding
-                        {
-                            Module = Name,
-                            Title = isByovd
-                                ? $"Event 7045: BYOVD vulnerable Treiber als Dienst installiert: {svcName}"
-                                : $"Event 7045: Mapper-bezogener Dienst installiert: {svcName}",
-                            Risk = isByovd ? RiskLevel.Critical : RiskLevel.High,
-                            Location = "Windows Event Log: System (Event ID 7045)",
-                            FileName = imagePath != null ? Path.GetFileName(imagePath.Trim('"')) : null,
-                            Reason = $"Windows Event 7045 zeigt die Installation eines Mapper/BYOVD-bezogenen " +
-                                     $"Dienstes: '{svcName}'. " +
-                                     (isByovd
-                                         ? "Der ImagePath referenziert einen bekannten vulnerable Treiber (BYOVD). "
-                                         : "") +
-                                     "Dienst-Installations-Events bleiben im Event-Log erhalten.",
-                            Detail = $"Zeit: {when?.ToString("yyyy-MM-dd HH:mm") ?? "?"} · " +
-                                     $"Service: {svcName ?? "?"} · ImagePath: {imagePath ?? "?"}"
-                        });
-                    }
-                    catch { }
-                    finally { rec.Dispose(); }
-                }
-            }
-            catch { }
-
-            // Check Security log for privilege escalation attempts (Event 4697: service installed)
-            try
-            {
-                var secQuery = new EventLogQuery("Security", PathType.LogName,
-                    "*[System[EventID=4697]]") { ReverseDirection = true };
-                using var secReader = new EventLogReader(secQuery);
-                int n = 0;
-                EventRecord? rec;
-                while (n++ < 200 && (rec = secReader.ReadEvent()) is not null)
-                {
-                    if (ct.IsCancellationRequested) { rec.Dispose(); return; }
-                    try
-                    {
-                        var props = rec.Properties;
-                        // 4697: [0]=SubjectUserSid [1]=SubjectUserName ... [4]=ServiceName [5]=ServiceFileName
-                        string? svcName = props.Count > 4 ? props[4].Value?.ToString() : null;
-                        string? svcFile = props.Count > 5 ? props[5].Value?.ToString() : null;
-
-                        bool isSuspect = SuspectMapperServiceKeywords.Any(k =>
-                            (svcName?.Contains(k, StringComparison.OrdinalIgnoreCase) ?? false)
-                            || (svcFile?.Contains(k, StringComparison.OrdinalIgnoreCase) ?? false));
-                        if (!isSuspect) continue;
-
-                        var when = rec.TimeCreated?.ToLocalTime();
-                        ctx.AddFinding(new Finding
-                        {
-                            Module = Name,
-                            Title = $"Security Event 4697: Mapper/BYOVD Dienst-Sicherheitseintrag: {svcName}",
-                            Risk = RiskLevel.High,
-                            Location = "Windows Event Log: Security (Event ID 4697)",
-                            Reason = $"Windows Security Event 4697 zeigt die Installation eines verdaechtigen " +
-                                     $"Dienstes mit Mapper-Bezug: '{svcName}'. Security-Log-Eintraege " +
-                                     "werden nur mit entsprechender Audit-Policy geschrieben und sind " +
-                                     "besonders zuverlaessige forensische Artefakte.",
-                            Detail = $"Zeit: {when?.ToString("yyyy-MM-dd HH:mm") ?? "?"} · " +
-                                     $"Service: {svcName ?? "?"} · File: {svcFile ?? "?"}"
-                        });
-                    }
-                    catch { }
-                    finally { rec.Dispose(); }
-                }
-            }
-            catch { }
-        }, ct);
-
-    private Task CheckMapperUserAssist(ScanContext ctx, CancellationToken ct) =>
-        Task.Run(() =>
-        {
-            try
-            {
-                using var hkcu = RegistryKey.OpenBaseKey(RegistryHive.CurrentUser, RegistryView.Default);
-                using var ua = hkcu.OpenSubKey(
-                    @"Software\Microsoft\Windows\CurrentVersion\Explorer\UserAssist",
-                    writable: false);
-                if (ua is null) return;
-
-                foreach (var guid in ua.GetSubKeyNames())
-                {
-                    if (ct.IsCancellationRequested) return;
-                    try
-                    {
-                        using var count = ua.OpenSubKey($@"{guid}\Count", writable: false);
-                        if (count is null) continue;
-                        ctx.IncrementRegistryKeys();
-
-                        foreach (var valueName in count.GetValueNames())
-                        {
-                            if (ct.IsCancellationRequested) return;
-                            var decoded = Rot13Decode(valueName);
-                            if (string.IsNullOrWhiteSpace(decoded)) continue;
-
-                            var decodedLower = decoded.ToLowerInvariant();
-                            bool isMapper = KdmapperExecutables.Any(n =>
-                                decodedLower.Contains(Path.GetFileNameWithoutExtension(n).ToLowerInvariant()))
-                                || ThunderingTurlaExecutables.Any(n =>
-                                    decodedLower.Contains(Path.GetFileNameWithoutExtension(n).ToLowerInvariant()))
-                                || OtherMapperExecutables.Any(n =>
-                                    decodedLower.Contains(Path.GetFileNameWithoutExtension(n).ToLowerInvariant()))
-                                || DseBypassExecutables.Any(n =>
-                                    decodedLower.Contains(Path.GetFileNameWithoutExtension(n).ToLowerInvariant()))
-                                || PatchGuardBypassExecutables.Any(n =>
-                                    decodedLower.Contains(Path.GetFileNameWithoutExtension(n).ToLowerInvariant()))
-                                || MapperMuiCacheKeywords.Any(k =>
-                                    decodedLower.Contains(k, StringComparison.OrdinalIgnoreCase));
-
-                            if (!isMapper) continue;
-
-                            // Extract last run timestamp from UserAssist data
-                            string? lastRun = null;
-                            try
-                            {
-                                if (count.GetValue(valueName) is byte[] b && b.Length >= 72)
-                                {
-                                    var ft = BitConverter.ToInt64(b, 60);
-                                    if (ft > 0)
-                                        lastRun = DateTime.FromFileTime(ft).ToLocalTime().ToString("yyyy-MM-dd HH:mm");
-                                }
-                            }
-                            catch { }
-
-                            ctx.AddFinding(new Finding
-                            {
-                                Module = Name,
-                                Title = "Kernel Mapper in UserAssist (Ausfuehrungsverlauf)",
-                                Risk = RiskLevel.Critical,
-                                Location = $@"HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\UserAssist\{guid}\Count",
-                                FileName = Path.GetFileName(decoded),
-                                Reason = $"Der Windows UserAssist-Schluessel zeigt, dass ein Kernel-Driver-" +
-                                         $"Mapping-Tool ausgefuehrt wurde. Dekodierter Eintrag: '{decoded}'. " +
-                                         "UserAssist protokolliert GUI-Programm-Starts und bleibt auch " +
-                                         "nach Loeschung der Datei erhalten.",
-                                Detail = lastRun is not null
-                                    ? $"Zuletzt ausgefuehrt: {lastRun}"
-                                    : $"Eintrag: {decoded}"
-                            });
-                        }
-                    }
-                    catch (UnauthorizedAccessException) { }
-                }
-            }
-            catch (UnauthorizedAccessException) { }
-        }, ct);
-
-    private Task CheckMapperMuiCache(ScanContext ctx, CancellationToken ct) =>
-        Task.Run(() =>
-        {
-            var muiCachePaths = new[]
-            {
-                @"Software\Classes\Local Settings\Software\Microsoft\Windows\Shell\MuiCache",
-                @"Software\Microsoft\Windows\ShellNoRoam\MUICache",
-            };
-
-            try
-            {
-                using var hkcu = RegistryKey.OpenBaseKey(RegistryHive.CurrentUser, RegistryView.Default);
-                foreach (var muiPath in muiCachePaths)
-                {
-                    if (ct.IsCancellationRequested) return;
-                    try
-                    {
-                        using var key = hkcu.OpenSubKey(muiPath, writable: false);
-                        if (key is null) continue;
-                        ctx.IncrementRegistryKeys();
-
-                        foreach (var valueName in key.GetValueNames())
-                        {
-                            if (ct.IsCancellationRequested) return;
-                            var vnLower = valueName.ToLowerInvariant();
-
-                            bool isMapper = KdmapperExecutables.Any(n =>
-                                vnLower.Contains(Path.GetFileNameWithoutExtension(n).ToLowerInvariant()))
-                                || ThunderingTurlaExecutables.Any(n =>
-                                    vnLower.Contains(Path.GetFileNameWithoutExtension(n).ToLowerInvariant()))
-                                || OtherMapperExecutables.Any(n =>
-                                    vnLower.Contains(Path.GetFileNameWithoutExtension(n).ToLowerInvariant()))
-                                || DseBypassExecutables.Any(n =>
-                                    vnLower.Contains(Path.GetFileNameWithoutExtension(n).ToLowerInvariant()))
-                                || PatchGuardBypassExecutables.Any(n =>
-                                    vnLower.Contains(Path.GetFileNameWithoutExtension(n).ToLowerInvariant()))
-                                || MapperMuiCacheKeywords.Any(k =>
-                                    vnLower.Contains(k, StringComparison.OrdinalIgnoreCase));
-
-                            if (!isMapper) continue;
-
-                            var displayName = key.GetValue(valueName)?.ToString() ?? string.Empty;
-                            ctx.AddFinding(new Finding
-                            {
-                                Module = Name,
-                                Title = "Kernel Mapper in MUICache (Ausfuehrungsverlauf)",
-                                Risk = RiskLevel.Critical,
-                                Location = $@"HKCU\{muiPath}",
-                                FileName = Path.GetFileName(valueName.Split('.')[0]),
-                                Reason = $"Der Windows MUICache-Schluessel zeigt, dass ein Kernel-Driver-" +
-                                         "Mapping-Tool ausgefuehrt wurde. MUICache speichert Anzeigenamen " +
-                                         "von ausgefuehrten GUI-Programmen und bleibt auch nach dem " +
-                                         "Loeschen der Dateien erhalten.",
-                                Detail = $"Pfad: {valueName} · Anzeigename: {displayName}"
-                            });
-                        }
-                    }
-                    catch (UnauthorizedAccessException) { }
-                }
-            }
-            catch (UnauthorizedAccessException) { }
-        }, ct);
-
-    private Task CheckMapperProcessArtifacts(ScanContext ctx, CancellationToken ct) =>
-        Task.Run(() =>
-        {
-            var processes = ctx.GetProcessSnapshot();
-            var allMapperNames = KdmapperExecutables
-                .Concat(ThunderingTurlaExecutables)
-                .Concat(OtherMapperExecutables)
-                .Concat(DseBypassExecutables)
-                .Concat(PatchGuardBypassExecutables)
-                .ToArray();
-
-            foreach (var proc in processes)
-            {
-                if (ct.IsCancellationRequested) return;
-                try
-                {
-                    ctx.IncrementProcesses();
-                    var procExe = proc.ProcessName + ".exe";
-                    bool isMapper = allMapperNames.Any(n =>
-                        procExe.Equals(n, StringComparison.OrdinalIgnoreCase)
-                        || proc.ProcessName.Equals(
-                            Path.GetFileNameWithoutExtension(n),
-                            StringComparison.OrdinalIgnoreCase));
-                    if (!isMapper) continue;
-
-                    string? imagePath = null;
-                    try { imagePath = proc.MainModule?.FileName; } catch { }
-
-                    var matchedName = allMapperNames.First(n =>
-                        procExe.Equals(n, StringComparison.OrdinalIgnoreCase)
-                        || proc.ProcessName.Equals(
-                            Path.GetFileNameWithoutExtension(n),
-                            StringComparison.OrdinalIgnoreCase));
-
-                    bool isKdmapper = KdmapperExecutables.Any(n =>
-                        procExe.Equals(n, StringComparison.OrdinalIgnoreCase));
-                    bool isTurla = ThunderingTurlaExecutables.Any(n =>
-                        procExe.Equals(n, StringComparison.OrdinalIgnoreCase));
-                    bool isDse = DseBypassExecutables.Any(n =>
-                        procExe.Equals(n, StringComparison.OrdinalIgnoreCase));
-                    bool isPg = PatchGuardBypassExecutables.Any(n =>
-                        procExe.Equals(n, StringComparison.OrdinalIgnoreCase));
-
-                    string toolType = isKdmapper ? "kdmapper Kernel-Treiber-Mapper"
-                        : isTurla ? "ThunderingTurla Kernel-Treiber-Mapper"
-                        : isDse ? "DSE-Bypass-Tool"
-                        : isPg ? "PatchGuard-Bypass-Tool"
-                        : "Kernel-Driver-Mapping-Tool";
 
                     ctx.AddFinding(new Finding
                     {
                         Module = Name,
-                        Title = $"{toolType} AKTIV laufend: {proc.ProcessName}",
-                        Risk = RiskLevel.Critical,
-                        Location = imagePath ?? proc.ProcessName,
-                        FileName = procExe,
-                        Reason = $"Ein {toolType} laeuft AKTUELL als Prozess '{proc.ProcessName}' (PID {proc.Id}). " +
-                                 "Ein aktiver Mapper-Prozess waehrend des Scans ist ein kritisches Indiz fuer " +
-                                 "aktives Kernel-Level-Cheating oder eine gerade stattfindende " +
-                                 "Treiber-Mapping-Operation.",
-                        Detail = $"PID: {proc.Id} · Pfad: {imagePath ?? "unbekannt"} · Tool: {matchedName}"
+                        Title = $"Mapper-Named Temporary File: {fn}",
+                        Risk = RiskLevel.Medium,
+                        Location = file,
+                        FileName = fn,
+                        Reason = $"File '{fn}' in Temp begins with a well-known mapper tool name. Mapper tools " +
+                                 "often write configuration, log, or intermediate files to Temp during operation, " +
+                                 "and these files persist as forensic artifacts after the tool exits.",
+                        Detail = $"Path: {file} | Temp dir: {tempDir}"
                     });
                 }
-                catch { }
+
+                await Task.Yield();
             }
         }, ct);
 
-    private Task CheckMapperPrefetchArtifacts(ScanContext ctx, CancellationToken ct) =>
-        Task.Run(() =>
-        {
-            // Check Windows Prefetch for mapper tool execution history
-            var prefetchDir = Path.Combine(WinDir, "Prefetch");
-            if (!Directory.Exists(prefetchDir)) return;
-
-            string[] pfFiles;
-            try { pfFiles = Directory.GetFiles(prefetchDir, "*.pf"); }
-            catch { return; }
-
-            var allMapperNames = KdmapperExecutables
-                .Concat(ThunderingTurlaExecutables)
-                .Concat(OtherMapperExecutables)
-                .Concat(DseBypassExecutables)
-                .Concat(PatchGuardBypassExecutables)
-                .Select(n => Path.GetFileNameWithoutExtension(n).ToUpperInvariant())
-                .ToHashSet(StringComparer.OrdinalIgnoreCase);
-
-            var byovdNames = ByovdVulnerableDrivers
-                .Select(n => Path.GetFileNameWithoutExtension(n).ToUpperInvariant())
-                .ToHashSet(StringComparer.OrdinalIgnoreCase);
-
-            foreach (var pfFile in pfFiles)
-            {
-                if (ct.IsCancellationRequested) return;
-                // "KDMAPPER.EXE-1A2B3C4D.pf" -> "KDMAPPER.EXE"
-                var baseName = Path.GetFileNameWithoutExtension(pfFile);
-                int dash = baseName.LastIndexOf('-');
-                var exeName = dash > 0 ? baseName[..dash] : baseName;
-                var exeBase = Path.GetFileNameWithoutExtension(exeName);
-
-                bool isMapper = allMapperNames.Contains(exeBase);
-                bool isByovdLoader = byovdNames.Contains(exeBase);
-                bool isDseTool = exeName.Contains("DSEFIX", StringComparison.OrdinalIgnoreCase)
-                              || exeName.Contains("BCDEDIT", StringComparison.OrdinalIgnoreCase);
-                bool isTestSign = exeName.Contains("TESTSIGN", StringComparison.OrdinalIgnoreCase);
-
-                if (!isMapper && !isByovdLoader && !isDseTool && !isTestSign) continue;
-
-                string category = isMapper ? "Kernel-Driver-Mapper"
-                    : isByovdLoader ? "BYOVD-Treiber-Lader"
-                    : isDseTool ? "DSE-Bypass-Tool"
-                    : "Test-Signing-Tool";
-
-                ctx.AddFinding(new Finding
-                {
-                    Module = Name,
-                    Title = $"Prefetch: {category} wurde ausgefuehrt: {exeName}",
-                    Risk = RiskLevel.Critical,
-                    Location = pfFile,
-                    FileName = exeName,
-                    Reason = $"Windows Prefetch zeigt, dass '{exeName}' ({category}) auf diesem System " +
-                             "ausgefuehrt wurde. Prefetch-Dateien werden von Windows automatisch beim " +
-                             "Start von Programmen erstellt und bleiben auch nach dem Loeschen der " +
-                             "Originaldatei bestehen. Dies ist ein zuverlaessiges forensisches Artefakt " +
-                             "fuer vergangene Programm-Ausfuehrungen.",
-                    Detail = $"Prefetch-Datei: {pfFile} · " +
-                             $"Zuletzt geaendert: {File.GetLastWriteTime(pfFile):yyyy-MM-dd HH:mm}"
-                });
-            }
-
-            // Also check PCA (Program Compatibility Assistant) logs for mapper executions
-            var pcaDir = Path.Combine(WinDir, "appcompat", "pca");
-            if (!Directory.Exists(pcaDir)) return;
-
-            foreach (var pcaFile in new[] { "PcaAppLaunchDic.txt", "PcaGeneralDb0.txt", "PcaGeneralDb1.txt" })
-            {
-                if (ct.IsCancellationRequested) return;
-                var pcaPath = Path.Combine(pcaDir, pcaFile);
-                if (!File.Exists(pcaPath)) continue;
-
-                string[] lines;
-                try { lines = File.ReadAllLines(pcaPath); }
-                catch { continue; }
-
-                foreach (var line in lines)
-                {
-                    if (ct.IsCancellationRequested) return;
-                    if (string.IsNullOrWhiteSpace(line)) continue;
-
-                    var path = line.Split('\t', '|')[0].Trim();
-                    if (path.Length < 4 || !path.Contains('\\')) continue;
-
-                    var pathLower = path.ToLowerInvariant();
-                    var fileName = Path.GetFileNameWithoutExtension(path).ToUpperInvariant();
-
-                    bool isMapperRef = allMapperNames.Contains(fileName)
-                        || MapperMuiCacheKeywords.Any(k =>
-                            pathLower.Contains(k, StringComparison.OrdinalIgnoreCase));
-                    if (!isMapperRef) continue;
-
-                    ctx.AddFinding(new Finding
-                    {
-                        Module = Name,
-                        Title = $"PCA-Log: Mapper-Tool wurde ausgefuehrt: {Path.GetFileName(path)}",
-                        Risk = RiskLevel.Critical,
-                        Location = $"{pcaPath} -> {path}",
-                        FileName = Path.GetFileName(path),
-                        Reason = $"Der Windows Program Compatibility Assistant (PCA) Log zeigt, dass " +
-                                 $"'{path}' ausgefuehrt wurde. PCA-Logs sind forensische Artefakte fuer " +
-                                 "vergangene Programm-Ausfuehrungen und bleiben nach Loeschung der " +
-                                 "Originaldatei erhalten.",
-                        Detail = $"PCA-Datei: {pcaFile} · Referenzierter Pfad: {path}"
-                    });
-                }
-            }
-        }, ct);
+    // -------------------------------------------------------------------------
+    // ROT13 decoder for UserAssist registry values
+    // -------------------------------------------------------------------------
 
     private static string Rot13Decode(string s)
     {
-        var a = s.ToCharArray();
-        for (int i = 0; i < a.Length; i++)
+        var sb = new System.Text.StringBuilder(s.Length);
+        foreach (char c in s)
         {
-            char c = a[i];
-            if (c is >= 'A' and <= 'Z') a[i] = (char)('A' + (c - 'A' + 13) % 26);
-            else if (c is >= 'a' and <= 'z') a[i] = (char)('a' + (c - 'a' + 13) % 26);
+            if (c >= 'a' && c <= 'z')
+                sb.Append((char)('a' + (c - 'a' + 13) % 26));
+            else if (c >= 'A' && c <= 'Z')
+                sb.Append((char)('A' + (c - 'A' + 13) % 26));
+            else
+                sb.Append(c);
         }
-        return new string(a);
+        return sb.ToString();
     }
 }
