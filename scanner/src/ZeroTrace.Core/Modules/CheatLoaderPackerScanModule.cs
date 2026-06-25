@@ -952,4 +952,222 @@ public sealed class CheatLoaderPackerScanModule : IScanModule
         var bytes = System.Text.Encoding.ASCII.GetBytes(sectionName);
         return ContainsSequence(buffer, length, bytes);
     }
+
+    private static readonly string[] KnownCrypterRegistryKeys =
+    {
+        @"SOFTWARE\CrypterSoftware",
+        @"SOFTWARE\FUDCrypter",
+        @"SOFTWARE\PrivateCrypter",
+        @"SOFTWARE\PremiumCrypter",
+        @"SOFTWARE\CheatLoader",
+        @"SOFTWARE\LoaderSoftware",
+        @"SOFTWARE\InjectLoader",
+        @"SOFTWARE\StealthLoader",
+        @"SOFTWARE\UDLoader",
+        @"SOFTWARE\VIPLoader",
+        @"SOFTWARE\PremiumLoader",
+        @"SOFTWARE\NativeLoader",
+        @"SOFTWARE\ShellcodeLoader",
+        @"SOFTWARE\ReflectiveLoader",
+        @"SOFTWARE\ManualMapLoader",
+        @"SOFTWARE\KernelLoader",
+        @"SOFTWARE\GhostLoader",
+        @"SOFTWARE\PhantomLoader",
+        @"SOFTWARE\ChimeraLoader",
+        @"SOFTWARE\ArcLoader",
+        @"SOFTWARE\XenonLoader",
+        @"SOFTWARE\BypassLoader",
+        @"SOFTWARE\EvasionLoader",
+        @"SOFTWARE\FUDStub",
+        @"SOFTWARE\PayloadLoader",
+        @"SOFTWARE\DropperLoader",
+    };
+
+    private static readonly string[] SuspiciousScheduledTaskKeywords =
+    {
+        "loader", "inject", "crypter", "packer", "cheat",
+        "bypass", "payload", "stub", "dropper", "shellcode",
+        "fud", "undetect", "private", "premium", "vip",
+        "aimbot", "esp", "wallhack", "trigger",
+    };
+
+    private static readonly string[] LoaderParentDirKeywords =
+    {
+        "cheat", "loader", "inject", "hack", "bypass", "aimbot",
+        "esp", "crypter", "packer", "fud", "payload", "stub",
+        "undetect", "private", "premium", "vip", "ghost", "phantom",
+        "chimera", "xenon", "arc", "nova", "supreme", "multi",
+        "kernel", "ring0", "driver", "native", "shellcode", "mapper",
+    };
+
+    public async Task RunRegistryAndScheduledTasksAsync(ScanContext ctx, CancellationToken ct)
+    {
+        await ScanCrypterRegistryKeysAsync(ctx, ct);
+        await ScanScheduledTasksForLoadersAsync(ctx, ct);
+        await ScanDownloadsDeepAsync(ctx, ct);
+    }
+
+    private async Task ScanCrypterRegistryKeysAsync(ScanContext ctx, CancellationToken ct)
+    {
+        foreach (var regPath in KnownCrypterRegistryKeys)
+        {
+            ct.ThrowIfCancellationRequested();
+            ctx.IncrementRegistryKeys();
+
+            foreach (var hive in new[] { RegistryHive.LocalMachine, RegistryHive.CurrentUser })
+            {
+                try
+                {
+                    using var baseKey = RegistryKey.OpenBaseKey(hive, RegistryView.Default);
+                    using var key = baseKey.OpenSubKey(regPath, writable: false);
+                    if (key is null) continue;
+
+                    var hiveStr = hive == RegistryHive.LocalMachine ? "HKLM" : "HKCU";
+                    ctx.AddFinding(new Finding
+                    {
+                        Module = Name,
+                        Title = $"Cheat loader/crypter registry key: {regPath.Split('\\').Last()}",
+                        Risk = RiskLevel.High,
+                        Location = $@"{hiveStr}\{regPath}",
+                        Reason = $"Registry key '{regPath}' associated with a cheat loader or crypter " +
+                                 "was found. Loaders and crypter tools create registry keys during " +
+                                 "installation for configuration persistence, license storage, and " +
+                                 "component path tracking. This key indicates the software was installed " +
+                                 "on this machine.",
+                        Detail = $"Registry: {hiveStr}\\{regPath}"
+                    });
+                }
+                catch { }
+            }
+        }
+
+        await Task.Yield();
+    }
+
+    private async Task ScanScheduledTasksForLoadersAsync(ScanContext ctx, CancellationToken ct)
+    {
+        const string tasksDir = @"C:\Windows\System32\Tasks";
+        if (!Directory.Exists(tasksDir)) return;
+
+        IEnumerable<string> taskFiles;
+        try
+        {
+            taskFiles = Directory.EnumerateFiles(tasksDir, "*", SearchOption.AllDirectories);
+        }
+        catch (UnauthorizedAccessException) { return; }
+        catch (IOException) { return; }
+
+        foreach (var taskFile in taskFiles)
+        {
+            ct.ThrowIfCancellationRequested();
+            ctx.IncrementFiles();
+
+            string content;
+            try
+            {
+                using var fs = new FileStream(taskFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                using var sr = new StreamReader(fs);
+                content = await sr.ReadToEndAsync();
+            }
+            catch (IOException) { continue; }
+            catch (UnauthorizedAccessException) { continue; }
+
+            var lowerContent = content.ToLowerInvariant();
+
+            var matchedKeywords = SuspiciousScheduledTaskKeywords
+                .Where(k => lowerContent.Contains(k, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            if (matchedKeywords.Count < 2) continue;
+
+            bool referencesUserWritablePath = lowerContent.Contains(@"\temp\", StringComparison.OrdinalIgnoreCase)
+                || lowerContent.Contains(@"\appdata\", StringComparison.OrdinalIgnoreCase)
+                || lowerContent.Contains(@"\downloads\", StringComparison.OrdinalIgnoreCase)
+                || lowerContent.Contains(@"\desktop\", StringComparison.OrdinalIgnoreCase);
+
+            if (!referencesUserWritablePath) continue;
+
+            var taskName = Path.GetFileName(taskFile);
+            ctx.AddFinding(new Finding
+            {
+                Module = Name,
+                Title = $"Scheduled task with loader keywords: {taskName}",
+                Risk = RiskLevel.High,
+                Location = taskFile,
+                FileName = taskName,
+                Reason = $"Scheduled task '{taskName}' references a user-writable path and contains " +
+                         $"{matchedKeywords.Count} loader/cheat keywords: " +
+                         $"{string.Join(", ", matchedKeywords.Take(5))}. " +
+                         "Cheat loaders create scheduled tasks to auto-launch on system startup, " +
+                         "on user logon, or on a timer to reload cheat components after anti-cheat " +
+                         "signature updates. Scheduled tasks in user directories are particularly " +
+                         "suspicious.",
+                Detail = $"Matched keywords: {string.Join(", ", matchedKeywords)}"
+            });
+        }
+    }
+
+    private async Task ScanDownloadsDeepAsync(ScanContext ctx, CancellationToken ct)
+    {
+        if (!Directory.Exists(Downloads)) return;
+
+        IEnumerable<string> subdirs;
+        try
+        {
+            subdirs = Directory.EnumerateDirectories(Downloads, "*", SearchOption.TopDirectoryOnly);
+        }
+        catch (UnauthorizedAccessException) { return; }
+
+        foreach (var subdir in subdirs)
+        {
+            ct.ThrowIfCancellationRequested();
+            var dirName = Path.GetFileName(subdir).ToLowerInvariant();
+
+            bool isLoaderDir = LoaderParentDirKeywords.Any(kw =>
+                dirName.Contains(kw, StringComparison.OrdinalIgnoreCase));
+
+            if (!isLoaderDir) continue;
+
+            try
+            {
+                await ScanDirectoryForLoadersAsync(ctx, subdir, recursive: true, ct);
+                await ScanDirForCheatConfigsAsync(ctx, subdir, recursive: true, ct);
+
+                IEnumerable<string> archiveFiles;
+                try
+                {
+                    archiveFiles = Directory.EnumerateFiles(subdir, "*.zip", SearchOption.TopDirectoryOnly)
+                        .Concat(Directory.EnumerateFiles(subdir, "*.rar", SearchOption.TopDirectoryOnly))
+                        .Concat(Directory.EnumerateFiles(subdir, "*.7z", SearchOption.TopDirectoryOnly));
+                }
+                catch (UnauthorizedAccessException) { continue; }
+                catch (IOException) { continue; }
+
+                foreach (var archivePath in archiveFiles)
+                {
+                    ct.ThrowIfCancellationRequested();
+                    ctx.IncrementFiles();
+
+                    var archiveName = Path.GetFileName(archivePath);
+                    ctx.AddFinding(new Finding
+                    {
+                        Module = Name,
+                        Title = $"Archive in suspected cheat loader directory: {archiveName}",
+                        Risk = RiskLevel.Medium,
+                        Location = archivePath,
+                        FileName = archiveName,
+                        Reason = $"Archive file '{archiveName}' found in Downloads subdirectory " +
+                                 $"'{dirName}' which has a cheat loader-related name. Cheat loaders " +
+                                 "are commonly distributed as ZIP/RAR archives and extracted to " +
+                                 "directories named after the cheat. The archive may contain the " +
+                                 "loader executable, stub, and configuration files.",
+                        Detail = $"Parent directory: {dirName} | Archive: {archivePath}"
+                    });
+                }
+            }
+            catch (UnauthorizedAccessException) { }
+
+            await Task.Yield();
+        }
+    }
 }
