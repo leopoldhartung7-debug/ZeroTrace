@@ -1375,6 +1375,9 @@ public sealed class ScanOptions
     public bool ScanAltVMoneyCheat { get; set; } = true;
     public bool ScanFiveMNativeHook { get; set; } = true;
     public bool ScanRageMPScriptInjection { get; set; } = true;
+    public bool ScanGTA5ModMenu { get; set; } = true;
+    public bool ScanAntiCheatBypassForensic { get; set; } = true;
+    public bool ScanRageMPAdminAbuseForensic { get; set; } = true;
     /// <summary>Detect cheat source code and development artifacts: .git repos with cheat remote
     /// URLs, Visual Studio cheat projects (.sln/.vcxproj with cheat keywords), compiled build
     /// artifacts (cheat.pdb, x64/Release DLLs), game SDK directories, offset header files,
@@ -2222,6 +2225,9 @@ public static class ScanProfiles
         ScanAltVMoneyCheat = true,
         ScanFiveMNativeHook = true,
         ScanRageMPScriptInjection = true,
+        ScanGTA5ModMenu = true,
+        ScanAntiCheatBypassForensic = true,
+        ScanRageMPAdminAbuseForensic = true,
         ScanCheatSourceCodeRepo = true,        // cheat git repo/VS project/SDK/PDB artifact scan — fast
         DeepDriveScan = false,
         // No per-module timeout — every Quick module runs to completion. Quick stays
