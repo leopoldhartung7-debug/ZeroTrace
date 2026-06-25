@@ -330,6 +330,7 @@ public sealed class ScanEngine
         if (o.ScanWindowsDefenderTamper) modules.Add(new WindowsDefenderTamperScanModule());
         if (o.ScanCodeSigningBypass) modules.Add(new CodeSigningBypassScanModule());
         if (o.ScanDnsConfiguration) modules.Add(new DnsOverHttpsScanModule());
+        if (o.ScanRpcEndpoints) modules.Add(new RpcEndpointScanModule());
         if (o.ScanWmiPersistence) modules.Add(new WmiPersistenceScanModule());
         if (o.ScanScheduledTasks) modules.Add(new ScheduledTaskScanModule());
         if (o.ScanKernelDrivers) modules.Add(new DriverScanModule());
@@ -393,6 +394,8 @@ public sealed class ScanEngine
         if (o.ScanAlternativeDataStreams) modules.Add(new AlternativeDataStreamScanModule());
         if (o.ScanMemoryProtection) modules.Add(new MemoryProtectionScanModule());
         if (o.ScanHiddenFiles) modules.Add(new HiddenFileScanModule());
+        if (o.ScanLoadedModuleIntegrity) modules.Add(new LoadedModuleIntegrityScanModule());
+        if (o.ScanKernelCallbackTable) modules.Add(new KernelCallbackTableScanModule());
         if (o.ScanHeapSpray) modules.Add(new HeapSprayScanModule());
         if (o.ScanKnownHashes) modules.Add(new KnownHashScanModule());
         if (o.ScanMemory) modules.Add(new MemoryScanModule());

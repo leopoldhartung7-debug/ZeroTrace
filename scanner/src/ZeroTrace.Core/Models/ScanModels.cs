@@ -463,6 +463,18 @@ public sealed class ScanOptions
     /// reparse points in the driver directory that indicate rootkit file hiding.</summary>
     public bool ScanHiddenFiles { get; set; } = true;
 
+    /// <summary>Verify loaded module code section integrity in game processes by comparing
+    /// .text section bytes against on-disk PE and detecting module stomping (zeroed headers).</summary>
+    public bool ScanLoadedModuleIntegrity { get; set; } = true;
+
+    /// <summary>Enumerate active RPC endpoints for cheat-keyword annotations, external (non-LRPC)
+    /// servers with unknown annotations, and known cheat-software interface UUIDs.</summary>
+    public bool ScanRpcEndpoints { get; set; } = true;
+
+    /// <summary>Detect KernelCallbackTable hijacking: verify PEB.KCT and all entries in
+    /// Win32 processes point to mapped image memory, not private/anonymous shellcode regions.</summary>
+    public bool ScanKernelCallbackTable { get; set; } = true;
+
     /// <summary>
     /// When false (default) the drive module only walks targeted, high-signal
     /// directories (profile, temp, downloads, appdata). When true it walks the
@@ -652,6 +664,9 @@ public static class ScanProfiles
         ScanGpuProcesses = true,         // process + registry — fast
         ScanProtectedProcesses = true,   // NtQueryInformationProcess — fast
         ScanHiddenFiles = false,         // file walk — slow
+        ScanLoadedModuleIntegrity = false, // process memory compare — slow
+        ScanRpcEndpoints = true,         // RPC API — fast
+        ScanKernelCallbackTable = false, // process memory scan — slow
         DeepDriveScan = false,
         ModuleTimeoutSeconds = 60,
     };
