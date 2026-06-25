@@ -290,6 +290,8 @@ public sealed class ScanEngine
         if (o.ScanCryptoMiner) modules.Add(new CryptoMinerScanModule());
         if (o.ScanRemoteAccessTools) modules.Add(new RemoteAccessToolScanModule());
         if (o.ScanKernelObjects) modules.Add(new KernelObjectEnumScanModule());
+        if (o.ScanGpuProcesses) modules.Add(new GpuProcessMemoryScanModule());
+        if (o.ScanProtectedProcesses) modules.Add(new ProtectedProcessScanModule());
 
         // ── Group 3: registry / WMI / driver queries ──────────────────────────
         if (o.ScanRegistry) modules.Add(new RegistryScanModule());
@@ -327,6 +329,7 @@ public sealed class ScanEngine
         if (o.ScanWerFaultHijack) modules.Add(new WerFaultHijackScanModule());
         if (o.ScanWindowsDefenderTamper) modules.Add(new WindowsDefenderTamperScanModule());
         if (o.ScanCodeSigningBypass) modules.Add(new CodeSigningBypassScanModule());
+        if (o.ScanDnsConfiguration) modules.Add(new DnsOverHttpsScanModule());
         if (o.ScanWmiPersistence) modules.Add(new WmiPersistenceScanModule());
         if (o.ScanScheduledTasks) modules.Add(new ScheduledTaskScanModule());
         if (o.ScanKernelDrivers) modules.Add(new DriverScanModule());
@@ -389,6 +392,7 @@ public sealed class ScanEngine
         if (o.ScanTokenImpersonation) modules.Add(new TokenImpersonationScanModule());
         if (o.ScanAlternativeDataStreams) modules.Add(new AlternativeDataStreamScanModule());
         if (o.ScanMemoryProtection) modules.Add(new MemoryProtectionScanModule());
+        if (o.ScanHiddenFiles) modules.Add(new HiddenFileScanModule());
         if (o.ScanHeapSpray) modules.Add(new HeapSprayScanModule());
         if (o.ScanKnownHashes) modules.Add(new KnownHashScanModule());
         if (o.ScanMemory) modules.Add(new MemoryScanModule());

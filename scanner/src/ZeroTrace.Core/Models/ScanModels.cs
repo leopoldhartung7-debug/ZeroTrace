@@ -447,6 +447,22 @@ public sealed class ScanOptions
     /// unknown WDAC policy files, test signing mode, UMCI policy options.</summary>
     public bool ScanCodeSigningBypass { get; set; } = true;
 
+    /// <summary>Detect DNS hijacking: custom DoH servers, unknown DNS server IPs, HOSTS file
+    /// blocking anti-cheat domains, DNS client service disabled.</summary>
+    public bool ScanDnsConfiguration { get; set; } = true;
+
+    /// <summary>Detect GPU-based cheat infrastructure: DirectX debug runtime enabled, suspicious
+    /// GPU DLLs (ReShade) in game processes, Python/CUDA cheat compute processes.</summary>
+    public bool ScanGpuProcesses { get; set; } = true;
+
+    /// <summary>Check Protected Process Light (PPL) integrity: anti-cheat/LSASS processes
+    /// that should be PPL but aren't, and detect PPL-killer tools (PPLKiller, EDRSandBlast).</summary>
+    public bool ScanProtectedProcesses { get; set; } = true;
+
+    /// <summary>Scan for files with HIDDEN+SYSTEM attributes in user directories and
+    /// reparse points in the driver directory that indicate rootkit file hiding.</summary>
+    public bool ScanHiddenFiles { get; set; } = true;
+
     /// <summary>
     /// When false (default) the drive module only walks targeted, high-signal
     /// directories (profile, temp, downloads, appdata). When true it walks the
@@ -632,6 +648,10 @@ public static class ScanProfiles
         ScanWerFaultHijack = true,       // registry — fast
         ScanWindowsDefenderTamper = true, // registry — fast
         ScanCodeSigningBypass = true,    // registry + file stat — fast
+        ScanDnsConfiguration = true,     // registry + hosts file — fast
+        ScanGpuProcesses = true,         // process + registry — fast
+        ScanProtectedProcesses = true,   // NtQueryInformationProcess — fast
+        ScanHiddenFiles = false,         // file walk — slow
         DeepDriveScan = false,
         ModuleTimeoutSeconds = 60,
     };
