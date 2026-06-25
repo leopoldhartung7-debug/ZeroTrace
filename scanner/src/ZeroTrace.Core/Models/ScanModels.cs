@@ -731,6 +731,31 @@ public sealed class ScanOptions
     /// reads the "name" field from layer JSON, and flags cheat-keyword names and paths.</summary>
     public bool ScanVulkanLayerInjection { get; set; } = true;
 
+    /// <summary>Detect non-system processes listening on loopback TCP/UDP ports — a hallmark
+    /// of cheat IPC channels. Cheat architectures split into multiple processes (DMA reader,
+    /// ESP renderer, radar bridge) that communicate over localhost sockets to share game state
+    /// without touching the game process directly. Flags processes in the empirically observed
+    /// cheat IPC port range (13337–13999) and processes with cheat-keyword names listening
+    /// on any loopback port. Uses GetExtendedTcpTable(LISTENER) and GetExtendedUdpTable.</summary>
+    public bool ScanLoopbackListeners { get; set; } = true;
+
+    /// <summary>Enumerate all running process command lines via WMI Win32_Process and flag
+    /// processes started with cheat-specific arguments (--inject, --esp, --bypass, --pid=,
+    /// --dll=) or cheat tool names as parameters. Also detects LOLBIN-based download cradles
+    /// (certutil -decode, mshta http://, wscript //B) and obfuscated PowerShell (-enc,
+    /// -EncodedCommand, IEX download) used by cheat loaders to fetch and execute payloads
+    /// while appearing as legitimate Windows processes.</summary>
+    public bool ScanProcessCommandLines { get; set; } = true;
+
+    /// <summary>Detect DirectX/DXGI debug layer activation and D3D registry overrides:
+    /// EnableDebugLayer, ForceWARP (GPU bypass via software rasterizer), DXGI debug interface,
+    /// and GPU-based validation — all intended only for game developers, never for end users.
+    /// Cheat tools exploit D3D debug facilities to hook IDXGISwapChain::Present for overlay
+    /// rendering (ESP, radar, crosshair) and intercept GPU resource creation. Also checks
+    /// HKCU UserGpuPreferences for cheat-keyword app entries and D3D plugin DLL registrations
+    /// outside of SDK paths.</summary>
+    public bool ScanDirectXDebugLayer { get; set; } = true;
+
     /// <summary>
     /// When false (default) the drive module only walks targeted, high-signal
     /// directories (profile, temp, downloads, appdata). When true it walks the
@@ -969,6 +994,9 @@ public static class ScanProfiles
         ScanUacBypassArtifacts = true,      // HKCU registry — fast
         ScanAntiCheatServiceIntegrity = true, // registry — fast
         ScanVulkanLayerInjection = true,      // registry + JSON file read — fast
+        ScanLoopbackListeners = true,         // GetExtendedTcpTable/UdpTable — fast
+        ScanProcessCommandLines = false,      // WMI Win32_Process query — slow
+        ScanDirectXDebugLayer = true,         // registry — fast
         DeepDriveScan = false,
         ModuleTimeoutSeconds = 60,
     };
