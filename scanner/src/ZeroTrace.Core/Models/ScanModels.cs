@@ -1362,6 +1362,12 @@ public sealed class ScanOptions
     public bool ScanOverwatchCheatForensicDeep { get; set; } = true;
     public bool ScanPUBG2CheatDeep { get; set; } = true;
     public bool ScanRageMPDeepForensic { get; set; } = true;
+    public bool ScanFiveMCrasherDetection { get; set; } = true;
+    public bool ScanFiveMMoneyDropCheat { get; set; } = true;
+    public bool ScanHaloInfiniteCheat { get; set; } = true;
+    public bool ScanHearthstoneCheat { get; set; } = true;
+    public bool ScanCheatDiscordArtifact { get; set; } = true;
+    public bool ScanCheatEngineDeepForensic { get; set; } = true;
     /// <summary>Detect cheat source code and development artifacts: .git repos with cheat remote
     /// URLs, Visual Studio cheat projects (.sln/.vcxproj with cheat keywords), compiled build
     /// artifacts (cheat.pdb, x64/Release DLLs), game SDK directories, offset header files,
@@ -2196,6 +2202,12 @@ public static class ScanProfiles
         ScanOverwatchCheatForensicDeep = true,
         ScanPUBG2CheatDeep = true,
         ScanRageMPDeepForensic = true,
+        ScanFiveMCrasherDetection = true,
+        ScanFiveMMoneyDropCheat = true,
+        ScanHaloInfiniteCheat = true,
+        ScanHearthstoneCheat = true,
+        ScanCheatDiscordArtifact = true,
+        ScanCheatEngineDeepForensic = true,
         ScanCheatSourceCodeRepo = true,        // cheat git repo/VS project/SDK/PDB artifact scan — fast
         DeepDriveScan = false,
         // No per-module timeout — every Quick module runs to completion. Quick stays

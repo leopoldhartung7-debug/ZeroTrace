@@ -691,7 +691,7 @@ public sealed class OverwatchCheatForensicDeepScanModule : IScanModule
         }, ct);
 
     private Task CheckMacroScriptArtifacts(ScanContext ctx, CancellationToken ct) =>
-        Task.Run(() =>
+        Task.Run(async () =>
         {
             ctx.Report(0.2, Name, "Scanning for OW2 macro/script artifacts...");
 
@@ -759,7 +759,7 @@ public sealed class OverwatchCheatForensicDeepScanModule : IScanModule
                         {
                             using var fs = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
                             using var sr = new StreamReader(fs);
-                            string content = sr.ReadToEnd();
+                            string content = await sr.ReadToEndAsync(ct);
 
                             var keyword = SoftAimbotConfigKeywords.FirstOrDefault(k =>
                                 content.Contains(k, StringComparison.OrdinalIgnoreCase));
@@ -788,7 +788,7 @@ public sealed class OverwatchCheatForensicDeepScanModule : IScanModule
         }, ct);
 
     private Task CheckOw2ConfigFile(ScanContext ctx, CancellationToken ct) =>
-        Task.Run(() =>
+        Task.Run(async () =>
         {
             ctx.Report(0.25, Name, "Scanning OW2 settings64.ini for cheat indicators...");
 
@@ -816,7 +816,7 @@ public sealed class OverwatchCheatForensicDeepScanModule : IScanModule
                 {
                     using var fs = new FileStream(configPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
                     using var sr = new StreamReader(fs);
-                    string content = sr.ReadToEnd();
+                    string content = await sr.ReadToEndAsync(ct);
 
                     var keyword = Ow2ConfigCheatKeywords.FirstOrDefault(k =>
                         content.Contains(k, StringComparison.OrdinalIgnoreCase));
@@ -997,7 +997,7 @@ public sealed class OverwatchCheatForensicDeepScanModule : IScanModule
         }, ct);
 
     private Task CheckSoftAimbotConfigFiles(ScanContext ctx, CancellationToken ct) =>
-        Task.Run(() =>
+        Task.Run(async () =>
         {
             ctx.Report(0.4, Name, "Scanning for soft aimbot configuration files...");
 
@@ -1043,7 +1043,7 @@ public sealed class OverwatchCheatForensicDeepScanModule : IScanModule
                         {
                             using var fs = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
                             using var sr = new StreamReader(fs);
-                            string content = sr.ReadToEnd();
+                            string content = await sr.ReadToEndAsync(ct);
 
                             int keywordHits = SoftAimbotConfigKeywords.Count(k =>
                                 content.Contains(k, StringComparison.OrdinalIgnoreCase));
@@ -1376,7 +1376,7 @@ public sealed class OverwatchCheatForensicDeepScanModule : IScanModule
         }, ct);
 
     private Task CheckBattleNetLogs(ScanContext ctx, CancellationToken ct) =>
-        Task.Run(() =>
+        Task.Run(async () =>
         {
             ctx.Report(0.7, Name, "Scanning Battle.net logs for cheat-related entries...");
 
@@ -1410,7 +1410,7 @@ public sealed class OverwatchCheatForensicDeepScanModule : IScanModule
                         {
                             using var fs = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
                             using var sr = new StreamReader(fs);
-                            string content = sr.ReadToEnd();
+                            string content = await sr.ReadToEndAsync(ct);
 
                             var keyword = BnetLogCheatKeywords.FirstOrDefault(k =>
                                 content.Contains(k, StringComparison.OrdinalIgnoreCase));
@@ -1441,7 +1441,7 @@ public sealed class OverwatchCheatForensicDeepScanModule : IScanModule
         }, ct);
 
     private Task CheckPixelAimbotScripts(ScanContext ctx, CancellationToken ct) =>
-        Task.Run(() =>
+        Task.Run(async () =>
         {
             ctx.Report(0.75, Name, "Scanning for pixel aimbot / screen-reading bot scripts...");
 
@@ -1475,7 +1475,7 @@ public sealed class OverwatchCheatForensicDeepScanModule : IScanModule
                         {
                             using var fs = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
                             using var sr = new StreamReader(fs);
-                            string content = sr.ReadToEnd();
+                            string content = await sr.ReadToEndAsync(ct);
 
                             int matchCount = PixelAimBotKeywords.Count(k =>
                                 content.Contains(k, StringComparison.OrdinalIgnoreCase));
