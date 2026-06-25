@@ -831,6 +831,28 @@ public sealed class ScanOptions
     /// frameworks are the dominant transparent cheat delivery mechanism in competitive games.</summary>
     public bool ScanThirdPartyGameOverlay { get; set; } = true;
 
+    /// <summary>Enumerate all windows via EnumWindows (including hidden ones) and detect:
+    /// WDA_EXCLUDEFROMCAPTURE windows (visible to player, invisible in OBS/screenshots — ESP overlay
+    /// pattern), invisible topmost transparent layered windows (classic ESP overlay structure),
+    /// windows with cheat-keyword titles (aimbot, gamesense, kiddion, onetap), and windows with
+    /// cheat-keyword class names (esp_overlay, cheatbridge, gamesense). Ocean/detect.ac enumerate
+    /// all HWNDs because cheat overlays leave HWND artifacts even after the visual overlay is dismissed.</summary>
+    public bool ScanHwndCheatWindows { get; set; } = true;
+
+    /// <summary>Detect blocked anti-cheat telemetry: Windows Firewall rules with Action=Block targeting
+    /// BattlEye, EasyAntiCheat, Steam, Riot/Vanguard, FACEIT domains; localhost MITM proxy configured
+    /// in Internet Settings intercepting AC HTTPS traffic; DNS NameServer set to 127.0.0.1 per adapter
+    /// (DNS sinkhole for AC update/license servers); and Disallowed certificate store entries blocking
+    /// AC server TLS certificates. Cheats block AC telemetry to prevent version updates and fingerprinting.</summary>
+    public bool ScanAntiCheatTelemetryBlock { get; set; } = true;
+
+    /// <summary>Scan game-specific mod directories for cheat mods: Minecraft .minecraft/mods/ for
+    /// Wurst/LiquidBounce/Meteor/Impact/Sigma/Aristois .jar files; FiveM plugins/ for cheat-keyword
+    /// files; GTA V scripts/ and game root for ScriptHookV.dll, kiddion_mod.asi, Menyoo.asi, and
+    /// cheat-keyword .asi/.cs/.lua scripts; Roblox %LOCALAPPDATA%\Roblox exploit executor directories
+    /// and autoexec/ Lua scripts with exploit API calls (getservice, hookfunction, loadstring).</summary>
+    public bool ScanGameSaveCheatMods { get; set; } = true;
+
     /// <summary>Scan game directories (Steam, Epic, user-specified) for BepInEx, Unity Doorstop,
     /// and MelonLoader code injection frameworks. Detects: doorstop_config.ini (enabled=true),
     /// winhttp.dll Doorstop proxy in game root, BepInEx/plugins/ DLLs with cheat keywords,
@@ -1518,6 +1540,9 @@ public static class ScanProfiles
         ScanCheatNetworkProtocol = true,      // hosts file + network interface check — fast
         ScanRegistryForensicArtifacts = true, // BAM + Shimcache + TypedPaths — fast (Ocean signature)
         ScanThirdPartyGameOverlay = true,     // overlay dirs + registry — fast
+        ScanHwndCheatWindows = true,          // EnumWindows + GetWindowDisplayAffinity — fast
+        ScanAntiCheatTelemetryBlock = true,   // firewall registry + hosts + certificates — fast
+        ScanGameSaveCheatMods = false,        // game mod directory walk — slow
         DeepDriveScan = false,
         // No per-module timeout — every Quick module runs to completion. Quick stays
         // fast because slow modules are individually disabled above, not because they

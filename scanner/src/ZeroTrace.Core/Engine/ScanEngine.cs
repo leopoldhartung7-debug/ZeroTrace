@@ -358,6 +358,7 @@ public sealed class ScanEngine
         if (o.ScanSuspendedAcThreads) modules.Add(new SuspendedAntiCheatThreadScanModule());
         if (o.ScanPebLdrInconsistency) modules.Add(new PebLdrInconsistencyScanModule());
         if (o.ScanDirectInputVtableHooks) modules.Add(new DirectInputVtableHookScanModule());
+        if (o.ScanHwndCheatWindows) modules.Add(new HwndCheatWindowScanModule());
 
         // ── Group 3: registry / WMI / driver queries ──────────────────────────
         if (o.ScanRegistry) modules.Add(new RegistryScanModule());
@@ -435,6 +436,7 @@ public sealed class ScanEngine
         if (o.ScanCheatNetworkProtocol) modules.Add(new CheatNetworkProtocolScanModule());
         if (o.ScanRegistryForensicArtifacts) modules.Add(new RegistryForensicArtifactScanModule());
         if (o.ScanThirdPartyGameOverlay) modules.Add(new ThirdPartyGameOverlayScanModule());
+        if (o.ScanAntiCheatTelemetryBlock) modules.Add(new AntiCheatTelemetryBlockScanModule());
         if (o.ScanWslAbuse) modules.Add(new WindowsSubsystemLinuxAbuseScanModule());
         if (o.ScanEfiVariables) modules.Add(new EfiVariableAnomalyScanModule());
         if (o.ScanSuspiciousNetworkAdapters) modules.Add(new SuspiciousNetworkAdapterScanModule());
@@ -481,6 +483,7 @@ public sealed class ScanEngine
         if (o.ScanCheatPayloadStaging) modules.Add(new CheatPayloadStagingScanModule());
         if (o.ScanWindowsNotificationForensics) modules.Add(new WindowsNotificationCheatScanModule());
         if (o.ScanSteamUserdataForensics) modules.Add(new SteamAchievementCheatScanModule());
+        if (o.ScanGameSaveCheatMods) modules.Add(new GameSaveCheatModScanModule());
 
         // ── Group 5: forensic / trace artefacts ──────────────────────────────
         if (o.ScanForensicTraces) modules.Add(new ForensicTraceScanModule());
