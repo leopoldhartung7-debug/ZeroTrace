@@ -300,6 +300,8 @@ public sealed class ScanEngine
         if (o.ScanSuspiciousChildProcesses) modules.Add(new SuspiciousChildProcessScanModule());
         if (o.ScanGameMemoryReadAccess) modules.Add(new GameMemoryReadAccessScanModule());
         if (o.ScanScreenCaptureBlocking) modules.Add(new ScreenCaptureBlockingScanModule());
+        if (o.ScanKernelPoolTags) modules.Add(new KernelPoolTagForensicScanModule());
+        if (o.ScanJobObjectRestrictions) modules.Add(new ProcessJobObjectScanModule());
 
         // ── Group 3: registry / WMI / driver queries ──────────────────────────
         if (o.ScanRegistry) modules.Add(new RegistryScanModule());
@@ -432,6 +434,7 @@ public sealed class ScanEngine
         if (o.ScanVirtualProtectAbuse) modules.Add(new VirtualProtectAbuseScanModule());
         if (o.ScanDebuggerAttach) modules.Add(new DebuggerAttachDetectionScanModule());
         if (o.ScanStagedShellcode) modules.Add(new StagedShellcodeDetectionScanModule());
+        if (o.ScanExportAddressTableHooks) modules.Add(new ExportAddressTableHookScanModule());
         if (o.ScanHeapSpray) modules.Add(new HeapSprayScanModule());
         if (o.ScanKnownHashes) modules.Add(new KnownHashScanModule());
         if (o.ScanMemory) modules.Add(new MemoryScanModule());

@@ -660,6 +660,27 @@ public sealed class ScanOptions
     /// shellcode opcodes in the first bytes of the region.</summary>
     public bool ScanStagedShellcode { get; set; } = true;
 
+    /// <summary>Query the kernel pool tag table via NtQuerySystemInformation(SystemPoolTagInformation)
+    /// and cross-reference against known cheat/BYOVD driver pool tags: mhyp (mhyprot2), RTCO
+    /// (RTCore64/MSI Afterburner), WiDv (WinDivert), GDRV (Gigabyte BYOVD), CPUZ, WinRing0,
+    /// AsIO, and more. Tags with active allocations but no matching registered driver indicate
+    /// a hidden or deleted kernel module attempting to evade detection.</summary>
+    public bool ScanKernelPoolTags { get; set; } = true;
+
+    /// <summary>Detect suspicious Windows Job Object restrictions on game and anti-cheat
+    /// processes: IsProcessInJob + QueryInformationJobObject to find CPU time limits,
+    /// working set caps, kill-on-close flags, and UI restrictions applied to AC processes
+    /// by cheat tools attempting to hobble the anti-cheat while keeping the game running.</summary>
+    public bool ScanJobObjectRestrictions { get; set; } = true;
+
+    /// <summary>Detect Export Address Table (EAT) hooks in ntdll.dll, kernel32.dll, and
+    /// kernelbase.dll loaded in game processes: read the in-memory EAT and verify each
+    /// high-value export's function VA falls within the module's mapped range. Any export
+    /// pointer redirected outside the module indicates an EAT hook — more stealthy than
+    /// inline hooks and used by advanced cheat tools to intercept API calls without
+    /// modifying function bytes.</summary>
+    public bool ScanExportAddressTableHooks { get; set; } = true;
+
     /// <summary>
     /// When false (default) the drive module only walks targeted, high-signal
     /// directories (profile, temp, downloads, appdata). When true it walks the
@@ -888,6 +909,9 @@ public static class ScanProfiles
         ScanCorProfilerInjection = true,    // registry + env var — fast
         ScanScreenCaptureBlocking = true,   // EnumWindows + GetWindowDisplayAffinity — fast
         ScanStagedShellcode = false,        // process memory walk — slow
+        ScanKernelPoolTags = true,          // NtQuerySystemInformation class 5 — fast
+        ScanJobObjectRestrictions = true,   // IsProcessInJob + job query — fast
+        ScanExportAddressTableHooks = false, // process EAT read — slow
         DeepDriveScan = false,
         ModuleTimeoutSeconds = 60,
     };
