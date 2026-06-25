@@ -353,6 +353,7 @@ public sealed class ScanEngine
         if (o.ScanTaskSchedulerDeep) modules.Add(new TaskSchedulerDeepScanModule());
         if (o.ScanStartupFolderDeep) modules.Add(new StartupFolderDeepScanModule());
         if (o.ScanSensitiveDataAccess) modules.Add(new SensitiveDataAccessScanModule());
+        if (o.ScanGameConfigManipulation) modules.Add(new GameConfigManipulationScanModule());
 
         // ── Group 5: forensic / trace artefacts ──────────────────────────────
         if (o.ScanForensicTraces) modules.Add(new ForensicTraceScanModule());
@@ -406,6 +407,8 @@ public sealed class ScanEngine
         if (o.ScanInlineHooks) modules.Add(new InlineHookDetectionScanModule());
         if (o.ScanEtwTamper) modules.Add(new EtwTamperScanModule());
         if (o.ScanHardwareBreakpoints) modules.Add(new HardwareBreakpointScanModule());
+        if (o.ScanShellcodeSignatures) modules.Add(new ShellcodeSignatureScanModule());
+        if (o.ScanProcessMemoryStrings) modules.Add(new ProcessMemoryStringsScanModule());
         if (o.ScanHeapSpray) modules.Add(new HeapSprayScanModule());
         if (o.ScanKnownHashes) modules.Add(new KnownHashScanModule());
         if (o.ScanMemory) modules.Add(new MemoryScanModule());

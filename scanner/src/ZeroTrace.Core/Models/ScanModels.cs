@@ -516,6 +516,22 @@ public sealed class ScanOptions
     /// CPU debug registers to intercept API calls without modifying any code bytes in memory.</summary>
     public bool ScanHardwareBreakpoints { get; set; } = true;
 
+    /// <summary>Scan private executable memory regions in game processes for known shellcode
+    /// byte signatures: msfvenom x64 stager, CobaltStrike beacon, SysWhispers syscall stubs,
+    /// PEB-walking patterns, Shikata-ga-nai XOR decoder, Donut header, Tartarus Gate, and more.</summary>
+    public bool ScanShellcodeSignatures { get; set; } = true;
+
+    /// <summary>Scan game configuration files for cheat console commands and cheat keywords:
+    /// CS2/CSGO autoexec.cfg, Apex/PUBG/Fortnite GameUserSettings.ini, Dota 2/TF2/GMod scripts,
+    /// and Steam userdata localconfig.vdf for suspicious launch options.</summary>
+    public bool ScanGameConfigManipulation { get; set; } = true;
+
+    /// <summary>Extract ASCII and UTF-16 LE strings from private process memory in game processes
+    /// and match against HIGH-confidence indicators (known cheat domains, DMA tool strings, Telegram
+    /// bot API URLs, Discord webhook URLs) and MEDIUM indicators (license check patterns, debug tool
+    /// names, cheat feature strings, kernel communication artifacts).</summary>
+    public bool ScanProcessMemoryStrings { get; set; } = true;
+
     /// <summary>
     /// When false (default) the drive module only walks targeted, high-signal
     /// directories (profile, temp, downloads, appdata). When true it walks the
@@ -718,6 +734,9 @@ public static class ScanProfiles
         ScanInlineHooks = false,            // process + disk read — slow
         ScanEtwTamper = true,              // ntdll comparison + ETW query — medium
         ScanHardwareBreakpoints = false,    // thread suspend+context — slow
+        ScanShellcodeSignatures = false,    // process memory walk — slow
+        ScanGameConfigManipulation = true,  // file read — fast
+        ScanProcessMemoryStrings = false,   // process memory walk — slow
         DeepDriveScan = false,
         ModuleTimeoutSeconds = 60,
     };
