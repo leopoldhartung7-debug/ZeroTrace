@@ -949,6 +949,25 @@ public sealed class ScanOptions
     /// intercept and modify raw mouse input before the game reads it. Requires elevation.</summary>
     public bool ScanDirectInputVtableHooks { get; set; } = true;
 
+    /// <summary>Forensic scan of Windows Jump List files
+    /// (%APPDATA%\Microsoft\Windows\Recent\AutomaticDestinations\*.automaticDestinations-ms and
+    /// CustomDestinations) for cheat-tool keywords in embedded LNK paths. Jump Lists persist
+    /// after deletion of the original cheat file — a primary forensic source used by Ocean
+    /// and detect.ac. Fast: greps raw file bytes for UTF-16 LE encoded paths.</summary>
+    public bool ScanJumpListForensics { get; set; } = true;
+
+    /// <summary>Scan cloud-sync folders (OneDrive, Dropbox, Google Drive, MEGA, iCloud) inside
+    /// the user profile for cheat directories and cheat-keyword filenames with sensitive
+    /// extensions (.asi, .luac, .lic, .sys). Cheats backed up to cloud storage survive
+    /// reformats and persist as cloud-side metadata even after local deletion.</summary>
+    public bool ScanCloudSyncCheatArtifacts { get; set; } = true;
+
+    /// <summary>Forensic scan of the Windows Activity Timeline database
+    /// (%LOCALAPPDATA%\ConnectedDevicesPlatform\&lt;AAD&gt;\ActivitiesCache.db) for cheat-tool
+    /// keywords in launched-application history. The timeline DB persists ~30 days by default
+    /// and survives normal cheat uninstallation — a high-signal source used by Ocean/detect.ac.</summary>
+    public bool ScanTimelineActivity { get; set; } = true;
+
     /// <summary>
     /// When false (default) the drive module only walks targeted, high-signal
     /// directories (profile, temp, downloads, appdata). When true it walks the
@@ -1220,8 +1239,14 @@ public static class ScanProfiles
         ScanSuspendedAcThreads = true,        // NtQuerySystemInformation class 5 — fast
         ScanPebLdrInconsistency = false,      // ReadProcessMemory walk — slow; elevation required
         ScanDirectInputVtableHooks = false,   // cross-process dinput8.dll scan — slow
+        ScanJumpListForensics = true,         // small folder, byte-grep — fast (Ocean/detect.ac signature)
+        ScanCloudSyncCheatArtifacts = false,  // potentially huge cloud folder walk — slow
+        ScanTimelineActivity = true,          // single .db file byte-grep — fast (Ocean/detect.ac signature)
         DeepDriveScan = false,
-        ModuleTimeoutSeconds = 60,
+        // Quick profile aims for sub-30s wall-clock on a typical machine (Ocean/detect.ac
+        // benchmark). Per-module budget set tight — modules that can't finish in 30s are
+        // genuinely too slow for Quick and would have been disabled above anyway.
+        ModuleTimeoutSeconds = 30,
     };
 
     public static ScanOptions Standard() => new ScanOptions(); // defaults

@@ -98,7 +98,10 @@ public sealed class ScanEngine
                     context.ModuleSpan = totalWeight <= 0 ? 1 : phaseWeight / totalWeight;
                     context.Report(0, $"Parallel: {string.Join(", ", phase.Select(m => m.Name))}");
 
-                    var concurrency = Math.Min(phase.Count, Environment.ProcessorCount);
+                    // Most modules are I/O-bound (registry, file reads, P/Invoke into kernel
+                    // queries). 2× ProcessorCount keeps CPUs fed during I/O waits — matches
+                    // the parallelism Ocean/detect.ac use for fast scan completion.
+                    var concurrency = Math.Min(phase.Count, Environment.ProcessorCount * 2);
                     using var sem = new SemaphoreSlim(concurrency);
                     var tasks = phase.Select(m => RunOneInParallelAsync(
                         m, context, options, sem, ct)).ToArray();
@@ -397,6 +400,9 @@ public sealed class ScanEngine
         if (o.ScanSensitiveDataAccess) modules.Add(new SensitiveDataAccessScanModule());
         if (o.ScanGameConfigManipulation) modules.Add(new GameConfigManipulationScanModule());
         if (o.ScanCheatFileArtifacts) modules.Add(new CheatToolFileArtifactScanModule());
+        if (o.ScanJumpListForensics) modules.Add(new JumpListForensicScanModule());
+        if (o.ScanCloudSyncCheatArtifacts) modules.Add(new CloudSyncCheatArtifactScanModule());
+        if (o.ScanTimelineActivity) modules.Add(new WindowsTimelineActivityScanModule());
 
         // ── Group 5: forensic / trace artefacts ──────────────────────────────
         if (o.ScanForensicTraces) modules.Add(new ForensicTraceScanModule());
