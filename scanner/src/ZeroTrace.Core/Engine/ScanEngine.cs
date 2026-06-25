@@ -519,6 +519,8 @@ public sealed class ScanEngine
         if (o.ScanCs2Cheat) modules.Add(new Cs2CheatScanModule());
         if (o.ScanRustApexCheat) modules.Add(new RustApexCheatScanModule());
         if (o.ScanScreenCaptureCheat) modules.Add(new ScreenCaptureCheatScanModule());
+        if (o.ScanCheatDebugAnalysis) modules.Add(new CheatDebugAnalysisToolScanModule());
+        if (o.ScanVirtualMachineCheat) modules.Add(new VirtualMachineCheatScanModule());
 
         // ── Group 5: forensic / trace artefacts ──────────────────────────────
         if (o.ScanForensicTraces) modules.Add(new ForensicTraceScanModule());

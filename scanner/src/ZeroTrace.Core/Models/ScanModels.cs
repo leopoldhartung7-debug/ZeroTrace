@@ -1119,6 +1119,23 @@ public sealed class ScanOptions
     /// process detection. Covers the dominant AI aimbot delivery mechanism.</summary>
     public bool ScanScreenCaptureCheat { get; set; } = true;
 
+    /// <summary>Detects reverse-engineering and cheat-development tools: IDA Pro (dirs + HKCU\Hex-Rays),
+    /// x64dbg/x32dbg (install dir + registry), Ghidra (wildcard dir search), OllyDbg, ReClass.NET
+    /// (AppData dir + registry + Critical when running alongside a game process), Process Hacker,
+    /// Scylla/ScyllaHide; C/C++ source files with 3+ ReadProcessMemory+entity/draw+cheat patterns;
+    /// Visual Studio projects in cheat-named dirs; git remote URLs with cheat keywords; anti-cheat
+    /// research PDFs/markdown; Wireshark captures with game names; IDA .i64 databases for game
+    /// binaries; Prefetch for 7 RE tool patterns.</summary>
+    public bool ScanCheatDebugAnalysis { get; set; } = true;
+
+    /// <summary>Detects VM usage in cheating contexts: VMware/VirtualBox/Hyper-V/QEMU/Parallels
+    /// installation + running NIC adapter (VM software + game running = High); virtual BIOS SMBIOS
+    /// manufacturer/product keywords and SCSI disk identifiers; VM service enumeration; game-named
+    /// VM disk images (.vmdk/.vdi named rust_vm/gta_vm etc. = Critical); Sandboxie + game process
+    /// (sandbox cheat isolation); RDP enabled + game running; DMA cheat tools (pcileech/dma_cheat);
+    /// Python network+memory relay scripts (DMA-over-network pattern).</summary>
+    public bool ScanVirtualMachineCheat { get; set; } = true;
+
     /// <summary>Scan game directories (Steam, Epic, user-specified) for BepInEx, Unity Doorstop,
     /// and MelonLoader code injection frameworks. Detects: doorstop_config.ini (enabled=true),
     /// winhttp.dll Doorstop proxy in game root, BepInEx/plugins/ DLLs with cheat keywords,
@@ -1844,6 +1861,8 @@ public static class ScanProfiles
         ScanCs2Cheat = true,                  // CS2 EXE/cfg/AppData/offset/process scan — fast
         ScanRustApexCheat = true,             // Rust/Apex EXE/recoil script/AppData scan — fast
         ScanScreenCaptureCheat = true,        // AI aimbot Python/ONNX/triggerbot scan — fast
+        ScanCheatDebugAnalysis = true,        // IDA/x64dbg/ReClass/cheat src/RE artifacts — fast
+        ScanVirtualMachineCheat = true,       // VM software + game + DMA cheat tool scan — fast
         DeepDriveScan = false,
         // No per-module timeout — every Quick module runs to completion. Quick stays
         // fast because slow modules are individually disabled above, not because they
