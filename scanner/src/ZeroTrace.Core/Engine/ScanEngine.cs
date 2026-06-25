@@ -610,6 +610,11 @@ public sealed class ScanEngine
         if (o.ScanFiveMServerLogCheat) modules.Add(new FiveMServerLogCheatScanModule());
         if (o.ScanLOLCheatForensic) modules.Add(new LOLCheatForensicScanModule());
         if (o.ScanSeaOfThievesCheat) modules.Add(new SeaOfThievesCheatScanModule());
+        if (o.ScanDota2CheatArtifact) modules.Add(new Dota2CheatArtifactScanModule());
+        if (o.ScanDeadByDaylightCheat) modules.Add(new DeadByDaylightCheatScanModule());
+        if (o.ScanTeamFortress2Cheat) modules.Add(new TeamFortress2CheatScanModule());
+        if (o.ScanWarzoneCODCheat) modules.Add(new WarzoneCODCheatScanModule());
+        if (o.ScanWindowsEventLogCheatForensic) modules.Add(new WindowsEventLogCheatForensicScanModule());
         if (o.ScanCheatSourceCodeRepo) modules.Add(new CheatSourceCodeRepoScanModule());
 
         // ── Group 5: forensic / trace artefacts ──────────────────────────────

@@ -1,5 +1,5 @@
-using System.Diagnostics;
 using Microsoft.Win32;
+using System.Text;
 using ZeroTrace.Core.Engine;
 using ZeroTrace.Core.Models;
 
@@ -7,1279 +7,1443 @@ namespace ZeroTrace.Core.Modules;
 
 public sealed class ValorantCheatScanModule : IScanModule
 {
-    public string Name => "Valorant-Cheat";
-    public double Weight => 0.7;
+    public string Name => "Valorant Cheat Deep Scan";
+    public double Weight => 4.0;
     public int ParallelGroup => 4;
+    public int ModuleTimeoutSeconds => 0;
 
-    private static readonly string[] KnownCheatExeNames =
-    {
-        "val_cheat.exe", "valorant_cheat.exe", "valorant_hack.exe", "valorant_aimbot.exe",
-        "valorant_esp.exe", "valorant_wallhack.exe", "valorant_bypass.exe",
-        "vanguard_bypass.exe", "vanguard_killer.exe", "vanguard_spoofer.exe",
-        "val_loader.exe", "valorant_loader.exe", "valo_cheat.exe", "valo_hack.exe",
-        "valo_esp.exe", "radiant_cheat.exe", "radiant_hack.exe", "recoil_valorant.exe",
-        "val_triggerbot.exe", "val_aimassist.exe", "valorant_unlocker.exe",
-        "crosshair_change.exe"
-    };
-
-    private static readonly string[] KnownCheatDllNames =
-    {
-        "val_cheat.dll", "valorant_cheat.dll", "valorant_hook.dll",
-        "vanguard_bypass.dll", "val_esp.dll", "valorant_aimbot.dll"
-    };
-
-    private static readonly string[] VanguardBypassToolNames =
-    {
-        "vanguard_bypass.exe", "vgc_killer.exe", "vgk_bypass.exe", "vanguard_patch.exe"
-    };
-
-    private static readonly string[] VanguardBypassPrefetchPatterns =
-    {
-        "VANGUARD_BYPASS", "VGCKILLER", "VGC_KILLER", "VGK_BYPASS", "VANGUARD_PATCH"
-    };
-
-    private static readonly string[] CheatPrefetchPatterns =
-    {
-        "VALORANT_CHEAT", "VAL_CHEAT", "VANGUARD_BYPASS", "VAL_LOADER",
-        "VALORANT_HACK", "VALORANT_AIMBOT", "VALO_CHEAT", "VAL_LOADER",
-        "RADIANT_CHEAT", "RECOIL_VALORANT", "VAL_TRIGGERBOT"
-    };
-
-    private static readonly string[] VanguardPsHistoryPatterns =
-    {
-        "sc stop vgc", "sc delete vgc", "net stop vgc",
-        "set-service vgc", "disable vgc", "sc stop vgk", "sc delete vgk"
-    };
-
-    private static readonly string[] LogCheatKeywords =
-    {
-        "vanguard", "bypass", "exploit", "inject"
-    };
-
-    private static readonly string[] ConfigCheatKeywords =
-    {
-        "bNovac", "bDisableVanguard", "bNoAntiCheat"
-    };
-
-    private static readonly string[] RecoilAhkKeywords =
-    {
-        "recoil", "spray", "transfer", "aimbot", "triggerbot", "rapidfire"
-    };
-
-    private static readonly string[] RecoilPythonKeywords =
-    {
-        "win32api.mouse_event", "pynput", "pyautogui"
-    };
-
-    private static readonly string[] RecoilConfigFileNames =
-    {
-        "recoil_valorant.cfg", "spray_transfer.cfg",
-        "val_recoil.json", "no_recoil_valorant.json"
-    };
-
-    private static readonly string[] SuspiciousProcessFlags =
-    {
-        "--bypass", "--inject", "--novanguard"
-    };
+    private static readonly string[] KnownCheatFileNames =
+    [
+        // Vanguard bypass tools
+        "vanguard_bypass.exe", "vgc_kill.exe", "vgk_bypass.dll",
+        "vanguard_bypass.dll", "vgc_bypass.exe", "vgk_kill.exe",
+        "vanguard_disable.exe", "vgc_disable.dll", "vgk_disable.exe",
+        "anti_vanguard.exe", "vanguard_hook.dll", "vgc_hook.dll",
+        "vgk_hook.dll", "vanguard_patch.exe", "vgc_patch.dll",
+        "vgk_patch.exe", "vanguard_loader.exe", "vanguard_spoof.dll",
+        "vgk_spoof.dll", "vanguard_unload.exe", "vgc_unload.exe",
+        "vgk_unload.dll", "bypass_vanguard.exe", "kill_vanguard.exe",
+        "disable_vanguard.exe", "vanguard_remover.exe", "vgremover.exe",
+        "vanguard_injector.dll", "vgc_injector.exe",
+        // Aimbot tools
+        "valorant_aim.exe", "aim_valorant.dll", "val_aimbot.exe",
+        "valorant_aimbot.exe", "val_aim.dll", "valo_aimbot.exe",
+        "valo_aim.dll", "valorant_silent_aim.exe", "val_silent_aim.dll",
+        "valorant_legit_aim.exe", "val_legit_aim.dll", "valorant_rage_aim.exe",
+        "valorant_aim_assist.exe", "val_aim_assist.dll", "valo_aim_assist.exe",
+        "valorant_fov_aim.dll", "valorant_bone_aim.dll", "valorant_predict_aim.dll",
+        "val_prediction.dll", "valorant_smooth_aim.dll", "val_smooth.dll",
+        "valo_silentaim.dll", "val_novischeck.dll", "valorant_novis.dll",
+        "valorant_triggerbot.exe", "val_triggerbot.dll", "valo_triggerbot.exe",
+        // Wallhack / ESP tools
+        "val_esp.dll", "valorant_wh.exe", "valo_esp.exe",
+        "valorant_esp.dll", "val_wallhack.exe", "valo_wallhack.dll",
+        "valorant_esp_box.dll", "val_esp_health.dll", "valo_esp_bone.dll",
+        "valorant_chams.dll", "val_glow.dll", "valo_glow.exe",
+        "valorant_vischeck_bypass.dll", "val_visibility.dll", "valo_xray.dll",
+        "valorant_distance_esp.dll", "val_item_esp.dll", "valo_radar.dll",
+        "valorant_sound_esp.dll", "val_footstep_esp.dll",
+        // Trigger bot
+        "val_trigger.exe", "trigger_valorant.dll", "valo_trigger.exe",
+        "val_auto_trigger.dll", "valorant_auto_shoot.exe", "val_clickbot.dll",
+        // Skin changers
+        "val_skin.exe", "valorant_skins.dll", "val_skinchanger.exe",
+        "valorant_skin_changer.dll", "valo_skins.exe", "val_knife.dll",
+        "valorant_knife_changer.exe", "val_buddy.dll", "valo_knife.exe",
+        "val_gun_buddy.dll", "valorant_skin_unlocker.exe", "val_card.dll",
+        "valorant_playercard.dll", "val_spray.dll", "val_title.dll",
+        "valorant_unlock_all.exe", "val_inventory_unlock.dll",
+        // HWID spoofer / ban evasion
+        "riot_hwid_spoofer.exe", "val_hwid_spoofer.dll", "valo_spoofer.exe",
+        "riot_spoofer.exe", "valorant_spoofer.exe", "val_ban_evasion.exe",
+        "riot_ban_bypass.exe", "val_unban.exe", "valo_unban.exe",
+        "riot_account_bypass.dll", "val_id_change.exe",
+        // Riot client bypass
+        "riot_bypass.exe", "riot_client_bypass.dll", "riotclient_bypass.exe",
+        "riot_launch_bypass.exe", "riot_auth_bypass.dll",
+        "riot_client_hook.dll", "riotclient_hook.exe",
+        "riot_client_patch.dll", "riot_services_bypass.exe",
+        // Loaders / injectors
+        "val_loader.exe", "valorant_loader.exe", "valo_loader.exe",
+        "val_injector.exe", "valorant_injector.exe", "valo_injector.dll",
+        "valorant_hack.dll", "val_hack.dll", "valo_cheat.dll",
+        "valorant_internal.dll", "val_external.exe", "valo_external.dll",
+        "valorant_driver.sys", "val_memory.dll", "valo_memory.exe",
+        // Other known cheat files
+        "vncheat.dll", "vncheat.exe", "valo_hvh.dll", "val_hvh.exe",
+        "valorant_no_recoil.dll", "val_rcs.dll", "valo_rcs.exe",
+        "valorant_backtrack.dll", "val_resolver.dll", "valo_resolver.exe",
+        "val_antiaim.dll", "valorant_antiaim.dll", "valo_fakelag.dll",
+        "val_offsets.dll", "valorant_offsets.dll", "val_sdk.dll",
+        "valorant_cheat.dll", "valorant_cheat.exe", "val_cheat.dll",
+    ];
 
     private static readonly string[] KnownCheatProcessNames =
+    [
+        "valorant_hack", "valo_cheat", "vncheat", "valorant_esp",
+        "valo_aim", "val_aimbot", "valorant_aimbot", "val_esp",
+        "valo_esp", "val_wallhack", "valorant_wallhack", "valo_wallhack",
+        "val_trigger", "valo_triggerbot", "val_skinchanger", "valo_skins",
+        "vanguard_bypass", "vgc_kill", "vgk_bypass", "val_loader",
+        "valorant_loader", "valo_loader", "val_injector", "valorant_injector",
+        "riot_bypass", "riot_hwid_spoofer", "val_spoofer", "valo_spoofer",
+        "val_hack", "valo_hack", "valorant_driver", "val_memory",
+        "valo_memory", "val_resolver", "valo_resolver", "val_antiaim",
+        "valo_antiaim", "val_external", "valo_external",
+    ];
+
+    private static readonly string[] VgkBypassDriverNames =
+    [
+        "vgk_bypass.sys", "vanguard_bypass.sys", "vgc_bypass.sys",
+        "vgk_hook.sys", "vanguard_hook.sys", "anti_vgk.sys",
+        "vgk_kill.sys", "vgk_disable.sys", "vanguard_disable.sys",
+        "vgk_spoof.sys", "vanguard_spoof.sys", "bypass_vgk.sys",
+        "vgk_patch.sys", "vanguard_patch.sys", "vgk_unload.sys",
+        "riot_bypass.sys", "riot_kernel.sys",
+    ];
+
+    private static readonly string[] SuspiciousLogKeywords =
+    [
+        "vanguard bypass", "vgk bypass", "vanguard disabled",
+        "vgc stopped", "kernel tamper", "driver bypass",
+        "aim assist enabled", "esp enabled", "wallhack enabled",
+        "triggerbot enabled", "silent aim enabled", "aimbot loaded",
+        "cheat loaded", "hook installed", "dll injected",
+        "memory read valorant", "valorant memory", "valo hack",
+        "skin changer loaded", "unlock all skins", "knife changer",
+        "hwid spoofed", "ban bypass", "riot auth bypass",
+        "recoil control enabled", "no recoil loaded",
+    ];
+
+    private static readonly string[] CheatConfigKeywords =
+    [
+        "aimbot_enabled", "aimbot_fov", "aimbot_smooth", "aimbot_bone",
+        "esp_enabled", "esp_box", "esp_health", "esp_name", "esp_distance",
+        "wallhack_enabled", "chams_enabled", "glow_enabled",
+        "triggerbot_enabled", "trigger_key", "trigger_delay",
+        "silent_aim_enabled", "legit_aim_enabled", "rage_aim_enabled",
+        "skinchanger_enabled", "knife_model", "gun_buddy",
+        "val_aimbot", "val_esp", "val_wallhack", "vanguard_bypass",
+        "no_recoil_val", "rcs_enabled_val", "backtrack_val",
+        "resolver_val", "antiaim_val", "fakelag_val",
+        "hwid_spoof_riot", "ban_bypass_riot", "riot_auth_bypass",
+        "unlock_all_skins", "skin_changer_val", "knife_changer_val",
+        "val_memory_read", "valorant_offsets", "val_sdk_enabled",
+    ];
+
+    private static readonly string[] HostsRiotEntries =
+    [
+        "auth.riotgames.com", "api.riotgames.com", "entitlements.auth.riotgames.com",
+        "playerpreferences.riotgames.com", "shared.riotgames.com",
+        "riot.direct", "riotgames.com", "na.lol.riotgames.com",
+        "rms.auth.riotgames.com", "geo.valorantesports.com",
+        "valorant.secure.dyn.riotgames.com", "clientconfig.rpg.riotgames.com",
+        "session.na.lol.riotgames.com", "ledge.na.lol.riotgames.com",
+        "pd.na.a.pvp.net", "glz-na-1.na.a.pvp.net", "shared.na.a.pvp.net",
+        "keystone.na.pvp.net", "vanguard-kernel.riotgames.com",
+        "vanguard.riotgames.com", "vgk.riotgames.com",
+        "anti-cheat.riotgames.com", "penaltyservice.riotgames.com",
+    ];
+
+    private static readonly string[] UserAssistCheatKeywords =
+    [
+        "vanguard_bypass", "vgc_kill", "vgk_bypass", "valorant_aim",
+        "aim_valorant", "val_aimbot", "val_esp", "valorant_esp",
+        "valo_esp", "val_wallhack", "valorant_wh", "val_trigger",
+        "trigger_valorant", "val_skin", "valorant_skins", "val_spoofer",
+        "riot_bypass", "riot_hwid", "valorant_loader", "val_injector",
+        "vncheat", "valorant_hack", "valo_cheat", "valorant_cheat",
+        "val_hack", "valo_hack", "val_loader", "valo_loader",
+        "valo_triggerbot", "val_skinchanger", "valo_skins", "val_resolver",
+    ];
+
+    private static readonly string[] MuiCacheCheatKeywords =
+    [
+        "vanguard_bypass", "vgc_kill", "vgk_bypass", "valorant_aim",
+        "val_aimbot", "val_esp", "valorant_esp", "valorant_wh",
+        "val_trigger", "val_skin", "valorant_skins", "val_spoofer",
+        "riot_bypass", "riot_hwid", "valorant_loader", "val_injector",
+        "vncheat", "valorant_hack", "valo_cheat", "val_hack",
+        "valo_hack", "val_loader", "valo_triggerbot", "val_skinchanger",
+        "val_resolver", "valo_skins", "valo_loader", "valo_wallhack",
+    ];
+
+    private static readonly string[] SuspiciousDllsInValorantDir =
+    [
+        "val_esp.dll", "val_aim.dll", "val_trigger.dll", "val_skins.dll",
+        "valorant_esp.dll", "valorant_aim.dll", "valo_esp.dll", "valo_aim.dll",
+        "d3d11_proxy.dll", "d3d12_proxy.dll", "xinput1_4_hook.dll",
+        "winmm_hook.dll", "version_hook.dll", "dinput8_hook.dll",
+        "dxgi_hook.dll", "d3dcompiler_hook.dll", "opengl32_hook.dll",
+        "wsock32_hook.dll", "ws2_32_hook.dll",
+    ];
+
+    private static readonly string[] TempCheatArtifactPatterns =
+    [
+        "valorant", "valo", "val_", "vanguard_bypass", "vgk_bypass",
+        "riot_bypass", "riot_hwid", "val_aimbot", "val_esp",
+        "val_wallhack", "val_trigger", "val_skin", "val_spoofer",
+        "vncheat", "valo_cheat", "valo_aim", "valo_esp",
+        "riot_bypass", "riot_spoofer", "vgc_kill", "vgk_kill",
+    ];
+
+    private static string Rot13Decode(string s)
     {
-        "val_cheat", "valorant_cheat", "valorant_hack", "valorant_aimbot",
-        "valorant_esp", "valorant_wallhack", "valorant_bypass",
-        "vanguard_bypass", "vanguard_killer", "vanguard_spoofer",
-        "val_loader", "valorant_loader", "valo_cheat", "valo_hack",
-        "valo_esp", "radiant_cheat", "radiant_hack", "recoil_valorant",
-        "val_triggerbot", "val_aimassist", "valorant_unlocker",
-        "crosshair_change", "vgc_killer", "vgk_bypass", "vanguard_patch"
-    };
+        var sb = new StringBuilder(s.Length);
+        foreach (char c in s)
+        {
+            if (c >= 'A' && c <= 'Z') sb.Append((char)('A' + (c - 'A' + 13) % 26));
+            else if (c >= 'a' && c <= 'z') sb.Append((char)('a' + (c - 'a' + 13) % 26));
+            else sb.Append(c);
+        }
+        return sb.ToString();
+    }
 
     public async Task RunAsync(ScanContext ctx, CancellationToken ct)
     {
-        ctx.Report(0.02, "Valorant-Cheat", "Starte Scan auf Valorant-Cheat-Artefakte");
+        ctx.Report(0.0, Name, "Starting Valorant cheat deep scan...");
 
-        await ScanKnownCheatFilesAsync(ctx, ct).ConfigureAwait(false);
-        ctx.Report(0.25, "Valorant-Cheat", "Bekannte Cheat-Dateien geprueft");
+        await Task.WhenAll(
+            CheckKnownCheatFilesAsync(ctx, ct),
+            CheckCheatProcessesAsync(ctx, ct),
+            CheckVanguardServiceTamperingAsync(ctx, ct),
+            CheckVgkBypassDriversAsync(ctx, ct),
+            CheckIFEOHijackAsync(ctx, ct),
+            CheckRegistryRunKeysAsync(ctx, ct),
+            CheckHostsFileRiotBlockingAsync(ctx, ct),
+            CheckValorantLogsAsync(ctx, ct),
+            CheckSuspiciousDllsInGameDirAsync(ctx, ct),
+            CheckTempFolderArtifactsAsync(ctx, ct),
+            CheckUserAssistAsync(ctx, ct),
+            CheckMuiCacheAsync(ctx, ct),
+            CheckDownloadsFolderAsync(ctx, ct),
+            CheckValorantAppDataAsync(ctx, ct),
+            CheckCheatConfigFoldersAsync(ctx, ct)
+        );
 
-        ct.ThrowIfCancellationRequested();
-        await ScanVanguardBypassArtifactsAsync(ctx, ct).ConfigureAwait(false);
-        ctx.Report(0.45, "Valorant-Cheat", "Vanguard-Bypass-Artefakte geprueft");
-
-        ct.ThrowIfCancellationRequested();
-        await ScanValorantConfigArtifactsAsync(ctx, ct).ConfigureAwait(false);
-        ctx.Report(0.60, "Valorant-Cheat", "Valorant-Konfigurationsartefakte geprueft");
-
-        ct.ThrowIfCancellationRequested();
-        await ScanRecoilAimScriptArtifactsAsync(ctx, ct).ConfigureAwait(false);
-        ctx.Report(0.75, "Valorant-Cheat", "Recoil/Aim-Skripte geprueft");
-
-        ct.ThrowIfCancellationRequested();
-        ScanRunningProcesses(ctx, ct);
-        ctx.Report(0.90, "Valorant-Cheat", "Laufende Prozesse geprueft");
-
-        ct.ThrowIfCancellationRequested();
-        ScanPrefetchEntries(ctx, ct);
-        ctx.Report(1.0, "Valorant-Cheat", "Scan abgeschlossen");
+        ctx.Report(1.0, Name, "Valorant cheat deep scan complete.");
     }
 
-    private async Task ScanKnownCheatFilesAsync(ScanContext ctx, CancellationToken ct)
-    {
-        var local = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        var roaming = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-        var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-        var temp = Path.GetTempPath();
-
-        var scanDirs = new[]
+    private Task CheckKnownCheatFilesAsync(ScanContext ctx, CancellationToken ct) =>
+        Task.Run(() =>
         {
-            Path.Combine(userProfile, "Desktop"),
-            Path.Combine(userProfile, "Downloads"),
-            temp,
-            Path.Combine(local, "Temp"),
-            roaming,
-            local,
-            Path.Combine(userProfile, "Documents")
-        };
-
-        foreach (var dir in scanDirs)
-        {
-            ct.ThrowIfCancellationRequested();
-            if (!Directory.Exists(dir)) continue;
-
-            string[] files;
-            try
+            var scanPaths = BuildValorantScanPaths();
+            foreach (var dir in scanPaths)
             {
-                files = Directory.GetFiles(dir, "*.*", SearchOption.TopDirectoryOnly);
-            }
-            catch (UnauthorizedAccessException)
-            {
-                continue;
-            }
-
-            foreach (var file in files)
-            {
-                ct.ThrowIfCancellationRequested();
-                ctx.IncrementFiles();
-
-                var fileName = Path.GetFileName(file);
-
-                foreach (var cheatExe in KnownCheatExeNames)
-                {
-                    if (!fileName.Equals(cheatExe, StringComparison.OrdinalIgnoreCase)) continue;
-
-                    long fileSize = 0;
-                    try { fileSize = new FileInfo(file).Length; } catch { }
-
-                    ctx.AddFinding(new Finding
-                    {
-                        Module = Name,
-                        Title = $"Bekannte Valorant-Cheat-EXE gefunden: {fileName}",
-                        Risk = RiskLevel.Critical,
-                        Location = file,
-                        FileName = fileName,
-                        Reason = $"Die Datei '{fileName}' entspricht dem Namen einer bekannten " +
-                                 "Valorant-Cheat-Anwendung. Diese Datei sollte nicht auf dem System " +
-                                 "eines ehrlichen Spielers vorhanden sein.",
-                        Detail = $"Verzeichnis: {dir} | Dateigröße: {fileSize} Bytes"
-                    });
-                    break;
-                }
-
-                foreach (var cheatDll in KnownCheatDllNames)
-                {
-                    if (!fileName.Equals(cheatDll, StringComparison.OrdinalIgnoreCase)) continue;
-
-                    long fileSize = 0;
-                    try { fileSize = new FileInfo(file).Length; } catch { }
-
-                    ctx.AddFinding(new Finding
-                    {
-                        Module = Name,
-                        Title = $"Bekannte Valorant-Cheat-DLL gefunden: {fileName}",
-                        Risk = RiskLevel.High,
-                        Location = file,
-                        FileName = fileName,
-                        Reason = $"Die Datei '{fileName}' entspricht dem Namen einer bekannten " +
-                                 "Valorant-Cheat-Bibliothek. DLLs mit diesen Namen werden " +
-                                 "typischerweise in den Valorant-Prozess injiziert.",
-                        Detail = $"Verzeichnis: {dir} | Dateigröße: {fileSize} Bytes"
-                    });
-                    break;
-                }
-            }
-
-            await Task.Yield();
-        }
-
-        await ScanSubdirsForCheatFilesAsync(ctx, ct, scanDirs).ConfigureAwait(false);
-    }
-
-    private async Task ScanSubdirsForCheatFilesAsync(ScanContext ctx, CancellationToken ct, string[] topDirs)
-    {
-        foreach (var topDir in topDirs)
-        {
-            ct.ThrowIfCancellationRequested();
-            if (!Directory.Exists(topDir)) continue;
-
-            string[] subdirs;
-            try
-            {
-                subdirs = Directory.GetDirectories(topDir, "*", SearchOption.TopDirectoryOnly);
-            }
-            catch (UnauthorizedAccessException)
-            {
-                continue;
-            }
-
-            foreach (var subdir in subdirs)
-            {
+                if (!Directory.Exists(dir)) continue;
                 ct.ThrowIfCancellationRequested();
 
                 string[] files;
                 try
                 {
-                    files = Directory.GetFiles(subdir, "*.*", SearchOption.TopDirectoryOnly);
+                    files = Directory.GetFiles(dir, "*", SearchOption.AllDirectories);
                 }
-                catch (UnauthorizedAccessException)
-                {
-                    continue;
-                }
+                catch (UnauthorizedAccessException) { continue; }
 
                 foreach (var file in files)
                 {
                     ct.ThrowIfCancellationRequested();
                     ctx.IncrementFiles();
+                    var fn = Path.GetFileName(file);
 
-                    var fileName = Path.GetFileName(file);
+                    var matchedCheat = KnownCheatFileNames.FirstOrDefault(c =>
+                        fn.Equals(c, StringComparison.OrdinalIgnoreCase));
 
-                    foreach (var cheatExe in KnownCheatExeNames)
+                    if (matchedCheat is not null)
                     {
-                        if (!fileName.Equals(cheatExe, StringComparison.OrdinalIgnoreCase)) continue;
-
-                        long fileSize = 0;
-                        try { fileSize = new FileInfo(file).Length; } catch { }
-
                         ctx.AddFinding(new Finding
                         {
                             Module = Name,
-                            Title = $"Bekannte Valorant-Cheat-EXE in Unterverzeichnis: {fileName}",
+                            Title = $"Valorant Cheat File Found: {fn}",
                             Risk = RiskLevel.Critical,
                             Location = file,
-                            FileName = fileName,
-                            Reason = $"Die Datei '{fileName}' in '{subdir}' entspricht dem Namen einer bekannten " +
-                                     "Valorant-Cheat-Anwendung. Cheats werden oft in Unterordner versteckt.",
-                            Detail = $"Dateigröße: {fileSize} Bytes"
+                            FileName = fn,
+                            Reason = $"Known Valorant cheat tool file '{fn}' was found at '{file}'. " +
+                                     $"This file matches the known cheat artifact '{matchedCheat}' " +
+                                     "and confirms cheating software was present on this system.",
+                            Detail = $"File: {file} | Matched: {matchedCheat}"
                         });
-                        break;
+                        continue;
                     }
 
-                    foreach (var cheatDll in KnownCheatDllNames)
+                    var fnLower = fn.ToLowerInvariant();
+                    bool hasCheatKeyword =
+                        fnLower.Contains("val_aimbot") || fnLower.Contains("valo_aim") ||
+                        fnLower.Contains("valorant_aim") || fnLower.Contains("val_esp") ||
+                        fnLower.Contains("valo_esp") || fnLower.Contains("valorant_esp") ||
+                        fnLower.Contains("vanguard_bypass") || fnLower.Contains("vgk_bypass") ||
+                        fnLower.Contains("vgc_kill") || fnLower.Contains("val_trigger") ||
+                        fnLower.Contains("val_wallhack") || fnLower.Contains("valo_wallhack");
+
+                    var ext = Path.GetExtension(fn).ToLowerInvariant();
+                    if (hasCheatKeyword && ext is ".exe" or ".dll" or ".sys")
                     {
-                        if (!fileName.Equals(cheatDll, StringComparison.OrdinalIgnoreCase)) continue;
-
-                        long fileSize = 0;
-                        try { fileSize = new FileInfo(file).Length; } catch { }
-
                         ctx.AddFinding(new Finding
                         {
                             Module = Name,
-                            Title = $"Bekannte Valorant-Cheat-DLL in Unterverzeichnis: {fileName}",
+                            Title = $"Valorant Suspicious File (Heuristic): {fn}",
                             Risk = RiskLevel.High,
                             Location = file,
-                            FileName = fileName,
-                            Reason = $"Die Datei '{fileName}' in '{subdir}' entspricht dem Namen einer bekannten " +
-                                     "Valorant-Cheat-Bibliothek. Injizierbare DLLs werden oft in Unterordner abgelegt.",
-                            Detail = $"Dateigröße: {fileSize} Bytes"
+                            FileName = fn,
+                            Reason = $"File '{fn}' contains Valorant cheat-related keywords in its name " +
+                                     "and was found in a Valorant-related scan directory. " +
+                                     "This is a strong heuristic indicator of cheat software targeting Valorant.",
+                            Detail = $"Path: {file}"
                         });
-                        break;
                     }
                 }
-
-                await Task.Yield();
             }
-        }
-    }
+        }, ct);
 
-    private async Task ScanVanguardBypassArtifactsAsync(ScanContext ctx, CancellationToken ct)
-    {
-        CheckVanguardServiceRegistryKeys(ctx);
-        ct.ThrowIfCancellationRequested();
-
-        CheckVanguardInstallIntegrity(ctx);
-        ct.ThrowIfCancellationRequested();
-
-        await ScanPowerShellHistoryForVanguardCommandsAsync(ctx, ct).ConfigureAwait(false);
-        ct.ThrowIfCancellationRequested();
-
-        await ScanForVanguardBypassToolsAsync(ctx, ct).ConfigureAwait(false);
-    }
-
-    private void CheckVanguardServiceRegistryKeys(ScanContext ctx)
-    {
-        CheckVgcServiceKey(ctx);
-        CheckVgkServiceKey(ctx);
-    }
-
-    private void CheckVgcServiceKey(ScanContext ctx)
-    {
-        const string vgcKeyPath = @"SYSTEM\CurrentControlSet\Services\vgc";
-        try
+    private Task CheckCheatProcessesAsync(ScanContext ctx, CancellationToken ct) =>
+        Task.Run(() =>
         {
-            using var key = Registry.LocalMachine.OpenSubKey(vgcKeyPath, writable: false);
-            ctx.IncrementRegistryKeys();
-
-            if (key is null) return;
-
-            var startValue = key.GetValue("Start");
-            ctx.IncrementRegistryKeys();
-
-            if (startValue is int startInt && startInt == 4)
+            var processes = ctx.GetProcessSnapshot();
+            foreach (var proc in processes)
             {
+                ct.ThrowIfCancellationRequested();
+                ctx.IncrementProcesses();
+
+                var pname = proc.ProcessName;
+                var matched = KnownCheatProcessNames.FirstOrDefault(c =>
+                    pname.Equals(c, StringComparison.OrdinalIgnoreCase) ||
+                    pname.Equals(c.Replace(".exe", ""), StringComparison.OrdinalIgnoreCase));
+
+                if (matched is null) continue;
+
+                string procPath = string.Empty;
+                try { procPath = proc.MainModule?.FileName ?? string.Empty; } catch { }
+
                 ctx.AddFinding(new Finding
                 {
                     Module = Name,
-                    Title = "Vanguard-Dienst (vgc) deaktiviert",
-                    Risk = RiskLevel.High,
-                    Location = @"HKLM\" + vgcKeyPath,
-                    Reason = "Der Vanguard-Kundendienst (vgc) hat den Startwert 4 (deaktiviert) in der Registry. " +
-                             "Das Deaktivieren von vgc ist eine gängige Methode, um Vanguard zu umgehen und " +
-                             "Cheats in Valorant auszuführen.",
-                    Detail = $"Registry-Wert: HKLM\\{vgcKeyPath}\\Start = {startInt} (Disabled)"
+                    Title = $"Valorant Cheat Process Running: {pname}",
+                    Risk = RiskLevel.Critical,
+                    Location = procPath.Length > 0 ? procPath : $"PID {proc.Id}",
+                    FileName = pname,
+                    Reason = $"Known Valorant cheat process '{pname}' is currently running (PID {proc.Id}). " +
+                             $"Process matches known cheat pattern '{matched}'. " +
+                             "This is an active cheat tool targeting Valorant, currently loaded in memory.",
+                    Detail = $"PID: {proc.Id} | Name: {pname} | Path: {procPath}"
                 });
             }
+        }, ct);
 
-            var imagePath = key.GetValue("ImagePath")?.ToString();
-            ctx.IncrementRegistryKeys();
-
-            if (!string.IsNullOrEmpty(imagePath) &&
-                !imagePath.Contains("vgc", StringComparison.OrdinalIgnoreCase) &&
-                !imagePath.Contains("Riot", StringComparison.OrdinalIgnoreCase) &&
-                !imagePath.Contains("Vanguard", StringComparison.OrdinalIgnoreCase))
-            {
-                ctx.AddFinding(new Finding
-                {
-                    Module = Name,
-                    Title = "Vanguard-Dienst (vgc) ImagePath möglicherweise manipuliert",
-                    Risk = RiskLevel.High,
-                    Location = @"HKLM\" + vgcKeyPath,
-                    Reason = "Der ImagePath des Vanguard-Dienstes (vgc) verweist nicht auf den erwarteten " +
-                             "Vanguard/Riot-Pfad. Dies kann auf eine Manipulation des Diensteintrags hinweisen.",
-                    Detail = $"ImagePath: {imagePath}"
-                });
-            }
-        }
-        catch (UnauthorizedAccessException) { }
-        catch (Exception) { }
-    }
-
-    private void CheckVgkServiceKey(ScanContext ctx)
-    {
-        const string vgkKeyPath = @"SYSTEM\CurrentControlSet\Services\vgk";
-        try
+    private Task CheckVanguardServiceTamperingAsync(ScanContext ctx, CancellationToken ct) =>
+        Task.Run(() =>
         {
-            using var key = Registry.LocalMachine.OpenSubKey(vgkKeyPath, writable: false);
-            ctx.IncrementRegistryKeys();
-
-            if (key is null) return;
-
-            var startValue = key.GetValue("Start");
-            ctx.IncrementRegistryKeys();
-
-            if (startValue is int startInt && startInt == 4)
+            var vanguardServices = new[]
             {
-                ctx.AddFinding(new Finding
+                ("vgc", "Vanguard user-mode service (vgc.exe)"),
+                ("vgk", "Vanguard kernel driver (vgk.sys)"),
+            };
+
+            foreach (var (svcName, svcDesc) in vanguardServices)
+            {
+                ct.ThrowIfCancellationRequested();
+                try
                 {
-                    Module = Name,
-                    Title = "Vanguard-Kerneltreiber (vgk) deaktiviert",
-                    Risk = RiskLevel.High,
-                    Location = @"HKLM\" + vgkKeyPath,
-                    Reason = "Der Vanguard-Kerneltreiber (vgk.sys) hat den Startwert 4 (deaktiviert) in der Registry. " +
-                             "Das Deaktivieren des Kerntreibers ist ein starkes Indiz für Vanguard-Bypass-Aktivitäten.",
-                    Detail = $"Registry-Wert: HKLM\\{vgkKeyPath}\\Start = {startInt} (Disabled)"
-                });
+                    using var svcKey = Registry.LocalMachine.OpenSubKey(
+                        $@"SYSTEM\CurrentControlSet\Services\{svcName}", writable: false);
+
+                    if (svcKey is null)
+                    {
+                        ctx.AddFinding(new Finding
+                        {
+                            Module = Name,
+                            Title = $"Vanguard Service Missing: {svcName}",
+                            Risk = RiskLevel.High,
+                            Location = $@"HKLM\SYSTEM\CurrentControlSet\Services\{svcName}",
+                            FileName = svcName,
+                            Reason = $"Vanguard service '{svcName}' ({svcDesc}) registry entry is missing. " +
+                                     "This service is installed with Valorant and its absence while Valorant " +
+                                     "is installed suggests it was forcibly removed by a bypass tool. " +
+                                     "Vanguard bypass tools commonly unregister or delete Vanguard services.",
+                            Detail = $"Expected registry key not found: HKLM\\SYSTEM\\CurrentControlSet\\Services\\{svcName}"
+                        });
+                        continue;
+                    }
+
+                    ctx.IncrementRegistryKeys();
+                    var startType = svcKey.GetValue("Start") as int? ?? -1;
+                    var imagePath = (svcKey.GetValue("ImagePath") as string ?? "").Trim();
+
+                    if (startType == 4)
+                    {
+                        ctx.AddFinding(new Finding
+                        {
+                            Module = Name,
+                            Title = $"Vanguard Service Disabled: {svcName}",
+                            Risk = RiskLevel.Critical,
+                            Location = $@"HKLM\SYSTEM\CurrentControlSet\Services\{svcName}",
+                            FileName = svcName,
+                            Reason = $"Vanguard service '{svcName}' ({svcDesc}) has been set to disabled " +
+                                     "(Start=4) in the registry. This is the primary method used by Vanguard " +
+                                     "bypass tools: they disable the anti-cheat service before launching Valorant " +
+                                     "so that no kernel-level protection is active during gameplay.",
+                            Detail = $"Service: {svcName} | Start type: {startType} (4=Disabled) | ImagePath: {imagePath}"
+                        });
+                    }
+
+                    if (!string.IsNullOrEmpty(imagePath) &&
+                        !imagePath.Contains("Riot Vanguard", StringComparison.OrdinalIgnoreCase) &&
+                        !imagePath.Contains("vgk.sys", StringComparison.OrdinalIgnoreCase) &&
+                        !imagePath.Contains("vgc.exe", StringComparison.OrdinalIgnoreCase))
+                    {
+                        ctx.AddFinding(new Finding
+                        {
+                            Module = Name,
+                            Title = $"Vanguard Service ImagePath Tampered: {svcName}",
+                            Risk = RiskLevel.Critical,
+                            Location = $@"HKLM\SYSTEM\CurrentControlSet\Services\{svcName}",
+                            FileName = svcName,
+                            Reason = $"Vanguard service '{svcName}' has an unexpected ImagePath: '{imagePath}'. " +
+                                     "The legitimate Vanguard service should reference the official Riot Vanguard " +
+                                     "installation path. A modified ImagePath indicates the service was " +
+                                     "redirected to a fake or empty binary to neutralize Vanguard.",
+                            Detail = $"Service: {svcName} | ImagePath: {imagePath}"
+                        });
+                    }
+                }
+                catch { }
             }
 
-            var imagePath = key.GetValue("ImagePath")?.ToString();
-            ctx.IncrementRegistryKeys();
-
-            if (!string.IsNullOrEmpty(imagePath))
+            var vgkExpectedPath = @"C:\Program Files\Riot Vanguard\vgk.sys";
+            if (File.Exists(vgkExpectedPath))
             {
-                bool pathSuspicious =
-                    !imagePath.Contains("vgk", StringComparison.OrdinalIgnoreCase) &&
-                    !imagePath.Contains("Riot", StringComparison.OrdinalIgnoreCase) &&
-                    !imagePath.Contains("Vanguard", StringComparison.OrdinalIgnoreCase) &&
-                    !imagePath.Contains("Program Files", StringComparison.OrdinalIgnoreCase);
-
-                if (pathSuspicious)
+                ctx.IncrementFiles();
+                try
+                {
+                    var fi = new FileInfo(vgkExpectedPath);
+                    if (fi.Length < 1024)
+                    {
+                        ctx.AddFinding(new Finding
+                        {
+                            Module = Name,
+                            Title = "Vanguard vgk.sys Suspiciously Small (Possible Hollowing)",
+                            Risk = RiskLevel.Critical,
+                            Location = vgkExpectedPath,
+                            FileName = "vgk.sys",
+                            Reason = $"Vanguard kernel driver 'vgk.sys' exists at its expected location but " +
+                                     $"is only {fi.Length} bytes in size, which is far too small for a " +
+                                     "legitimate driver. Cheat bypass tools sometimes replace vgk.sys with a " +
+                                     "hollow stub (empty or minimal binary) that satisfies file existence " +
+                                     "checks while providing no actual anti-cheat protection.",
+                            Detail = $"Path: {vgkExpectedPath} | Size: {fi.Length} bytes"
+                        });
+                    }
+                }
+                catch { }
+            }
+            else
+            {
+                var riotGamesPath = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "Riot Games");
+                if (Directory.Exists(riotGamesPath))
                 {
                     ctx.AddFinding(new Finding
                     {
                         Module = Name,
-                        Title = "Vanguard-Treiber (vgk) ImagePath möglicherweise ersetzt",
+                        Title = "Vanguard vgk.sys Not Found (Riot Games Installed)",
                         Risk = RiskLevel.High,
-                        Location = @"HKLM\" + vgkKeyPath,
-                        Reason = "Der ImagePath des Vanguard-Kerneltreibers (vgk) zeigt nicht auf den erwarteten " +
-                                 "Installationspfad von Riot Vanguard. Ein ersetzter Kerneltreibereintrag ist " +
-                                 "ein starkes Indiz für einen Vanguard-Bypass.",
-                        Detail = $"ImagePath: {imagePath}"
+                        Location = vgkExpectedPath,
+                        FileName = "vgk.sys",
+                        Reason = "Riot Games is installed but vgk.sys (Vanguard kernel driver) is absent from " +
+                                 "its expected path 'C:\\Program Files\\Riot Vanguard\\vgk.sys'. " +
+                                 "Bypass tools may delete or relocate vgk.sys to prevent Vanguard from " +
+                                 "loading its kernel component, fully disabling kernel-level protection.",
+                        Detail = $"Expected path: {vgkExpectedPath} | Riot Games dir: {riotGamesPath}"
                     });
                 }
             }
-        }
-        catch (UnauthorizedAccessException) { }
-        catch (Exception) { }
-    }
+        }, ct);
 
-    private void CheckVanguardInstallIntegrity(ScanContext ctx)
-    {
-        const string vanguardDir = @"C:\Program Files\Riot Vanguard";
-        if (!Directory.Exists(vanguardDir)) return;
-
-        CheckVgkSysFile(ctx, vanguardDir);
-        CheckVgcExeFile(ctx, vanguardDir);
-    }
-
-    private void CheckVgkSysFile(ScanContext ctx, string vanguardDir)
-    {
-        var vgkPath = Path.Combine(vanguardDir, "vgk.sys");
-        if (!File.Exists(vgkPath)) return;
-
-        ctx.IncrementFiles();
-
-        long fileSize = 0;
-        try { fileSize = new FileInfo(vgkPath).Length; } catch { return; }
-
-        const long minNormalSize = 100 * 1024;
-        const long maxNormalSize = 2 * 1024 * 1024;
-
-        if (fileSize < 10 * 1024)
+    private Task CheckVgkBypassDriversAsync(ScanContext ctx, CancellationToken ct) =>
+        Task.Run(() =>
         {
-            ctx.AddFinding(new Finding
+            var driversDir = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.System), "drivers");
+
+            if (Directory.Exists(driversDir))
             {
-                Module = Name,
-                Title = "vgk.sys ungewöhnlich klein — möglicherweise ersetzt",
-                Risk = RiskLevel.High,
-                Location = vgkPath,
-                FileName = "vgk.sys",
-                Reason = $"Die Vanguard-Kerneltreiberdatei vgk.sys ist nur {fileSize} Bytes groß. " +
-                         $"Legitime vgk.sys-Dateien sind typischerweise {minNormalSize / 1024}–{maxNormalSize / (1024 * 1024)} MB groß. " +
-                         "Eine extrem kleine Datei deutet darauf hin, dass der Treiber durch eine Stub-Datei " +
-                         "ersetzt wurde, um Vanguard zu deaktivieren.",
-                Detail = $"Dateigröße: {fileSize} Bytes | Erwarteter Bereich: {minNormalSize / 1024} KB – {maxNormalSize / (1024 * 1024)} MB"
-            });
-        }
-        else if (fileSize > maxNormalSize)
-        {
-            ctx.AddFinding(new Finding
-            {
-                Module = Name,
-                Title = "vgk.sys ungewöhnlich groß — möglicherweise manipuliert",
-                Risk = RiskLevel.High,
-                Location = vgkPath,
-                FileName = "vgk.sys",
-                Reason = $"Die Vanguard-Kerneltreiberdatei vgk.sys ist {fileSize / (1024 * 1024.0):F1} MB groß. " +
-                         $"Legitime vgk.sys-Dateien sind typischerweise unter {maxNormalSize / (1024 * 1024)} MB. " +
-                         "Eine übermäßig große Datei könnte auf eine mit bösartigem Code gepatschte Datei hinweisen.",
-                Detail = $"Dateigröße: {fileSize} Bytes | Erwartete Maximalgröße: {maxNormalSize / (1024 * 1024)} MB"
-            });
-        }
-    }
+                string[] driverFiles;
+                try { driverFiles = Directory.GetFiles(driversDir, "*.sys"); }
+                catch (UnauthorizedAccessException) { driverFiles = Array.Empty<string>(); }
 
-    private void CheckVgcExeFile(ScanContext ctx, string vanguardDir)
-    {
-        var vgcPath = Path.Combine(vanguardDir, "vgc.exe");
-        ctx.IncrementFiles();
-
-        if (!File.Exists(vgcPath))
-        {
-            ctx.AddFinding(new Finding
-            {
-                Module = Name,
-                Title = "vgc.exe in Riot-Vanguard-Verzeichnis fehlt",
-                Risk = RiskLevel.High,
-                Location = vanguardDir,
-                FileName = "vgc.exe",
-                Reason = "Das Riot-Vanguard-Verzeichnis existiert, aber vgc.exe fehlt. " +
-                         "Dies kann bedeuten, dass der Vanguard-Dienst-Starter entfernt wurde, " +
-                         "um die Anti-Cheat-Funktionalität zu deaktivieren.",
-                Detail = $"Erwarteter Pfad: {vgcPath}"
-            });
-            return;
-        }
-
-        long fileSize = 0;
-        try { fileSize = new FileInfo(vgcPath).Length; } catch { }
-
-        if (fileSize < 50 * 1024)
-        {
-            ctx.AddFinding(new Finding
-            {
-                Module = Name,
-                Title = "vgc.exe möglicherweise durch Stub-Datei ersetzt",
-                Risk = RiskLevel.High,
-                Location = vgcPath,
-                FileName = "vgc.exe",
-                Reason = $"Die Vanguard-Dienst-Datei vgc.exe ist nur {fileSize} Bytes groß — " +
-                         "deutlich kleiner als erwartet. Dies kann darauf hinweisen, dass die " +
-                         "originale Datei durch eine leere oder deaktivierte Stub-Datei ersetzt wurde.",
-                Detail = $"Dateigröße: {fileSize} Bytes"
-            });
-        }
-    }
-
-    private async Task ScanPowerShellHistoryForVanguardCommandsAsync(ScanContext ctx, CancellationToken ct)
-    {
-        var roaming = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-        var historyPath = Path.Combine(roaming,
-            "Microsoft", "Windows", "PowerShell", "PSReadLine", "ConsoleHost_history.txt");
-
-        if (!File.Exists(historyPath)) return;
-
-        string content;
-        try
-        {
-            using var fs = new FileStream(historyPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-            using var sr = new StreamReader(fs);
-            content = await sr.ReadToEndAsync().ConfigureAwait(false);
-        }
-        catch (IOException) { return; }
-        catch (UnauthorizedAccessException) { return; }
-
-        ctx.IncrementFiles();
-
-        var lines = content.Split('\n', StringSplitOptions.RemoveEmptyEntries);
-        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-        foreach (var line in lines)
-        {
-            ct.ThrowIfCancellationRequested();
-            var trimmed = line.Trim();
-            if (string.IsNullOrEmpty(trimmed)) continue;
-
-            foreach (var pattern in VanguardPsHistoryPatterns)
-            {
-                if (!trimmed.Contains(pattern, StringComparison.OrdinalIgnoreCase)) continue;
-                if (!seen.Add(pattern)) continue;
-
-                ctx.AddFinding(new Finding
+                foreach (var file in driverFiles)
                 {
-                    Module = Name,
-                    Title = $"PowerShell-Verlauf: Vanguard-Deaktivierungsbefehl",
-                    Risk = RiskLevel.Medium,
-                    Location = historyPath,
-                    Reason = $"Der PowerShell-Befehlsverlauf enthält den Befehl '{pattern}', " +
-                             "der zum Stoppen oder Deaktivieren des Vanguard-Anti-Cheat-Dienstes " +
-                             "verwendet wird. Dies ist ein gängiger erster Schritt bei Valorant-Cheat-Setups.",
-                    Detail = $"Gefundene Zeile: {TruncateString(trimmed, 200)}"
-                });
-                break;
+                    ct.ThrowIfCancellationRequested();
+                    ctx.IncrementFiles();
+                    var fn = Path.GetFileName(file);
+                    var matched = VgkBypassDriverNames.FirstOrDefault(d =>
+                        fn.Equals(d, StringComparison.OrdinalIgnoreCase));
+
+                    if (matched is not null)
+                    {
+                        ctx.AddFinding(new Finding
+                        {
+                            Module = Name,
+                            Title = $"Vanguard Bypass Driver Found: {fn}",
+                            Risk = RiskLevel.Critical,
+                            Location = file,
+                            FileName = fn,
+                            Reason = $"Known Vanguard bypass kernel driver '{fn}' found in the system " +
+                                     "drivers directory. This driver is specifically designed to intercept " +
+                                     "and neutralize Riot Vanguard's kernel-mode anti-cheat scanning, " +
+                                     "enabling cheat software to operate undetected. Pattern: " + matched,
+                            Detail = $"Driver path: {file}"
+                        });
+                    }
+                }
             }
-        }
-    }
 
-    private async Task ScanForVanguardBypassToolsAsync(ScanContext ctx, CancellationToken ct)
-    {
-        var local = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        var roaming = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-        var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-        var temp = Path.GetTempPath();
-
-        var scanDirs = new[]
-        {
-            Path.Combine(userProfile, "Desktop"),
-            Path.Combine(userProfile, "Downloads"),
-            temp,
-            Path.Combine(local, "Temp"),
-            roaming,
-            local,
-            Path.Combine(userProfile, "Documents")
-        };
-
-        foreach (var dir in scanDirs)
-        {
-            ct.ThrowIfCancellationRequested();
-            if (!Directory.Exists(dir)) continue;
-
-            await ScanDirForVanguardBypassToolsAsync(ctx, ct, dir, recursive: false).ConfigureAwait(false);
-
-            string[] subdirs;
             try
             {
-                subdirs = Directory.GetDirectories(dir, "*", SearchOption.TopDirectoryOnly);
-            }
-            catch (UnauthorizedAccessException)
-            {
-                continue;
-            }
+                using var servicesKey = Registry.LocalMachine.OpenSubKey(
+                    @"SYSTEM\CurrentControlSet\Services", writable: false);
+                if (servicesKey is null) return;
 
-            foreach (var subdir in subdirs)
+                foreach (var svcName in servicesKey.GetSubKeyNames())
+                {
+                    ct.ThrowIfCancellationRequested();
+                    ctx.IncrementRegistryKeys();
+                    try
+                    {
+                        using var svc = servicesKey.OpenSubKey(svcName, writable: false);
+                        if (svc is null) continue;
+
+                        var imgPath = (svc.GetValue("ImagePath") as string ?? "").ToLowerInvariant();
+                        var type = svc.GetValue("Type") as int? ?? 0;
+                        if (type != 1) continue;
+
+                        var matched = VgkBypassDriverNames.FirstOrDefault(d =>
+                            imgPath.Contains(d, StringComparison.OrdinalIgnoreCase) ||
+                            svcName.Contains(d.Replace(".sys", ""), StringComparison.OrdinalIgnoreCase));
+
+                        if (matched is not null)
+                        {
+                            ctx.AddFinding(new Finding
+                            {
+                                Module = Name,
+                                Title = $"Vanguard Bypass Driver Service: {svcName}",
+                                Risk = RiskLevel.Critical,
+                                Location = $@"HKLM\SYSTEM\CurrentControlSet\Services\{svcName}",
+                                FileName = svcName,
+                                Reason = $"Kernel driver service '{svcName}' matches a known Vanguard bypass " +
+                                         $"driver pattern '{matched}'. ImagePath: '{imgPath}'. " +
+                                         "This driver-level bypass operates before Vanguard starts to prevent " +
+                                         "it from loading or to intercept its kernel callbacks.",
+                                Detail = $"Service: {svcName} | ImagePath: {imgPath} | Matched: {matched}"
+                            });
+                        }
+
+                        var svcNameLower = svcName.ToLowerInvariant();
+                        if ((svcNameLower.Contains("vgk") || svcNameLower.Contains("vanguard") ||
+                             svcNameLower.Contains("vgc")) &&
+                            (svcNameLower.Contains("bypass") || svcNameLower.Contains("kill") ||
+                             svcNameLower.Contains("disable") || svcNameLower.Contains("patch") ||
+                             svcNameLower.Contains("hook") || svcNameLower.Contains("spoof")))
+                        {
+                            ctx.AddFinding(new Finding
+                            {
+                                Module = Name,
+                                Title = $"Suspicious Vanguard-Targeting Service: {svcName}",
+                                Risk = RiskLevel.Critical,
+                                Location = $@"HKLM\SYSTEM\CurrentControlSet\Services\{svcName}",
+                                FileName = svcName,
+                                Reason = $"Kernel driver service '{svcName}' has a name that indicates it " +
+                                         "specifically targets Vanguard anti-cheat (vgk/vgc) with bypass, " +
+                                         "kill, disable, patch, hook, or spoof operations. " +
+                                         "This pattern is exclusive to Vanguard bypass tools.",
+                                Detail = $"Service: {svcName} | ImagePath: {imgPath}"
+                            });
+                        }
+                    }
+                    catch { }
+                }
+            }
+            catch { }
+        }, ct);
+
+    private Task CheckIFEOHijackAsync(ScanContext ctx, CancellationToken ct) =>
+        Task.Run(() =>
+        {
+            const string ifeoBase =
+                @"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options";
+
+            var targetExecutables = new[]
+            {
+                "VALORANT.exe", "VALORANT-Win64-Shipping.exe",
+                "RiotClientServices.exe", "RiotClientUx.exe",
+                "RiotClientUxRender.exe", "vgc.exe", "vgk.sys",
+                "RiotClientCrashHandler.exe",
+            };
+
+            foreach (var targetExe in targetExecutables)
             {
                 ct.ThrowIfCancellationRequested();
-                await ScanDirForVanguardBypassToolsAsync(ctx, ct, subdir, recursive: false).ConfigureAwait(false);
-            }
-        }
-    }
-
-    private async Task ScanDirForVanguardBypassToolsAsync(ScanContext ctx, CancellationToken ct, string dir, bool recursive)
-    {
-        string[] files;
-        try
-        {
-            files = Directory.GetFiles(dir, "*.exe", SearchOption.TopDirectoryOnly);
-        }
-        catch (UnauthorizedAccessException) { return; }
-
-        foreach (var file in files)
-        {
-            ct.ThrowIfCancellationRequested();
-            ctx.IncrementFiles();
-
-            var fileName = Path.GetFileName(file);
-            foreach (var toolName in VanguardBypassToolNames)
-            {
-                if (!fileName.Equals(toolName, StringComparison.OrdinalIgnoreCase)) continue;
-
-                long fileSize = 0;
-                try { fileSize = new FileInfo(file).Length; } catch { }
-
-                ctx.AddFinding(new Finding
-                {
-                    Module = Name,
-                    Title = $"Vanguard-Bypass-Tool gefunden: {fileName}",
-                    Risk = RiskLevel.High,
-                    Location = file,
-                    FileName = fileName,
-                    Reason = $"Die Datei '{fileName}' ist ein bekanntes Werkzeug zum Umgehen oder " +
-                             "Deaktivieren von Riot Vanguard. Das Vorhandensein dieser Datei ist " +
-                             "ein starkes Indiz für den Versuch, Vanguard zu deaktivieren und Cheats in Valorant einzusetzen.",
-                    Detail = $"Dateigröße: {fileSize} Bytes | Pfad: {dir}"
-                });
-                break;
-            }
-        }
-
-        await Task.Yield();
-    }
-
-    private async Task ScanValorantConfigArtifactsAsync(ScanContext ctx, CancellationToken ct)
-    {
-        var local = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        var roaming = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-
-        await ScanValorantLocalAppDataDirAsync(ctx, ct, local).ConfigureAwait(false);
-        ct.ThrowIfCancellationRequested();
-
-        await ScanValorantConfigFilesAsync(ctx, ct, local).ConfigureAwait(false);
-        ct.ThrowIfCancellationRequested();
-
-        await ScanRiotGamesLogsAsync(ctx, ct, roaming).ConfigureAwait(false);
-        ct.ThrowIfCancellationRequested();
-
-        await ScanRiotClientUxRenderLogAsync(ctx, ct, local).ConfigureAwait(false);
-    }
-
-    private async Task ScanValorantLocalAppDataDirAsync(ScanContext ctx, CancellationToken ct, string localAppData)
-    {
-        var valorantDir = Path.Combine(localAppData, "VALORANT");
-        if (!Directory.Exists(valorantDir)) return;
-
-        string[] files;
-        try
-        {
-            files = Directory.GetFiles(valorantDir, "*", SearchOption.AllDirectories);
-        }
-        catch (UnauthorizedAccessException) { return; }
-
-        var recentModified = new List<string>();
-
-        foreach (var file in files)
-        {
-            ct.ThrowIfCancellationRequested();
-            ctx.IncrementFiles();
-
-            try
-            {
-                var writeTime = File.GetLastWriteTimeUtc(file);
-                if ((DateTime.UtcNow - writeTime).TotalDays <= 7)
-                    recentModified.Add(file);
-            }
-            catch (IOException) { }
-        }
-
-        if (recentModified.Count > 0 && recentModified.Count <= 3)
-        {
-            foreach (var f in recentModified.Take(3))
-            {
-                ct.ThrowIfCancellationRequested();
-                DateTime writeTime = default;
-                try { writeTime = File.GetLastWriteTimeUtc(f); } catch { }
-
-                ctx.AddFinding(new Finding
-                {
-                    Module = Name,
-                    Title = $"Kürzlich geänderte Datei im VALORANT-AppData-Verzeichnis",
-                    Risk = RiskLevel.Low,
-                    Location = f,
-                    FileName = Path.GetFileName(f),
-                    Reason = "Eine Datei im lokalen VALORANT-AppData-Verzeichnis wurde in den letzten 7 Tagen geändert. " +
-                             "Cheats modifizieren manchmal Valorant-Konfigurationsdateien, um Vorteile zu erlangen.",
-                    Detail = writeTime != default ? $"Zuletzt geändert: {writeTime:yyyy-MM-dd HH:mm:ss} UTC" : null
-                });
-            }
-        }
-
-        await Task.Yield();
-    }
-
-    private async Task ScanValorantConfigFilesAsync(ScanContext ctx, CancellationToken ct, string localAppData)
-    {
-        var configDir = Path.Combine(localAppData, "Riot Games", "VALORANT", "Saved", "Config");
-        if (!Directory.Exists(configDir)) return;
-
-        string[] configFiles;
-        try
-        {
-            configFiles = Directory.GetFiles(configDir, "*.ini", SearchOption.AllDirectories);
-        }
-        catch (UnauthorizedAccessException) { return; }
-
-        foreach (var cfgFile in configFiles)
-        {
-            ct.ThrowIfCancellationRequested();
-            ctx.IncrementFiles();
-
-            string content;
-            try
-            {
-                using var fs = new FileStream(cfgFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-                using var sr = new StreamReader(fs);
-                content = await sr.ReadToEndAsync().ConfigureAwait(false);
-            }
-            catch (IOException) { continue; }
-            catch (UnauthorizedAccessException) { continue; }
-
-            foreach (var keyword in ConfigCheatKeywords)
-            {
-                if (!content.Contains(keyword, StringComparison.OrdinalIgnoreCase)) continue;
-
-                ctx.AddFinding(new Finding
-                {
-                    Module = Name,
-                    Title = $"Verdächtiges Cheat-Schlüsselwort in Valorant-Konfiguration: {keyword}",
-                    Risk = RiskLevel.High,
-                    Location = cfgFile,
-                    FileName = Path.GetFileName(cfgFile),
-                    Reason = $"Die Valorant-Konfigurationsdatei enthält das Schlüsselwort '{keyword}', " +
-                             "das auf eine manipulierte Konfiguration hinweist. Solche Einstellungen " +
-                             "können die Anti-Cheat-Schutzmechanismen deaktivieren oder Cheat-Funktionen aktivieren.",
-                    Detail = $"Schlüsselwort: {keyword} | Konfigurationsdatei: {Path.GetFileName(cfgFile)}"
-                });
-                break;
-            }
-        }
-    }
-
-    private async Task ScanRiotGamesLogsAsync(ScanContext ctx, CancellationToken ct, string roamingAppData)
-    {
-        var riotGamesDir = Path.Combine(roamingAppData, "Riot Games");
-        if (!Directory.Exists(riotGamesDir)) return;
-
-        string[] logFiles;
-        try
-        {
-            logFiles = Directory.GetFiles(riotGamesDir, "*.log", SearchOption.AllDirectories);
-        }
-        catch (UnauthorizedAccessException) { return; }
-
-        foreach (var logFile in logFiles)
-        {
-            ct.ThrowIfCancellationRequested();
-            ctx.IncrementFiles();
-
-            long fileSize = 0;
-            try { fileSize = new FileInfo(logFile).Length; } catch { continue; }
-
-            const long maxReadBytes = 256 * 1024;
-            string content;
-
-            try
-            {
-                using var fs = new FileStream(logFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-
-                if (fileSize > maxReadBytes)
-                    fs.Seek(-maxReadBytes, SeekOrigin.End);
-
-                using var sr = new StreamReader(fs);
-                content = await sr.ReadToEndAsync().ConfigureAwait(false);
-            }
-            catch (IOException) { continue; }
-            catch (UnauthorizedAccessException) { continue; }
-
-            foreach (var keyword in LogCheatKeywords)
-            {
-                if (!content.Contains(keyword, StringComparison.OrdinalIgnoreCase)) continue;
-
-                var context = ExtractContextAroundKeyword(content, keyword, 120);
-
-                ctx.AddFinding(new Finding
-                {
-                    Module = Name,
-                    Title = $"Verdächtiges Schlüsselwort in Riot-Games-Log: {keyword}",
-                    Risk = RiskLevel.Medium,
-                    Location = logFile,
-                    FileName = Path.GetFileName(logFile),
-                    Reason = $"Die Riot-Games-Protokolldatei enthält das Schlüsselwort '{keyword}'. " +
-                             "Cheat-Injektoren und Bypass-Tools hinterlassen oft Spuren in den " +
-                             "Anwendungsprotokollen von Riot Games.",
-                    Detail = string.IsNullOrEmpty(context) ? null : $"Kontext: {context}"
-                });
-                break;
-            }
-        }
-    }
-
-    private async Task ScanRiotClientUxRenderLogAsync(ScanContext ctx, CancellationToken ct, string localAppData)
-    {
-        var logPath = Path.Combine(localAppData, "Riot Games", "Riot Client", "UxRender.log");
-        if (!File.Exists(logPath)) return;
-
-        ctx.IncrementFiles();
-
-        long fileSize = 0;
-        try { fileSize = new FileInfo(logPath).Length; } catch { return; }
-
-        const long maxReadBytes = 256 * 1024;
-        string content;
-
-        try
-        {
-            using var fs = new FileStream(logPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-            if (fileSize > maxReadBytes)
-                fs.Seek(-maxReadBytes, SeekOrigin.End);
-
-            using var sr = new StreamReader(fs);
-            content = await sr.ReadToEndAsync().ConfigureAwait(false);
-        }
-        catch (IOException) { return; }
-        catch (UnauthorizedAccessException) { return; }
-
-        var crashPatterns = new[]
-        {
-            "exception", "crash", "fatal", "access violation", "segfault",
-            "injected", "hook detected", "integrity check failed",
-            "module verification failed", "tamper"
-        };
-
-        foreach (var pattern in crashPatterns)
-        {
-            ct.ThrowIfCancellationRequested();
-            if (!content.Contains(pattern, StringComparison.OrdinalIgnoreCase)) continue;
-
-            var context = ExtractContextAroundKeyword(content, pattern, 150);
-
-            ctx.AddFinding(new Finding
-            {
-                Module = Name,
-                Title = $"Riot-Client-UxRender-Log: Absturzmuster gefunden ({pattern})",
-                Risk = RiskLevel.Medium,
-                Location = logPath,
-                FileName = "UxRender.log",
-                Reason = $"Das Riot-Client-UxRender-Protokoll enthält das Muster '{pattern}', " +
-                         "das auf Abstürze durch Cheat-Injektion oder Anti-Cheat-Konflikte " +
-                         "hinweisen kann. Cheat-Injektoren destabilisieren oft den Client-Renderer.",
-                Detail = string.IsNullOrEmpty(context) ? null : $"Kontext: {context}"
-            });
-            break;
-        }
-
-        await Task.Yield();
-    }
-
-    private async Task ScanRecoilAimScriptArtifactsAsync(ScanContext ctx, CancellationToken ct)
-    {
-        var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-
-        var scanDirs = new[]
-        {
-            Path.Combine(userProfile, "Desktop"),
-            Path.Combine(userProfile, "Downloads"),
-            Path.Combine(userProfile, "Documents")
-        };
-
-        foreach (var dir in scanDirs)
-        {
-            ct.ThrowIfCancellationRequested();
-            if (!Directory.Exists(dir)) continue;
-
-            await ScanDirForRecoilScriptsAsync(ctx, ct, dir).ConfigureAwait(false);
-        }
-    }
-
-    private async Task ScanDirForRecoilScriptsAsync(ScanContext ctx, CancellationToken ct, string dir)
-    {
-        await ScanAhkFilesInDirAsync(ctx, ct, dir).ConfigureAwait(false);
-        ct.ThrowIfCancellationRequested();
-        await ScanPythonFilesInDirAsync(ctx, ct, dir).ConfigureAwait(false);
-        ct.ThrowIfCancellationRequested();
-        await ScanRecoilConfigFilesInDirAsync(ctx, ct, dir).ConfigureAwait(false);
-    }
-
-    private async Task ScanAhkFilesInDirAsync(ScanContext ctx, CancellationToken ct, string dir)
-    {
-        string[] ahkFiles;
-        try
-        {
-            ahkFiles = Directory.GetFiles(dir, "*.ahk", SearchOption.TopDirectoryOnly);
-        }
-        catch (UnauthorizedAccessException) { return; }
-
-        foreach (var ahkFile in ahkFiles)
-        {
-            ct.ThrowIfCancellationRequested();
-            ctx.IncrementFiles();
-
-            string content;
-            try
-            {
-                using var fs = new FileStream(ahkFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-                using var sr = new StreamReader(fs);
-                content = await sr.ReadToEndAsync().ConfigureAwait(false);
-            }
-            catch (IOException) { continue; }
-            catch (UnauthorizedAccessException) { continue; }
-
-            bool hasValorant = content.Contains("valorant", StringComparison.OrdinalIgnoreCase);
-            if (!hasValorant) continue;
-
-            foreach (var keyword in RecoilAhkKeywords)
-            {
-                if (!content.Contains(keyword, StringComparison.OrdinalIgnoreCase)) continue;
-
-                ctx.AddFinding(new Finding
-                {
-                    Module = Name,
-                    Title = $"Valorant-Recoil/Aim-AHK-Skript: {Path.GetFileName(ahkFile)}",
-                    Risk = RiskLevel.Medium,
-                    Location = ahkFile,
-                    FileName = Path.GetFileName(ahkFile),
-                    Reason = $"Das AutoHotkey-Skript '{Path.GetFileName(ahkFile)}' enthält sowohl 'valorant' " +
-                             $"als auch '{keyword}'. AHK-Skripte mit diesen Schlüsselwörtern werden " +
-                             "häufig für Recoil-Kontrolle, Spray-Transfer oder Triggerbot-Automatisierung " +
-                             "in Valorant eingesetzt.",
-                    Detail = $"Valorant + '{keyword}' gefunden in: {Path.GetFileName(ahkFile)}"
-                });
-                break;
-            }
-        }
-    }
-
-    private async Task ScanPythonFilesInDirAsync(ScanContext ctx, CancellationToken ct, string dir)
-    {
-        string[] pyFiles;
-        try
-        {
-            pyFiles = Directory.GetFiles(dir, "*.py", SearchOption.TopDirectoryOnly);
-        }
-        catch (UnauthorizedAccessException) { return; }
-
-        foreach (var pyFile in pyFiles)
-        {
-            ct.ThrowIfCancellationRequested();
-            ctx.IncrementFiles();
-
-            string content;
-            try
-            {
-                using var fs = new FileStream(pyFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-                using var sr = new StreamReader(fs);
-                content = await sr.ReadToEndAsync().ConfigureAwait(false);
-            }
-            catch (IOException) { continue; }
-            catch (UnauthorizedAccessException) { continue; }
-
-            bool hasValorant = content.Contains("valorant", StringComparison.OrdinalIgnoreCase);
-            if (!hasValorant) continue;
-
-            foreach (var keyword in RecoilPythonKeywords)
-            {
-                if (!content.Contains(keyword, StringComparison.OrdinalIgnoreCase)) continue;
-
-                ctx.AddFinding(new Finding
-                {
-                    Module = Name,
-                    Title = $"Valorant-Recoil-Python-Skript: {Path.GetFileName(pyFile)}",
-                    Risk = RiskLevel.Medium,
-                    Location = pyFile,
-                    FileName = Path.GetFileName(pyFile),
-                    Reason = $"Das Python-Skript '{Path.GetFileName(pyFile)}' enthält sowohl 'valorant' " +
-                             $"als auch '{keyword}'. Python-Skripte mit Mauseingabe-APIs und " +
-                             "Valorant-Referenzen werden typischerweise für Recoil-Makros oder " +
-                             "Triggerbot-Implementierungen verwendet.",
-                    Detail = $"Valorant + '{keyword}' gefunden in: {Path.GetFileName(pyFile)}"
-                });
-                break;
-            }
-        }
-    }
-
-    private async Task ScanRecoilConfigFilesInDirAsync(ScanContext ctx, CancellationToken ct, string dir)
-    {
-        string[] allFiles;
-        try
-        {
-            allFiles = Directory.GetFiles(dir, "*", SearchOption.TopDirectoryOnly);
-        }
-        catch (UnauthorizedAccessException) { return; }
-
-        foreach (var file in allFiles)
-        {
-            ct.ThrowIfCancellationRequested();
-            var fileName = Path.GetFileName(file);
-
-            foreach (var cfgName in RecoilConfigFileNames)
-            {
-                if (!fileName.Equals(cfgName, StringComparison.OrdinalIgnoreCase)) continue;
-
-                ctx.IncrementFiles();
-
-                long fileSize = 0;
-                try { fileSize = new FileInfo(file).Length; } catch { }
-
-                string contentPreview = string.Empty;
                 try
                 {
-                    using var fs = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-                    using var sr = new StreamReader(fs);
-                    contentPreview = TruncateString(await sr.ReadToEndAsync().ConfigureAwait(false), 300);
+                    using var ifeoKey = Registry.LocalMachine.OpenSubKey(
+                        $@"{ifeoBase}\{targetExe}", writable: false);
+
+                    if (ifeoKey is null) continue;
+                    ctx.IncrementRegistryKeys();
+
+                    var debugger = ifeoKey.GetValue("Debugger") as string;
+                    var globalFlag = ifeoKey.GetValue("GlobalFlag") as int?;
+
+                    if (!string.IsNullOrEmpty(debugger))
+                    {
+                        ctx.AddFinding(new Finding
+                        {
+                            Module = Name,
+                            Title = $"IFEO Hijack on Valorant/Vanguard Binary: {targetExe}",
+                            Risk = RiskLevel.Critical,
+                            Location = $@"HKLM\{ifeoBase}\{targetExe}",
+                            FileName = targetExe,
+                            Reason = $"Image File Execution Options (IFEO) Debugger key set for '{targetExe}'. " +
+                                     $"Debugger value: '{debugger}'. " +
+                                     "This causes Windows to launch the debugger binary instead of the legitimate " +
+                                     $"'{targetExe}' whenever it is executed. Attackers use this to intercept " +
+                                     "Valorant or Vanguard startup and redirect execution to a cheat loader " +
+                                     "or to prevent Vanguard from starting at all.",
+                            Detail = $"Debugger: {debugger} | GlobalFlag: {globalFlag}"
+                        });
+                    }
+
+                    if (globalFlag.HasValue && globalFlag.Value != 0)
+                    {
+                        ctx.AddFinding(new Finding
+                        {
+                            Module = Name,
+                            Title = $"IFEO GlobalFlag Set for Valorant Binary: {targetExe}",
+                            Risk = RiskLevel.High,
+                            Location = $@"HKLM\{ifeoBase}\{targetExe}",
+                            FileName = targetExe,
+                            Reason = $"Image File Execution Options GlobalFlag is non-zero ({globalFlag}) " +
+                                     $"for '{targetExe}'. Attackers may set GlobalFlag to enable silent " +
+                                     "process exit behavior or heap debugging flags that interfere with " +
+                                     "Vanguard's integrity checks.",
+                            Detail = $"GlobalFlag: 0x{globalFlag:X8}"
+                        });
+                    }
                 }
-                catch (IOException) { }
-                catch (UnauthorizedAccessException) { }
+                catch { }
+            }
+        }, ct);
 
-                ctx.AddFinding(new Finding
+    private Task CheckRegistryRunKeysAsync(ScanContext ctx, CancellationToken ct) =>
+        Task.Run(() =>
+        {
+            var runKeyPaths = new[]
+            {
+                @"SOFTWARE\Microsoft\Windows\CurrentVersion\Run",
+                @"SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce",
+                @"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Run",
+            };
+
+            var roots = new[] { Registry.CurrentUser, Registry.LocalMachine };
+
+            foreach (var root in roots)
+            {
+                foreach (var keyPath in runKeyPaths)
                 {
-                    Module = Name,
-                    Title = $"Valorant-Recoil-Konfigurationsdatei: {fileName}",
-                    Risk = RiskLevel.Medium,
-                    Location = file,
-                    FileName = fileName,
-                    Reason = $"Die Datei '{fileName}' ist eine bekannte Konfigurationsdatei für " +
-                             "Valorant-Recoil-Steuerungs- oder Spray-Transfer-Skripte. " +
-                             "Diese Dateien enthalten typischerweise Einstellungen für automatisierte " +
-                             "Rückstoß-Kompensation oder Mausbewegungsmuster.",
-                    Detail = fileSize > 0 ? $"Dateigröße: {fileSize} Bytes" : null
-                });
-                break;
+                    ct.ThrowIfCancellationRequested();
+                    try
+                    {
+                        using var key = root.OpenSubKey(keyPath, writable: false);
+                        if (key is null) continue;
+
+                        foreach (var valueName in key.GetValueNames())
+                        {
+                            ct.ThrowIfCancellationRequested();
+                            ctx.IncrementRegistryKeys();
+
+                            var value = (key.GetValue(valueName) as string ?? "").ToLowerInvariant();
+                            var nameLower = valueName.ToLowerInvariant();
+                            var combined = nameLower + " " + value;
+
+                            var cheatMatch = KnownCheatFileNames.FirstOrDefault(c =>
+                                combined.Contains(c.Replace(".exe", "").Replace(".dll", ""),
+                                    StringComparison.OrdinalIgnoreCase));
+
+                            if (cheatMatch is not null)
+                            {
+                                ctx.AddFinding(new Finding
+                                {
+                                    Module = Name,
+                                    Title = $"Valorant Cheat Loader in Run Key: {valueName}",
+                                    Risk = RiskLevel.Critical,
+                                    Location = $@"{(root == Registry.CurrentUser ? "HKCU" : "HKLM")}\{keyPath}\{valueName}",
+                                    FileName = valueName,
+                                    Reason = $"Registry Run key entry '{valueName}' references a known Valorant " +
+                                             $"cheat loader pattern '{cheatMatch}'. Command: '{value}'. " +
+                                             "This establishes persistence for a cheat tool, ensuring it starts " +
+                                             "automatically before Valorant launches.",
+                                    Detail = $"Key: {keyPath}\\{valueName} | Value: {value} | Matched: {cheatMatch}"
+                                });
+                                continue;
+                            }
+
+                            if ((value.Contains("vanguard", StringComparison.OrdinalIgnoreCase) ||
+                                 value.Contains("valorant", StringComparison.OrdinalIgnoreCase) ||
+                                 value.Contains("riot", StringComparison.OrdinalIgnoreCase)) &&
+                                (value.Contains("bypass", StringComparison.OrdinalIgnoreCase) ||
+                                 value.Contains("loader", StringComparison.OrdinalIgnoreCase) ||
+                                 value.Contains("injector", StringComparison.OrdinalIgnoreCase) ||
+                                 value.Contains("cheat", StringComparison.OrdinalIgnoreCase) ||
+                                 value.Contains("hack", StringComparison.OrdinalIgnoreCase) ||
+                                 value.Contains("kill", StringComparison.OrdinalIgnoreCase) ||
+                                 value.Contains("disable", StringComparison.OrdinalIgnoreCase)))
+                            {
+                                ctx.AddFinding(new Finding
+                                {
+                                    Module = Name,
+                                    Title = $"Suspicious Valorant/Vanguard Run Key: {valueName}",
+                                    Risk = RiskLevel.High,
+                                    Location = $@"{(root == Registry.CurrentUser ? "HKCU" : "HKLM")}\{keyPath}\{valueName}",
+                                    FileName = valueName,
+                                    Reason = $"Registry Run key '{valueName}' references a Valorant/Vanguard-related " +
+                                             "executable with bypass/loader/injector/cheat/hack/kill/disable keywords. " +
+                                             $"Command: '{value}'. This is a strong indicator of cheat persistence.",
+                                    Detail = $"Value: {value}"
+                                });
+                            }
+                        }
+                    }
+                    catch { }
+                }
             }
-        }
+        }, ct);
 
-        await Task.Yield();
-    }
+    private Task CheckHostsFileRiotBlockingAsync(ScanContext ctx, CancellationToken ct) =>
+        Task.Run(async () =>
+        {
+            var hostsPath = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.System),
+                "drivers", "etc", "hosts");
 
-    private void ScanRunningProcesses(ScanContext ctx, CancellationToken ct)
-    {
-        Process[] processes;
-        try
-        {
-            processes = ctx.GetProcessSnapshot();
-        }
-        catch
-        {
-            return;
-        }
-
-        foreach (var proc in processes)
-        {
+            if (!File.Exists(hostsPath)) return;
             ct.ThrowIfCancellationRequested();
-            ctx.IncrementProcesses();
 
-            string procName;
-            try { procName = proc.ProcessName; }
-            catch { continue; }
-
-            if (string.IsNullOrEmpty(procName)) continue;
-
-            foreach (var cheatProcName in KnownCheatProcessNames)
+            string content;
+            try
             {
-                if (!procName.Equals(cheatProcName, StringComparison.OrdinalIgnoreCase)) continue;
-
-                int pid = 0;
-                try { pid = proc.Id; } catch { }
-
-                string? imagePath = null;
-                try { imagePath = proc.MainModule?.FileName; } catch { }
-
-                ctx.AddFinding(new Finding
-                {
-                    Module = Name,
-                    Title = $"Bekannter Valorant-Cheat-Prozess läuft: {procName}",
-                    Risk = RiskLevel.Critical,
-                    Location = imagePath ?? procName,
-                    FileName = procName + ".exe",
-                    Reason = $"Der laufende Prozess '{procName}' (PID {pid}) entspricht dem Namen " +
-                             "einer bekannten Valorant-Cheat-Anwendung. Das gleichzeitige Ausführen " +
-                             "eines Cheat-Prozesses neben Valorant ist ein eindeutiges Cheat-Indiz.",
-                    Detail = $"PID: {pid}" + (imagePath != null ? $" | Pfad: {imagePath}" : "")
-                });
-                break;
+                using var fs = new FileStream(hostsPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                using var sr = new StreamReader(fs);
+                content = await sr.ReadToEndAsync(ct);
             }
+            catch (IOException) { return; }
 
-            CheckValorantProcessCommandLine(ctx, proc, procName);
-        }
-    }
-
-    private void CheckValorantProcessCommandLine(ScanContext ctx, Process proc, string procName)
-    {
-        bool nameContainsValorant = procName.Contains("valorant", StringComparison.OrdinalIgnoreCase)
-            || procName.Contains("valo", StringComparison.OrdinalIgnoreCase);
-
-        if (!nameContainsValorant) return;
-
-        string? commandLine = null;
-        try
-        {
-            using var searcher = new System.Management.ManagementObjectSearcher(
-                $"SELECT CommandLine FROM Win32_Process WHERE ProcessId = {proc.Id}");
-            using var results = searcher.Get();
-            foreach (System.Management.ManagementObject mo in results)
-            {
-                commandLine = mo["CommandLine"]?.ToString();
-                break;
-            }
-        }
-        catch { return; }
-
-        if (string.IsNullOrEmpty(commandLine)) return;
-
-        foreach (var flag in SuspiciousProcessFlags)
-        {
-            if (!commandLine.Contains(flag, StringComparison.OrdinalIgnoreCase)) continue;
-
-            int pid = 0;
-            try { pid = proc.Id; } catch { }
-
-            ctx.AddFinding(new Finding
-            {
-                Module = Name,
-                Title = $"Valorant-Prozess mit verdächtigen Kommandozeilen-Flags: {procName}",
-                Risk = RiskLevel.High,
-                Location = $"PID {pid} · {procName}",
-                FileName = procName + ".exe",
-                Reason = $"Der Valorant-bezogene Prozess '{procName}' (PID {pid}) wurde mit dem " +
-                         $"verdächtigen Flag '{flag}' gestartet. Solche Flags werden von Cheat-Loadern " +
-                         "verwendet, um Cheats zu injizieren oder die Anti-Cheat-Überprüfung zu umgehen.",
-                Detail = $"Kommandozeile: {TruncateString(commandLine, 220)}"
-            });
-            break;
-        }
-    }
-
-    private void ScanPrefetchEntries(ScanContext ctx, CancellationToken ct)
-    {
-        const string prefetchDir = @"C:\Windows\Prefetch";
-        if (!Directory.Exists(prefetchDir)) return;
-
-        string[] prefetchFiles;
-        try
-        {
-            prefetchFiles = Directory.GetFiles(prefetchDir, "*.pf");
-        }
-        catch (UnauthorizedAccessException) { return; }
-        catch { return; }
-
-        foreach (var pfFile in prefetchFiles)
-        {
-            ct.ThrowIfCancellationRequested();
             ctx.IncrementFiles();
 
-            var pfName = Path.GetFileNameWithoutExtension(pfFile);
-            var dashIdx = pfName.LastIndexOf('-');
-            var exeName = dashIdx > 0 && pfName.Length - dashIdx == 9
-                ? pfName[..dashIdx]
-                : pfName;
-
-            var exeNameUpper = exeName.ToUpperInvariant();
-
-            foreach (var pattern in CheatPrefetchPatterns)
+            foreach (var riotHost in HostsRiotEntries)
             {
-                if (!exeNameUpper.StartsWith(pattern, StringComparison.OrdinalIgnoreCase)) continue;
+                if (!content.Contains(riotHost, StringComparison.OrdinalIgnoreCase)) continue;
 
-                DateTime lastWrite = default;
-                try { lastWrite = File.GetLastWriteTime(pfFile); } catch { }
-
-                ctx.AddFinding(new Finding
+                var lines = content.Split('\n');
+                foreach (var line in lines)
                 {
-                    Module = Name,
-                    Title = $"Prefetch-Eintrag: Valorant-Cheat ausgeführt — {exeName}.exe",
-                    Risk = DeterminePrefetchRisk(exeNameUpper),
-                    Location = pfFile,
-                    FileName = exeName + ".exe",
-                    Reason = $"Die Prefetch-Datei deutet auf die Ausführung von '{exeName}.exe' hin, " +
-                             "das dem Namensmuster eines bekannten Valorant-Cheats oder Vanguard-Bypass-Tools " +
-                             "entspricht. Prefetch-Einträge bleiben auch nach dem Löschen der Originaldatei erhalten.",
-                    Detail = lastWrite != default
-                        ? $"Prefetch zuletzt aktualisiert: {lastWrite:yyyy-MM-dd HH:mm:ss}"
-                        : null
-                });
-                break;
-            }
+                    var trimmed = line.TrimStart();
+                    if (trimmed.StartsWith("#")) continue;
+                    if (!trimmed.Contains(riotHost, StringComparison.OrdinalIgnoreCase)) continue;
 
-            foreach (var pattern in VanguardBypassPrefetchPatterns)
-            {
-                if (!exeNameUpper.StartsWith(pattern, StringComparison.OrdinalIgnoreCase)) continue;
-
-                if (CheatPrefetchPatterns.Any(cp =>
-                    exeNameUpper.StartsWith(cp, StringComparison.OrdinalIgnoreCase)))
+                    ctx.AddFinding(new Finding
+                    {
+                        Module = Name,
+                        Title = $"Hosts File Blocking Riot/Vanguard Server: {riotHost}",
+                        Risk = RiskLevel.High,
+                        Location = hostsPath,
+                        FileName = "hosts",
+                        Reason = $"The Windows hosts file contains an active entry redirecting or blocking " +
+                                 $"'{riotHost}'. This is used by Valorant/Vanguard bypass tools to " +
+                                 "prevent authentication servers, telemetry endpoints, or Vanguard update " +
+                                 "servers from being reached. Blocking auth servers can allow ban-evading " +
+                                 "accounts to connect, and blocking Vanguard update servers prevents " +
+                                 "detection signature updates.",
+                        Detail = $"Hosts entry: {trimmed.Trim()} | Blocked host: {riotHost}"
+                    });
                     break;
+                }
+            }
+        }, ct);
 
-                DateTime lastWrite = default;
-                try { lastWrite = File.GetLastWriteTime(pfFile); } catch { }
+    private Task CheckValorantLogsAsync(ScanContext ctx, CancellationToken ct) =>
+        Task.Run(async () =>
+        {
+            var logDirs = new[]
+            {
+                Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "Valorant", "Saved", "Logs"),
+                Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "Riot Games", "Riot Client", "Logs"),
+                Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "Riot Games", "VALORANT", "Logs"),
+                Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                    "Riot Games", "Logs"),
+            };
 
+            foreach (var logDir in logDirs)
+            {
+                if (!Directory.Exists(logDir)) continue;
+                ct.ThrowIfCancellationRequested();
+
+                string[] logFiles;
+                try { logFiles = Directory.GetFiles(logDir, "*.log", SearchOption.AllDirectories); }
+                catch (UnauthorizedAccessException) { continue; }
+
+                foreach (var logFile in logFiles)
+                {
+                    ct.ThrowIfCancellationRequested();
+                    ctx.IncrementFiles();
+
+                    string content;
+                    try
+                    {
+                        using var fs = new FileStream(logFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                        using var sr = new StreamReader(fs);
+                        content = await sr.ReadToEndAsync(ct);
+                    }
+                    catch (IOException) { continue; }
+
+                    var fn = Path.GetFileName(logFile);
+                    foreach (var keyword in SuspiciousLogKeywords)
+                    {
+                        if (!content.Contains(keyword, StringComparison.OrdinalIgnoreCase)) continue;
+
+                        ctx.AddFinding(new Finding
+                        {
+                            Module = Name,
+                            Title = $"Suspicious Entry in Valorant Log: {fn}",
+                            Risk = RiskLevel.High,
+                            Location = logFile,
+                            FileName = fn,
+                            Reason = $"Valorant/Riot log file '{fn}' contains suspicious keyword '{keyword}'. " +
+                                     "Cheat tools sometimes write telemetry, debug output, or status messages " +
+                                     "to log files, or log files may record anomalous events caused by cheat " +
+                                     "interference with the game client or Vanguard.",
+                            Detail = $"Log file: {logFile} | Keyword: {keyword}"
+                        });
+                        break;
+                    }
+                }
+            }
+        }, ct);
+
+    private Task CheckSuspiciousDllsInGameDirAsync(ScanContext ctx, CancellationToken ct) =>
+        Task.Run(() =>
+        {
+            var valorantGameDirs = new List<string>
+            {
+                Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "Valorant"),
+                Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "Riot Games", "VALORANT", "live"),
+                @"C:\Riot Games\VALORANT\live",
+                @"C:\Program Files\Riot Games\VALORANT\live",
+            };
+
+            try
+            {
+                using var riotKey = Registry.LocalMachine.OpenSubKey(
+                    @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Riot Game valorant.live",
+                    writable: false)
+                    ?? Registry.CurrentUser.OpenSubKey(
+                    @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Riot Game valorant.live",
+                    writable: false);
+                if (riotKey is not null)
+                {
+                    var installLoc = riotKey.GetValue("InstallLocation") as string;
+                    if (!string.IsNullOrEmpty(installLoc))
+                        valorantGameDirs.Add(installLoc);
+                }
+            }
+            catch { }
+
+            foreach (var gameDir in valorantGameDirs)
+            {
+                if (!Directory.Exists(gameDir)) continue;
+                ct.ThrowIfCancellationRequested();
+
+                var binDir = Path.Combine(gameDir, "ShooterGame", "Binaries", "Win64");
+                if (!Directory.Exists(binDir))
+                    binDir = gameDir;
+
+                string[] files;
+                try { files = Directory.GetFiles(binDir, "*.dll", SearchOption.TopDirectoryOnly); }
+                catch (UnauthorizedAccessException) { continue; }
+
+                foreach (var file in files)
+                {
+                    ct.ThrowIfCancellationRequested();
+                    ctx.IncrementFiles();
+                    var fn = Path.GetFileName(file);
+
+                    var cheatMatch = KnownCheatFileNames.FirstOrDefault(c =>
+                        fn.Equals(c, StringComparison.OrdinalIgnoreCase) ||
+                        (c.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) &&
+                         fn.Equals(c, StringComparison.OrdinalIgnoreCase)));
+
+                    if (cheatMatch is not null)
+                    {
+                        ctx.AddFinding(new Finding
+                        {
+                            Module = Name,
+                            Title = $"Cheat DLL in Valorant Game Directory: {fn}",
+                            Risk = RiskLevel.Critical,
+                            Location = file,
+                            FileName = fn,
+                            Reason = $"Known Valorant cheat DLL '{fn}' found inside the Valorant game " +
+                                     $"binary directory. Pattern: '{cheatMatch}'. " +
+                                     "Cheat tools place DLLs in the game's executable directory for " +
+                                     "DLL side-loading or hijacking attacks against Valorant.",
+                            Detail = $"Path: {file}"
+                        });
+                        continue;
+                    }
+
+                    var matchedProxy = SuspiciousDllsInValorantDir.FirstOrDefault(d =>
+                        fn.Equals(d, StringComparison.OrdinalIgnoreCase));
+                    if (matchedProxy is not null)
+                    {
+                        ctx.AddFinding(new Finding
+                        {
+                            Module = Name,
+                            Title = $"Proxy/Hook DLL in Valorant Dir: {fn}",
+                            Risk = RiskLevel.Critical,
+                            Location = file,
+                            FileName = fn,
+                            Reason = $"Suspicious proxy or hook DLL '{fn}' found in the Valorant game directory. " +
+                                     "This file matches a known DLL hijacking pattern used to intercept " +
+                                     "Windows API calls from Valorant or Vanguard. Cheat tools use this " +
+                                     "technique to inject code into the game process without traditional injection.",
+                            Detail = $"Path: {file} | Pattern: {matchedProxy}"
+                        });
+                    }
+                }
+            }
+        }, ct);
+
+    private Task CheckTempFolderArtifactsAsync(ScanContext ctx, CancellationToken ct) =>
+        Task.Run(() =>
+        {
+            var tempPaths = new[]
+            {
+                Path.GetTempPath(),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Temp"),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "Temp"),
+            };
+
+            foreach (var tempDir in tempPaths)
+            {
+                if (!Directory.Exists(tempDir)) continue;
+                ct.ThrowIfCancellationRequested();
+
+                string[] files;
+                try { files = Directory.GetFiles(tempDir, "*", SearchOption.TopDirectoryOnly); }
+                catch (UnauthorizedAccessException) { continue; }
+
+                foreach (var file in files)
+                {
+                    ct.ThrowIfCancellationRequested();
+                    ctx.IncrementFiles();
+                    var fn = Path.GetFileName(file);
+                    var fnLower = fn.ToLowerInvariant();
+
+                    var matchedArtifact = TempCheatArtifactPatterns.FirstOrDefault(p =>
+                        fnLower.Contains(p, StringComparison.OrdinalIgnoreCase));
+
+                    if (matchedArtifact is null) continue;
+
+                    var ext = Path.GetExtension(fn).ToLowerInvariant();
+                    if (ext is not (".exe" or ".dll" or ".sys" or ".dat" or ".log" or ".cfg" or ".ini" or ".zip" or ".rar" or ".7z"))
+                        continue;
+
+                    ctx.AddFinding(new Finding
+                    {
+                        Module = Name,
+                        Title = $"Valorant Cheat Artifact in Temp Folder: {fn}",
+                        Risk = ext is ".exe" or ".dll" or ".sys"
+                            ? RiskLevel.High : RiskLevel.Medium,
+                        Location = file,
+                        FileName = fn,
+                        Reason = $"File '{fn}' in the temp folder contains Valorant cheat-related keywords " +
+                                 $"(matched: '{matchedArtifact}'). Cheat tools commonly extract and run from " +
+                                 "temp directories to avoid persistent footprints in standard locations " +
+                                 "and to complicate forensic attribution.",
+                        Detail = $"Path: {file} | Pattern: {matchedArtifact} | Extension: {ext}"
+                    });
+                }
+            }
+        }, ct);
+
+    private Task CheckUserAssistAsync(ScanContext ctx, CancellationToken ct) =>
+        Task.Run(() =>
+        {
+            const string userAssistBase =
+                @"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\UserAssist";
+
+            try
+            {
+                using var baseKey = Registry.CurrentUser.OpenSubKey(userAssistBase, writable: false);
+                if (baseKey is null) return;
+
+                foreach (var guidName in baseKey.GetSubKeyNames())
+                {
+                    ct.ThrowIfCancellationRequested();
+                    try
+                    {
+                        using var countKey = baseKey.OpenSubKey($@"{guidName}\Count", writable: false);
+                        if (countKey is null) continue;
+
+                        foreach (var encodedName in countKey.GetValueNames())
+                        {
+                            ct.ThrowIfCancellationRequested();
+                            ctx.IncrementRegistryKeys();
+
+                            var decoded = Rot13Decode(encodedName);
+                            var decodedLower = decoded.ToLowerInvariant();
+
+                            var keyword = UserAssistCheatKeywords.FirstOrDefault(k =>
+                                decodedLower.Contains(k, StringComparison.OrdinalIgnoreCase));
+                            if (keyword is null) continue;
+
+                            int runCount = 0;
+                            DateTime? lastRun = null;
+                            try
+                            {
+                                var data = countKey.GetValue(encodedName) as byte[];
+                                if (data is { Length: >= 16 })
+                                {
+                                    runCount = BitConverter.ToInt32(data, 4);
+                                    var fileTime = BitConverter.ToInt64(data, 8);
+                                    if (fileTime > 0)
+                                        lastRun = DateTime.FromFileTimeUtc(fileTime);
+                                }
+                            }
+                            catch { }
+
+                            ctx.AddFinding(new Finding
+                            {
+                                Module = Name,
+                                Title = $"UserAssist: Valorant Cheat Executed — {keyword}",
+                                Risk = RiskLevel.High,
+                                Location = $@"HKCU\{userAssistBase}\{guidName}\Count",
+                                FileName = Path.GetFileName(decoded),
+                                Reason = $"Windows UserAssist forensic record shows execution of Valorant cheat " +
+                                         $"tool matching '{keyword}'. Decoded entry: '{decoded}'. " +
+                                         $"Execution count: {runCount}. " +
+                                         (lastRun.HasValue
+                                             ? $"Last executed: {lastRun.Value:yyyy-MM-dd HH:mm} UTC. "
+                                             : "") +
+                                         "UserAssist entries survive file deletion and provide irrefutable " +
+                                         "forensic evidence of cheat tool execution.",
+                                Detail = $"Decoded: {decoded} | Runs: {runCount} | " +
+                                         $"Last: {(lastRun.HasValue ? lastRun.Value.ToString("O") : "unknown")}"
+                            });
+                        }
+                    }
+                    catch { }
+                }
+            }
+            catch { }
+        }, ct);
+
+    private Task CheckMuiCacheAsync(ScanContext ctx, CancellationToken ct) =>
+        Task.Run(() =>
+        {
+            const string muiCacheKey =
+                @"SOFTWARE\Classes\Local Settings\Software\Microsoft\Windows\Shell\MuiCache";
+
+            try
+            {
+                using var key = Registry.CurrentUser.OpenSubKey(muiCacheKey, writable: false);
+                if (key is null) return;
+
+                foreach (var valueName in key.GetValueNames())
+                {
+                    ct.ThrowIfCancellationRequested();
+                    ctx.IncrementRegistryKeys();
+
+                    var path = valueName;
+                    var dotIdx = valueName.LastIndexOf('.');
+                    if (dotIdx > 0 && !valueName[dotIdx..].Contains('\\'))
+                        path = valueName[..dotIdx];
+
+                    var friendlyName = key.GetValue(valueName) as string ?? "";
+                    var combined = path.ToLowerInvariant() + " " + friendlyName.ToLowerInvariant();
+
+                    var keyword = MuiCacheCheatKeywords.FirstOrDefault(k =>
+                        combined.Contains(k, StringComparison.OrdinalIgnoreCase));
+                    if (keyword is null) continue;
+
+                    bool fileExists = File.Exists(path);
+                    ctx.AddFinding(new Finding
+                    {
+                        Module = Name,
+                        Title = $"MuiCache: Valorant Cheat Tool Executed: {Path.GetFileName(path)}",
+                        Risk = RiskLevel.High,
+                        Location = $@"HKCU\{muiCacheKey}",
+                        FileName = Path.GetFileName(path),
+                        Reason = $"MuiCache entry proves execution of Valorant cheat tool '{Path.GetFileName(path)}' " +
+                                 $"(keyword match: '{keyword}'). " +
+                                 (fileExists
+                                     ? "The file still exists on disk."
+                                     : "The file has been deleted but its execution is forensically confirmed.") +
+                                 " MuiCache records persist even after program uninstallation or file deletion.",
+                        Detail = $"Path: {path} | FriendlyName: {friendlyName} | Exists: {fileExists}"
+                    });
+                }
+            }
+            catch { }
+        }, ct);
+
+    private Task CheckDownloadsFolderAsync(ScanContext ctx, CancellationToken ct) =>
+        Task.Run(() =>
+        {
+            var downloadsPath = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
+
+            if (!Directory.Exists(downloadsPath)) return;
+            ct.ThrowIfCancellationRequested();
+
+            string[] files;
+            try { files = Directory.GetFiles(downloadsPath, "*", SearchOption.TopDirectoryOnly); }
+            catch (UnauthorizedAccessException) { return; }
+
+            foreach (var file in files)
+            {
+                ct.ThrowIfCancellationRequested();
+                ctx.IncrementFiles();
+                var fn = Path.GetFileName(file);
+
+                var matchedCheat = KnownCheatFileNames.FirstOrDefault(c =>
+                    fn.Equals(c, StringComparison.OrdinalIgnoreCase));
+
+                if (matchedCheat is not null)
+                {
+                    ctx.AddFinding(new Finding
+                    {
+                        Module = Name,
+                        Title = $"Valorant Cheat Download Found: {fn}",
+                        Risk = RiskLevel.Critical,
+                        Location = file,
+                        FileName = fn,
+                        Reason = $"Known Valorant cheat file '{fn}' found in the Downloads folder. " +
+                                 "This confirms the user downloaded this cheat tool from the internet. " +
+                                 $"Matched known cheat pattern: '{matchedCheat}'.",
+                        Detail = $"Path: {file}"
+                    });
+                    continue;
+                }
+
+                var ext = Path.GetExtension(fn).ToLowerInvariant();
+                if (ext is not (".exe" or ".dll" or ".zip" or ".rar" or ".7z")) continue;
+
+                var fnLower = fn.ToLowerInvariant();
+                var cheatHit = TempCheatArtifactPatterns.FirstOrDefault(p =>
+                    fnLower.Contains(p, StringComparison.OrdinalIgnoreCase));
+
+                if (cheatHit is not null)
+                {
+                    ctx.AddFinding(new Finding
+                    {
+                        Module = Name,
+                        Title = $"Valorant Suspicious Download: {fn}",
+                        Risk = RiskLevel.High,
+                        Location = file,
+                        FileName = fn,
+                        Reason = $"File '{fn}' in Downloads contains Valorant cheat-related keywords " +
+                                 $"(matched: '{cheatHit}'). Downloaded archives or executables with " +
+                                 "Valorant cheat keywords are a strong indicator of attempted or completed " +
+                                 "cheat tool download and installation.",
+                        Detail = $"Path: {file} | Pattern: {cheatHit}"
+                    });
+                }
+            }
+        }, ct);
+
+    private Task CheckValorantAppDataAsync(ScanContext ctx, CancellationToken ct) =>
+        Task.Run(async () =>
+        {
+            var appDataPaths = new[]
+            {
+                Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "Valorant"),
+                Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "Riot Games"),
+                Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                    "Riot Games"),
+                @"C:\Program Files\Riot Vanguard",
+            };
+
+            foreach (var appDataPath in appDataPaths)
+            {
+                if (!Directory.Exists(appDataPath)) continue;
+                ct.ThrowIfCancellationRequested();
+
+                string[] files;
+                try { files = Directory.GetFiles(appDataPath, "*", SearchOption.AllDirectories); }
+                catch (UnauthorizedAccessException) { continue; }
+
+                foreach (var file in files)
+                {
+                    ct.ThrowIfCancellationRequested();
+                    ctx.IncrementFiles();
+                    var fn = Path.GetFileName(file);
+                    var ext = Path.GetExtension(fn).ToLowerInvariant();
+
+                    var cheatMatch = KnownCheatFileNames.FirstOrDefault(c =>
+                        fn.Equals(c, StringComparison.OrdinalIgnoreCase));
+                    if (cheatMatch is not null)
+                    {
+                        ctx.AddFinding(new Finding
+                        {
+                            Module = Name,
+                            Title = $"Valorant Cheat in Riot AppData: {fn}",
+                            Risk = RiskLevel.Critical,
+                            Location = file,
+                            FileName = fn,
+                            Reason = $"Known Valorant cheat file '{fn}' found inside Riot Games AppData " +
+                                     $"directory. Matched pattern: '{cheatMatch}'. Cheat tools plant files " +
+                                     "in Riot AppData directories to blend in with legitimate Riot/Valorant " +
+                                     "application data and avoid filesystem-level detection.",
+                            Detail = $"Path: {file}"
+                        });
+                        continue;
+                    }
+
+                    if (ext is ".exe" or ".dll" or ".sys")
+                    {
+                        var fnLower = fn.ToLowerInvariant();
+                        var heuristicHit = TempCheatArtifactPatterns.FirstOrDefault(p =>
+                            fnLower.Contains(p, StringComparison.OrdinalIgnoreCase));
+
+                        if (heuristicHit is not null)
+                        {
+                            ctx.AddFinding(new Finding
+                            {
+                                Module = Name,
+                                Title = $"Suspicious Executable in Riot AppData: {fn}",
+                                Risk = RiskLevel.High,
+                                Location = file,
+                                FileName = fn,
+                                Reason = $"Executable/DLL '{fn}' with Valorant cheat keyword '{heuristicHit}' " +
+                                         "found in Riot Games AppData directory. Cheat loaders frequently " +
+                                         "disguise payloads inside Riot AppData to evade simple name-based " +
+                                         "detection and to persist across game updates.",
+                                Detail = $"Path: {file} | Pattern: {heuristicHit}"
+                            });
+                        }
+                    }
+
+                    if (ext is ".json" or ".cfg" or ".ini" or ".toml" or ".yaml" or ".txt")
+                    {
+                        string content;
+                        try
+                        {
+                            using var fs = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                            using var sr = new StreamReader(fs);
+                            content = await sr.ReadToEndAsync(ct);
+                        }
+                        catch (IOException) { continue; }
+
+                        var cheatConfigHit = CheatConfigKeywords.FirstOrDefault(k =>
+                            content.Contains(k, StringComparison.OrdinalIgnoreCase));
+                        if (cheatConfigHit is not null)
+                        {
+                            ctx.AddFinding(new Finding
+                            {
+                                Module = Name,
+                                Title = $"Valorant Cheat Config in Riot AppData: {fn}",
+                                Risk = RiskLevel.High,
+                                Location = file,
+                                FileName = fn,
+                                Reason = $"Config file '{fn}' in Riot AppData directory contains cheat-specific " +
+                                         $"setting '{cheatConfigHit}'. This config was written by a Valorant " +
+                                         "cheat tool. Cheat tools store aimbot, ESP, and Vanguard bypass " +
+                                         "settings in config files adjacent to legitimate Riot data.",
+                                Detail = $"Path: {file} | Config keyword: {cheatConfigHit}"
+                            });
+                        }
+                    }
+                }
+            }
+        }, ct);
+
+    private Task CheckCheatConfigFoldersAsync(ScanContext ctx, CancellationToken ct) =>
+        Task.Run(async () =>
+        {
+            var configSearchPaths = new[]
+            {
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "valorant_cheat"),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "val_esp"),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "val_aim"),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "valo_cheat"),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "vncheat"),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "vanguard_bypass"),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "riot_bypass"),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "riot_hwid"),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "val_spoofer"),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "val_skinchanger"),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "val_triggerbot"),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "val_wallhack"),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "valorant_cheat"),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "val_esp"),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "val_aim"),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "valo_cheat"),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "vncheat"),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "vanguard_bypass"),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "riot_bypass"),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "val_spoofer"),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "val_skinchanger"),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "val_triggerbot"),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".valorant_cheat"),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".vncheat"),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".val_aim"),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".vanguard_bypass"),
+            };
+
+            foreach (var configPath in configSearchPaths)
+            {
+                ct.ThrowIfCancellationRequested();
+                if (!Directory.Exists(configPath)) continue;
+
+                var dirName = Path.GetFileName(configPath);
                 ctx.AddFinding(new Finding
                 {
                     Module = Name,
-                    Title = $"Prefetch-Eintrag: Vanguard-Bypass-Tool ausgeführt — {exeName}.exe",
-                    Risk = RiskLevel.High,
-                    Location = pfFile,
-                    FileName = exeName + ".exe",
-                    Reason = $"Die Prefetch-Datei deutet auf die Ausführung von '{exeName}.exe' hin, " +
-                             "das dem Namensmuster eines bekannten Vanguard-Bypass-Tools entspricht. " +
-                             "Dies zeigt, dass das Tool zu einem früheren Zeitpunkt auf dem System ausgeführt wurde.",
-                    Detail = lastWrite != default
-                        ? $"Prefetch zuletzt aktualisiert: {lastWrite:yyyy-MM-dd HH:mm:ss}"
-                        : null
+                    Title = $"Valorant Cheat Config Folder Found: {dirName}",
+                    Risk = RiskLevel.Critical,
+                    Location = configPath,
+                    FileName = dirName,
+                    Reason = $"Directory '{configPath}' is a known configuration folder for the Valorant " +
+                             $"cheat tool '{dirName}'. The existence of this directory confirms the cheat " +
+                             "was installed and executed on this machine. These directories are created " +
+                             "exclusively by cheat software during installation or first run.",
+                    Detail = $"Cheat config dir: {configPath}"
                 });
-                break;
+
+                string[] configFiles;
+                try { configFiles = Directory.GetFiles(configPath, "*", SearchOption.AllDirectories); }
+                catch (UnauthorizedAccessException) { continue; }
+
+                foreach (var configFile in configFiles)
+                {
+                    ct.ThrowIfCancellationRequested();
+                    ctx.IncrementFiles();
+                    var fn = Path.GetFileName(configFile);
+                    var ext = Path.GetExtension(fn).ToLowerInvariant();
+
+                    if (ext is ".json" or ".cfg" or ".ini" or ".toml" or ".txt" or ".yaml")
+                    {
+                        string content;
+                        try
+                        {
+                            using var fs = new FileStream(configFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                            using var sr = new StreamReader(fs);
+                            content = await sr.ReadToEndAsync(ct);
+                        }
+                        catch (IOException) { continue; }
+
+                        var cheatConfigHit = CheatConfigKeywords.FirstOrDefault(k =>
+                            content.Contains(k, StringComparison.OrdinalIgnoreCase));
+                        if (cheatConfigHit is not null)
+                        {
+                            ctx.AddFinding(new Finding
+                            {
+                                Module = Name,
+                                Title = $"Valorant Cheat Config File Content: {fn}",
+                                Risk = RiskLevel.High,
+                                Location = configFile,
+                                FileName = fn,
+                                Reason = $"Config file '{fn}' in the cheat folder contains cheat-specific " +
+                                         $"setting '{cheatConfigHit}'. This configuration was written by a " +
+                                         "Valorant cheat tool and details its operational settings " +
+                                         "(aimbot, ESP, Vanguard bypass, skin changer, etc.).",
+                                Detail = $"Path: {configFile} | Config key: {cheatConfigHit}"
+                            });
+                        }
+                    }
+                }
             }
-        }
-    }
 
-    private static RiskLevel DeterminePrefetchRisk(string exeNameUpper)
+            // Check for known cheat-related registry software keys
+            var riotCheatRegKeys = new[]
+            {
+                @"SOFTWARE\ValorantCheat",
+                @"SOFTWARE\ValESP",
+                @"SOFTWARE\ValorantAimbot",
+                @"SOFTWARE\ValAimbot",
+                @"SOFTWARE\ValorantHack",
+                @"SOFTWARE\VanguardBypass",
+                @"SOFTWARE\RiotBypass",
+                @"SOFTWARE\VGKBypass",
+                @"SOFTWARE\VGCKill",
+                @"SOFTWARE\ValSpoofer",
+                @"SOFTWARE\RiotHWIDSpoofer",
+                @"SOFTWARE\ValSkinChanger",
+                @"SOFTWARE\ValorantSkinUnlocker",
+                @"SOFTWARE\ValTriggerBot",
+                @"SOFTWARE\ValorantWallhack",
+                @"SOFTWARE\ValResolver",
+                @"SOFTWARE\VnCheat",
+            };
+
+            foreach (var regKey in riotCheatRegKeys)
+            {
+                ct.ThrowIfCancellationRequested();
+                try
+                {
+                    using var key = Registry.LocalMachine.OpenSubKey(regKey, writable: false)
+                                 ?? Registry.CurrentUser.OpenSubKey(regKey, writable: false);
+                    if (key is null) continue;
+
+                    ctx.IncrementRegistryKeys();
+                    ctx.AddFinding(new Finding
+                    {
+                        Module = Name,
+                        Title = $"Valorant Cheat Registry Key Found: {Path.GetFileName(regKey)}",
+                        Risk = RiskLevel.Critical,
+                        Location = $@"HKLM\{regKey}",
+                        FileName = Path.GetFileName(regKey),
+                        Reason = $"Registry key '{regKey}' belonging to a known Valorant cheat tool was found. " +
+                                 "This registry entry is created during cheat tool installation and confirms " +
+                                 "the tool was present and configured on this system.",
+                        Detail = $"Registry key: {regKey}"
+                    });
+                }
+                catch { }
+            }
+        }, ct);
+
+    private static List<string> BuildValorantScanPaths()
     {
-        if (exeNameUpper.StartsWith("VANGUARD_BYPASS", StringComparison.OrdinalIgnoreCase) ||
-            exeNameUpper.StartsWith("VGCKILLER", StringComparison.OrdinalIgnoreCase) ||
-            exeNameUpper.StartsWith("VGC_KILLER", StringComparison.OrdinalIgnoreCase) ||
-            exeNameUpper.StartsWith("VGK_BYPASS", StringComparison.OrdinalIgnoreCase))
-            return RiskLevel.High;
+        var paths = new List<string>();
 
-        if (exeNameUpper.StartsWith("VAL_LOADER", StringComparison.OrdinalIgnoreCase) ||
-            exeNameUpper.StartsWith("VALORANT_LOADER", StringComparison.OrdinalIgnoreCase))
-            return RiskLevel.High;
+        var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+        var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
 
-        return RiskLevel.High;
+        paths.Add(Path.Combine(localAppData, "Valorant"));
+        paths.Add(Path.Combine(localAppData, "Riot Games"));
+        paths.Add(Path.Combine(appData, "Riot Games"));
+        paths.Add(Path.Combine(userProfile, "Downloads"));
+        paths.Add(@"C:\Program Files\Riot Vanguard");
+        paths.Add(@"C:\Program Files\Riot Games");
+        paths.Add(@"C:\Riot Games");
+
+        return paths;
     }
-
-    private static string ExtractContextAroundKeyword(string content, string keyword, int contextLength)
-    {
-        var idx = content.IndexOf(keyword, StringComparison.OrdinalIgnoreCase);
-        if (idx < 0) return string.Empty;
-
-        var start = Math.Max(0, idx - contextLength / 2);
-        var end = Math.Min(content.Length, idx + keyword.Length + contextLength / 2);
-        var extracted = content.Substring(start, end - start)
-            .Replace('\n', ' ')
-            .Replace('\r', ' ');
-
-        return TruncateString(extracted.Trim(), contextLength);
-    }
-
-    private static string TruncateString(string s, int maxLength)
-        => s.Length <= maxLength ? s : s.Substring(0, maxLength) + "…";
 }
