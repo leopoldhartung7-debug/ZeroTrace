@@ -402,7 +402,7 @@ public sealed class TeamFortress2CheatScanModule : IScanModule
     // -------------------------------------------------------------------------
 
     private Task CheckKnownCheatExecutables(ScanContext ctx, CancellationToken ct) =>
-        Task.Run(() =>
+        Task.Run(async () =>
         {
             ctx.Report(0.02, Name, "Scanning for known TF2 cheat executables");
 
@@ -499,7 +499,7 @@ public sealed class TeamFortress2CheatScanModule : IScanModule
     // -------------------------------------------------------------------------
 
     private Task CheckVacBypassArtifacts(ScanContext ctx, CancellationToken ct) =>
-        Task.Run(() =>
+        Task.Run(async () =>
         {
             ctx.Report(0.07, Name, "Scanning for VAC/VACnet bypass artifacts");
 
@@ -598,7 +598,7 @@ public sealed class TeamFortress2CheatScanModule : IScanModule
     // -------------------------------------------------------------------------
 
     private Task CheckTf2GameDirectoryOverlayDlls(ScanContext ctx, CancellationToken ct) =>
-        Task.Run(() =>
+        Task.Run(async () =>
         {
             ctx.Report(0.12, Name, "Scanning TF2 directory for suspicious overlay DLLs");
 
@@ -663,7 +663,7 @@ public sealed class TeamFortress2CheatScanModule : IScanModule
     // -------------------------------------------------------------------------
 
     private Task CheckSourceModPluginArtifacts(ScanContext ctx, CancellationToken ct) =>
-        Task.Run(() =>
+        Task.Run(async () =>
         {
             ctx.Report(0.17, Name, "Scanning SourceMod plugin directories for cheat .smx files");
 
@@ -716,7 +716,7 @@ public sealed class TeamFortress2CheatScanModule : IScanModule
                     {
                         using var fs = new FileStream(smxFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
                         using var sr = new StreamReader(fs, System.Text.Encoding.Latin1);
-                        content = sr.ReadToEnd();
+                        content = await sr.ReadToEndAsync(ct);
                     }
                     catch (IOException) { continue; }
                     catch (UnauthorizedAccessException) { continue; }
@@ -749,7 +749,7 @@ public sealed class TeamFortress2CheatScanModule : IScanModule
     // -------------------------------------------------------------------------
 
     private Task CheckCustomHudEspArtifacts(ScanContext ctx, CancellationToken ct) =>
-        Task.Run(() =>
+        Task.Run(async () =>
         {
             ctx.Report(0.22, Name, "Scanning TF2 custom resource/HUD for ESP overlay artifacts");
 
@@ -829,7 +829,7 @@ public sealed class TeamFortress2CheatScanModule : IScanModule
                         {
                             using var fs = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
                             using var sr = new StreamReader(fs);
-                            content = sr.ReadToEnd();
+                            content = await sr.ReadToEndAsync(ct);
                         }
                         catch (IOException) { continue; }
                         catch (UnauthorizedAccessException) { continue; }
@@ -864,7 +864,7 @@ public sealed class TeamFortress2CheatScanModule : IScanModule
     // -------------------------------------------------------------------------
 
     private Task CheckClassConfigCheatBinds(ScanContext ctx, CancellationToken ct) =>
-        Task.Run(() =>
+        Task.Run(async () =>
         {
             ctx.Report(0.27, Name, "Scanning TF2 class config files for cheat binds");
 
@@ -889,7 +889,7 @@ public sealed class TeamFortress2CheatScanModule : IScanModule
                     {
                         using var fs = new FileStream(cfgPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
                         using var sr = new StreamReader(fs);
-                        content = sr.ReadToEnd();
+                        content = await sr.ReadToEndAsync(ct);
                     }
                     catch (IOException) { continue; }
                     catch (UnauthorizedAccessException) { continue; }
@@ -955,7 +955,7 @@ public sealed class TeamFortress2CheatScanModule : IScanModule
     // -------------------------------------------------------------------------
 
     private Task CheckAutoexecCheatContent(ScanContext ctx, CancellationToken ct) =>
-        Task.Run(() =>
+        Task.Run(async () =>
         {
             ctx.Report(0.33, Name, "Scanning TF2 autoexec.cfg for cheat content");
 
@@ -974,7 +974,7 @@ public sealed class TeamFortress2CheatScanModule : IScanModule
                 {
                     using var fs = new FileStream(autoexecPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
                     using var sr = new StreamReader(fs);
-                    content = sr.ReadToEnd();
+                    content = await sr.ReadToEndAsync(ct);
                 }
                 catch (IOException) { continue; }
                 catch (UnauthorizedAccessException) { continue; }
@@ -1040,7 +1040,7 @@ public sealed class TeamFortress2CheatScanModule : IScanModule
     // -------------------------------------------------------------------------
 
     private Task CheckTempFolderArtifacts(ScanContext ctx, CancellationToken ct) =>
-        Task.Run(() =>
+        Task.Run(async () =>
         {
             ctx.Report(0.40, Name, "Scanning temp folders for TF2 cheat logs and configs");
 
@@ -1094,7 +1094,7 @@ public sealed class TeamFortress2CheatScanModule : IScanModule
     // -------------------------------------------------------------------------
 
     private Task CheckOffsetPatternFiles(ScanContext ctx, CancellationToken ct) =>
-        Task.Run(() =>
+        Task.Run(async () =>
         {
             ctx.Report(0.45, Name, "Scanning for TF2 external cheat offset and pattern files");
 
@@ -1138,7 +1138,7 @@ public sealed class TeamFortress2CheatScanModule : IScanModule
                     {
                         using var fs = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
                         using var sr = new StreamReader(fs);
-                        content = sr.ReadToEnd();
+                        content = await sr.ReadToEndAsync(ct);
                     }
                     catch (IOException) { continue; }
                     catch (UnauthorizedAccessException) { continue; }
@@ -1182,7 +1182,7 @@ public sealed class TeamFortress2CheatScanModule : IScanModule
     // -------------------------------------------------------------------------
 
     private Task CheckLuaScriptArtifacts(ScanContext ctx, CancellationToken ct) =>
-        Task.Run(() =>
+        Task.Run(async () =>
         {
             ctx.Report(0.52, Name, "Scanning for Lua scripts with TF2 cheat content");
 
@@ -1220,7 +1220,7 @@ public sealed class TeamFortress2CheatScanModule : IScanModule
                     {
                         using var fs = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
                         using var sr = new StreamReader(fs);
-                        content = sr.ReadToEnd();
+                        content = await sr.ReadToEndAsync(ct);
                     }
                     catch (IOException) { continue; }
                     catch (UnauthorizedAccessException) { continue; }
@@ -1254,7 +1254,7 @@ public sealed class TeamFortress2CheatScanModule : IScanModule
     // -------------------------------------------------------------------------
 
     private Task CheckRegistryRunKeys(ScanContext ctx, CancellationToken ct) =>
-        Task.Run(() =>
+        Task.Run(async () =>
         {
             ctx.Report(0.58, Name, "Scanning registry Run keys for TF2 cheat loaders");
 
@@ -1345,7 +1345,7 @@ public sealed class TeamFortress2CheatScanModule : IScanModule
     // -------------------------------------------------------------------------
 
     private Task CheckUserAssistArtifacts(ScanContext ctx, CancellationToken ct) =>
-        Task.Run(() =>
+        Task.Run(async () =>
         {
             ctx.Report(0.64, Name, "Scanning UserAssist registry for TF2 cheat execution history");
 
@@ -1453,7 +1453,7 @@ public sealed class TeamFortress2CheatScanModule : IScanModule
     // -------------------------------------------------------------------------
 
     private Task CheckMuiCacheArtifacts(ScanContext ctx, CancellationToken ct) =>
-        Task.Run(() =>
+        Task.Run(async () =>
         {
             ctx.Report(0.70, Name, "Scanning MUICache registry for TF2 cheat program history");
 
@@ -1530,7 +1530,7 @@ public sealed class TeamFortress2CheatScanModule : IScanModule
     // -------------------------------------------------------------------------
 
     private Task CheckDownloadsFolderArtifacts(ScanContext ctx, CancellationToken ct) =>
-        Task.Run(() =>
+        Task.Run(async () =>
         {
             ctx.Report(0.76, Name, "Scanning Downloads folder for TF2 cheat artifacts");
 
@@ -1618,7 +1618,7 @@ public sealed class TeamFortress2CheatScanModule : IScanModule
     // -------------------------------------------------------------------------
 
     private Task CheckAppDataArtifacts(ScanContext ctx, CancellationToken ct) =>
-        Task.Run(() =>
+        Task.Run(async () =>
         {
             ctx.Report(0.84, Name, "Scanning AppData for TF2 cheat configuration artifacts");
 

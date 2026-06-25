@@ -615,6 +615,10 @@ public sealed class ScanEngine
         if (o.ScanTeamFortress2Cheat) modules.Add(new TeamFortress2CheatScanModule());
         if (o.ScanWarzoneCODCheat) modules.Add(new WarzoneCODCheatScanModule());
         if (o.ScanWindowsEventLogCheatForensic) modules.Add(new WindowsEventLogCheatForensicScanModule());
+        if (o.ScanBattlefield2042Cheat) modules.Add(new Battlefield2042CheatScanModule());
+        if (o.ScanOverwatchCheatForensicDeep) modules.Add(new OverwatchCheatForensicDeepScanModule());
+        if (o.ScanPUBG2CheatDeep) modules.Add(new PUBG2CheatDeepScanModule());
+        if (o.ScanRageMPDeepForensic) modules.Add(new RageMPDeepForensicScanModule());
         if (o.ScanCheatSourceCodeRepo) modules.Add(new CheatSourceCodeRepoScanModule());
 
         // ── Group 5: forensic / trace artefacts ──────────────────────────────

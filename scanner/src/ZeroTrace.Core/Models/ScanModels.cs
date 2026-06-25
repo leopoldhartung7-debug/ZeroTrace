@@ -1358,6 +1358,10 @@ public sealed class ScanOptions
     public bool ScanTeamFortress2Cheat { get; set; } = true;
     public bool ScanWarzoneCODCheat { get; set; } = true;
     public bool ScanWindowsEventLogCheatForensic { get; set; } = true;
+    public bool ScanBattlefield2042Cheat { get; set; } = true;
+    public bool ScanOverwatchCheatForensicDeep { get; set; } = true;
+    public bool ScanPUBG2CheatDeep { get; set; } = true;
+    public bool ScanRageMPDeepForensic { get; set; } = true;
     /// <summary>Detect cheat source code and development artifacts: .git repos with cheat remote
     /// URLs, Visual Studio cheat projects (.sln/.vcxproj with cheat keywords), compiled build
     /// artifacts (cheat.pdb, x64/Release DLLs), game SDK directories, offset header files,
@@ -2188,6 +2192,10 @@ public static class ScanProfiles
         ScanTeamFortress2Cheat = true,
         ScanWarzoneCODCheat = true,
         ScanWindowsEventLogCheatForensic = true,
+        ScanBattlefield2042Cheat = true,
+        ScanOverwatchCheatForensicDeep = true,
+        ScanPUBG2CheatDeep = true,
+        ScanRageMPDeepForensic = true,
         ScanCheatSourceCodeRepo = true,        // cheat git repo/VS project/SDK/PDB artifact scan — fast
         DeepDriveScan = false,
         // No per-module timeout — every Quick module runs to completion. Quick stays
