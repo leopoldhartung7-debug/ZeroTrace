@@ -363,6 +363,22 @@ public sealed class ScanOptions
     /// infections used to load unsigned drivers before the OS and bypass all anti-cheat.</summary>
     public bool ScanBootSector { get; set; } = true;
 
+    /// <summary>Scan PE headers of game process modules for module stomping (zeroed headers),
+    /// packer section names (UPX/Themida/VMProtect), and PE timestamp mismatches vs disk.</summary>
+    public bool ScanPEHeaderAnomalies { get; set; } = true;
+
+    /// <summary>Search user-accessible directories for credential dump artifacts: LSASS dumps,
+    /// SAM/NTDS copies, .kirbi Kerberos tickets, Mimikatz output files, and NTLM hash files.</summary>
+    public bool ScanSensitiveDataAccess { get; set; } = true;
+
+    /// <summary>Enumerate all active UDP sockets with process attribution; flag suspicious ports
+    /// and cheat-keyword process names (DMA radar, ESP overlay, C2 channels use UDP).</summary>
+    public bool ScanUdpSockets { get; set; } = true;
+
+    /// <summary>Detect advanced registry hijacking: BHOs, HKCU shell extensions, protocol handlers,
+    /// desktop namespace extensions, and Session Manager SubSystems outside System32.</summary>
+    public bool ScanRegistryHijack { get; set; } = true;
+
     /// <summary>
     /// When false (default) the drive module only walks targeted, high-signal
     /// directories (profile, temp, downloads, appdata). When true it walks the
@@ -527,6 +543,10 @@ public static class ScanProfiles
         ScanFileAssociationHijack = true, // registry — fast
         ScanStartupFolderDeep = true,     // small folder — fast
         ScanBootSector = false,           // disk sector read — slow
+        ScanPEHeaderAnomalies = false,    // memory walk — slow
+        ScanSensitiveDataAccess = false,  // file walk — slow
+        ScanUdpSockets = true,            // IP helper API — fast
+        ScanRegistryHijack = true,        // registry — fast
         DeepDriveScan = false,
         ModuleTimeoutSeconds = 60,
     };
