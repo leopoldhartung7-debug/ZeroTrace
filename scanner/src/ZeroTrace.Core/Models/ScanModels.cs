@@ -310,6 +310,26 @@ public sealed class ScanOptions
     /// Events, Semaphores, and Mutants with cheat-keyword names used for IPC between cheat components.</summary>
     public bool ScanMemoryMappedFiles { get; set; } = true;
 
+    /// <summary>Detect custom application compatibility shim databases (SDB files) used for
+    /// DLL injection and API hooking without requiring admin privileges or code modification.</summary>
+    public bool ScanAppCompatShims { get; set; } = true;
+
+    /// <summary>Detect Subject Interface Package (SIP) and Trust Provider DLL hijacking used to
+    /// bypass Authenticode signature verification — makes unsigned binaries appear signed.</summary>
+    public bool ScanSipProviders { get; set; } = true;
+
+    /// <summary>Comprehensive scan of Image File Execution Options (IFEO) for debugger hijacking
+    /// of game/anti-cheat executables, VerifierDll injection, and GlobalFlag manipulation.</summary>
+    public bool ScanImageFileExecutionOptions { get; set; } = true;
+
+    /// <summary>Detect KnownDLLs registry hijacking and SafeDllSearchMode disabled — both allow
+    /// replacing critical Windows DLLs for all processes without replacing files on disk.</summary>
+    public bool ScanKnownDllsHijack { get; set; } = true;
+
+    /// <summary>Detect Winlogon Shell/Userinit/GinaDLL/TaskMan/Notify hijacking for persistence —
+    /// runs at every login in the security context of the logged-on user or SYSTEM.</summary>
+    public bool ScanWinlogonHijack { get; set; } = true;
+
     /// <summary>
     /// When false (default) the drive module only walks targeted, high-signal
     /// directories (profile, temp, downloads, appdata). When true it walks the
@@ -461,6 +481,11 @@ public static class ScanProfiles
         ScanLsaPlugins = true,            // registry — fast
         ScanPrintSpoolerPersistence = true, // registry — fast
         ScanMemoryMappedFiles = true,     // NT syscall — fast
+        ScanAppCompatShims = true,        // registry + file — fast
+        ScanSipProviders = true,          // registry — fast
+        ScanImageFileExecutionOptions = true, // registry — fast
+        ScanKnownDllsHijack = true,       // registry — fast
+        ScanWinlogonHijack = true,        // registry — fast
         DeepDriveScan = false,
         ModuleTimeoutSeconds = 60,
     };

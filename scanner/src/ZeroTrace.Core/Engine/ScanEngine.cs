@@ -305,6 +305,11 @@ public sealed class ScanEngine
         if (o.ScanAppInitDlls) modules.Add(new AppInitDllScanModule());
         if (o.ScanLsaPlugins) modules.Add(new LsaPluginScanModule());
         if (o.ScanPrintSpoolerPersistence) modules.Add(new PrintSpoolerPersistenceScanModule());
+        if (o.ScanAppCompatShims) modules.Add(new AppCompatShimScanModule());
+        if (o.ScanSipProviders) modules.Add(new SipProviderScanModule());
+        if (o.ScanImageFileExecutionOptions) modules.Add(new ImageFileExecutionOptionsScanModule());
+        if (o.ScanKnownDllsHijack) modules.Add(new KnownDllsHijackScanModule());
+        if (o.ScanWinlogonHijack) modules.Add(new WinlogonHijackScanModule());
         if (o.ScanWmiPersistence) modules.Add(new WmiPersistenceScanModule());
         if (o.ScanScheduledTasks) modules.Add(new ScheduledTaskScanModule());
         if (o.ScanKernelDrivers) modules.Add(new DriverScanModule());
