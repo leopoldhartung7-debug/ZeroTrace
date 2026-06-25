@@ -330,6 +330,23 @@ public sealed class ScanOptions
     /// runs at every login in the security context of the logged-on user or SYSTEM.</summary>
     public bool ScanWinlogonHijack { get; set; } = true;
 
+    /// <summary>Scan svchost.exe service groups for unknown or non-system DLL-based services
+    /// hosted inside the trusted svchost.exe process as a stealth persistence mechanism.</summary>
+    public bool ScanSvcHostGroups { get; set; } = true;
+
+    /// <summary>Check integrity and status of installed anti-cheat systems (EasyAntiCheat,
+    /// BattlEye, Vanguard, FACEIT, ESEA) for tampering, disabling, or AC-bypass processes.</summary>
+    public bool ScanAntiCheatStatus { get; set; } = true;
+
+    /// <summary>Deep scan WMI event subscriptions (ActiveScriptEventConsumer,
+    /// CommandLineEventConsumer) in root\subscription and root\default namespaces for
+    /// fileless cheat persistence that survives reboots.</summary>
+    public bool ScanWmiSubscriptionDeep { get; set; } = true;
+
+    /// <summary>Detect direct syscall stubs in game processes (SysWhispers/Hell's Gate patterns)
+    /// and ntdll.dll double-loading used to bypass Anti-Cheat userland hooks in ntdll.</summary>
+    public bool ScanDirectSyscalls { get; set; } = true;
+
     /// <summary>
     /// When false (default) the drive module only walks targeted, high-signal
     /// directories (profile, temp, downloads, appdata). When true it walks the
@@ -486,6 +503,10 @@ public static class ScanProfiles
         ScanImageFileExecutionOptions = true, // registry — fast
         ScanKnownDllsHijack = true,       // registry — fast
         ScanWinlogonHijack = true,        // registry — fast
+        ScanSvcHostGroups = true,         // registry — fast
+        ScanAntiCheatStatus = true,       // process + file — fast
+        ScanWmiSubscriptionDeep = true,   // WMI query — medium
+        ScanDirectSyscalls = false,       // memory walk — slow
         DeepDriveScan = false,
         ModuleTimeoutSeconds = 60,
     };

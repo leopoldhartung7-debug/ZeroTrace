@@ -286,6 +286,7 @@ public sealed class ScanEngine
         if (o.ScanLoadedKernelModules) modules.Add(new LoadedKernelModuleScanModule());
         if (o.ScanNamedPipes) modules.Add(new NamedPipeScanModule());
         if (o.ScanMemoryMappedFiles) modules.Add(new MemoryMappedFileScanModule());
+        if (o.ScanAntiCheatStatus) modules.Add(new AntiCheatStatusScanModule());
 
         // ── Group 3: registry / WMI / driver queries ──────────────────────────
         if (o.ScanRegistry) modules.Add(new RegistryScanModule());
@@ -310,6 +311,8 @@ public sealed class ScanEngine
         if (o.ScanImageFileExecutionOptions) modules.Add(new ImageFileExecutionOptionsScanModule());
         if (o.ScanKnownDllsHijack) modules.Add(new KnownDllsHijackScanModule());
         if (o.ScanWinlogonHijack) modules.Add(new WinlogonHijackScanModule());
+        if (o.ScanSvcHostGroups) modules.Add(new SvcHostGroupScanModule());
+        if (o.ScanWmiSubscriptionDeep) modules.Add(new WmiSubscriptionDeepScanModule());
         if (o.ScanWmiPersistence) modules.Add(new WmiPersistenceScanModule());
         if (o.ScanScheduledTasks) modules.Add(new ScheduledTaskScanModule());
         if (o.ScanKernelDrivers) modules.Add(new DriverScanModule());
@@ -359,6 +362,7 @@ public sealed class ScanEngine
         if (o.ScanSuspiciousExecutables) modules.Add(new SuspiciousExecutableScanModule());
         if (o.ScanProcessInjection) modules.Add(new ProcessInjectionScanModule());
         if (o.ScanSignatureVerification) modules.Add(new SignatureVerificationScanModule());
+        if (o.ScanDirectSyscalls) modules.Add(new SystemCallDirectScanModule());
         if (o.ScanThreadStartAddress) modules.Add(new ThreadStartAddressScanModule());
         if (o.ScanHeapSpray) modules.Add(new HeapSprayScanModule());
         if (o.ScanKnownHashes) modules.Add(new KnownHashScanModule());
