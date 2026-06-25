@@ -122,6 +122,13 @@ public sealed class CheatLoaderPackerScanModule : IScanModule
         ctx.Report(0.88, Name, "Scanning AppData directories for loader remnants...");
         await ScanAppDataDirectoriesAsync(ctx, ct);
 
+        ctx.Report(0.93, Name, "Checking registry for crypter/loader keys and scheduled tasks...");
+        await ScanCrypterRegistryKeysAsync(ctx, ct);
+        await ScanScheduledTasksForLoadersAsync(ctx, ct);
+
+        ctx.Report(0.97, Name, "Deep scanning Downloads for cheat loader archives...");
+        await ScanDownloadsDeepAsync(ctx, ct);
+
         ctx.Report(1.0, Name, "Cheat loader and packer scan complete");
     }
 
@@ -999,13 +1006,6 @@ public sealed class CheatLoaderPackerScanModule : IScanModule
         "chimera", "xenon", "arc", "nova", "supreme", "multi",
         "kernel", "ring0", "driver", "native", "shellcode", "mapper",
     };
-
-    public async Task RunRegistryAndScheduledTasksAsync(ScanContext ctx, CancellationToken ct)
-    {
-        await ScanCrypterRegistryKeysAsync(ctx, ct);
-        await ScanScheduledTasksForLoadersAsync(ctx, ct);
-        await ScanDownloadsDeepAsync(ctx, ct);
-    }
 
     private async Task ScanCrypterRegistryKeysAsync(ScanContext ctx, CancellationToken ct)
     {
