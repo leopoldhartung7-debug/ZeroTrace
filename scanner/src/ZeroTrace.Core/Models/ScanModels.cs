@@ -807,6 +807,30 @@ public sealed class ScanOptions
     /// reinstalls — a high-value forensic source.</summary>
     public bool ScanSteamUserdataForensics { get; set; } = true;
 
+    /// <summary>Detect Interception keyboard/mouse filter driver (used for no-recoil/aimbot at
+    /// kernel level, intercepting ALL input before games/AC), vJoy virtual joystick, ViGEmBus
+    /// virtual gamepad (aim assist on PC games), HidHide (controller hiding). Checks service
+    /// registry, filesystem files, and AHK scripts with Interception DllCall patterns.</summary>
+    public bool ScanInterceptionDriver { get; set; } = true;
+
+    /// <summary>Analyze hosts file for blocked anti-cheat domains (battleye.com, easyanticheat.net,
+    /// VAC/Riot domains → 127.0.0.1) and added cheat license server entries. Also detects ZeroTier/
+    /// Tailscale VPN adapters (DMA radar LAN), multiple concurrent VPN connections (HWID bypass),
+    /// and listening services on known cheat IPC ports (41337, 31337, 13337).</summary>
+    public bool ScanCheatNetworkProtocol { get; set; } = true;
+
+    /// <summary>Deep forensic scan of BAM (Background Activity Moderator — all executed app paths
+    /// including deleted ones), Shimcache/AppCompatCache (execution history persisting across reboots),
+    /// TypedPaths (Explorer address bar history), WER registry crash history, and CapabilityAccessManager
+    /// — primary forensic sources used by Ocean/detect.ac for cheat execution evidence.</summary>
+    public bool ScanRegistryForensicArtifacts { get; set; } = true;
+
+    /// <summary>Detect game overlay software abused for cheat ESP delivery: ImGui/MinHook DLLs in
+    /// Steam/Discord/GFE overlay directories, registry entries registering cheat overlay DLLs in
+    /// Xbox Game Bar configuration, Game DVR disabled (screenshot evasion). Third-party overlay
+    /// frameworks are the dominant transparent cheat delivery mechanism in competitive games.</summary>
+    public bool ScanThirdPartyGameOverlay { get; set; } = true;
+
     /// <summary>Scan game directories (Steam, Epic, user-specified) for BepInEx, Unity Doorstop,
     /// and MelonLoader code injection frameworks. Detects: doorstop_config.ini (enabled=true),
     /// winhttp.dll Doorstop proxy in game root, BepInEx/plugins/ DLLs with cheat keywords,
@@ -1490,6 +1514,10 @@ public static class ScanProfiles
         ScanCheatPayloadStaging = false,      // Temp/Downloads file walk — slow
         ScanWindowsNotificationForensics = true, // wpndatabase.db byte-grep — fast
         ScanSteamUserdataForensics = false,   // Steam userdata walk — slow
+        ScanInterceptionDriver = true,        // service registry + AHK script scan — fast
+        ScanCheatNetworkProtocol = true,      // hosts file + network interface check — fast
+        ScanRegistryForensicArtifacts = true, // BAM + Shimcache + TypedPaths — fast (Ocean signature)
+        ScanThirdPartyGameOverlay = true,     // overlay dirs + registry — fast
         DeepDriveScan = false,
         // No per-module timeout — every Quick module runs to completion. Quick stays
         // fast because slow modules are individually disabled above, not because they

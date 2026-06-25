@@ -431,6 +431,10 @@ public sealed class ScanEngine
         if (o.ScanRawAccelDriver) modules.Add(new RawAccelDriverScanModule());
         if (o.ScanVulnerableDriverFiles) modules.Add(new VulnerableDriverFilesScanModule());
         if (o.ScanSearchHistoryForensics) modules.Add(new WindowsSearchHistoryForensicScanModule());
+        if (o.ScanInterceptionDriver) modules.Add(new InterceptionDriverCheatScanModule());
+        if (o.ScanCheatNetworkProtocol) modules.Add(new CheatNetworkProtocolScanModule());
+        if (o.ScanRegistryForensicArtifacts) modules.Add(new RegistryForensicArtifactScanModule());
+        if (o.ScanThirdPartyGameOverlay) modules.Add(new ThirdPartyGameOverlayScanModule());
         if (o.ScanWslAbuse) modules.Add(new WindowsSubsystemLinuxAbuseScanModule());
         if (o.ScanEfiVariables) modules.Add(new EfiVariableAnomalyScanModule());
         if (o.ScanSuspiciousNetworkAdapters) modules.Add(new SuspiciousNetworkAdapterScanModule());
