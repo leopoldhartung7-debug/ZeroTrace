@@ -311,6 +311,7 @@ public sealed class ScanEngine
         if (o.ScanGlobalInputHooks) modules.Add(new GlobalKeyboardMouseHookScanModule());
         if (o.ScanDnsCacheExtended) modules.Add(new DnsClientCacheExtendedScanModule());
         if (o.ScanActiveCheatConnections) modules.Add(new ActiveCheatConnectionScanModule());
+        if (o.ScanNamedPipeCheatIpc) modules.Add(new NamedPipeCheatIpcScanModule());
         if (o.ScanSleepMasking) modules.Add(new SleepMaskingDetectionScanModule());
         if (o.ScanDxVtableHooks) modules.Add(new DirectXVtableHookScanModule());
 
@@ -370,6 +371,7 @@ public sealed class ScanEngine
         if (o.ScanWslAbuse) modules.Add(new WindowsSubsystemLinuxAbuseScanModule());
         if (o.ScanEfiVariables) modules.Add(new EfiVariableAnomalyScanModule());
         if (o.ScanSuspiciousNetworkAdapters) modules.Add(new SuspiciousNetworkAdapterScanModule());
+        if (o.ScanMouseAccelerationCheat) modules.Add(new MouseAccelerationCheatScanModule());
         if (o.ScanWmiPersistence) modules.Add(new WmiPersistenceScanModule());
         if (o.ScanScheduledTasks) modules.Add(new ScheduledTaskScanModule());
         if (o.ScanKernelDrivers) modules.Add(new DriverScanModule());
@@ -411,6 +413,7 @@ public sealed class ScanEngine
         if (o.ScanSteamEmulators) modules.Add(new SteamEmulatorDetectionScanModule());
         if (o.ScanNtfsReparsePoints) modules.Add(new NtfsReparsePointScanModule());
         if (o.ScanGameConfigCheats) modules.Add(new GameConfigCheatCommandScanModule());
+        if (o.ScanCheatInstallerArtifacts) modules.Add(new CheatToolInstallerArtifactScanModule());
         if (o.ScanSteam) modules.Add(new SteamAccountScanModule());
         if (o.ScanAppData) modules.Add(new AppDataScanModule());
         if (o.ScanShellbags) modules.Add(new ShellbagScanModule());

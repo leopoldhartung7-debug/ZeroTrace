@@ -870,6 +870,24 @@ public sealed class ScanOptions
     /// Uses EnumWindows + GetWindowLongPtr(GWL_EXSTYLE) for overlay detection.</summary>
     public bool ScanGlobalInputHooks { get; set; } = true;
 
+    /// <summary>Scan HID mouse device class registry for non-legitimate upper/lower filter drivers
+    /// (HID-level no-recoil cheats install as filter drivers to intercept all mouse events),
+    /// unusual mouse acceleration curve values (SmoothMouseXCurve/SmoothMouseYCurve),
+    /// and abnormal MouseSensitivity/MouseSpeed registry settings.</summary>
+    public bool ScanMouseAccelerationCheat { get; set; } = true;
+
+    /// <summary>Enumerate \Device\NamedPipe via NtQueryDirectoryObject for 60+ known cheat
+    /// tool IPC pipe names (Gamesense, Onetap, Fatality, Kiddion, 2Take1, PCILeech, DMA
+    /// patterns) and suspicious auto-generated pipe names with cheat-related prefixes.
+    /// Named pipes are the primary cheat IPC channel between loader and injected DLL.</summary>
+    public bool ScanNamedPipeCheatIpc { get; set; } = true;
+
+    /// <summary>Scan AppData, Temp, Desktop, and game directories for cheat tool installer
+    /// artifacts: license/token files (.lic, .token), config files with cheat CVars,
+    /// log files with cheat activation strings, auto-updater manifests, injector-staged DLLs
+    /// in Temp, and directories named after known cheat tools.</summary>
+    public bool ScanCheatInstallerArtifacts { get; set; } = true;
+
     /// <summary>Detect sleep-obfuscated cheat DLLs (Ekko/Foliage/Deathsleep patterns) that
     /// XOR-encrypt themselves and change memory permissions to RW (not executable) while sleeping.
     /// Uses VirtualQueryEx to find large private RW-only committed regions with high entropy
@@ -1167,6 +1185,9 @@ public static class ScanProfiles
         ScanDnsCacheExtended = true,          // DnsGetCacheDataTable — fast
         ScanSuspiciousNetworkAdapters = true, // GetAdaptersInfo + registry — fast
         ScanTokenIntegrityAbuse = true,       // integrity level check — fast
+        ScanMouseAccelerationCheat = true,    // HID registry check — fast
+        ScanNamedPipeCheatIpc = true,         // NtQueryDirectoryObject \Device\NamedPipe — fast
+        ScanCheatInstallerArtifacts = false,  // filesystem scan — slow
         ScanSleepMasking = false,             // VirtualQueryEx memory scan — slow
         ScanActiveCheatConnections = true,    // GetExtendedTcpTable ALL — fast
         ScanDxVtableHooks = false,            // cross-process vtable read — slow
