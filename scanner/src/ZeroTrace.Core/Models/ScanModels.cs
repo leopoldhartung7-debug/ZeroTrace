@@ -168,6 +168,43 @@ public sealed class ScanOptions
     /// used to bypass kernel-level anti-cheat protection (HVCI bypass).</summary>
     public bool ScanHypervisor { get; set; } = true;
 
+    /// <summary>Walk Windows Shellbag registry entries for previously-visited cheat
+    /// tool folders (kiddion, 2take1, cherax, memprocfs, etc.).</summary>
+    public bool ScanShellbags { get; set; } = true;
+
+    /// <summary>Decode UserAssist ROT13 registry entries for program execution history
+    /// and flag known cheat tool executables that were run in the past.</summary>
+    public bool ScanUserAssist { get; set; } = true;
+
+    /// <summary>Parse Windows Firewall rules for cheat-keyword names, apps in temp
+    /// paths, or rules that block anti-cheat services.</summary>
+    public bool ScanFirewallRules { get; set; } = true;
+
+    /// <summary>Check Volume Shadow Copy count and VSS service state; detect vssadmin
+    /// delete commands in PowerShell history (anti-forensic VSS wipe).</summary>
+    public bool ScanVolumeShadow { get; set; } = true;
+
+    /// <summary>Detect abuse of Windows Accessibility binaries (Sticky Keys / sethc.exe
+    /// backdoor via IFEO debugger or binary replacement) for cheat persistence.</summary>
+    public bool ScanAccessibilityAbuse { get; set; } = true;
+
+    /// <summary>Detect credential stealer artifacts: known stealer processes, output
+    /// files (passwords.txt, tokens.txt), browser DB copies in Temp, Discord LevelDB
+    /// clones, Steam ssfn token files, and Telegram tdata copies.</summary>
+    public bool ScanCredentialTheft { get; set; } = true;
+
+    /// <summary>Detect COM object hijacking via HKCU CLSID overrides — a technique
+    /// cheats use to inject DLLs into elevated processes without admin rights.</summary>
+    public bool ScanComHijack { get; set; } = true;
+
+    /// <summary>Scan FiveM plugin/citizen directories and Garry's Mod autorun/addons
+    /// for malicious LUA scripts containing cheat function patterns.</summary>
+    public bool ScanLuaScripts { get; set; } = true;
+
+    /// <summary>Check Steam game installations for ASI loader files, unsigned proxy
+    /// DLLs (dinput8.dll, d3d9.dll), and tampered anti-cheat binaries.</summary>
+    public bool ScanGameIntegrity { get; set; } = true;
+
     /// <summary>
     /// When false (default) the drive module only walks targeted, high-signal
     /// directories (profile, temp, downloads, appdata). When true it walks the
@@ -284,6 +321,15 @@ public static class ScanProfiles
         ScanIatHooks = true,        // fast — in-process only
         ScanTimestampManipulation = false, // file walk — slow
         ScanHypervisor = true,      // CPUID + WMI — fast
+        ScanShellbags = false,      // registry walk — medium
+        ScanUserAssist = true,      // registry — fast
+        ScanFirewallRules = true,   // registry parse — fast
+        ScanVolumeShadow = true,    // WMI + service — fast
+        ScanAccessibilityAbuse = true, // registry + file — fast
+        ScanCredentialTheft = false, // file walk — slow
+        ScanComHijack = true,       // registry — fast
+        ScanLuaScripts = false,     // file walk — slow
+        ScanGameIntegrity = false,  // game root walk — slow
         DeepDriveScan = false,
         ModuleTimeoutSeconds = 60,
     };

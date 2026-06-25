@@ -288,6 +288,9 @@ public sealed class ScanEngine
         if (o.ScanEventLogTamper) modules.Add(new EventLogTamperScanModule());
         if (o.ScanHwidSpoofer) modules.Add(new HwidSpooferScanModule());
         if (o.ScanPacketCapture) modules.Add(new PacketCaptureScanModule());
+        if (o.ScanFirewallRules) modules.Add(new FirewallRuleScanModule());
+        if (o.ScanVolumeShadow) modules.Add(new VolumeShadowScanModule());
+        if (o.ScanComHijack) modules.Add(new ComHijackScanModule());
         if (o.ScanWmiPersistence) modules.Add(new WmiPersistenceScanModule());
         if (o.ScanScheduledTasks) modules.Add(new ScheduledTaskScanModule());
         if (o.ScanKernelDrivers) modules.Add(new DriverScanModule());
@@ -300,6 +303,8 @@ public sealed class ScanEngine
         if (o.ScanDownloads) modules.Add(new DownloadsScanModule());
         if (o.ScanPowerShell) modules.Add(new PowerShellScanModule());
         if (o.ScanSecurityTimeline) modules.Add(new SecurityTimelineScanModule());
+        if (o.ScanCredentialTheft) modules.Add(new CredentialTheftScanModule());
+        if (o.ScanLuaScripts) modules.Add(new LuaScriptScanModule());
 
         // ── Group 5: forensic / trace artefacts ──────────────────────────────
         if (o.ScanForensicTraces) modules.Add(new ForensicTraceScanModule());
@@ -318,6 +323,9 @@ public sealed class ScanEngine
         if (o.ScanClipboard) modules.Add(new ClipboardScanModule());
         if (o.ScanSteam) modules.Add(new SteamAccountScanModule());
         if (o.ScanAppData) modules.Add(new AppDataScanModule());
+        if (o.ScanShellbags) modules.Add(new ShellbagScanModule());
+        if (o.ScanUserAssist) modules.Add(new UserAssistScanModule());
+        if (o.ScanAccessibilityAbuse) modules.Add(new AccessibilityAbuseScanModule());
 
         // ── Sequential (group 0): order-sensitive or internally parallel ──────
         if (o.ScanMacroSoftware) modules.Add(new MacroSoftwareScanModule());
@@ -327,6 +335,7 @@ public sealed class ScanEngine
         if (o.ScanDrives) modules.Add(new DriveScanModule());
         if (o.ScanNtfsAds) modules.Add(new NtfsAdsScanModule());
         if (o.ScanTimestampManipulation) modules.Add(new TimestampManipulationScanModule());
+        if (o.ScanGameIntegrity) modules.Add(new GameIntegrityScanModule());
         if (o.ScanCustomStrings) modules.Add(new CustomStringsScanModule());
         // Cloud analysis runs after drives so all hashes are collected first.
         if (o.ScanCloudAnalysis) modules.Add(new CloudAnalysisScanModule(
