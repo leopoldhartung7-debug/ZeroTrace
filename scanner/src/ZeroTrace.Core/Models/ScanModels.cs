@@ -1312,6 +1312,18 @@ public sealed class ScanOptions
     public bool ScanKernelRootkitDetection { get; set; } = true;
     public bool ScanUefiSecureBootBypass { get; set; } = true;
     public bool ScanAntiVirusEvasionArtifact { get; set; } = true;
+    public bool ScanFiveMMenuCheat { get; set; } = true;
+    public bool ScanAltVCheatMenu { get; set; } = true;
+    public bool ScanRageMpDeepCheat { get; set; } = true;
+    public bool ScanCheatLoaderPacker { get; set; } = true;
+    public bool ScanDmaCheatHardware { get; set; } = true;
+    public bool ScanStreamerModeCheatEvasion { get; set; } = true;
+    public bool ScanHwidSpooferRegistry { get; set; } = true;
+    public bool ScanAntiCheatFingerPrintEvasion { get; set; } = true;
+    public bool ScanBanEvasionAccount { get; set; } = true;
+    public bool ScanNetworkPacketManipulation { get; set; } = true;
+    public bool ScanGameTrainerCheatEngine { get; set; } = true;
+    public bool ScanVirtualMachineCheatBypass { get; set; } = true;
     /// <summary>Detect cheat source code and development artifacts: .git repos with cheat remote
     /// URLs, Visual Studio cheat projects (.sln/.vcxproj with cheat keywords), compiled build
     /// artifacts (cheat.pdb, x64/Release DLLs), game SDK directories, offset header files,
@@ -2093,6 +2105,18 @@ public static class ScanProfiles
         ScanKernelRootkitDetection = true,      // kernel rootkit artifact scan
         ScanUefiSecureBootBypass = true,        // UEFI bootkit / secure boot bypass scan
         ScanAntiVirusEvasionArtifact = true,    // AV/EDR evasion artifact scan
+        ScanFiveMMenuCheat = true,              // FiveM cheat menu / Lua executor scan
+        ScanAltVCheatMenu = true,               // alt:V cheat menu / resource bypass scan
+        ScanRageMpDeepCheat = true,             // RageMP cheat / CEF bypass scan
+        ScanCheatLoaderPacker = true,           // cheat loader/packer/crypter scan
+        ScanDmaCheatHardware = true,            // DMA PCIe hardware cheat scan
+        ScanStreamerModeCheatEvasion = true,    // OBS/capture bypass / streamer mode cheat scan
+        ScanHwidSpooferRegistry = true,         // HWID spoofer registry artifact scan
+        ScanAntiCheatFingerPrintEvasion = true, // AC fingerprint evasion artifact scan
+        ScanBanEvasionAccount = true,           // ban evasion / multi-account artifact scan
+        ScanNetworkPacketManipulation = true,   // lag switch / packet injection scan
+        ScanGameTrainerCheatEngine = true,      // Cheat Engine / game trainer scan
+        ScanVirtualMachineCheatBypass = true,   // VM-based cheat bypass scan
         ScanCheatSourceCodeRepo = true,        // cheat git repo/VS project/SDK/PDB artifact scan — fast
         DeepDriveScan = false,
         // No per-module timeout — every Quick module runs to completion. Quick stays

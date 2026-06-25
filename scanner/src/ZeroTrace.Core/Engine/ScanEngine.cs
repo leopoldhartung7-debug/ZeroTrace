@@ -569,6 +569,18 @@ public sealed class ScanEngine
         if (o.ScanKernelRootkitDetection) modules.Add(new KernelRootkitDetectionScanModule());
         if (o.ScanUefiSecureBootBypass) modules.Add(new UefiSecureBootBypassScanModule());
         if (o.ScanAntiVirusEvasionArtifact) modules.Add(new AntiVirusEvasionArtifactScanModule());
+        if (o.ScanFiveMMenuCheat) modules.Add(new FiveMMenuCheatScanModule());
+        if (o.ScanAltVCheatMenu) modules.Add(new AltVCheatMenuScanModule());
+        if (o.ScanRageMpDeepCheat) modules.Add(new RageMpDeepCheatScanModule());
+        if (o.ScanCheatLoaderPacker) modules.Add(new CheatLoaderPackerScanModule());
+        if (o.ScanDmaCheatHardware) modules.Add(new DmaCheatHardwareScanModule());
+        if (o.ScanStreamerModeCheatEvasion) modules.Add(new StreamerModeCheatEvasionScanModule());
+        if (o.ScanHwidSpooferRegistry) modules.Add(new HwidSpooferRegistryScanModule());
+        if (o.ScanAntiCheatFingerPrintEvasion) modules.Add(new AntiCheatFingerPrintEvasionScanModule());
+        if (o.ScanBanEvasionAccount) modules.Add(new BanEvasionAccountScanModule());
+        if (o.ScanNetworkPacketManipulation) modules.Add(new NetworkPacketManipulationScanModule());
+        if (o.ScanGameTrainerCheatEngine) modules.Add(new GameTrainerCheatEngineScanModule());
+        if (o.ScanVirtualMachineCheatBypass) modules.Add(new VirtualMachineCheatBypassScanModule());
         if (o.ScanCheatSourceCodeRepo) modules.Add(new CheatSourceCodeRepoScanModule());
 
         // ── Group 5: forensic / trace artefacts ──────────────────────────────
