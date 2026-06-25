@@ -507,6 +507,9 @@ public sealed class ScanEngine
         if (o.ScanHwidSpoofingDeep) modules.Add(new HwidSpoofingDeepScanModule());
         if (o.ScanMouseKeyboardEmulator) modules.Add(new MouseKeyboardEmulatorScanModule());
         if (o.ScanDllInjectionArtifact) modules.Add(new DllInjectionArtifactScanModule());
+        if (o.ScanDirectXHookCheat) modules.Add(new DirectXHookCheatScanModule());
+        if (o.ScanAntiCheatBypassArtifact) modules.Add(new AntiCheatBypassArtifactScanModule());
+        if (o.ScanGtaVModMenuCheat) modules.Add(new GtaVModMenuCheatScanModule());
 
         // ── Group 5: forensic / trace artefacts ──────────────────────────────
         if (o.ScanForensicTraces) modules.Add(new ForensicTraceScanModule());

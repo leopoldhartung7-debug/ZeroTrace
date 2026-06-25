@@ -1021,6 +1021,30 @@ public sealed class ScanOptions
     /// Manual mapping and IFEO hijacking are advanced techniques that bypass most anti-cheats.</summary>
     public bool ScanDllInjectionArtifact { get; set; } = true;
 
+    /// <summary>Detects DirectX/Vulkan hook tools used for ESP and wallhack rendering: scans for
+    /// proxy d3d11.dll/dxgi.dll/opengl32.dll placed next to GTA V, FiveM, and CS2 executables
+    /// (size &lt;500KB = proxy), ReShade .fx shader files with ESP/bone/hitbox/wallhack keywords,
+    /// imgui.ini files with cheat window names (ESP Settings, Aimbot, Bone ESP, Radar), OBS plugin
+    /// DLLs and scene JSON for suspicious sources, and running processes with --d3d/--hook CLI args.
+    /// Graphics hooks are the dominant ESP injection vector in modern cheats.</summary>
+    public bool ScanDirectXHookCheat { get; set; } = true;
+
+    /// <summary>Highest-value detection: artifacts from VAC/EAC/BattlEye/CFX/Ricochet/FACEIT bypass
+    /// tools. These tools exist solely to circumvent anti-cheat protection. Detects: 40+ known bypass
+    /// EXEs and DLLs across all major anti-cheats, steamclient.dll and EasyAntiCheat_launcher.exe
+    /// size anomalies, BEService.exe size check, bypass.lua/noban.lua in CitizenFX, PowerShell
+    /// history with sc stop AC commands, scheduled tasks with bypass+AC names, and Prefetch
+    /// artifacts for 19 bypass tool patterns.</summary>
+    public bool ScanAntiCheatBypassArtifact { get; set; } = true;
+
+    /// <summary>Deep GTA V mod menu and cheat tool detection: scans GTA V install directory for
+    /// cheat DLLs (menyoo/stand/cherax/2take1/kiddion etc.), cheat-named ASI files, and ScriptHookV
+    /// log references; checks 14 known mod menu AppData directories (Kiddion, 2Take1, Stand, Cherax,
+    /// Orbital, Midnight, Brute, Nova, Menyoo etc.) with config file content scan; detects 25 known
+    /// mod menu EXEs on disk and in running processes; scans GTA V commandline.txt for anti-detect
+    /// flags; and checks Prefetch for 20 mod menu patterns.</summary>
+    public bool ScanGtaVModMenuCheat { get; set; } = true;
+
     /// <summary>Scan game directories (Steam, Epic, user-specified) for BepInEx, Unity Doorstop,
     /// and MelonLoader code injection frameworks. Detects: doorstop_config.ini (enabled=true),
     /// winhttp.dll Doorstop proxy in game root, BepInEx/plugins/ DLLs with cheat keywords,
@@ -1734,6 +1758,9 @@ public static class ScanProfiles
         ScanHwidSpoofingDeep = true,          // spoofer EXE/driver/BIOS/MAC/registry scan — fast
         ScanMouseKeyboardEmulator = true,     // Interception driver/GHUB macro/AI aimbot — fast
         ScanDllInjectionArtifact = true,      // injector EXE/AppInit/IFEO/CE/shellcode — fast
+        ScanDirectXHookCheat = true,          // proxy d3d DLL in game dir + imgui ESP config — fast
+        ScanAntiCheatBypassArtifact = true,   // VAC/EAC/BE/CFX bypass EXE + PS history — fast
+        ScanGtaVModMenuCheat = true,          // mod menu DLL/ASI/AppData/process scan — fast
         DeepDriveScan = false,
         // No per-module timeout — every Quick module runs to completion. Quick stays
         // fast because slow modules are individually disabled above, not because they
