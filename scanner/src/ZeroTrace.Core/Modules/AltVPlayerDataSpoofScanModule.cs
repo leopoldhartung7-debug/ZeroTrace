@@ -449,6 +449,64 @@ public sealed class AltVPlayerDataSpoofScanModule : IScanModule
         "altv_data_editor",
     ];
 
+    private static readonly string[] PlayerDataSpoofConfigFiles =
+    [
+        "altv_stat_spoof_config.json",
+        "altv_stats_spoof_config.json",
+        "altv_data_spoof_config.json",
+        "altv_player_spoof_config.json",
+        "altv_level_spoof_config.json",
+        "altv_rank_spoof_config.json",
+        "altv_spoof_settings.json",
+        "altv_stat_hack_config.json",
+        "altv_data_hack_config.json",
+        "altv_player_hack_config.json",
+        "stat_spoof_altv_config.json",
+        "data_spoof_altv_config.json",
+        "altv_sync_spoof_config.json",
+        "altv_health_spoof_config.json",
+        "altv_armor_spoof_config.json",
+        "altv_position_spoof_config.json",
+        "altv_money_spoof_config.json",
+        "altv_name_spoof_config.json",
+        "altv_ping_spoof_config.json",
+        "altv_stat_offsets.json",
+        "altv_stat_offsets.txt",
+        "altv_data_offsets.json",
+        "altv_data_offsets.txt",
+        "altv_player_offsets.json",
+        "altv_player_offsets.txt",
+        "altv_stat_addresses.txt",
+        "altv_data_addresses.txt",
+        "altv_fake_stats.json",
+        "altv_fake_data.json",
+        "altv_spoof_v2_config.json",
+    ];
+
+    private static readonly string[] PlayerDataSpoofRecentDocPatterns =
+    [
+        "altv_stat_spoof",
+        "altv_stats_spoof",
+        "altv_data_spoof",
+        "altv_player_spoof",
+        "altv_level_spoof",
+        "altv_rank_spoof",
+        "altv_xp_spoof",
+        "altv_score_spoof",
+        "stat_spoof_altv",
+        "data_spoof_altv",
+        "player_spoof_altv",
+        "altv_sync_spoof",
+        "altv_health_spoof",
+        "altv_armor_spoof",
+        "altv_money_spoof",
+        "altv_name_spoof",
+        "altv_ping_spoof",
+        "altv_stat_hack",
+        "altv_data_hack",
+        "altv_spoof_v2",
+    ];
+
     public async Task RunAsync(ScanContext ctx, CancellationToken ct)
     {
         await Task.WhenAll(
@@ -459,7 +517,10 @@ public sealed class AltVPlayerDataSpoofScanModule : IScanModule
             CheckPlayerDataSpoofServerLogs(ctx, ct),
             CheckPlayerDataSpoofResourceFolders(ctx, ct),
             CheckPlayerDataSpoofDownloadArtifacts(ctx, ct),
-            CheckRegistryForPlayerDataSpoof(ctx, ct)
+            CheckRegistryForPlayerDataSpoof(ctx, ct),
+            CheckPlayerDataSpoofConfigFiles(ctx, ct),
+            CheckPlayerDataSpoofCacheArtifacts(ctx, ct),
+            CheckPlayerDataSpoofRecentDocuments(ctx, ct)
         );
     }
 
@@ -1216,6 +1277,229 @@ public sealed class AltVPlayerDataSpoofScanModule : IScanModule
             catch (Exception) { }
         }
     }
+
+    private Task CheckPlayerDataSpoofConfigFiles(ScanContext ctx, CancellationToken ct) => Task.Run(() =>
+    {
+        var scanDirs = new List<string>(AltVBaseDirs)
+        {
+            Desktop,
+            Path.Combine(UserProfile, "Downloads"),
+            Path.Combine(LocalAppData, "Temp"),
+            AppData,
+            LocalAppData,
+            Path.Combine(UserProfile, "Documents"),
+        };
+
+        foreach (var dir in scanDirs)
+        {
+            if (!Directory.Exists(dir)) continue;
+            try
+            {
+                foreach (var file in Directory.EnumerateFiles(dir, "*", SearchOption.AllDirectories))
+                {
+                    ct.ThrowIfCancellationRequested();
+                    ctx.IncrementFiles();
+                    var fn = Path.GetFileName(file);
+                    if (PlayerDataSpoofConfigFiles.Any(k => fn.Equals(k, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        ctx.AddFinding(new Finding
+                        {
+                            Module = Name,
+                            Title = "alt:V player data/stats spoof configuration file",
+                            Risk = RiskLevel.High,
+                            Location = Path.GetDirectoryName(file) ?? dir,
+                            FileName = fn,
+                            Reason = $"alt:V player data/stats spoof configuration or offset file '{fn}' found on disk. These files contain stat manipulation settings, memory offsets for player data structures, fake stat values, or configuration for spoofing tools targeting the alt:V synchronization layer.",
+                            Detail = $"Full path: {file}"
+                        });
+                    }
+                }
+            }
+            catch (UnauthorizedAccessException) { }
+            catch (IOException) { }
+        }
+    }, ct);
+
+    private Task CheckPlayerDataSpoofCacheArtifacts(ScanContext ctx, CancellationToken ct) => Task.Run(() =>
+    {
+        foreach (var altVDir in AltVBaseDirs)
+        {
+            var cacheDirs = new[]
+            {
+                Path.Combine(altVDir, "cache"),
+                Path.Combine(altVDir, "data"),
+                Path.Combine(altVDir, "temp"),
+                Path.Combine(altVDir, "bin"),
+                Path.Combine(altVDir, "logs"),
+            };
+
+            foreach (var cacheDir in cacheDirs)
+            {
+                if (!Directory.Exists(cacheDir)) continue;
+                try
+                {
+                    foreach (var file in Directory.EnumerateFiles(cacheDir, "*.dll", SearchOption.AllDirectories))
+                    {
+                        ct.ThrowIfCancellationRequested();
+                        ctx.IncrementFiles();
+                        var fn = Path.GetFileName(file);
+                        if (PlayerDataSpoofDlls.Any(k => fn.Equals(k, StringComparison.OrdinalIgnoreCase)))
+                        {
+                            ctx.AddFinding(new Finding
+                            {
+                                Module = Name,
+                                Title = "Player data spoof DLL inside alt:V cache/data folder",
+                                Risk = RiskLevel.Critical,
+                                Location = Path.GetDirectoryName(file) ?? cacheDir,
+                                FileName = fn,
+                                Reason = $"Known alt:V player data/stats spoof DLL '{fn}' found inside the alt:V application cache or data folder. Spoof tools sometimes store their DLLs inside the game framework directory to evade detection, persist across sessions, and enable auto-loading when the alt:V client initializes.",
+                                Detail = $"Full path: {file}"
+                            });
+                        }
+                    }
+                }
+                catch (UnauthorizedAccessException) { }
+                catch (IOException) { }
+
+                try
+                {
+                    foreach (var file in Directory.EnumerateFiles(cacheDir, "*.exe", SearchOption.AllDirectories))
+                    {
+                        ct.ThrowIfCancellationRequested();
+                        ctx.IncrementFiles();
+                        var fn = Path.GetFileName(file);
+                        if (PlayerDataSpoofExecutables.Any(k => fn.Equals(k, StringComparison.OrdinalIgnoreCase)))
+                        {
+                            ctx.AddFinding(new Finding
+                            {
+                                Module = Name,
+                                Title = "Player data spoof executable inside alt:V cache/data folder",
+                                Risk = RiskLevel.Critical,
+                                Location = Path.GetDirectoryName(file) ?? cacheDir,
+                                FileName = fn,
+                                Reason = $"Known alt:V player data/stats spoof executable '{fn}' found inside the alt:V application cache or data directory. Storing spoof tools inside the framework directory is a common evasion technique used to avoid detection by anticheat scans.",
+                                Detail = $"Full path: {file}"
+                            });
+                        }
+                    }
+                }
+                catch (UnauthorizedAccessException) { }
+                catch (IOException) { }
+            }
+        }
+
+        var altVInstallCacheDirs = new[]
+        {
+            @"C:\altv\cache",
+            @"C:\altv\data",
+            @"C:\Program Files\altv\cache",
+            Path.Combine(UserProfile, "altv", "cache"),
+        };
+
+        foreach (var cacheDir in altVInstallCacheDirs)
+        {
+            if (!Directory.Exists(cacheDir)) continue;
+            try
+            {
+                foreach (var file in Directory.EnumerateFiles(cacheDir, "*.dll", SearchOption.AllDirectories))
+                {
+                    ct.ThrowIfCancellationRequested();
+                    ctx.IncrementFiles();
+                    var fn = Path.GetFileName(file);
+                    if (PlayerDataSpoofDlls.Any(k => fn.Equals(k, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        ctx.AddFinding(new Finding
+                        {
+                            Module = Name,
+                            Title = "Player data spoof DLL inside alt:V installation cache",
+                            Risk = RiskLevel.Critical,
+                            Location = Path.GetDirectoryName(file) ?? cacheDir,
+                            FileName = fn,
+                            Reason = $"Known alt:V player data/stats spoof DLL '{fn}' found inside the alt:V installation cache directory. This indicates a spoof tool was deliberately placed within the alt:V installation to enable persistent stat manipulation.",
+                            Detail = $"Full path: {file}"
+                        });
+                    }
+                }
+            }
+            catch (UnauthorizedAccessException) { }
+            catch (IOException) { }
+        }
+    }, ct);
+
+    private Task CheckPlayerDataSpoofRecentDocuments(ScanContext ctx, CancellationToken ct) => Task.Run(() =>
+    {
+        var recentDir = Path.Combine(AppData, "Microsoft", "Windows", "Recent");
+        if (!Directory.Exists(recentDir)) return;
+        try
+        {
+            foreach (var lnk in Directory.EnumerateFiles(recentDir, "*.lnk", SearchOption.TopDirectoryOnly))
+            {
+                ct.ThrowIfCancellationRequested();
+                ctx.IncrementFiles();
+                var fn = Path.GetFileNameWithoutExtension(lnk).ToLowerInvariant();
+                bool isSpoofArtifact = PlayerDataSpoofRecentDocPatterns.Any(k =>
+                    fn.Contains(k, StringComparison.OrdinalIgnoreCase))
+                    || PlayerDataSpoofDownloadArtifacts.Any(k =>
+                        fn.Contains(k.Replace(".exe", string.Empty, StringComparison.OrdinalIgnoreCase)
+                            .Replace(".zip", string.Empty, StringComparison.OrdinalIgnoreCase)
+                            .Replace(".rar", string.Empty, StringComparison.OrdinalIgnoreCase)
+                            .Replace(".7z", string.Empty, StringComparison.OrdinalIgnoreCase),
+                            StringComparison.OrdinalIgnoreCase));
+                if (isSpoofArtifact)
+                {
+                    ctx.AddFinding(new Finding
+                    {
+                        Module = Name,
+                        Title = "alt:V player data/stats spoof recent document artifact",
+                        Risk = RiskLevel.Medium,
+                        Location = recentDir,
+                        FileName = Path.GetFileName(lnk),
+                        Reason = $"Windows Recent Documents folder contains a shortcut referencing an alt:V player data/stats spoof file: '{fn}'. Recent Documents tracks files opened or accessed by the user and provides forensic evidence of interaction with stat spoof tools even after file deletion.",
+                        Detail = $"Shortcut: {lnk}"
+                    });
+                }
+            }
+        }
+        catch (UnauthorizedAccessException) { }
+        catch (IOException) { }
+
+        var automaticDestDir = Path.Combine(AppData, "Microsoft", "Windows", "Recent", "AutomaticDestinations");
+        if (!Directory.Exists(automaticDestDir)) return;
+        try
+        {
+            foreach (var jumpFile in Directory.EnumerateFiles(automaticDestDir, "*.automaticDestinations-ms", SearchOption.TopDirectoryOnly))
+            {
+                ct.ThrowIfCancellationRequested();
+                ctx.IncrementFiles();
+                try
+                {
+                    using var fs = new FileStream(jumpFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                    using var sr = new StreamReader(fs, System.Text.Encoding.Unicode, detectEncodingFromByteOrderMarks: true);
+                    string content = sr.ReadToEnd();
+                    bool hasSpoofArtifact = PlayerDataSpoofRecentDocPatterns.Any(k =>
+                        content.Contains(k, StringComparison.OrdinalIgnoreCase))
+                        || PlayerDataSpoofExecutables.Any(k =>
+                            content.Contains(k, StringComparison.OrdinalIgnoreCase));
+                    if (hasSpoofArtifact)
+                    {
+                        ctx.AddFinding(new Finding
+                        {
+                            Module = Name,
+                            Title = "alt:V player data/stats spoof jump list artifact",
+                            Risk = RiskLevel.Medium,
+                            Location = automaticDestDir,
+                            FileName = Path.GetFileName(jumpFile),
+                            Reason = $"Windows Jump List (AutomaticDestinations) file contains a reference to an alt:V player data/stats spoof tool. Jump lists record recently accessed files and applications and persist as forensic artifacts even after spoof tool removal.",
+                            Detail = $"Jump list file: {jumpFile}"
+                        });
+                    }
+                }
+                catch (IOException) { }
+            }
+        }
+        catch (UnauthorizedAccessException) { }
+        catch (IOException) { }
+    }, ct);
 
     private static string Rot13Decode(string s)
     {

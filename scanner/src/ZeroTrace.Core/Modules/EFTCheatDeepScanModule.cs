@@ -1243,4 +1243,360 @@ public sealed class EFTCheatDeepScanModule : IScanModule
             }
         }
     }
+
+    private void CheckEFTEacBypassRegistry(ScanContext ctx, CancellationToken ct)
+    {
+        var eacServiceNames = new[]
+        {
+            "EasyAntiCheat", "EasyAntiCheat_EOS", "EACInternal",
+        };
+
+        foreach (var svcName in eacServiceNames)
+        {
+            ct.ThrowIfCancellationRequested();
+            try
+            {
+                using var svcKey = Registry.LocalMachine.OpenSubKey(
+                    $@"SYSTEM\CurrentControlSet\Services\{svcName}", writable: false);
+
+                if (svcKey is null) continue;
+                ctx.IncrementRegistryKeys();
+
+                var startType = svcKey.GetValue("Start") as int? ?? -1;
+                var imagePath = (svcKey.GetValue("ImagePath") as string ?? "").Trim();
+
+                if (startType == 4)
+                {
+                    ctx.AddFinding(new Finding
+                    {
+                        Module = Name,
+                        Title = $"EAC Service Disabled (EFT Anti-Cheat Bypass): {svcName}",
+                        Risk = RiskLevel.Critical,
+                        Location = $@"HKLM\SYSTEM\CurrentControlSet\Services\{svcName}",
+                        FileName = svcName,
+                        Reason = $"EasyAntiCheat service '{svcName}' has been set to disabled (Start=4) in the registry. " +
+                                 "Escape From Tarkov uses EasyAntiCheat as its primary anti-cheat protection. " +
+                                 "EFT cheat bypass tools disable the EAC service before launching EFT so " +
+                                 "that no kernel-level anti-cheat protection is active during gameplay. " +
+                                 "This is the primary method used by EFT bypass cheats.",
+                        Detail = $"Service: {svcName} | Start type: {startType} (4=Disabled) | ImagePath: {imagePath}"
+                    });
+                }
+
+                if (!string.IsNullOrEmpty(imagePath) &&
+                    !imagePath.Contains("EasyAntiCheat", StringComparison.OrdinalIgnoreCase) &&
+                    !imagePath.Contains("Battlestate Games", StringComparison.OrdinalIgnoreCase))
+                {
+                    ctx.AddFinding(new Finding
+                    {
+                        Module = Name,
+                        Title = $"EAC Service ImagePath Possibly Tampered: {svcName}",
+                        Risk = RiskLevel.Critical,
+                        Location = $@"HKLM\SYSTEM\CurrentControlSet\Services\{svcName}",
+                        FileName = svcName,
+                        Reason = $"EasyAntiCheat service '{svcName}' has an unexpected ImagePath: '{imagePath}'. " +
+                                 "Legitimate EAC for EFT references the EasyAntiCheat installation directory. " +
+                                 "A modified ImagePath indicates the service was redirected to a stub or empty " +
+                                 "binary by an EFT EAC bypass tool, effectively neutralizing EAC protection.",
+                        Detail = $"Service: {svcName} | ImagePath: {imagePath}"
+                    });
+                }
+            }
+            catch { }
+        }
+    }
+
+    private void CheckEFTIFEOHijack(ScanContext ctx, CancellationToken ct)
+    {
+        const string ifeoBase =
+            @"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options";
+
+        var eftTargetBinaries = new[]
+        {
+            "EscapeFromTarkov.exe", "EFT.exe", "Tarkov.exe",
+            "EasyAntiCheat.exe", "EasyAntiCheat_EOS.exe",
+            "BsgLauncher.exe", "BEService.exe",
+        };
+
+        foreach (var targetExe in eftTargetBinaries)
+        {
+            ct.ThrowIfCancellationRequested();
+            try
+            {
+                using var ifeoKey = Registry.LocalMachine.OpenSubKey(
+                    $@"{ifeoBase}\{targetExe}", writable: false);
+
+                if (ifeoKey is null) continue;
+                ctx.IncrementRegistryKeys();
+
+                var debugger = ifeoKey.GetValue("Debugger") as string;
+                var globalFlag = ifeoKey.GetValue("GlobalFlag") as int?;
+
+                if (!string.IsNullOrEmpty(debugger))
+                {
+                    ctx.AddFinding(new Finding
+                    {
+                        Module = Name,
+                        Title = $"IFEO Hijack on EFT/EAC Binary: {targetExe}",
+                        Risk = RiskLevel.Critical,
+                        Location = $@"HKLM\{ifeoBase}\{targetExe}",
+                        FileName = targetExe,
+                        Reason = $"Image File Execution Options (IFEO) Debugger key is set for '{targetExe}'. " +
+                                 $"Debugger value: '{debugger}'. " +
+                                 "This causes Windows to launch the debugger binary instead of the legitimate " +
+                                 $"'{targetExe}' executable. EFT cheat developers use IFEO hijacking to " +
+                                 "intercept EFT or EAC startup and redirect execution to a cheat loader " +
+                                 "or to prevent EasyAntiCheat from initializing.",
+                        Detail = $"Debugger: {debugger} | GlobalFlag: {globalFlag}"
+                    });
+                }
+
+                if (globalFlag.HasValue && globalFlag.Value != 0)
+                {
+                    ctx.AddFinding(new Finding
+                    {
+                        Module = Name,
+                        Title = $"IFEO GlobalFlag Set for EFT Binary: {targetExe}",
+                        Risk = RiskLevel.High,
+                        Location = $@"HKLM\{ifeoBase}\{targetExe}",
+                        FileName = targetExe,
+                        Reason = $"Image File Execution Options GlobalFlag is non-zero ({globalFlag}) " +
+                                 $"for '{targetExe}'. A non-zero GlobalFlag can enable heap debugging, " +
+                                 "silent exit, or other behaviors that interfere with EFT or EAC " +
+                                 "integrity validation and anti-cheat scanning.",
+                        Detail = $"GlobalFlag: 0x{globalFlag:X8}"
+                    });
+                }
+            }
+            catch { }
+        }
+    }
+
+    private void CheckEFTHostsFileBlockingBSG(ScanContext ctx, CancellationToken ct)
+    {
+        var hostsPath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.System),
+            "drivers", "etc", "hosts");
+
+        if (!File.Exists(hostsPath)) return;
+
+        var bsgHosts = new[]
+        {
+            "prod.escapefromtarkov.com", "launcher.escapefromtarkov.com",
+            "trading.escapefromtarkov.com", "ragfair.escapefromtarkov.com",
+            "mail.escapefromtarkov.com", "www.escapefromtarkov.com",
+            "escapefromtarkov.com", "bsg.escapefromtarkov.com",
+            "eac.escapefromtarkov.com", "anticheat.escapefromtarkov.com",
+        };
+
+        string content;
+        try
+        {
+            using var fs = new FileStream(hostsPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            using var sr = new StreamReader(fs);
+            content = sr.ReadToEnd();
+        }
+        catch (IOException) { return; }
+
+        ctx.IncrementFiles();
+
+        foreach (var bsgHost in bsgHosts)
+        {
+            if (!content.Contains(bsgHost, StringComparison.OrdinalIgnoreCase)) continue;
+
+            var lines = content.Split('\n');
+            foreach (var line in lines)
+            {
+                var trimmed = line.TrimStart();
+                if (trimmed.StartsWith("#")) continue;
+                if (!trimmed.Contains(bsgHost, StringComparison.OrdinalIgnoreCase)) continue;
+
+                ctx.AddFinding(new Finding
+                {
+                    Module = Name,
+                    Title = $"Hosts File Blocking BSG/EFT Server: {bsgHost}",
+                    Risk = RiskLevel.High,
+                    Location = hostsPath,
+                    FileName = "hosts",
+                    Reason = $"The Windows hosts file contains an active entry redirecting or blocking '{bsgHost}'. " +
+                             "EFT cheat bypass tools modify the hosts file to block BSG authentication servers, " +
+                             "EAC telemetry endpoints, or BSG update servers. Blocking authentication servers " +
+                             "can allow ban-evading accounts to connect, and blocking EAC update servers " +
+                             "prevents detection signature updates from being delivered.",
+                    Detail = $"Hosts entry: {trimmed.Trim()} | Blocked host: {bsgHost}"
+                });
+                break;
+            }
+        }
+    }
+
+    private void CheckEFTSuspiciousDrivers(ScanContext ctx, CancellationToken ct)
+    {
+        var eacBypassDriverNames = new[]
+        {
+            "eac_bypass.sys", "easyanticheat_bypass.sys", "eac_kill.sys",
+            "eac_disable.sys", "eft_bypass.sys", "eft_eac_bypass.sys",
+            "bsg_bypass.sys", "tarkov_bypass.sys", "eft_driver.sys",
+            "anti_eac.sys", "eac_hook.sys", "eft_kernel.sys",
+        };
+
+        var driversDir = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.System), "drivers");
+
+        if (!Directory.Exists(driversDir)) return;
+
+        string[] driverFiles;
+        try { driverFiles = Directory.GetFiles(driversDir, "*.sys"); }
+        catch (UnauthorizedAccessException) { return; }
+        catch (IOException) { return; }
+
+        foreach (var file in driverFiles)
+        {
+            ct.ThrowIfCancellationRequested();
+            ctx.IncrementFiles();
+            var fn = Path.GetFileName(file);
+
+            var matched = eacBypassDriverNames.FirstOrDefault(d =>
+                fn.Equals(d, StringComparison.OrdinalIgnoreCase));
+
+            if (matched is not null)
+            {
+                ctx.AddFinding(new Finding
+                {
+                    Module = Name,
+                    Title = $"EFT EAC Bypass Driver Found: {fn}",
+                    Risk = RiskLevel.Critical,
+                    Location = file,
+                    FileName = fn,
+                    Reason = $"Known EFT EasyAntiCheat bypass kernel driver '{fn}' found in the system " +
+                             "drivers directory. This driver is specifically designed to intercept and " +
+                             "neutralize EasyAntiCheat's kernel-mode scanning for EFT, enabling cheat " +
+                             "software to operate undetected. Pattern matched: " + matched,
+                    Detail = $"Driver path: {file}"
+                });
+            }
+
+            var fnLower = fn.ToLowerInvariant();
+            bool isEacBypass =
+                (fnLower.Contains("eac") || fnLower.Contains("easyanticheat")) &&
+                (fnLower.Contains("bypass") || fnLower.Contains("kill") || fnLower.Contains("disable") ||
+                 fnLower.Contains("hook") || fnLower.Contains("patch") || fnLower.Contains("spoof"));
+            bool isEftDriver =
+                (fnLower.Contains("eft") || fnLower.Contains("tarkov") || fnLower.Contains("bsg")) &&
+                (fnLower.Contains("bypass") || fnLower.Contains("driver") || fnLower.Contains("kernel") ||
+                 fnLower.Contains("cheat") || fnLower.Contains("hack"));
+
+            if ((isEacBypass || isEftDriver) && matched is null)
+            {
+                ctx.AddFinding(new Finding
+                {
+                    Module = Name,
+                    Title = $"Suspicious EFT/EAC-Targeting Driver (Heuristic): {fn}",
+                    Risk = RiskLevel.Critical,
+                    Location = file,
+                    FileName = fn,
+                    Reason = $"Kernel driver '{fn}' has a name indicating it targets EasyAntiCheat or " +
+                             "EFT with bypass/kill/disable/hook/patch operations. EAC bypass drivers " +
+                             "operate at kernel level to intercept anti-cheat callbacks before EAC " +
+                             "can detect cheat software running in EFT.",
+                    Detail = $"Driver: {file}"
+                });
+            }
+        }
+    }
+
+    private void CheckEFTMonoUnityArtifacts(ScanContext ctx, CancellationToken ct)
+    {
+        var eftInstallDirs = new List<string>();
+        foreach (var drive in new[] { @"C:\", @"D:\", @"E:\", @"F:\" })
+        {
+            eftInstallDirs.Add(Path.Combine(drive, "EscapeFromTarkov"));
+            eftInstallDirs.Add(Path.Combine(drive, "Escape From Tarkov"));
+            eftInstallDirs.Add(Path.Combine(drive, "EFT"));
+        }
+
+        eftInstallDirs.Add(Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
+            "Battlestate Games", "EscapeFromTarkov"));
+
+        var suspiciousUnityFiles = new[]
+        {
+            "mono.dll", "mono-2.0-bdwgc.dll",
+        };
+
+        foreach (var installDir in eftInstallDirs)
+        {
+            if (!Directory.Exists(installDir)) continue;
+            ct.ThrowIfCancellationRequested();
+
+            var monoDir = Path.Combine(installDir, "MonoBleedingEdge", "EmbedRuntime");
+            if (!Directory.Exists(monoDir))
+                monoDir = Path.Combine(installDir, "EscapeFromTarkov_Data", "Mono");
+
+            if (!Directory.Exists(monoDir)) continue;
+
+            foreach (var suspFile in suspiciousUnityFiles)
+            {
+                var suspPath = Path.Combine(monoDir, suspFile);
+                if (!File.Exists(suspPath)) continue;
+
+                ctx.IncrementFiles();
+                try
+                {
+                    var fi = new FileInfo(suspPath);
+                    if (fi.Length < 512 * 1024)
+                    {
+                        ctx.AddFinding(new Finding
+                        {
+                            Module = Name,
+                            Title = $"EFT Unity Mono DLL Suspiciously Small: {suspFile}",
+                            Risk = RiskLevel.High,
+                            Location = suspPath,
+                            FileName = suspFile,
+                            Reason = $"EFT Unity runtime file '{suspFile}' is only {fi.Length} bytes, " +
+                                     "which is far too small for a legitimate Mono runtime. Some EFT cheat " +
+                                     "tools replace or hollow the Mono runtime DLL to inject cheat code " +
+                                     "into the EFT Unity scripting environment, bypassing normal injection " +
+                                     "detection. A legitimate mono.dll for Unity is typically 2-8 MB.",
+                            Detail = $"Path: {suspPath} | Size: {fi.Length} bytes"
+                        });
+                    }
+                }
+                catch { }
+            }
+
+            var assemblyCSharpPath = Path.Combine(installDir, "EscapeFromTarkov_Data",
+                "Managed", "Assembly-CSharp.dll");
+            if (File.Exists(assemblyCSharpPath))
+            {
+                ctx.IncrementFiles();
+                try
+                {
+                    var fi = new FileInfo(assemblyCSharpPath);
+                    var lastWrite = fi.LastWriteTimeUtc;
+                    var expectedMaxAge = DateTime.UtcNow.AddDays(-1);
+
+                    if (lastWrite > expectedMaxAge)
+                    {
+                        ctx.AddFinding(new Finding
+                        {
+                            Module = Name,
+                            Title = "EFT Assembly-CSharp.dll Recently Modified",
+                            Risk = RiskLevel.High,
+                            Location = assemblyCSharpPath,
+                            FileName = "Assembly-CSharp.dll",
+                            Reason = $"EFT's Assembly-CSharp.dll was last modified at {lastWrite:yyyy-MM-dd HH:mm} UTC, " +
+                                     "which is very recent. Assembly-CSharp.dll is the main game assembly for EFT's " +
+                                     "Unity scripting. Some cheat tools (particularly BepInEx patchers and dnSpy-based " +
+                                     "mods) patch this file directly to inject cheat code into the game. " +
+                                     "Legitimate EFT updates modify this file, but recent modification outside of " +
+                                     "a known update window is suspicious.",
+                            Detail = $"Path: {assemblyCSharpPath} | LastWrite: {lastWrite:O} | Size: {fi.Length}"
+                        });
+                    }
+                }
+                catch { }
+            }
+        }
+    }
 }
