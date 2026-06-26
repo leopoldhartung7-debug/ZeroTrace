@@ -1384,6 +1384,7 @@ public sealed class ScanOptions
     public bool ScanFiveMIdentitySpoof { get; set; } = true;
     public bool ScanFiveMNUIExploit { get; set; } = true;
     public bool ScanRageMPKickExploit { get; set; } = true;
+    public bool ScanRageMPCEFExploit { get; set; } = true;
     /// <summary>Detect cheat source code and development artifacts: .git repos with cheat remote
     /// URLs, Visual Studio cheat projects (.sln/.vcxproj with cheat keywords), compiled build
     /// artifacts (cheat.pdb, x64/Release DLLs), game SDK directories, offset header files,
@@ -2240,6 +2241,7 @@ public static class ScanProfiles
         ScanFiveMIdentitySpoof = true,
         ScanFiveMNUIExploit = true,
         ScanRageMPKickExploit = true,
+        ScanRageMPCEFExploit = true,
         ScanCheatSourceCodeRepo = true,        // cheat git repo/VS project/SDK/PDB artifact scan — fast
         DeepDriveScan = false,
         // No per-module timeout — every Quick module runs to completion. Quick stays
