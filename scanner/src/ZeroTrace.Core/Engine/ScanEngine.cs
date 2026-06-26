@@ -644,6 +644,8 @@ public sealed class ScanEngine
         if (o.ScanRageMPCEFExploit) modules.Add(new RageMPCEFExploitScanModule());
         if (o.ScanEFTCheatDeep) modules.Add(new EFTCheatDeepScanModule());
         if (o.ScanValorantAimbotForensic) modules.Add(new ValorantAimbotForensicScanModule());
+        if (o.ScanAltVPlayerDataSpoof) modules.Add(new AltVPlayerDataSpoofScanModule());
+        if (o.ScanApexLegendsMacroForensic) modules.Add(new ApexLegendsMacroForensicScanModule());
         if (o.ScanCheatSourceCodeRepo) modules.Add(new CheatSourceCodeRepoScanModule());
 
         // ── Group 5: forensic / trace artefacts ──────────────────────────────

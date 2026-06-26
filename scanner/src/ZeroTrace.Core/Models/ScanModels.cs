@@ -1387,6 +1387,8 @@ public sealed class ScanOptions
     public bool ScanRageMPCEFExploit { get; set; } = true;
     public bool ScanEFTCheatDeep { get; set; } = true;
     public bool ScanValorantAimbotForensic { get; set; } = true;
+    public bool ScanAltVPlayerDataSpoof { get; set; } = true;
+    public bool ScanApexLegendsMacroForensic { get; set; } = true;
     /// <summary>Detect cheat source code and development artifacts: .git repos with cheat remote
     /// URLs, Visual Studio cheat projects (.sln/.vcxproj with cheat keywords), compiled build
     /// artifacts (cheat.pdb, x64/Release DLLs), game SDK directories, offset header files,
@@ -2246,6 +2248,8 @@ public static class ScanProfiles
         ScanRageMPCEFExploit = true,
         ScanEFTCheatDeep = true,
         ScanValorantAimbotForensic = true,
+        ScanAltVPlayerDataSpoof = true,
+        ScanApexLegendsMacroForensic = true,
         ScanCheatSourceCodeRepo = true,        // cheat git repo/VS project/SDK/PDB artifact scan — fast
         DeepDriveScan = false,
         // No per-module timeout — every Quick module runs to completion. Quick stays
