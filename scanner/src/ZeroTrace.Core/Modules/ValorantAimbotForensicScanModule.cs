@@ -93,6 +93,23 @@ public sealed class ValorantAimbotForensicScanModule : IScanModule
         "valorant_soft_aim.exe",
         "valorant_legit_aim.exe",
         "valorant_rage_aim.exe",
+        "valorant_recoil_control.exe",
+        "valorant_spread_control.exe",
+        "valorant_aim_key.exe",
+        "valorant_triggerkey.exe",
+        "valorant_flick.exe",
+        "valo_aimbot.exe",
+        "valo_triggerbot.exe",
+        "valo_silent_aim.exe",
+        "valo_norecoil.exe",
+        "valo_cheat.exe",
+        "valo_hack.exe",
+        "valo_aim.exe",
+        "valorant_loader.exe",
+        "valorant_injector.exe",
+        "valorant_bypass.exe",
+        "aim_valorant.exe",
+        "trigger_valorant.exe",
     };
 
     private static readonly string[] AimbotDllNames =
@@ -152,6 +169,8 @@ public sealed class ValorantAimbotForensicScanModule : IScanModule
         "recoil_valorant.dll",
         "spread_valorant.dll",
         "bhop_valorant.dll",
+        "valorant_esp.dll",
+        "valorant_wallhack.dll",
     };
 
     private static readonly string[] AimbotConfigFileNames =
@@ -293,6 +312,9 @@ public sealed class ValorantAimbotForensicScanModule : IScanModule
         "valo_aimbot.zip",
         "valo_aimbot.rar",
         "valo_aimbot.7z",
+        "valo_cheat.zip",
+        "valo_cheat.rar",
+        "valo_cheat.7z",
     };
 
     private static readonly string[] GameLogCheatPatterns =
@@ -336,49 +358,52 @@ public sealed class ValorantAimbotForensicScanModule : IScanModule
         "recoil control script",
         "aim assist script",
         "triggerbot script",
+        "vanguard violation",
+        "kernel cheat detected",
     };
 
     private static readonly string[] UserAssistAimbotNames =
     {
-        "inyb_nvzoobg",
-        "inyb_nvz",
-        "inyb_gevttreobg",
-        "inyb_gevttre",
-        "inyb_fvyrag_nvz",
-        "inyb_zntvp_ohyyrg",
-        "inyb_nvznffvfg",
-        "inyb_nvz_nffvfg",
-        "inyb_erpbvy",
-        "inyb_aberpbvy",
-        "inyb_ab_erpbvy",
-        "inyb_fcernq",
-        "inyb_abfcernq",
-        "inyb_ab_fcernq",
-        "inyb_encvq_sver",
-        "inyb_encvqsver",
-        "inyb_ubc",
-        "inyb_ohaol",
-        "inyb_fcrrq",
-        "inyb_fcrrqunpx",
-        "inyb_sbi",
-        "inyb_sbi_purng",
-        "inyb_ybnqre_nvz",
-        "inyb_vawrpgbe_nvz",
-        "inyb_olcnff_nvz",
-        "nvzoobg_inybenag",
-        "gevttreobg_inybenag",
-        "fvyrag_nvz_inybenag",
-        "zntvp_ohyyrg_inybenag",
-        "nvz_nffvfg_inybenag",
-        "aberpbvy_inybenag",
-        "ab_erpbvy_inybenag",
-        "encvq_sver_inybenag",
-        "oubc_inybenag",
-        "sbi_inybenag",
-        "ubyybj_inybenag",
-        "urnqfubg_inybenag",
-        "nhgb_nvz_inybenag",
-        "nhgb_sver_inybenag",
+        "valorant_aimbot",
+        "valorant_aim",
+        "valorant_triggerbot",
+        "valorant_trigger",
+        "valorant_silent_aim",
+        "valorant_magic_bullet",
+        "valorant_aimassist",
+        "valorant_aim_assist",
+        "valorant_norecoil",
+        "valorant_no_recoil",
+        "valorant_spread",
+        "valorant_rapid_fire",
+        "valorant_bhop",
+        "valorant_speed",
+        "valorant_fov",
+        "valorant_bone_aim",
+        "valorant_headshot",
+        "valorant_auto_aim",
+        "valorant_cheat",
+        "valorant_hack",
+        "valorant_loader_aim",
+        "valorant_injector_aim",
+        "valorant_bypass_aim",
+        "val_aimbot",
+        "val_aim",
+        "val_triggerbot",
+        "val_silent_aim",
+        "val_norecoil",
+        "val_fov",
+        "val_bone_aim",
+        "val_headshot",
+        "val_auto_aim",
+        "val_aimassist",
+        "aimbot_valorant",
+        "triggerbot_valorant",
+        "silent_aim_valorant",
+        "norecoil_valorant",
+        "valo_aimbot",
+        "valo_triggerbot",
+        "valo_cheat",
     };
 
     private static readonly string[] MuiCacheAimbotNames =
@@ -416,6 +441,8 @@ public sealed class ValorantAimbotForensicScanModule : IScanModule
         "val_headshot",
         "val_auto_aim",
         "val_aimassist",
+        "aimbot_valorant",
+        "triggerbot_valorant",
     };
 
     private static readonly string[] UninstallAimbotKeywords =
@@ -445,6 +472,161 @@ public sealed class ValorantAimbotForensicScanModule : IScanModule
         "val cheat",
     };
 
+    private static readonly string[] VanguardBypassKeywords =
+    {
+        "vgk.sys",
+        "vanguard bypass",
+        "vanguard spoof",
+        "vanguard disable",
+        "vanguard kill",
+        "anticheat bypass",
+        "riot vanguard",
+        "trvanguard",
+        "vgc.exe",
+    };
+
+    private static readonly string[] ShellbagValorantPaths =
+    {
+        @"valorant\aimbot",
+        @"valorant\triggerbot",
+        @"valorant\cheat",
+        @"valorant\hack",
+        @"val\aimbot",
+        @"val\triggerbot",
+        @"val\cheat",
+        @"valorant_aimbot",
+        @"valorant_triggerbot",
+        @"val_aimbot",
+    };
+
+    private static readonly string[] AppCompatValorantCheatNames =
+    {
+        "valorant_aimbot",
+        "valorant_triggerbot",
+        "valorant_cheat",
+        "valorant_hack",
+        "valorant_silent_aim",
+        "valorant_norecoil",
+        "val_aimbot",
+        "val_triggerbot",
+        "valo_aimbot",
+        "aimbot_valorant",
+        "triggerbot_valorant",
+    };
+
+    private static readonly string[] PrefetchAimbotNames =
+    {
+        "VALORANT_AIMBOT",
+        "VALORANT_AIM",
+        "VALORANT_TRIGGERBOT",
+        "VALORANT_TRIGGER",
+        "VALORANT_SILENT_AIM",
+        "VALORANT_MAGIC_BULLET",
+        "VALORANT_AIMASSIST",
+        "VALORANT_AIM_ASSIST",
+        "VALORANT_NORECOIL",
+        "VALORANT_NO_RECOIL",
+        "VALORANT_SPREAD",
+        "VALORANT_RAPID_FIRE",
+        "VALORANT_BHOP",
+        "VALORANT_SPEED",
+        "VALORANT_FOV",
+        "VALORANT_BONE_AIM",
+        "VALORANT_HEADSHOT",
+        "VALORANT_AUTO_AIM",
+        "VALORANT_CHEAT",
+        "VALORANT_HACK",
+        "VALORANT_LOADER_AIM",
+        "VALORANT_INJECTOR_AIM",
+        "VALORANT_BYPASS_AIM",
+        "VAL_AIMBOT",
+        "VAL_AIM",
+        "VAL_TRIGGERBOT",
+        "VAL_SILENT_AIM",
+        "VAL_NORECOIL",
+        "VAL_FOV",
+        "AIMBOT_VALORANT",
+        "TRIGGERBOT_VALORANT",
+        "VALO_AIMBOT",
+        "VALO_TRIGGERBOT",
+    };
+
+    private static readonly string[] EnvVarAimbotKeywords =
+    {
+        "valorant_aimbot",
+        "valorant_triggerbot",
+        "valorant_cheat",
+        "valorant_hack",
+        "val_aimbot",
+        "val_triggerbot",
+        "val_cheat",
+        "valo_aimbot",
+        "aimbot_valorant",
+        "triggerbot_valorant",
+        "valorant_bypass",
+        "valorant_loader",
+        "valorant_inject",
+    };
+
+    private static readonly string[] StartupFolderAimbotPatterns =
+    {
+        "valorant_aimbot",
+        "valorant_triggerbot",
+        "valorant_cheat",
+        "valorant_hack",
+        "valorant_silent_aim",
+        "valorant_norecoil",
+        "val_aimbot",
+        "val_triggerbot",
+        "val_cheat",
+        "valo_aimbot",
+        "aimbot_valorant",
+        "triggerbot_valorant",
+        "valorant_loader",
+        "valorant_injector",
+        "valorant_bypass",
+    };
+
+    private static readonly string[] ScheduledTaskAimbotKeywords =
+    {
+        "valorant_aimbot",
+        "valorant_triggerbot",
+        "valorant_cheat",
+        "valorant_hack",
+        "val_aimbot",
+        "val_triggerbot",
+        "valo_aimbot",
+        "aimbot_valorant",
+        "valorant_loader",
+        "valorant_bypass",
+        "valorant_inject",
+        "valorant_silent_aim",
+        "valorant_norecoil",
+    };
+
+    private static readonly string[] RecentFilesAimbotPatterns =
+    {
+        "valorant_aimbot",
+        "valorant_triggerbot",
+        "valorant_cheat",
+        "valorant_hack",
+        "valorant_silent_aim",
+        "valorant_norecoil",
+        "valorant_rapid_fire",
+        "valorant_bhop",
+        "val_aimbot",
+        "val_triggerbot",
+        "val_cheat",
+        "valo_aimbot",
+        "aimbot_valorant",
+        "triggerbot_valorant",
+        "valorant_fov",
+        "valorant_bone_aim",
+        "valorant_headshot",
+        "valorant_loader",
+        "valorant_bypass",
+    };
+
     public Task RunAsync(ScanContext ctx, CancellationToken ct)
     {
         ctx.Report(0.0, Name, "Starting Valorant aimbot forensic scan...");
@@ -455,7 +637,12 @@ public sealed class ValorantAimbotForensicScanModule : IScanModule
             CheckValorantMacroScripts(ctx, ct),
             CheckValorantDownloadArtifacts(ctx, ct),
             CheckValorantGameLogs(ctx, ct),
-            CheckValorantRegistryArtifacts(ctx, ct)
+            CheckValorantRegistryArtifacts(ctx, ct),
+            CheckValorantPrefetchArtifacts(ctx, ct),
+            CheckValorantStartupFolderArtifacts(ctx, ct),
+            CheckValorantScheduledTaskArtifacts(ctx, ct),
+            CheckValorantEnvironmentVariables(ctx, ct),
+            CheckValorantRecentDocuments(ctx, ct)
         );
     }
 
@@ -468,34 +655,35 @@ public sealed class ValorantAimbotForensicScanModule : IScanModule
             {
                 if (ct.IsCancellationRequested) return;
                 if (!Directory.Exists(dir)) continue;
+                IEnumerable<string> files = Enumerable.Empty<string>();
                 try
                 {
-                    foreach (var file in Directory.EnumerateFiles(dir, "*.exe",
-                        SearchOption.AllDirectories))
-                    {
-                        if (ct.IsCancellationRequested) return;
-                        ctx.IncrementFiles();
-                        var fileName = Path.GetFileName(file);
-                        var fileNameLower = fileName.ToLowerInvariant();
-                        if (!AimbotExecutableNames.Any(n =>
-                                string.Equals(n, fileNameLower, StringComparison.OrdinalIgnoreCase)))
-                            continue;
-                        ctx.AddFinding(new Finding
-                        {
-                            Module   = Name,
-                            Title    = $"Valorant Aimbot Executable Found: {fileName}",
-                            Risk     = RiskLevel.High,
-                            Location = file,
-                            FileName = fileName,
-                            Reason   = $"Valorant aimbot/triggerbot executable '{fileName}' found at '{file}'. " +
-                                       "This file matches a known Valorant aimbot or triggerbot cheat executable name. " +
-                                       "Such tools are used to automate aim, trigger shots, control recoil, or " +
-                                       "otherwise gain an unfair advantage in Valorant.",
-                            Detail   = $"Path: {file} | File: {fileName}"
-                        });
-                    }
+                    files = Directory.EnumerateFiles(dir, "*.exe", SearchOption.AllDirectories);
                 }
-                catch (UnauthorizedAccessException) { }
+                catch (UnauthorizedAccessException) { continue; }
+                foreach (var file in files)
+                {
+                    if (ct.IsCancellationRequested) return;
+                    ctx.IncrementFiles();
+                    var fileName = Path.GetFileName(file);
+                    if (!AimbotExecutableNames.Any(n =>
+                            string.Equals(n, fileName, StringComparison.OrdinalIgnoreCase)))
+                        continue;
+                    ctx.AddFinding(new Finding
+                    {
+                        Module   = Name,
+                        Title    = $"Valorant Aimbot Executable Found: {fileName}",
+                        Risk     = RiskLevel.High,
+                        Location = file,
+                        FileName = fileName,
+                        Reason   = $"Valorant aimbot/triggerbot executable '{fileName}' found at '{file}'. " +
+                                   "This file matches a known Valorant aimbot or triggerbot cheat executable name. " +
+                                   "Such tools are used to automate aim, trigger shots, control recoil, " +
+                                   "eliminate spread, automate bunnyhop, or otherwise gain an unfair " +
+                                   "advantage in Valorant ranked or unrated matches.",
+                        Detail   = $"Path: {file} | File: {fileName}"
+                    });
+                }
             }
         }, ct);
 
@@ -508,34 +696,35 @@ public sealed class ValorantAimbotForensicScanModule : IScanModule
             {
                 if (ct.IsCancellationRequested) return;
                 if (!Directory.Exists(dir)) continue;
+                IEnumerable<string> files = Enumerable.Empty<string>();
                 try
                 {
-                    foreach (var file in Directory.EnumerateFiles(dir, "*.dll",
-                        SearchOption.AllDirectories))
-                    {
-                        if (ct.IsCancellationRequested) return;
-                        ctx.IncrementFiles();
-                        var fileName = Path.GetFileName(file);
-                        var fileNameLower = fileName.ToLowerInvariant();
-                        if (!AimbotDllNames.Any(n =>
-                                string.Equals(n, fileNameLower, StringComparison.OrdinalIgnoreCase)))
-                            continue;
-                        ctx.AddFinding(new Finding
-                        {
-                            Module   = Name,
-                            Title    = $"Valorant Aimbot DLL Found: {fileName}",
-                            Risk     = RiskLevel.High,
-                            Location = file,
-                            FileName = fileName,
-                            Reason   = $"Valorant aimbot DLL '{fileName}' found at '{file}'. " +
-                                       "This DLL matches a known Valorant aimbot, triggerbot, or cheat injection " +
-                                       "library name. Such DLLs are injected into game processes to provide " +
-                                       "aimbot, silent aim, no-recoil, or other cheating functionality.",
-                            Detail   = $"Path: {file} | File: {fileName}"
-                        });
-                    }
+                    files = Directory.EnumerateFiles(dir, "*.dll", SearchOption.AllDirectories);
                 }
-                catch (UnauthorizedAccessException) { }
+                catch (UnauthorizedAccessException) { continue; }
+                foreach (var file in files)
+                {
+                    if (ct.IsCancellationRequested) return;
+                    ctx.IncrementFiles();
+                    var fileName = Path.GetFileName(file);
+                    if (!AimbotDllNames.Any(n =>
+                            string.Equals(n, fileName, StringComparison.OrdinalIgnoreCase)))
+                        continue;
+                    ctx.AddFinding(new Finding
+                    {
+                        Module   = Name,
+                        Title    = $"Valorant Aimbot DLL Found: {fileName}",
+                        Risk     = RiskLevel.High,
+                        Location = file,
+                        FileName = fileName,
+                        Reason   = $"Valorant aimbot DLL '{fileName}' found at '{file}'. " +
+                                   "This DLL matches a known Valorant aimbot, triggerbot, or cheat injection " +
+                                   "library name. Such DLLs are injected into the game process or a companion " +
+                                   "process to provide aimbot, silent aim, no-recoil, or other cheating " +
+                                   "functionality while Valorant is running.",
+                        Detail   = $"Path: {file} | File: {fileName}"
+                    });
+                }
             }
         }, ct);
 
@@ -548,47 +737,50 @@ public sealed class ValorantAimbotForensicScanModule : IScanModule
             {
                 if (ct.IsCancellationRequested) return;
                 if (!Directory.Exists(dir)) continue;
+                IEnumerable<string> files = Enumerable.Empty<string>();
                 try
                 {
-                    foreach (var file in Directory.EnumerateFiles(dir, "*.json",
-                        SearchOption.AllDirectories))
-                    {
-                        if (ct.IsCancellationRequested) return;
-                        ctx.IncrementFiles();
-                        var fileName = Path.GetFileName(file);
-                        var fileNameLower = fileName.ToLowerInvariant();
-                        if (!AimbotConfigFileNames.Any(n =>
-                                string.Equals(n, fileNameLower, StringComparison.OrdinalIgnoreCase)))
-                            continue;
-                        string content = string.Empty;
-                        try
-                        {
-                            using var fs = new FileStream(file, FileMode.Open, FileAccess.Read,
-                                FileShare.ReadWrite);
-                            using var sr = new StreamReader(fs);
-                            content = await sr.ReadToEndAsync(ct);
-                        }
-                        catch (IOException) { }
-                        var hitKeyword = ConfigKeywords.FirstOrDefault(k =>
-                            content.Contains(k, StringComparison.OrdinalIgnoreCase));
-                        ctx.AddFinding(new Finding
-                        {
-                            Module   = Name,
-                            Title    = $"Valorant Aimbot Config File Found: {fileName}",
-                            Risk     = RiskLevel.High,
-                            Location = file,
-                            FileName = fileName,
-                            Reason   = $"Valorant aimbot/cheat configuration file '{fileName}' found at '{file}'. " +
-                                       (hitKeyword is not null
-                                           ? $"File content contains cheat-related keyword '{hitKeyword}'. "
-                                           : "File name matches known aimbot config pattern. ") +
-                                       "These config files store aimbot settings such as FOV, smoothing, bone targets, " +
-                                       "trigger keys, recoil control values, and spread parameters.",
-                            Detail   = $"Path: {file} | Keyword: {hitKeyword ?? "n/a"}"
-                        });
-                    }
+                    files = Directory.EnumerateFiles(dir, "*.json", SearchOption.AllDirectories);
                 }
-                catch (UnauthorizedAccessException) { }
+                catch (UnauthorizedAccessException) { continue; }
+                foreach (var file in files)
+                {
+                    if (ct.IsCancellationRequested) return;
+                    ctx.IncrementFiles();
+                    var fileName = Path.GetFileName(file);
+                    if (!AimbotConfigFileNames.Any(n =>
+                            string.Equals(n, fileName, StringComparison.OrdinalIgnoreCase)))
+                        continue;
+                    string content = string.Empty;
+                    try
+                    {
+                        using var fs = new FileStream(file, FileMode.Open, FileAccess.Read,
+                            FileShare.ReadWrite);
+                        using var sr = new StreamReader(fs);
+                        content = await sr.ReadToEndAsync(ct);
+                    }
+                    catch (IOException) { }
+                    var hitKeyword = string.IsNullOrEmpty(content)
+                        ? null
+                        : ConfigKeywords.FirstOrDefault(k =>
+                            content.Contains(k, StringComparison.OrdinalIgnoreCase));
+                    ctx.AddFinding(new Finding
+                    {
+                        Module   = Name,
+                        Title    = $"Valorant Aimbot Config File Found: {fileName}",
+                        Risk     = RiskLevel.High,
+                        Location = file,
+                        FileName = fileName,
+                        Reason   = $"Valorant aimbot/cheat configuration file '{fileName}' found at '{file}'. " +
+                                   (hitKeyword is not null
+                                       ? $"File content contains cheat-related keyword '{hitKeyword}'. "
+                                       : "File name matches known aimbot config pattern. ") +
+                                   "These config files store aimbot settings such as FOV, smoothing, bone " +
+                                   "targets, trigger keys, recoil control values, spread parameters, " +
+                                   "bhop settings, and speed hack configurations.",
+                        Detail   = $"Path: {file} | Keyword: {hitKeyword ?? "name match only"}"
+                    });
+                }
             }
         }, ct);
 
@@ -602,53 +794,56 @@ public sealed class ValorantAimbotForensicScanModule : IScanModule
             {
                 if (ct.IsCancellationRequested) return;
                 if (!Directory.Exists(dir)) continue;
+                IEnumerable<string> allFiles = Enumerable.Empty<string>();
                 try
                 {
-                    foreach (var file in Directory.EnumerateFiles(dir, "*",
-                        SearchOption.AllDirectories))
-                    {
-                        if (ct.IsCancellationRequested) return;
-                        var ext = Path.GetExtension(file);
-                        if (!scriptExtensions.Any(e =>
-                                string.Equals(e, ext, StringComparison.OrdinalIgnoreCase)))
-                            continue;
-                        ctx.IncrementFiles();
-                        var fileName = Path.GetFileName(file);
-                        var fileNameLower = fileName.ToLowerInvariant();
-                        bool nameMatch = MacroScriptNamePatterns.Any(p =>
-                            fileNameLower.Contains(p, StringComparison.OrdinalIgnoreCase));
-                        if (!nameMatch) continue;
-                        string content = string.Empty;
-                        try
-                        {
-                            using var fs = new FileStream(file, FileMode.Open, FileAccess.Read,
-                                FileShare.ReadWrite);
-                            using var sr = new StreamReader(fs);
-                            content = await sr.ReadToEndAsync(ct);
-                        }
-                        catch (IOException) { }
-                        if (string.IsNullOrEmpty(content)) continue;
-                        var hits = MacroScriptContentKeywords
-                            .Where(k => content.Contains(k, StringComparison.OrdinalIgnoreCase))
-                            .ToList();
-                        if (hits.Count < 3) continue;
-                        ctx.AddFinding(new Finding
-                        {
-                            Module   = Name,
-                            Title    = $"Valorant Macro/Script File Found: {fileName}",
-                            Risk     = RiskLevel.High,
-                            Location = file,
-                            FileName = fileName,
-                            Reason   = $"Macro or automation script '{fileName}' found at '{file}' " +
-                                       $"with {hits.Count} cheat-related content keywords matched: " +
-                                       $"{string.Join(", ", hits.Take(5))}. " +
-                                       "Such scripts are used for Valorant aimbot, triggerbot, no-recoil, " +
-                                       "rapid-fire, and bhop automation via AutoHotkey, Python, or AutoIt.",
-                            Detail   = $"Path: {file} | Matches ({hits.Count}): {string.Join(", ", hits)}"
-                        });
-                    }
+                    allFiles = Directory.EnumerateFiles(dir, "*", SearchOption.AllDirectories);
                 }
-                catch (UnauthorizedAccessException) { }
+                catch (UnauthorizedAccessException) { continue; }
+                foreach (var file in allFiles)
+                {
+                    if (ct.IsCancellationRequested) return;
+                    var ext = Path.GetExtension(file);
+                    if (!scriptExtensions.Any(e =>
+                            string.Equals(e, ext, StringComparison.OrdinalIgnoreCase)))
+                        continue;
+                    ctx.IncrementFiles();
+                    var fileName = Path.GetFileName(file);
+                    var fileNameLower = fileName.ToLowerInvariant();
+                    bool nameMatch = MacroScriptNamePatterns.Any(p =>
+                        fileNameLower.Contains(p, StringComparison.OrdinalIgnoreCase));
+                    if (!nameMatch) continue;
+                    string content = string.Empty;
+                    try
+                    {
+                        using var fs = new FileStream(file, FileMode.Open, FileAccess.Read,
+                            FileShare.ReadWrite);
+                        using var sr = new StreamReader(fs);
+                        content = await sr.ReadToEndAsync(ct);
+                    }
+                    catch (IOException) { }
+                    if (string.IsNullOrEmpty(content)) continue;
+                    var hits = MacroScriptContentKeywords
+                        .Where(k => content.Contains(k, StringComparison.OrdinalIgnoreCase))
+                        .ToList();
+                    if (hits.Count < 3) continue;
+                    ctx.AddFinding(new Finding
+                    {
+                        Module   = Name,
+                        Title    = $"Valorant Macro/Script File Found: {fileName}",
+                        Risk     = RiskLevel.High,
+                        Location = file,
+                        FileName = fileName,
+                        Reason   = $"Macro or automation script '{fileName}' found at '{file}' " +
+                                   $"with {hits.Count} cheat-related content keywords matched: " +
+                                   $"{string.Join(", ", hits.Take(5))}. " +
+                                   "Such scripts are used for Valorant aimbot, triggerbot, no-recoil, " +
+                                   "rapid-fire, and bhop automation via AutoHotkey, Python, or AutoIt. " +
+                                   "The combination of script name and content keywords strongly suggests " +
+                                   "this is a cheat automation script targeting Valorant.",
+                        Detail   = $"Path: {file} | Matches ({hits.Count}): {string.Join(", ", hits)}"
+                    });
+                }
             }
         }, ct);
 
@@ -662,38 +857,39 @@ public sealed class ValorantAimbotForensicScanModule : IScanModule
             {
                 if (ct.IsCancellationRequested) return;
                 if (!Directory.Exists(dir)) continue;
+                IEnumerable<string> allFiles = Enumerable.Empty<string>();
                 try
                 {
-                    foreach (var file in Directory.EnumerateFiles(dir, "*",
-                        SearchOption.AllDirectories))
-                    {
-                        if (ct.IsCancellationRequested) return;
-                        var ext = Path.GetExtension(file);
-                        if (!archiveExtensions.Any(e =>
-                                string.Equals(e, ext, StringComparison.OrdinalIgnoreCase)))
-                            continue;
-                        ctx.IncrementFiles();
-                        var fileName = Path.GetFileName(file);
-                        var fileNameLower = fileName.ToLowerInvariant();
-                        if (!DownloadArchiveNames.Any(n =>
-                                string.Equals(n, fileNameLower, StringComparison.OrdinalIgnoreCase)))
-                            continue;
-                        ctx.AddFinding(new Finding
-                        {
-                            Module   = Name,
-                            Title    = $"Valorant Aimbot Archive Found: {fileName}",
-                            Risk     = RiskLevel.High,
-                            Location = file,
-                            FileName = fileName,
-                            Reason   = $"Valorant aimbot/cheat archive '{fileName}' found at '{file}'. " +
-                                       "This archive matches a known Valorant cheat distribution package name. " +
-                                       "Cheat tools are frequently distributed as compressed archives and " +
-                                       "extracted before injection or execution.",
-                            Detail   = $"Path: {file} | File: {fileName}"
-                        });
-                    }
+                    allFiles = Directory.EnumerateFiles(dir, "*", SearchOption.AllDirectories);
                 }
-                catch (UnauthorizedAccessException) { }
+                catch (UnauthorizedAccessException) { continue; }
+                foreach (var file in allFiles)
+                {
+                    if (ct.IsCancellationRequested) return;
+                    var ext = Path.GetExtension(file);
+                    if (!archiveExtensions.Any(e =>
+                            string.Equals(e, ext, StringComparison.OrdinalIgnoreCase)))
+                        continue;
+                    ctx.IncrementFiles();
+                    var fileName = Path.GetFileName(file);
+                    if (!DownloadArchiveNames.Any(n =>
+                            string.Equals(n, fileName, StringComparison.OrdinalIgnoreCase)))
+                        continue;
+                    ctx.AddFinding(new Finding
+                    {
+                        Module   = Name,
+                        Title    = $"Valorant Aimbot Archive Found: {fileName}",
+                        Risk     = RiskLevel.High,
+                        Location = file,
+                        FileName = fileName,
+                        Reason   = $"Valorant aimbot/cheat archive '{fileName}' found at '{file}'. " +
+                                   "This archive matches a known Valorant cheat distribution package name. " +
+                                   "Cheat tools are frequently distributed as compressed archives containing " +
+                                   "executables, DLLs, and configuration files that are extracted and " +
+                                   "used before or during Valorant sessions.",
+                        Detail   = $"Path: {file} | File: {fileName}"
+                    });
+                }
             }
             await Task.CompletedTask;
         }, ct);
@@ -705,14 +901,13 @@ public sealed class ValorantAimbotForensicScanModule : IScanModule
             var localApp = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
             var riotLogRoot = Path.Combine(localApp, "Riot Games");
             if (!Directory.Exists(riotLogRoot)) return;
-            var logDirs = new List<string>();
+            var logDirs = new List<string> { riotLogRoot };
             try
             {
                 logDirs.AddRange(Directory.GetDirectories(riotLogRoot, "*",
                     SearchOption.AllDirectories));
             }
             catch (UnauthorizedAccessException) { }
-            logDirs.Insert(0, riotLogRoot);
             foreach (var logDir in logDirs)
             {
                 if (ct.IsCancellationRequested) return;
@@ -751,7 +946,8 @@ public sealed class ValorantAimbotForensicScanModule : IScanModule
                                        $"cheat-related pattern '{pattern}'. " +
                                        "This indicates the anti-cheat system (Vanguard) or the game itself " +
                                        "detected or logged suspicious behavior consistent with aimbot, " +
-                                       "triggerbot, macro usage, or cheating.",
+                                       "triggerbot, macro usage, recoil scripting, or other forms of cheating " +
+                                       "in Valorant. Log evidence persists after the session ends.",
                             Detail   = $"Log: {logFile} | Pattern: {pattern}"
                         });
                         break;
@@ -768,6 +964,8 @@ public sealed class ValorantAimbotForensicScanModule : IScanModule
             CheckMuiCacheRegistry(ctx, ct);
             CheckRunRegistryKeys(ctx, ct);
             CheckUninstallRegistry(ctx, ct);
+            CheckVanguardBypassRegistry(ctx, ct);
+            CheckAppCompatRegistry(ctx, ct);
             await Task.CompletedTask;
         }, ct);
 
@@ -793,10 +991,7 @@ public sealed class ValorantAimbotForensicScanModule : IScanModule
                         var decoded = Rot13Decode(encodedName);
                         var decodedLower = decoded.ToLowerInvariant();
                         bool isHit = UserAssistAimbotNames.Any(n =>
-                            decodedLower.Contains(Rot13Decode(n), StringComparison.OrdinalIgnoreCase)) ||
-                            AimbotExecutableNames.Any(n =>
-                                decodedLower.Contains(Path.GetFileNameWithoutExtension(n),
-                                    StringComparison.OrdinalIgnoreCase));
+                            decodedLower.Contains(n, StringComparison.OrdinalIgnoreCase));
                         if (!isHit) continue;
                         int runCount = 0;
                         DateTime? lastRun = null;
@@ -825,8 +1020,9 @@ public sealed class ValorantAimbotForensicScanModule : IScanModule
                                        (lastRun.HasValue
                                            ? $", last seen {lastRun.Value:yyyy-MM-dd HH:mm} UTC"
                                            : "") +
-                                       "). UserAssist entries persist even after the file is deleted, " +
-                                       "making this a reliable forensic indicator of prior cheat tool usage.",
+                                       "). UserAssist entries are ROT13-encoded and persist even after " +
+                                       "the file is deleted, making this a reliable forensic indicator " +
+                                       "of prior Valorant aimbot or cheat tool execution on this machine.",
                             Detail   = $"Decoded: {decoded} | Runs: {runCount} | " +
                                        $"Last: {(lastRun.HasValue ? lastRun.Value.ToString("O") : "unknown")}"
                         });
@@ -861,6 +1057,7 @@ public sealed class ValorantAimbotForensicScanModule : IScanModule
                     combined.Contains(n, StringComparison.OrdinalIgnoreCase));
                 if (!isHit) continue;
                 var fn = Path.GetFileName(path);
+                bool fileExists = File.Exists(path);
                 ctx.AddFinding(new Finding
                 {
                     Module   = Name,
@@ -870,9 +1067,10 @@ public sealed class ValorantAimbotForensicScanModule : IScanModule
                     FileName = fn,
                     Reason   = $"MuiCache registry entry shows execution of Valorant aimbot tool '{fn}'. " +
                                "MuiCache records every application Windows has displayed a name for, " +
-                               "persisting even after file deletion. This is a reliable forensic artifact " +
-                               "of prior Valorant aimbot or cheat tool usage.",
-                    Detail   = $"Path: {path} | Description: {friendlyName}"
+                               "persisting even after file deletion. " +
+                               (fileExists ? "File is still present on disk. " : "File has been deleted. ") +
+                               "This is a reliable forensic artifact of prior Valorant aimbot usage on this system.",
+                    Detail   = $"Path: {path} | Description: {friendlyName} | File exists: {fileExists}"
                 });
             }
         }
@@ -899,10 +1097,11 @@ public sealed class ValorantAimbotForensicScanModule : IScanModule
                 {
                     if (ct.IsCancellationRequested) return;
                     ctx.IncrementRegistryKeys();
-                    var value = (key.GetValue(valueName) as string ?? "").ToLowerInvariant();
+                    var value = (key.GetValue(valueName) as string ?? string.Empty);
+                    var valueLower = value.ToLowerInvariant();
                     var nameLower = valueName.ToLowerInvariant();
                     bool isHit = AimbotExecutableNames.Any(n =>
-                        value.Contains(Path.GetFileNameWithoutExtension(n),
+                        valueLower.Contains(Path.GetFileNameWithoutExtension(n),
                             StringComparison.OrdinalIgnoreCase) ||
                         nameLower.Contains(Path.GetFileNameWithoutExtension(n),
                             StringComparison.OrdinalIgnoreCase));
@@ -914,10 +1113,11 @@ public sealed class ValorantAimbotForensicScanModule : IScanModule
                         Risk     = RiskLevel.High,
                         Location = $@"{(hive == Registry.CurrentUser ? "HKCU" : "HKLM")}\{keyPath}",
                         FileName = valueName,
-                        Reason   = $"Registry Run/RunOnce key contains Valorant aimbot autostart entry '{valueName}' " +
-                                   $"pointing to: '{value}'. " +
+                        Reason   = $"Registry Run/RunOnce key contains Valorant aimbot autostart entry " +
+                                   $"'{valueName}' pointing to: '{value}'. " +
                                    "This indicates the aimbot was configured to start automatically with Windows, " +
-                                   "a common persistence mechanism for cheat tools.",
+                                   "a common persistence mechanism for cheat tools ensuring the aimbot is " +
+                                   "loaded and ready each time the user starts their computer.",
                         Detail   = $"Key: {keyPath} | Name: {valueName} | Value: {value}"
                     });
                 }
@@ -949,9 +1149,10 @@ public sealed class ValorantAimbotForensicScanModule : IScanModule
                     {
                         using var subKey = baseKey.OpenSubKey(subKeyName, writable: false);
                         if (subKey is null) continue;
-                        var displayName = (subKey.GetValue("DisplayName") as string ?? "").ToLowerInvariant();
-                        var installLocation = (subKey.GetValue("InstallLocation") as string ?? "").ToLowerInvariant();
-                        var combined = displayName + " " + installLocation;
+                        var displayName = (subKey.GetValue("DisplayName") as string ?? string.Empty).ToLowerInvariant();
+                        var installLocation = (subKey.GetValue("InstallLocation") as string ?? string.Empty).ToLowerInvariant();
+                        var publisherName = (subKey.GetValue("Publisher") as string ?? string.Empty).ToLowerInvariant();
+                        var combined = displayName + " " + installLocation + " " + publisherName;
                         bool isHit = UninstallAimbotKeywords.Any(k =>
                             combined.Contains(k, StringComparison.OrdinalIgnoreCase));
                         if (!isHit) continue;
@@ -964,9 +1165,10 @@ public sealed class ValorantAimbotForensicScanModule : IScanModule
                             FileName = subKeyName,
                             Reason   = $"Uninstall registry entry for Valorant aimbot/cheat tool found: '{displayName}'. " +
                                        "This indicates the cheat was formally installed on this system. " +
-                                       "Uninstall entries persist until the software is removed via the " +
-                                       "system's uninstaller or the registry key is manually deleted.",
-                            Detail   = $"DisplayName: {displayName} | Location: {installLocation}"
+                                       "Uninstall entries persist until the software is removed through the " +
+                                       "system's uninstaller or the registry key is manually deleted, " +
+                                       "providing forensic evidence of prior installation.",
+                            Detail   = $"DisplayName: {displayName} | Location: {installLocation} | Publisher: {publisherName}"
                         });
                     }
                     catch { }
@@ -974,6 +1176,89 @@ public sealed class ValorantAimbotForensicScanModule : IScanModule
             }
             catch { }
         }
+    }
+
+    private void CheckVanguardBypassRegistry(ScanContext ctx, CancellationToken ct)
+    {
+        var bypassRegPaths = new[]
+        {
+            @"SYSTEM\CurrentControlSet\Services\vgk",
+            @"SYSTEM\CurrentControlSet\Services\vgc",
+            @"SOFTWARE\Riot Games\Vanguard",
+        };
+        foreach (var regPath in bypassRegPaths)
+        {
+            if (ct.IsCancellationRequested) return;
+            ctx.IncrementRegistryKeys();
+            try
+            {
+                using var key = Registry.LocalMachine.OpenSubKey(regPath, writable: false);
+                if (key is null) continue;
+                var start = key.GetValue("Start") as int?;
+                var imagePath = (key.GetValue("ImagePath") as string ?? string.Empty).ToLowerInvariant();
+                bool bypassSuspected = VanguardBypassKeywords.Any(k =>
+                    imagePath.Contains(k, StringComparison.OrdinalIgnoreCase));
+                if (start == 4 || bypassSuspected)
+                {
+                    ctx.AddFinding(new Finding
+                    {
+                        Module   = Name,
+                        Title    = $"Vanguard Anti-Cheat Anomaly: {regPath}",
+                        Risk     = RiskLevel.High,
+                        Location = $@"HKLM\{regPath}",
+                        Reason   = $"Vanguard anti-cheat driver registry entry at '{regPath}' shows anomalous " +
+                                   $"configuration. StartType: {start?.ToString() ?? "unknown"}. " +
+                                   (start == 4 ? "Driver is disabled (StartType=4). " : "") +
+                                   (bypassSuspected ? $"ImagePath contains bypass keyword: '{imagePath}'. " : "") +
+                                   "Disabling or tampering with Vanguard's kernel driver is a common " +
+                                   "technique used by cheat loaders to avoid detection while running aimbot " +
+                                   "or triggerbot software in Valorant.",
+                        Detail   = $"Key: {regPath} | Start: {start} | ImagePath: {imagePath}"
+                    });
+                }
+            }
+            catch { }
+        }
+    }
+
+    private void CheckAppCompatRegistry(ScanContext ctx, CancellationToken ct)
+    {
+        const string appCompatPath =
+            @"SYSTEM\CurrentControlSet\Control\Session Manager\AppCompatCache";
+        const string shimCachePath =
+            @"SOFTWARE\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Layers";
+        try
+        {
+            using var shimKey = Registry.CurrentUser.OpenSubKey(shimCachePath, writable: false);
+            if (shimKey is not null)
+            {
+                foreach (var valueName in shimKey.GetValueNames())
+                {
+                    if (ct.IsCancellationRequested) return;
+                    ctx.IncrementRegistryKeys();
+                    var nameLower = valueName.ToLowerInvariant();
+                    bool isHit = AppCompatValorantCheatNames.Any(n =>
+                        nameLower.Contains(n, StringComparison.OrdinalIgnoreCase));
+                    if (!isHit) continue;
+                    var value = (shimKey.GetValue(valueName) as string ?? string.Empty);
+                    ctx.AddFinding(new Finding
+                    {
+                        Module   = Name,
+                        Title    = $"AppCompat Shim: Valorant Cheat Compatibility Entry: {Path.GetFileName(valueName)}",
+                        Risk     = RiskLevel.High,
+                        Location = $@"HKCU\{shimCachePath}",
+                        FileName = Path.GetFileName(valueName),
+                        Reason   = $"Application Compatibility Flags registry contains entry for " +
+                                   $"Valorant-related cheat tool '{Path.GetFileName(valueName)}'. " +
+                                   "Cheat tools sometimes register compatibility shims to ensure they " +
+                                   "run correctly alongside game processes. This entry persists as a " +
+                                   "forensic artifact even after the cheat is removed.",
+                        Detail   = $"Path: {valueName} | Flags: {value}"
+                    });
+                }
+            }
+        }
+        catch { }
     }
 
     private static string[] GetStandardSearchDirectories()
