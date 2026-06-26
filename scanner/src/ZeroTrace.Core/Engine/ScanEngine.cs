@@ -635,6 +635,8 @@ public sealed class ScanEngine
         if (o.ScanGTA5ModMenu) modules.Add(new GTA5ModMenuForensicScanModule());
         if (o.ScanAntiCheatBypassForensic) modules.Add(new AntiCheatBypassForensicScanModule());
         if (o.ScanRageMPAdminAbuseForensic) modules.Add(new RageMPAdminAbuseForensicScanModule());
+        if (o.ScanAltVAdminAbuseForensic) modules.Add(new AltVAdminAbuseForensicScanModule());
+        if (o.ScanFiveMESXHack) modules.Add(new FiveMESXHackForensicScanModule());
         if (o.ScanCheatSourceCodeRepo) modules.Add(new CheatSourceCodeRepoScanModule());
 
         // ── Group 5: forensic / trace artefacts ──────────────────────────────

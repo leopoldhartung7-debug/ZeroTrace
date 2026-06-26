@@ -1,5 +1,10 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Win32;
-using System.Text;
 using ZeroTrace.Core.Engine;
 using ZeroTrace.Core.Models;
 
@@ -7,1564 +12,1742 @@ namespace ZeroTrace.Core.Modules;
 
 public sealed class SteamCheatWorkshopScanModule : IScanModule
 {
-    public string Name => "Steam Workshop Cheat Artifact Forensic Scan";
+    public string Name => "Steam Workshop Cheat Distribution Forensic Scan";
     public double Weight => 3.6;
     public int ParallelGroup => 4;
     public int ModuleTimeoutSeconds => 0;
 
-    private static readonly string ProgramFilesX86 =
-        Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
-    private static readonly string ProgramFiles =
-        Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
-    private static readonly string LocalAppData =
+    // -------------------------------------------------------------------------
+    // Known Steam cheat launcher executables (65+)
+    // -------------------------------------------------------------------------
+
+    private static readonly HashSet<string> KnownSteamCheatLaunchers = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "steam_cheat.exe",
+        "steam_inject.exe",
+        "steam_hack.exe",
+        "steam_loader.exe",
+        "steam_bypass.exe",
+        "steam_dumper.exe",
+        "steam_crack.exe",
+        "steam_patch.exe",
+        "steam_overlay_cheat.exe",
+        "gameinject.exe",
+        "gameoverlay_cheat.exe",
+        "steamapi_bypass.exe",
+        "steamapi_inject.exe",
+        "steamapi_hack.exe",
+        "vac_bypass.exe",
+        "vac_bypass_v2.exe",
+        "vac_bypass_v3.exe",
+        "vac_dump.exe",
+        "steam_vac_bypass.exe",
+        "steam_vac_dump.exe",
+        "steamcmd_cheat.exe",
+        "steam_workshop_dl.exe",
+        "workshop_dl.exe",
+        "workshop_bypass.exe",
+        "workshop_crack.exe",
+        "workshop_inject.exe",
+        "workshop_loader.exe",
+        "steamapi_loader.exe",
+        "steamclient_patch.exe",
+        "steamclient_hook.exe",
+        "steam_emu.exe",
+        "steam_emulator.exe",
+        "goldberg_emu.exe",
+        "skidrow_steam.exe",
+        "reloaded_steam.exe",
+        "bypass_steam.exe",
+        "crack_steam.exe",
+        "patch_steam.exe",
+        "hook_steam.exe",
+        "inject_steam.exe",
+        "dump_steam.exe",
+        "steam_game_inject.exe",
+        "game_inject_steam.exe",
+        "steamhook.exe",
+        "steaminject.exe",
+        "steambypass.exe",
+        "steamhack.exe",
+        "steamcrack.exe",
+        "steamdump.exe",
+        "workshopcheat.exe",
+        "workshophack.exe",
+        "workshopinject.exe",
+        "vacbypass.exe",
+        "vacbypasser.exe",
+        "vacdump.exe",
+        "vacdumper.exe",
+        "steamvac.exe",
+        "steam_api_bypass.exe",
+        "steam_overlay_inject.exe",
+        "steam_game_cheat.exe",
+        "steam_cheat_loader.exe",
+        "game_cheat_steam.exe",
+        "steam_aimbot.exe",
+        "steam_wallhack.exe",
+        "steam_cheat_v2.exe",
+    };
+
+    // -------------------------------------------------------------------------
+    // Known Steam cheat download archives (50+)
+    // -------------------------------------------------------------------------
+
+    private static readonly HashSet<string> KnownSteamCheatArchives = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "vac_bypass.zip",
+        "vac_bypass.rar",
+        "steam_inject.zip",
+        "steam_hack.zip",
+        "steam_cheat.zip",
+        "steam_bypass.zip",
+        "workshop_cheat.zip",
+        "workshop_hack.zip",
+        "steamapi_bypass.zip",
+        "goldberg_emu.zip",
+        "steam_emu.zip",
+        "steam_crack.zip",
+        "steam_patch.zip",
+        "steam_loader.zip",
+        "steam_loader.rar",
+        "vacbypass_tool.zip",
+        "vac_undetected.zip",
+        "vac_bypass_v2.zip",
+        "steam_dumper.zip",
+        "steam_overlay_cheat.zip",
+        "steamapi_hack.zip",
+        "workshop_bypass.zip",
+        "workshop_loader.zip",
+        "steamclient_patch.zip",
+        "steamclient_hook.zip",
+        "steam_hook.zip",
+        "steam_inject_v2.zip",
+        "steam_api_bypass.zip",
+        "goldberg_emu.rar",
+        "ali213_emu.zip",
+        "skidrow_steam.zip",
+        "reloaded_steam.zip",
+        "cream_api.zip",
+        "cream_api.rar",
+        "steam_workshop_dl.zip",
+        "workshop_crack.zip",
+        "workshop_inject.zip",
+        "steam_cheat_loader.zip",
+        "game_cheat_steam.zip",
+        "steam_aimbot.zip",
+        "steam_wallhack.zip",
+        "vac_cracker.zip",
+        "vac_cracker.rar",
+        "steamemulator_pack.zip",
+        "steam_emu_pack.zip",
+        "steam_bypass_pack.zip",
+        "vac_bypass_pack.zip",
+        "steam_cheat_pack.zip",
+        "steam_inject_pack.zip",
+        "workshop_cheat_pack.zip",
+    };
+
+    // -------------------------------------------------------------------------
+    // Steam API bypass file indicators (fake/patched steam_api.dll etc.)
+    // -------------------------------------------------------------------------
+
+    private static readonly string[] SteamApiBypassContentKeywords = new[]
+    {
+        "goldberg", "skidrow", "reloaded", "cracked", "bypassed",
+    };
+
+    private static readonly HashSet<string> SteamApiBypassFileNames = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "steam_api.dll",
+        "steam_api64.dll",
+        "steamclient.dll",
+        "steamclient64.dll",
+    };
+
+    // Config files used by Steam emulators and bypass tools
+    private static readonly HashSet<string> SteamEmuConfigFiles = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "steam_interfaces.txt",
+        "ALI213.ini",
+        "cream_api.ini",
+        "goldberg.ini",
+        "steam_settings.ini",
+        "CreamAPI.ini",
+        "SmokelessRUMBLE.ini",
+        "hotfix.ini",
+    };
+
+    // -------------------------------------------------------------------------
+    // Cheat overlay DLL names used in Steam game injection
+    // -------------------------------------------------------------------------
+
+    private static readonly HashSet<string> CheatOverlayDlls = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "gameoverlayrenderer.dll",
+        "gameoverlayrenderer64.dll",
+        "gamehook.dll",
+        "overlay_inject.dll",
+        "overlay_cheat.dll",
+        "overlay_hack.dll",
+        "steam_overlay_cheat.dll",
+        "game_overlay_inject.dll",
+        "d3d9_hook.dll",
+        "d3d11_hook.dll",
+        "d3d12_hook.dll",
+        "opengl_hook.dll",
+        "vulkan_hook.dll",
+        "overlay_loader.dll",
+        "cheat_overlay.dll",
+        "hack_overlay.dll",
+    };
+
+    // -------------------------------------------------------------------------
+    // VAC ban bypass tool documentation files
+    // -------------------------------------------------------------------------
+
+    private static readonly HashSet<string> VacBypassDocFiles = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "vac_ban_bypass.txt",
+        "unban_guide.txt",
+        "ban_bypass.pdf",
+        "vac_bypass_guide.txt",
+        "vac_unban.txt",
+        "steam_unban.txt",
+        "vac_removal.txt",
+        "bypass_vac.txt",
+        "unbanned.txt",
+        "anti_vac.txt",
+        "vac_bypass_readme.txt",
+        "vac_bypass.md",
+        "steam_ban_bypass.txt",
+        "game_ban_bypass.txt",
+    };
+
+    // -------------------------------------------------------------------------
+    // VAC bypass script filenames (.ps1, .bat, .py)
+    // -------------------------------------------------------------------------
+
+    private static readonly HashSet<string> VacBypassScriptNames = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "vac_bypass.ps1",
+        "vacbypass.ps1",
+        "vac_bypass.bat",
+        "vacbypass.bat",
+        "vac_bypass.py",
+        "vacbypass.py",
+        "bypass_vac.ps1",
+        "bypass_vac.bat",
+        "bypass_vac.py",
+        "steam_bypass.ps1",
+        "steam_bypass.bat",
+        "steam_bypass.py",
+        "anti_vac.ps1",
+        "anti_vac.bat",
+        "steam_cheat_setup.bat",
+        "steam_cheat_setup.ps1",
+        "install_bypass.bat",
+        "install_bypass.ps1",
+        "vac_hook.bat",
+        "vac_hook.ps1",
+    };
+
+    // -------------------------------------------------------------------------
+    // Steam cheat config file keywords
+    // -------------------------------------------------------------------------
+
+    private static readonly string[] SteamCheatConfigKeywords = new[]
+    {
+        "bypass", "crack", "vac", "cheat", "inject",
+    };
+
+    // -------------------------------------------------------------------------
+    // Workshop directory suspicious file extensions
+    // -------------------------------------------------------------------------
+
+    private static readonly HashSet<string> SuspiciousWorkshopExtensions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ".dll",
+        ".exe",
+        ".sys",
+    };
+
+    // -------------------------------------------------------------------------
+    // Workshop item folder cheat keyword fragments
+    // -------------------------------------------------------------------------
+
+    private static readonly string[] WorkshopCheatFolderKeywords = new[]
+    {
+        "cheat", "hack", "aimbot", "wallhack", "esp", "bypass", "inject",
+        "triggerbot", "bhop", "spinbot", "rapidfire", "nofall", "godmode",
+        "noclip", "trainer", "exploit", "loader", "stealer",
+    };
+
+    // -------------------------------------------------------------------------
+    // Steam log suspicious patterns
+    // -------------------------------------------------------------------------
+
+    private static readonly string[] SteamLogSuspiciousPatterns = new[]
+    {
+        "vac ban",
+        "game ban",
+        "workshop cheat",
+        "inject detected",
+        "bypass detected",
+        "cheat detected",
+        "suspicious activity",
+        "vac network",
+        "game network ban",
+        "ban issued",
+        "vacnetwork",
+        "ban detected",
+        "cheating detected",
+        "anti-cheat",
+        "anticheat",
+        "violation detected",
+        "untrusted",
+        "banned from",
+        "permanent ban",
+        "cooldown",
+        "overwatch ban",
+        "trust factor",
+        "low trust",
+        "untrusted account",
+        "vac authentication error",
+        "steam guard blocked",
+        "account restricted",
+        "vac enabled game",
+        "vac session timed out",
+        "game server ban",
+    };
+
+    // -------------------------------------------------------------------------
+    // Fake Steam emulator registry keys (Goldberg, ALI213, RLD)
+    // -------------------------------------------------------------------------
+
+    private static readonly string[] FakeSteamEmuRegistryPaths = new[]
+    {
+        @"SOFTWARE\Goldberg Emulator",
+        @"SOFTWARE\Ali213",
+        @"SOFTWARE\ALI213",
+        @"SOFTWARE\RLD Games",
+        @"SOFTWARE\SKIDROW",
+        @"SOFTWARE\CODEX",
+        @"SOFTWARE\Cream API",
+        @"SOFTWARE\SmokelessRUMBLE",
+        @"SOFTWARE\CPY",
+        @"SOFTWARE\DARKSiDERS",
+        @"SOFTWARE\3DM",
+        @"SOFTWARE\Goldberg Steam Emu",
+    };
+
+    // -------------------------------------------------------------------------
+    // Steam cheat launcher names in UserAssist (ROT13 encoded in registry)
+    // -------------------------------------------------------------------------
+
+    private static readonly HashSet<string> SteamCheatUserAssistNames = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "steam_cheat.exe",
+        "steam_inject.exe",
+        "steam_hack.exe",
+        "steam_loader.exe",
+        "steam_bypass.exe",
+        "vac_bypass.exe",
+        "vac_bypass_v2.exe",
+        "steam_vac_bypass.exe",
+        "goldberg_emu.exe",
+        "steam_emu.exe",
+        "workshop_bypass.exe",
+        "steamapi_bypass.exe",
+        "steamclient_patch.exe",
+        "steam_overlay_cheat.exe",
+        "vacbypass.exe",
+        "vacbypasser.exe",
+        "steamhook.exe",
+        "steaminject.exe",
+        "steambypass.exe",
+        "workshopcheat.exe",
+        "workshophack.exe",
+        "workshopinject.exe",
+        "steam_dumper.exe",
+        "vac_dump.exe",
+        "steam_crack.exe",
+        "steam_patch.exe",
+        "bypass_steam.exe",
+        "crack_steam.exe",
+        "patch_steam.exe",
+        "hook_steam.exe",
+        "inject_steam.exe",
+        "steam_game_inject.exe",
+        "steamvac.exe",
+        "steam_api_bypass.exe",
+        "steam_cheat_loader.exe",
+    };
+
+    // -------------------------------------------------------------------------
+    // Steam cheat MUICache names (30+)
+    // -------------------------------------------------------------------------
+
+    private static readonly HashSet<string> SteamCheatMuiCacheNames = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "steam_cheat.exe",
+        "steam_inject.exe",
+        "steam_hack.exe",
+        "steam_loader.exe",
+        "steam_bypass.exe",
+        "vac_bypass.exe",
+        "steam_vac_bypass.exe",
+        "goldberg_emu.exe",
+        "workshop_bypass.exe",
+        "steamapi_bypass.exe",
+        "steamclient_patch.exe",
+        "steam_overlay_cheat.exe",
+        "vacbypass.exe",
+        "steamhook.exe",
+        "steaminject.exe",
+        "steambypass.exe",
+        "workshopcheat.exe",
+        "workshophack.exe",
+        "steam_dumper.exe",
+        "vac_dump.exe",
+        "steam_crack.exe",
+        "steam_patch.exe",
+        "bypass_steam.exe",
+        "steam_game_inject.exe",
+        "steamvac.exe",
+        "steam_api_bypass.exe",
+        "steam_cheat_loader.exe",
+        "vac_bypass_v2.exe",
+        "vac_bypass_v3.exe",
+        "steam_emu.exe",
+    };
+
+    // -------------------------------------------------------------------------
+    // Directory helpers
+    // -------------------------------------------------------------------------
+
+    private static string DesktopDir =>
+        Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+
+    private static string DownloadsDir =>
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
+
+    private static string UserTempDir => Path.GetTempPath();
+
+    private static string WindowsTempDir =>
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "Temp");
+
+    private static string LocalAppDataDir =>
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
 
-    // Well-known Steam AppIDs for games that are common cheat targets
-    private const string AppIdGta5       = "271590";
-    private const string AppIdCs2        = "730";
-    private const string AppIdGmod       = "4000";
-    private const string AppIdTf2        = "440";
-    private const string AppIdRust       = "252490";
-    private const string AppIdDayZ       = "221100";
-    private const string AppIdArma3      = "107410";
-    private const string AppIdPubg       = "578080";
-    private const string AppIdRainbow6   = "359550";
-    private const string AppIdApexLeg    = "1172470";
-    private const string AppIdDota2      = "570";
-    private const string AppIdUnturned   = "304930";
+    private static string RoamingAppDataDir =>
+        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
 
-    private static readonly string[] CheatLaunchOptions =
-    {
-        "-insecure", "-bypass", "-hack", "-dev",
-        "-nobreakpad", "-nosteamcontroller",
-        "-condebug", "-novid -insecure",
-        "-sw -insecure", "-unsafe",
-        "-allowdebug", "-norestrictions",
-        "+sv_cheats 1", "+sv_lan 1",
-        "-textmode", "-nohltv",
-        "-allowdebugger", "-debugger",
-        "-nocheatcheck", "-noanticheat",
-        "-disable_anticheat", "-bypass_anticheat",
-        "-eac_disable", "-be_disable",
-        "-easy_anticheat_launcher=0",
-    };
+    // Default Steam install path
+    private static readonly string DefaultSteamDir =
+        Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86),
+            "Steam");
 
-    private static readonly string[] CheatWorkshopFolderNames =
-    {
-        "cheat", "hack", "aimbot", "wallhack", "esp", "bhop", "bunnyhop",
-        "triggerbot", "no-recoil", "norecoil", "spinbot", "speedhack",
-        "inject", "injector", "loader", "bypass", "spoofer",
-        "kiddion", "2take1", "cherax", "ozark", "tsunami",
-        "yimmenu", "lambda", "absolute", "spectre", "susano",
-        "neverlose", "onetap", "gamesense", "aimware", "fatality",
-        "nixware", "lumina", "fecurity", "vac_bypass", "eac_bypass",
-        "cheatengine", "modmenu", "mod menu", "private menu",
-        "internal cheat", "external cheat", "rage cheat", "legit cheat",
-        "hvh", "head vs head", "closet cheat", "stream proof",
-    };
+    private static readonly string DefaultSteamAppsDir =
+        Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86),
+            "Steam", "steamapps");
 
-    private static readonly string[] SuspiciousWorkshopExtensions =
-    {
-        ".exe", ".bat", ".cmd", ".vbs", ".ps1", ".wsf",
-        ".scr", ".com", ".pif",
-    };
+    private static readonly string DefaultWorkshopContentDir =
+        Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86),
+            "Steam", "steamapps", "workshop", "content");
 
-    private static readonly string[] CheatAsiFileNames =
-    {
-        "cheat.asi", "hack.asi", "injector.asi", "loader.asi",
-        "trainer.asi", "bypass.asi", "menu.asi", "modmenu.asi",
-        "ScriptHookVDotNet.asi", "dsound.asi", "dinput8.asi",
-        "NativeTrainer.asi", "EnhancedNativeTrainer.asi",
-        "LegacyMenuAPI.asi", "GTA5Mods.asi",
-        "aimbot.asi", "wallhack.asi", "esp.asi",
-        "rage.asi", "internal.asi", "external.asi",
-        "kiddion.asi", "cherax.asi", "2take1.asi",
-        "tsunami.asi", "ozark.asi", "yimmenu.asi",
-    };
+    // -------------------------------------------------------------------------
+    // Resolve Steam directory (registry or default)
+    // -------------------------------------------------------------------------
 
-    private static readonly string[] CheatGarryModE2Patterns =
-    {
-        "aimbot", "wallhack", "esp", "triggerbot", "bhop", "bunnyhop",
-        "godmode", "noclip cheat", "speedhack", "fly hack",
-        "propkill", "crash server", "lag exploit", "crash exploit",
-        "kill all", "explode all", "freeze all", "kick all",
-        "admin bypass", "ulx bypass", "ulib bypass",
-        "prop spam", "entity spam", "crash lua",
-        "sv_cheats", "sv_allowcslua",
-    };
-
-    private static readonly string[] SuspiciousSteamBinDlls =
-    {
-        "gameoverlayrenderer.dll", "gameoverlayrenderer64.dll",
-        "steamclient.dll", "steamclient64.dll",
-        "tier0_s.dll", "vstdlib_s.dll",
-    };
-
-    private static readonly string[] KnownSteamCheatOverlayDlls =
-    {
-        "cheat_overlay.dll", "hack_overlay.dll", "esp_overlay.dll",
-        "aimbot_overlay.dll", "radar_overlay.dll", "menu_overlay.dll",
-        "cheatoverlay.dll", "hackoverlay.dll", "overlay_cheat.dll",
-        "inject_overlay.dll", "bypass_overlay.dll",
-        "steam_api_hook.dll", "steam_bypass.dll", "steam_emu.dll",
-        "steamemu.dll", "steam_api_bypass.dll",
-        "goldberg_steam_emu.dll", "ALICEfix.dll",
-        "SmartSteamEmu.dll", "SmartSteamEmu64.dll",
-        "CreamAPI.dll", "cream_api.dll",
-        "SteamFix.dll", "steam_fix.dll",
-        "orbital_emulator.dll",
-    };
-
-    private static readonly string[] CheatStackTracePatterns =
-    {
-        "cheat", "hack", "aimbot", "wallhack", "esp", "inject",
-        "loader", "bypass", "spoofer", "kiddion", "cherax",
-        "2take1", "neverlose", "onetap", "gamesense", "aimware",
-        "fatality", "nixware", "fecurity", "lumina",
-        "memprocfs", "pcileech", "dma",
-        "xenos", "extremeinjector", "manualmap",
-        "ScriptHookV", "ScriptHookVDotNet",
-        "eac_bypass", "battleye_bypass", "vac_bypass",
-        "anti_anticheat", "anticheat_bypass",
-    };
-
-    private static readonly string[] UserDataCheatCloudPatterns =
-    {
-        "cheat", "hack", "aimbot", "wallhack", "esp",
-        "triggerbot", "bhop", "bunnyhop", "no_recoil", "norecoil",
-        "bypass", "inject", "loader", "spoofer",
-        "sv_cheats", "noclip", "godmode",
-        "kiddion", "cherax", "2take1", "ozark",
-        "neverlose", "onetap", "gamesense", "aimware", "fatality",
-        "aim_key", "esp_key", "triggerkey", "bhop_key",
-        "fov_aimbot", "smooth_aimbot", "silent_aim",
-        "prediction", "backtrack", "spread_correction",
-        "resolver", "anti_aim", "desync",
-        "rage_bot", "legit_bot", "hvh_config",
-        "skinchanger", "skin_changer", "inventory_changer",
-    };
-
-    private static readonly string[] SteamCheatRunKeys =
-    {
-        "CheatLoader", "HackLoader", "SteamBypass", "SteamHook",
-        "SteamCheat", "GameHack", "AimBot", "WallHack",
-        "EspLoader", "InjectLoader", "BypassLoader",
-        "SpooferLoader", "HwidSpoofer", "SerialSpoofer",
-        "VacBypass", "EacBypass", "BattleyeBypass",
-        "SteamEmu", "SmartSteamEmu", "GoldbergEmu",
-        "CreamAPI", "Skidrow", "Codex",
-    };
-
-    public async Task RunAsync(ScanContext ctx, CancellationToken ct)
-    {
-        ctx.Report(0.0, Name, "Starting Steam Workshop cheat artifact scan");
-
-        await Task.WhenAll(
-            CheckWorkshopContentFolder(ctx, ct),
-            CheckWorkshopDllArtifacts(ctx, ct),
-            CheckGta5WorkshopItems(ctx, ct),
-            CheckCs2WorkshopItems(ctx, ct),
-            CheckGmodE2Scripts(ctx, ct),
-            CheckTf2WorkshopItems(ctx, ct),
-            CheckSteamLocalConfig(ctx, ct),
-            CheckSteamUserData(ctx, ct),
-            CheckSteamRegistryLaunchArgs(ctx, ct),
-            CheckSteamLibrarySystemDlls(ctx, ct),
-            CheckSteamBinOverlayDlls(ctx, ct),
-            CheckSteamCrashDumps(ctx, ct),
-            CheckUserAssistSteamCheats(ctx, ct),
-            CheckMuiCacheSteamCheats(ctx, ct),
-            CheckSteamRunKeys(ctx, ct)
-        );
-
-        ctx.Report(1.0, Name, "Steam Workshop cheat artifact scan complete");
-    }
-
-    private static string Rot13Decode(string s)
-    {
-        var sb = new StringBuilder(s.Length);
-        foreach (char c in s)
-        {
-            if      (c >= 'A' && c <= 'Z') sb.Append((char)('A' + (c - 'A' + 13) % 26));
-            else if (c >= 'a' && c <= 'z') sb.Append((char)('a' + (c - 'a' + 13) % 26));
-            else sb.Append(c);
-        }
-        return sb.ToString();
-    }
-
-    private static string? GetSteamPath()
+    private static string ResolveSteamDir()
     {
         try
         {
-            var path = Registry.GetValue(
-                @"HKEY_CURRENT_USER\Software\Valve\Steam", "SteamPath", null) as string;
-            if (!string.IsNullOrEmpty(path)) return path;
-
-            using var key = Registry.LocalMachine.OpenSubKey(
-                @"SOFTWARE\WOW6432Node\Valve\Steam", writable: false)
-                ?? Registry.LocalMachine.OpenSubKey(
-                @"SOFTWARE\Valve\Steam", writable: false);
-            return key?.GetValue("InstallPath") as string;
-        }
-        catch { return null; }
-    }
-
-    private static string? GetWorkshopPath(string? steamPath)
-    {
-        if (string.IsNullOrEmpty(steamPath)) return null;
-        var workshopPath = Path.Combine(steamPath, "steamapps", "workshop", "content");
-        return Directory.Exists(workshopPath) ? workshopPath : null;
-    }
-
-    private static IEnumerable<string> GetAllSteamLibraries(string? steamPath)
-    {
-        if (string.IsNullOrEmpty(steamPath)) yield break;
-        yield return steamPath;
-
-        var libraryFolders = Path.Combine(steamPath, "steamapps", "libraryfolders.vdf");
-        if (!File.Exists(libraryFolders)) yield break;
-
-        string[] lines;
-        try { lines = File.ReadAllLines(libraryFolders); }
-        catch { yield break; }
-
-        foreach (var line in lines)
-        {
-            var trimmed = line.Trim();
-            if (!trimmed.StartsWith('"')) continue;
-            var parts = trimmed.Split('"', StringSplitOptions.RemoveEmptyEntries);
-            if (parts.Length < 2) continue;
-            var value = parts[parts.Length - 1];
-            if (value.Contains('\\') || value.Contains('/'))
+            foreach (var hive in new[] { Registry.CurrentUser, Registry.LocalMachine })
             {
-                if (Directory.Exists(value)) yield return value;
+                using var key = hive.OpenSubKey(@"SOFTWARE\Valve\Steam", writable: false)
+                             ?? hive.OpenSubKey(@"SOFTWARE\WOW6432Node\Valve\Steam", writable: false);
+                if (key == null) continue;
+                var path = key.GetValue("SteamPath")?.ToString()
+                        ?? key.GetValue("InstallPath")?.ToString();
+                if (!string.IsNullOrEmpty(path) && Directory.Exists(path))
+                    return path;
             }
         }
+        catch { }
+        return DefaultSteamDir;
     }
 
-    private Task CheckWorkshopContentFolder(ScanContext ctx, CancellationToken ct) =>
-        Task.Run(() =>
-        {
-            var steamPath = GetSteamPath();
-            var workshopBase = GetWorkshopPath(steamPath);
-            if (workshopBase is null) return;
+    // -------------------------------------------------------------------------
+    // RunAsync — all 11 checks in parallel
+    // -------------------------------------------------------------------------
 
-            try
-            {
-                foreach (var appIdDir in Directory.EnumerateDirectories(workshopBase))
-                {
-                    if (ct.IsCancellationRequested) return;
-                    var appId = Path.GetFileName(appIdDir);
+    public Task RunAsync(ScanContext ctx, CancellationToken ct)
+    {
+        ctx.Report(0.0, Name, "Starting Steam Workshop cheat distribution forensic scan...");
 
-                    try
-                    {
-                        foreach (var itemDir in Directory.EnumerateDirectories(appIdDir))
-                        {
-                            if (ct.IsCancellationRequested) return;
-                            var itemId = Path.GetFileName(itemDir);
+        return Task.WhenAll(
+            CheckSteamCheatLauncherExecutables(ctx, ct),
+            CheckSteamApiBypassArtifacts(ctx, ct),
+            CheckSteamWorkshopCheatItems(ctx, ct),
+            CheckSteamLocalConfigCheat(ctx, ct),
+            CheckSteamCheatDownloadArtifacts(ctx, ct),
+            CheckSteamOverlayCheatArtifacts(ctx, ct),
+            CheckSteamCheatRegistryArtifacts(ctx, ct),
+            CheckSteamCheatConfigFiles(ctx, ct),
+            CheckSteamCheatLogFiles(ctx, ct),
+            CheckVACBanArtifacts(ctx, ct),
+            CheckSteamInstallerCheatRecords(ctx, ct)
+        );
+    }
 
-                            try
-                            {
-                                foreach (var file in Directory.EnumerateFiles(itemDir, "*", SearchOption.AllDirectories))
-                                {
-                                    if (ct.IsCancellationRequested) return;
-                                    ctx.IncrementFiles();
+    // -------------------------------------------------------------------------
+    // Check 1: Steam cheat launcher executables
+    // -------------------------------------------------------------------------
 
-                                    var ext = Path.GetExtension(file).ToLowerInvariant();
-                                    if (!SuspiciousWorkshopExtensions.Contains(ext)) continue;
-
-                                    var nameLower = Path.GetFileName(file).ToLowerInvariant();
-                                    var hasSuspiciousName = CheatWorkshopFolderNames.Any(k =>
-                                        nameLower.Contains(k, StringComparison.OrdinalIgnoreCase));
-
-                                    if (ext == ".exe" || ext == ".bat" || ext == ".cmd" || ext == ".ps1")
-                                    {
-                                        ctx.AddFinding(new Finding
-                                        {
-                                            Module = "Steam Workshop Cheat Artifact Forensic Scan",
-                                            Title = $"Workshop item contains unexpected executable: {Path.GetFileName(file)}",
-                                            Risk = hasSuspiciousName ? RiskLevel.Critical : RiskLevel.High,
-                                            Location = file,
-                                            FileName = Path.GetFileName(file),
-                                            Reason = $"Steam Workshop item {itemId} (AppID {appId}) contains " +
-                                                     $"an executable file '{Path.GetFileName(file)}'. " +
-                                                     "Workshop items should not contain standalone executables. " +
-                                                     "This is a known vector for distributing cheat loaders " +
-                                                     "via Steam Workshop subscriptions.",
-                                            Detail = $"Workshop item: {itemDir} | AppID: {appId} | File: {file}"
-                                        });
-                                    }
-                                }
-                            }
-                            catch (UnauthorizedAccessException) { }
-
-                            var itemDirName = Path.GetFileName(itemDir).ToLowerInvariant();
-                            foreach (var cheatName in CheatWorkshopFolderNames)
-                            {
-                                if (itemDirName.Contains(cheatName, StringComparison.OrdinalIgnoreCase))
-                                {
-                                    ctx.AddFinding(new Finding
-                                    {
-                                        Module = "Steam Workshop Cheat Artifact Forensic Scan",
-                                        Title = $"Workshop item folder with cheat name: {Path.GetFileName(itemDir)}",
-                                        Risk = RiskLevel.High,
-                                        Location = itemDir,
-                                        FileName = Path.GetFileName(itemDir),
-                                        Reason = $"Steam Workshop item directory '{Path.GetFileName(itemDir)}' " +
-                                                 $"(AppID {appId}) has a name matching cheat keyword '{cheatName}'. " +
-                                                 "Cheat tools are sometimes distributed through Workshop items " +
-                                                 "using misleading or explicit names.",
-                                        Detail = $"Item dir: {itemDir} | Keyword: {cheatName} | AppID: {appId}"
-                                    });
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                    catch (UnauthorizedAccessException) { }
-                }
-            }
-            catch (UnauthorizedAccessException) { }
-        }, ct);
-
-    private Task CheckWorkshopDllArtifacts(ScanContext ctx, CancellationToken ct) =>
-        Task.Run(() =>
-        {
-            var steamPath = GetSteamPath();
-            var workshopBase = GetWorkshopPath(steamPath);
-            if (workshopBase is null) return;
-
-            var legitimateModDllPatterns = new[]
-            {
-                "addon", "mod", "plugin", "extension", "resource",
-                "soundfix", "fix", "patch", "improvement",
-            };
-
-            try
-            {
-                foreach (var appIdDir in Directory.EnumerateDirectories(workshopBase))
-                {
-                    if (ct.IsCancellationRequested) return;
-                    var appId = Path.GetFileName(appIdDir);
-
-                    try
-                    {
-                        foreach (var itemDir in Directory.EnumerateDirectories(appIdDir))
-                        {
-                            if (ct.IsCancellationRequested) return;
-                            var itemId = Path.GetFileName(itemDir);
-
-                            try
-                            {
-                                foreach (var dll in Directory.EnumerateFiles(itemDir, "*.dll", SearchOption.AllDirectories))
-                                {
-                                    if (ct.IsCancellationRequested) return;
-                                    ctx.IncrementFiles();
-
-                                    var dllName = Path.GetFileName(dll).ToLowerInvariant();
-                                    var relPath = dll.Substring(itemDir.Length).ToLowerInvariant();
-
-                                    bool isLegitMod = legitimateModDllPatterns.Any(p =>
-                                        dllName.Contains(p, StringComparison.OrdinalIgnoreCase));
-                                    bool isCheatName = CheatWorkshopFolderNames.Any(k =>
-                                        dllName.Contains(k, StringComparison.OrdinalIgnoreCase));
-                                    bool isInRootOrBin = relPath.Count(c => c == Path.DirectorySeparatorChar) <= 2
-                                        || relPath.Contains(@"\bin\", StringComparison.OrdinalIgnoreCase);
-
-                                    if (isCheatName)
-                                    {
-                                        ctx.AddFinding(new Finding
-                                        {
-                                            Module = "Steam Workshop Cheat Artifact Forensic Scan",
-                                            Title = $"Workshop DLL with cheat name: {Path.GetFileName(dll)}",
-                                            Risk = RiskLevel.Critical,
-                                            Location = dll,
-                                            FileName = Path.GetFileName(dll),
-                                            Reason = $"Steam Workshop item {itemId} (AppID {appId}) contains DLL " +
-                                                     $"'{Path.GetFileName(dll)}' whose name matches a known cheat keyword. " +
-                                                     "Workshop DLLs with cheat names are characteristic of cheat " +
-                                                     "injection libraries distributed through Workshop subscriptions.",
-                                            Detail = $"Workshop item: {itemDir} | DLL: {dll} | AppID: {appId}"
-                                        });
-                                    }
-                                    else if (isInRootOrBin && !isLegitMod)
-                                    {
-                                        ctx.AddFinding(new Finding
-                                        {
-                                            Module = "Steam Workshop Cheat Artifact Forensic Scan",
-                                            Title = $"Workshop item: unexpected DLL in bin/root location ({Path.GetFileName(dll)})",
-                                            Risk = RiskLevel.Medium,
-                                            Location = dll,
-                                            FileName = Path.GetFileName(dll),
-                                            Reason = $"Steam Workshop item {itemId} (AppID {appId}) contains DLL " +
-                                                     $"'{Path.GetFileName(dll)}' in a root or bin-level directory " +
-                                                     "where non-addon DLLs are not expected. " +
-                                                     "This location is used by cheat loaders to ensure automatic loading.",
-                                            Detail = $"Workshop item: {itemDir} | DLL: {dll} | RelPath: {relPath}"
-                                        });
-                                    }
-                                }
-                            }
-                            catch (UnauthorizedAccessException) { }
-                        }
-                    }
-                    catch (UnauthorizedAccessException) { }
-                }
-            }
-            catch (UnauthorizedAccessException) { }
-        }, ct);
-
-    private Task CheckGta5WorkshopItems(ScanContext ctx, CancellationToken ct) =>
-        Task.Run(() =>
-        {
-            var steamPath = GetSteamPath();
-            var workshopBase = GetWorkshopPath(steamPath);
-            if (workshopBase is null) return;
-
-            var gta5WorkshopDir = Path.Combine(workshopBase, AppIdGta5);
-            if (!Directory.Exists(gta5WorkshopDir)) return;
-
-            try
-            {
-                foreach (var itemDir in Directory.EnumerateDirectories(gta5WorkshopDir))
-                {
-                    if (ct.IsCancellationRequested) return;
-                    var itemId = Path.GetFileName(itemDir);
-
-                    try
-                    {
-                        foreach (var asi in Directory.EnumerateFiles(itemDir, "*.asi", SearchOption.AllDirectories))
-                        {
-                            ctx.IncrementFiles();
-                            var asiName = Path.GetFileName(asi);
-                            bool isKnownCheatAsi = CheatAsiFileNames.Any(k =>
-                                asiName.Equals(k, StringComparison.OrdinalIgnoreCase));
-                            bool hasCheatName = CheatWorkshopFolderNames.Any(k =>
-                                asiName.Contains(k, StringComparison.OrdinalIgnoreCase));
-
-                            if (isKnownCheatAsi || hasCheatName)
-                            {
-                                ctx.AddFinding(new Finding
-                                {
-                                    Module = "Steam Workshop Cheat Artifact Forensic Scan",
-                                    Title = $"GTA5 Workshop: cheat ASI plugin ({asiName})",
-                                    Risk = RiskLevel.Critical,
-                                    Location = asi,
-                                    FileName = asiName,
-                                    Reason = $"GTA V Workshop item {itemId} contains ASI plugin '{asiName}' " +
-                                             "which matches a known cheat or suspicious ASI file name. " +
-                                             "ASI files are loaded by ScriptHookV and are the primary delivery " +
-                                             "mechanism for GTA V cheats including kiddion's Modest Menu, " +
-                                             "2Take1, Cherax, and similar tools.",
-                                    Detail = $"Workshop item: {itemDir} | ASI: {asi} | AppID: {AppIdGta5}"
-                                });
-                            }
-                            else
-                            {
-                                ctx.AddFinding(new Finding
-                                {
-                                    Module = "Steam Workshop Cheat Artifact Forensic Scan",
-                                    Title = $"GTA5 Workshop: unexpected ASI plugin ({asiName})",
-                                    Risk = RiskLevel.Medium,
-                                    Location = asi,
-                                    FileName = asiName,
-                                    Reason = $"GTA V Workshop item {itemId} contains ASI plugin '{asiName}'. " +
-                                             "ASI files are loaded by ScriptHookV and can execute arbitrary code. " +
-                                             "Legitimate mods rarely distribute as Workshop-sourced ASI files.",
-                                    Detail = $"Workshop item: {itemDir} | ASI: {asi}"
-                                });
-                            }
-                        }
-
-                        foreach (var dll in Directory.EnumerateFiles(itemDir, "*.dll", SearchOption.AllDirectories))
-                        {
-                            ctx.IncrementFiles();
-                            var dllName = Path.GetFileName(dll).ToLowerInvariant();
-                            if (dllName.Contains("scripthook", StringComparison.OrdinalIgnoreCase) ||
-                                dllName.Contains("dinput8", StringComparison.OrdinalIgnoreCase) ||
-                                dllName.Contains("dsound", StringComparison.OrdinalIgnoreCase) ||
-                                dllName.Contains("d3d", StringComparison.OrdinalIgnoreCase) ||
-                                dllName.Contains("winmm", StringComparison.OrdinalIgnoreCase))
-                            {
-                                ctx.AddFinding(new Finding
-                                {
-                                    Module = "Steam Workshop Cheat Artifact Forensic Scan",
-                                    Title = $"GTA5 Workshop: proxy/hook DLL artifact ({Path.GetFileName(dll)})",
-                                    Risk = RiskLevel.High,
-                                    Location = dll,
-                                    FileName = Path.GetFileName(dll),
-                                    Reason = $"GTA V Workshop item {Path.GetFileName(itemDir)} contains DLL " +
-                                             $"'{Path.GetFileName(dll)}' that matches a known DLL hijacking proxy name. " +
-                                             "Cheats use proxy DLLs (dinput8.dll, dsound.dll, winmm.dll) to load " +
-                                             "without an ASI loader, making detection harder.",
-                                    Detail = $"Workshop item: {itemDir} | DLL: {dll}"
-                                });
-                            }
-                        }
-
-                        var itemDirLower = Path.GetFileName(itemDir).ToLowerInvariant();
-                        foreach (var cheatName in CheatWorkshopFolderNames)
-                        {
-                            if (itemDirLower.Contains(cheatName, StringComparison.OrdinalIgnoreCase))
-                            {
-                                ctx.AddFinding(new Finding
-                                {
-                                    Module = "Steam Workshop Cheat Artifact Forensic Scan",
-                                    Title = $"GTA5 Workshop: cheat-named item folder ({itemDirLower})",
-                                    Risk = RiskLevel.High,
-                                    Location = itemDir,
-                                    FileName = Path.GetFileName(itemDir),
-                                    Reason = $"GTA V Workshop subscription folder '{Path.GetFileName(itemDir)}' " +
-                                             $"matches cheat keyword '{cheatName}'. " +
-                                             "This is consistent with a subscribed cheat distributed as a Workshop item.",
-                                    Detail = $"Item: {itemDir} | Keyword: {cheatName} | AppID: {AppIdGta5}"
-                                });
-                                break;
-                            }
-                        }
-                    }
-                    catch (UnauthorizedAccessException) { }
-                }
-            }
-            catch (UnauthorizedAccessException) { }
-        }, ct);
-
-    private Task CheckCs2WorkshopItems(ScanContext ctx, CancellationToken ct) =>
-        Task.Run(() =>
-        {
-            var steamPath = GetSteamPath();
-            var workshopBase = GetWorkshopPath(steamPath);
-            if (workshopBase is null) return;
-
-            var cs2WorkshopDir = Path.Combine(workshopBase, AppIdCs2);
-            if (!Directory.Exists(cs2WorkshopDir)) return;
-
-            var suspiciousCs2Extensions = new[] { ".exe", ".dll", ".bat", ".ps1", ".cmd", ".vbs" };
-            var cs2CheatPatterns = new[]
-            {
-                "aimbot", "wallhack", "esp", "bhop", "triggerbot",
-                "norecoil", "no_recoil", "spinbot", "bypass",
-                "neverlose", "onetap", "gamesense", "aimware", "fatality",
-                "nixware", "fecurity", "lumina", "interium", "skeet",
-                "vac_bypass", "eac_bypass", "cheat", "hack", "inject",
-                "rage", "hvh", "resolver", "backtrack", "spread",
-                "prediction", "anti_aim", "desync",
-            };
-
-            try
-            {
-                foreach (var itemDir in Directory.EnumerateDirectories(cs2WorkshopDir))
-                {
-                    if (ct.IsCancellationRequested) return;
-                    var itemId = Path.GetFileName(itemDir);
-
-                    try
-                    {
-                        foreach (var file in Directory.EnumerateFiles(itemDir, "*", SearchOption.AllDirectories))
-                        {
-                            if (ct.IsCancellationRequested) return;
-                            ctx.IncrementFiles();
-
-                            var ext = Path.GetExtension(file).ToLowerInvariant();
-                            if (!suspiciousCs2Extensions.Contains(ext)) continue;
-
-                            var nameLower = Path.GetFileName(file).ToLowerInvariant();
-                            var isCheat = cs2CheatPatterns.Any(p =>
-                                nameLower.Contains(p, StringComparison.OrdinalIgnoreCase));
-
-                            ctx.AddFinding(new Finding
-                            {
-                                Module = "Steam Workshop Cheat Artifact Forensic Scan",
-                                Title = $"CS2 Workshop: suspicious executable in item ({Path.GetFileName(file)})",
-                                Risk = isCheat ? RiskLevel.Critical : RiskLevel.High,
-                                Location = file,
-                                FileName = Path.GetFileName(file),
-                                Reason = $"CS2 Workshop item {itemId} contains executable or DLL " +
-                                         $"'{Path.GetFileName(file)}'. " +
-                                         "CS2 Workshop items should only contain maps, models, and game assets. " +
-                                         "Executables or DLLs in Workshop content are a strong indicator " +
-                                         "of cheat distribution via Workshop subscription.",
-                                Detail = $"Workshop item: {itemDir} | File: {file} | IsCheatNamed: {isCheat}"
-                            });
-                        }
-
-                        var vcfFiles = Directory.EnumerateFiles(itemDir, "*.cfg", SearchOption.AllDirectories);
-                        foreach (var cfg in vcfFiles)
-                        {
-                            ctx.IncrementFiles();
-                            string content;
-                            try
-                            {
-                                using var fs = new FileStream(cfg, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-                                using var sr = new StreamReader(fs);
-                                content = sr.ReadToEnd();
-                            }
-                            catch (IOException) { continue; }
-                            catch (UnauthorizedAccessException) { continue; }
-
-                            if (content.Contains("sv_cheats", StringComparison.OrdinalIgnoreCase) ||
-                                content.Contains("sv_lan", StringComparison.OrdinalIgnoreCase) ||
-                                content.Contains("exec cheat", StringComparison.OrdinalIgnoreCase))
-                            {
-                                ctx.AddFinding(new Finding
-                                {
-                                    Module = "Steam Workshop Cheat Artifact Forensic Scan",
-                                    Title = $"CS2 Workshop: config with cheat console vars ({Path.GetFileName(cfg)})",
-                                    Risk = RiskLevel.Medium,
-                                    Location = cfg,
-                                    FileName = Path.GetFileName(cfg),
-                                    Reason = $"CS2 Workshop config file '{Path.GetFileName(cfg)}' in item {itemId} " +
-                                             "contains cheat-enabling console variables (sv_cheats, sv_lan). " +
-                                             "Workshop configs with these variables may be used to enable " +
-                                             "server-side cheats or to configure cheat functionality.",
-                                    Detail = $"Config: {cfg} | Workshop item: {itemDir}"
-                                });
-                            }
-                        }
-                    }
-                    catch (UnauthorizedAccessException) { }
-                }
-            }
-            catch (UnauthorizedAccessException) { }
-        }, ct);
-
-    private Task CheckGmodE2Scripts(ScanContext ctx, CancellationToken ct) =>
+    private Task CheckSteamCheatLauncherExecutables(ScanContext ctx, CancellationToken ct) =>
         Task.Run(async () =>
         {
-            var steamPath = GetSteamPath();
-            var workshopBase = GetWorkshopPath(steamPath);
-            if (workshopBase is null) return;
-
-            var gmodWorkshopDir = Path.Combine(workshopBase, AppIdGmod);
-            if (!Directory.Exists(gmodWorkshopDir)) return;
-
-            try
+            var steamDir = ResolveSteamDir();
+            var searchDirs = new[]
             {
-                foreach (var itemDir in Directory.EnumerateDirectories(gmodWorkshopDir))
+                DesktopDir,
+                DownloadsDir,
+                UserTempDir,
+                WindowsTempDir,
+                LocalAppDataDir,
+                RoamingAppDataDir,
+                steamDir,
+            };
+
+            foreach (var dir in searchDirs)
+            {
+                if (ct.IsCancellationRequested) return;
+                if (!Directory.Exists(dir)) continue;
+
+                string[] files;
+                try
                 {
-                    if (ct.IsCancellationRequested) return;
-                    var itemId = Path.GetFileName(itemDir);
-
-                    try
-                    {
-                        foreach (var e2File in Directory.EnumerateFiles(itemDir, "*.txt", SearchOption.AllDirectories)
-                            .Concat(Directory.EnumerateFiles(itemDir, "*.e2", SearchOption.AllDirectories))
-                            .Concat(Directory.EnumerateFiles(itemDir, "*.lua", SearchOption.AllDirectories)))
-                        {
-                            if (ct.IsCancellationRequested) return;
-                            ctx.IncrementFiles();
-
-                            var fi = new FileInfo(e2File);
-                            if (fi.Length > 2 * 1024 * 1024) continue;
-
-                            string content;
-                            try
-                            {
-                                using var fs = new FileStream(e2File, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-                                using var sr = new StreamReader(fs);
-                                content = await sr.ReadToEndAsync(ct);
-                            }
-                            catch (IOException) { continue; }
-                            catch (UnauthorizedAccessException) { continue; }
-
-                            foreach (var pattern in CheatGarryModE2Patterns)
-                            {
-                                if (content.Contains(pattern, StringComparison.OrdinalIgnoreCase))
-                                {
-                                    ctx.AddFinding(new Finding
-                                    {
-                                        Module = "Steam Workshop Cheat Artifact Forensic Scan",
-                                        Title = $"Garry's Mod Workshop: E2/Lua cheat script ({Path.GetFileName(e2File)})",
-                                        Risk = RiskLevel.High,
-                                        Location = e2File,
-                                        FileName = Path.GetFileName(e2File),
-                                        Reason = $"Garry's Mod Workshop item {itemId} contains script " +
-                                                 $"'{Path.GetFileName(e2File)}' with cheat-related content matching " +
-                                                 $"'{pattern}'. E2 (Expression2) and Lua scripts in GMod can " +
-                                                 "implement aimbots, prop kills, server crash exploits, " +
-                                                 "godmode, and admin bypass cheats.",
-                                        Detail = $"Script: {e2File} | Pattern: {pattern} | Item: {itemDir}"
-                                    });
-                                    break;
-                                }
-                            }
-
-                            if (content.Contains("RunString", StringComparison.OrdinalIgnoreCase) ||
-                                content.Contains("CompileString", StringComparison.OrdinalIgnoreCase) ||
-                                content.Contains("loadstring", StringComparison.OrdinalIgnoreCase))
-                            {
-                                ctx.AddFinding(new Finding
-                                {
-                                    Module = "Steam Workshop Cheat Artifact Forensic Scan",
-                                    Title = $"Garry's Mod Workshop: dynamic code execution in script ({Path.GetFileName(e2File)})",
-                                    Risk = RiskLevel.Medium,
-                                    Location = e2File,
-                                    FileName = Path.GetFileName(e2File),
-                                    Reason = $"Garry's Mod Workshop script '{Path.GetFileName(e2File)}' uses " +
-                                             "dynamic code execution functions (RunString/CompileString/loadstring). " +
-                                             "These are used to execute obfuscated cheat payloads loaded at runtime, " +
-                                             "evading static analysis of Workshop content.",
-                                    Detail = $"Script: {e2File} | Item: {itemDir}"
-                                });
-                            }
-                        }
-                    }
-                    catch (UnauthorizedAccessException) { }
+                    files = Directory.GetFiles(dir, "*.exe", SearchOption.TopDirectoryOnly);
                 }
-            }
-            catch (UnauthorizedAccessException) { }
-        }, ct);
+                catch (UnauthorizedAccessException) { continue; }
+                catch (IOException) { continue; }
 
-    private Task CheckTf2WorkshopItems(ScanContext ctx, CancellationToken ct) =>
-        Task.Run(() =>
-        {
-            var steamPath = GetSteamPath();
-            var workshopBase = GetWorkshopPath(steamPath);
-            if (workshopBase is null) return;
-
-            var tf2WorkshopDir = Path.Combine(workshopBase, AppIdTf2);
-            if (!Directory.Exists(tf2WorkshopDir)) return;
-
-            try
-            {
-                foreach (var itemDir in Directory.EnumerateDirectories(tf2WorkshopDir))
+                foreach (var file in files)
                 {
                     if (ct.IsCancellationRequested) return;
-                    var itemId = Path.GetFileName(itemDir);
-
-                    try
-                    {
-                        foreach (var file in Directory.EnumerateFiles(itemDir, "*.dll", SearchOption.AllDirectories)
-                            .Concat(Directory.EnumerateFiles(itemDir, "*.exe", SearchOption.AllDirectories)))
-                        {
-                            ctx.IncrementFiles();
-                            var name = Path.GetFileName(file);
-                            ctx.AddFinding(new Finding
-                            {
-                                Module = "Steam Workshop Cheat Artifact Forensic Scan",
-                                Title = $"TF2 Workshop: unexpected executable/DLL in item ({name})",
-                                Risk = RiskLevel.High,
-                                Location = file,
-                                FileName = name,
-                                Reason = $"Team Fortress 2 Workshop item {itemId} contains '{name}', " +
-                                         "an executable or DLL file. TF2 Workshop items should only " +
-                                         "contain cosmetics, maps, and game content — not binaries. " +
-                                         "Executables in TF2 Workshop items are a known cheat delivery vector.",
-                                Detail = $"Workshop item: {itemDir} | File: {file} | AppID: {AppIdTf2}"
-                            });
-                        }
-
-                        foreach (var vtf in Directory.EnumerateFiles(itemDir, "*.vtf", SearchOption.AllDirectories))
-                        {
-                            ctx.IncrementFiles();
-                            var vtfName = Path.GetFileName(vtf).ToLowerInvariant();
-                            if (vtfName.Contains("wallhack", StringComparison.OrdinalIgnoreCase) ||
-                                vtfName.Contains("transparent", StringComparison.OrdinalIgnoreCase) ||
-                                vtfName.Contains("cheat", StringComparison.OrdinalIgnoreCase) ||
-                                vtfName.Contains("glow", StringComparison.OrdinalIgnoreCase))
-                            {
-                                ctx.AddFinding(new Finding
-                                {
-                                    Module = "Steam Workshop Cheat Artifact Forensic Scan",
-                                    Title = $"TF2 Workshop: suspicious VTF texture name ({Path.GetFileName(vtf)})",
-                                    Risk = RiskLevel.Medium,
-                                    Location = vtf,
-                                    FileName = Path.GetFileName(vtf),
-                                    Reason = $"TF2 Workshop item {itemId} contains VTF texture " +
-                                             $"'{Path.GetFileName(vtf)}' with a suspicious name. " +
-                                             "Modified textures are used in TF2 to create wallhacks " +
-                                             "(transparent walls) and visual cheats that bypass VAC.",
-                                    Detail = $"Workshop item: {itemDir} | VTF: {vtf}"
-                                });
-                            }
-                        }
-                    }
-                    catch (UnauthorizedAccessException) { }
-                }
-            }
-            catch (UnauthorizedAccessException) { }
-        }, ct);
-
-    private Task CheckSteamLocalConfig(ScanContext ctx, CancellationToken ct) =>
-        Task.Run(async () =>
-        {
-            var steamPath = GetSteamPath();
-            if (steamPath is null) return;
-
-            var userdataDir = Path.Combine(steamPath, "userdata");
-            if (!Directory.Exists(userdataDir)) return;
-
-            try
-            {
-                foreach (var userDir in Directory.EnumerateDirectories(userdataDir))
-                {
-                    if (ct.IsCancellationRequested) return;
-                    var configDir = Path.Combine(userDir, "config");
-                    if (!Directory.Exists(configDir)) continue;
-
-                    var localConfig = Path.Combine(configDir, "localconfig.vdf");
-                    if (!File.Exists(localConfig)) continue;
-
                     ctx.IncrementFiles();
+
+                    var fn = Path.GetFileName(file);
+                    if (!KnownSteamCheatLaunchers.Contains(fn)) continue;
+
+                    ctx.AddFinding(new Finding
+                    {
+                        Module = Name,
+                        Title = $"Known Steam Cheat Launcher: {fn}",
+                        Risk = RiskLevel.High,
+                        Location = file,
+                        FileName = fn,
+                        Reason = $"Executable '{fn}' matches a known Steam cheat launcher or VAC bypass tool. " +
+                                 "These tools exploit Steam's API, inject into game processes via Steam overlays, " +
+                                 "or bypass Valve Anti-Cheat (VAC) by intercepting Steam authentication calls.",
+                        Detail = $"Path: {file} | Directory: {dir}"
+                    });
+                }
+
+                await Task.Yield();
+            }
+
+            // Also check AppData subdirectories one level deep
+            foreach (var baseDir in new[] { LocalAppDataDir, RoamingAppDataDir })
+            {
+                if (ct.IsCancellationRequested) return;
+                if (!Directory.Exists(baseDir)) continue;
+
+                string[] subDirs;
+                try { subDirs = Directory.GetDirectories(baseDir); }
+                catch (UnauthorizedAccessException) { continue; }
+                catch (IOException) { continue; }
+
+                foreach (var sub in subDirs)
+                {
+                    if (ct.IsCancellationRequested) return;
+
+                    string[] subFiles;
+                    try
+                    {
+                        subFiles = Directory.GetFiles(sub, "*.exe", SearchOption.TopDirectoryOnly);
+                    }
+                    catch (UnauthorizedAccessException) { continue; }
+                    catch (IOException) { continue; }
+
+                    foreach (var file in subFiles)
+                    {
+                        if (ct.IsCancellationRequested) return;
+                        ctx.IncrementFiles();
+
+                        var fn = Path.GetFileName(file);
+                        if (!KnownSteamCheatLaunchers.Contains(fn)) continue;
+
+                        ctx.AddFinding(new Finding
+                        {
+                            Module = Name,
+                            Title = $"Steam Cheat Launcher in AppData Subdirectory: {fn}",
+                            Risk = RiskLevel.High,
+                            Location = file,
+                            FileName = fn,
+                            Reason = $"Known Steam cheat launcher '{fn}' found in an AppData subdirectory. " +
+                                     "This staging location is commonly used to hide Steam bypass tools and " +
+                                     "VAC evasion software from superficial directory scans.",
+                            Detail = $"Path: {file}"
+                        });
+                    }
+
+                    await Task.Yield();
+                }
+            }
+        }, ct);
+
+    // -------------------------------------------------------------------------
+    // Check 2: Steam API bypass artifacts (patched/fake steam_api.dll etc.)
+    // -------------------------------------------------------------------------
+
+    private Task CheckSteamApiBypassArtifacts(ScanContext ctx, CancellationToken ct) =>
+        Task.Run(async () =>
+        {
+            var steamDir = ResolveSteamDir();
+            var steamAppsDir = Path.Combine(steamDir, "steamapps");
+
+            if (!Directory.Exists(steamAppsDir)) return;
+
+            // Enumerate game directories under steamapps\common
+            var commonDir = Path.Combine(steamAppsDir, "common");
+            if (!Directory.Exists(commonDir)) return;
+
+            string[] gameDirs;
+            try { gameDirs = Directory.GetDirectories(commonDir); }
+            catch (UnauthorizedAccessException) { return; }
+            catch (IOException) { return; }
+
+            foreach (var gameDir in gameDirs)
+            {
+                if (ct.IsCancellationRequested) return;
+
+                // Look for steam_api.dll, steam_api64.dll, steamclient.dll, steamclient64.dll
+                foreach (var apiFileName in SteamApiBypassFileNames)
+                {
+                    if (ct.IsCancellationRequested) return;
+
+                    string[] candidates;
+                    try
+                    {
+                        candidates = Directory.GetFiles(gameDir, apiFileName,
+                            SearchOption.AllDirectories);
+                    }
+                    catch (UnauthorizedAccessException) { continue; }
+                    catch (IOException) { continue; }
+
+                    foreach (var apiFile in candidates)
+                    {
+                        if (ct.IsCancellationRequested) return;
+                        ctx.IncrementFiles();
+
+                        // Read first 256KB to check for bypass keywords in file content
+                        string content = string.Empty;
+                        try
+                        {
+                            using var fs = new FileStream(apiFile, FileMode.Open,
+                                FileAccess.Read, FileShare.ReadWrite);
+                            int readLen = (int)Math.Min(262144L, fs.Length);
+                            if (readLen > 0)
+                            {
+                                var buf = new byte[readLen];
+                                int bytesRead = 0;
+                                while (bytesRead < readLen)
+                                {
+                                    int n = await fs.ReadAsync(buf, bytesRead, readLen - bytesRead, ct);
+                                    if (n == 0) break;
+                                    bytesRead += n;
+                                }
+                                content = System.Text.Encoding.ASCII.GetString(buf, 0, bytesRead);
+                            }
+                        }
+                        catch (UnauthorizedAccessException) { continue; }
+                        catch (IOException) { continue; }
+
+                        var matchedKeyword = SteamApiBypassContentKeywords.FirstOrDefault(k =>
+                            content.Contains(k, StringComparison.OrdinalIgnoreCase));
+
+                        if (matchedKeyword == null) continue;
+
+                        ctx.AddFinding(new Finding
+                        {
+                            Module = Name,
+                            Title = $"Patched/Fake Steam API DLL in Game Directory: {Path.GetFileName(apiFile)}",
+                            Risk = RiskLevel.High,
+                            Location = apiFile,
+                            FileName = Path.GetFileName(apiFile),
+                            Reason = $"Steam API file '{Path.GetFileName(apiFile)}' in a game directory contains " +
+                                     $"the keyword '{matchedKeyword}', which is a watermark found in well-known " +
+                                     "Steam emulators (Goldberg, Skidrow, Reloaded, ALI213). These replace the " +
+                                     "legitimate Steam API to bypass DRM, authentication, and potentially VAC.",
+                            Detail = $"Path: {apiFile} | Matched keyword: {matchedKeyword} | " +
+                                     $"Game dir: {Path.GetFileName(gameDir)}"
+                        });
+                    }
+                }
+
+                // Check for Steam emulator config files in the game directory
+                foreach (var emuConfig in SteamEmuConfigFiles)
+                {
+                    if (ct.IsCancellationRequested) return;
+
+                    string[] configMatches;
+                    try
+                    {
+                        configMatches = Directory.GetFiles(gameDir, emuConfig,
+                            SearchOption.AllDirectories);
+                    }
+                    catch (UnauthorizedAccessException) { continue; }
+                    catch (IOException) { continue; }
+
+                    foreach (var cfgFile in configMatches)
+                    {
+                        if (ct.IsCancellationRequested) return;
+                        ctx.IncrementFiles();
+
+                        ctx.AddFinding(new Finding
+                        {
+                            Module = Name,
+                            Title = $"Steam Emulator Config in Game Directory: {Path.GetFileName(cfgFile)}",
+                            Risk = RiskLevel.High,
+                            Location = cfgFile,
+                            FileName = Path.GetFileName(cfgFile),
+                            Reason = $"Steam emulator configuration file '{Path.GetFileName(cfgFile)}' found in a " +
+                                     "Steam game directory. Files like ALI213.ini, cream_api.ini, and " +
+                                     "steam_interfaces.txt are used to configure cracked/bypassed Steam API " +
+                                     "DLLs that circumvent DRM and potentially VAC checks.",
+                            Detail = $"Path: {cfgFile} | Game dir: {Path.GetFileName(gameDir)}"
+                        });
+                    }
+                }
+
+                await Task.Yield();
+            }
+        }, ct);
+
+    // -------------------------------------------------------------------------
+    // Check 3: Steam Workshop cheat items
+    // -------------------------------------------------------------------------
+
+    private Task CheckSteamWorkshopCheatItems(ScanContext ctx, CancellationToken ct) =>
+        Task.Run(async () =>
+        {
+            // Steam Workshop content path
+            var steamDir = ResolveSteamDir();
+            var workshopDir = Path.Combine(steamDir, "steamapps", "workshop", "content");
+
+            if (!Directory.Exists(workshopDir)) return;
+
+            // Enumerate app ID directories (each game has its own)
+            string[] appDirs;
+            try { appDirs = Directory.GetDirectories(workshopDir); }
+            catch (UnauthorizedAccessException) { return; }
+            catch (IOException) { return; }
+
+            foreach (var appDir in appDirs)
+            {
+                if (ct.IsCancellationRequested) return;
+
+                // Enumerate workshop item directories
+                string[] itemDirs;
+                try { itemDirs = Directory.GetDirectories(appDir); }
+                catch (UnauthorizedAccessException) { continue; }
+                catch (IOException) { continue; }
+
+                foreach (var itemDir in itemDirs)
+                {
+                    if (ct.IsCancellationRequested) return;
+
+                    var itemDirName = Path.GetFileName(itemDir).ToLowerInvariant();
+                    bool dirHasCheatKeyword = WorkshopCheatFolderKeywords.Any(k =>
+                        itemDirName.Contains(k, StringComparison.OrdinalIgnoreCase));
+
+                    // Enumerate all files in this workshop item
+                    string[] itemFiles;
+                    try
+                    {
+                        itemFiles = Directory.GetFiles(itemDir, "*",
+                            SearchOption.AllDirectories);
+                    }
+                    catch (UnauthorizedAccessException) { continue; }
+                    catch (IOException) { continue; }
+
+                    foreach (var file in itemFiles)
+                    {
+                        if (ct.IsCancellationRequested) return;
+                        ctx.IncrementFiles();
+
+                        var ext = Path.GetExtension(file).ToLowerInvariant();
+                        var fn = Path.GetFileName(file);
+
+                        // Flag .dll, .exe, .sys files in workshop content
+                        if (SuspiciousWorkshopExtensions.Contains(ext))
+                        {
+                            var risk = ext == ".sys" ? RiskLevel.Critical : RiskLevel.High;
+                            ctx.AddFinding(new Finding
+                            {
+                                Module = Name,
+                                Title = $"Suspicious Binary in Steam Workshop Item: {fn}",
+                                Risk = risk,
+                                Location = file,
+                                FileName = fn,
+                                Reason = $"A {ext.ToUpperInvariant()} file was found inside a Steam Workshop " +
+                                         $"content directory (App: {Path.GetFileName(appDir)}, Item: " +
+                                         $"{Path.GetFileName(itemDir)}). Workshop items should not contain " +
+                                         "executable, DLL, or driver files. This strongly suggests a cheat or " +
+                                         "injector is being distributed via Steam Workshop.",
+                                Detail = $"Path: {file} | App: {Path.GetFileName(appDir)} | " +
+                                         $"Item: {Path.GetFileName(itemDir)}"
+                            });
+                        }
+                        // Flag if item directory name contains cheat keywords
+                        else if (dirHasCheatKeyword)
+                        {
+                            ctx.AddFinding(new Finding
+                            {
+                                Module = Name,
+                                Title = $"Workshop Item Directory Contains Cheat Keyword: {Path.GetFileName(itemDir)}",
+                                Risk = RiskLevel.Medium,
+                                Location = itemDir,
+                                FileName = fn,
+                                Reason = $"Steam Workshop item directory '{Path.GetFileName(itemDir)}' for app " +
+                                         $"'{Path.GetFileName(appDir)}' has a name containing a cheat-related " +
+                                         "keyword. Cheats are sometimes distributed as Workshop items with " +
+                                         "misleading or explicit names.",
+                                Detail = $"Item dir: {itemDir} | File: {file}"
+                            });
+                            break; // One finding per item directory to avoid spam
+                        }
+                    }
+
+                    await Task.Yield();
+                }
+            }
+        }, ct);
+
+    // -------------------------------------------------------------------------
+    // Check 4: Steam local config cheat indicators
+    // -------------------------------------------------------------------------
+
+    private Task CheckSteamLocalConfigCheat(ScanContext ctx, CancellationToken ct) =>
+        Task.Run(async () =>
+        {
+            var steamDir = ResolveSteamDir();
+
+            // Check localconfig.vdf, loginusers.vdf, config.vdf for suspicious content
+            var vdfFiles = new[]
+            {
+                Path.Combine(steamDir, "userdata"),
+                Path.Combine(RoamingAppDataDir, "Steam"),
+                Path.Combine(steamDir, "config"),
+            };
+
+            var suspiciousVdfKeywords = new[]
+            {
+                "cheat", "hack", "bypass", "inject", "vac_bypass", "workshop_cheat",
+                "aimbot", "wallhack", "triggerbot",
+            };
+
+            foreach (var baseDir in vdfFiles)
+            {
+                if (ct.IsCancellationRequested) return;
+                if (!Directory.Exists(baseDir)) continue;
+
+                string[] configFiles;
+                try
+                {
+                    configFiles = Directory.GetFiles(baseDir, "*.vdf", SearchOption.AllDirectories);
+                }
+                catch (UnauthorizedAccessException) { continue; }
+                catch (IOException) { continue; }
+
+                foreach (var vdfFile in configFiles)
+                {
+                    if (ct.IsCancellationRequested) return;
+                    ctx.IncrementFiles();
+
                     string content;
                     try
                     {
-                        using var fs = new FileStream(localConfig, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                        using var fs = new FileStream(vdfFile, FileMode.Open,
+                            FileAccess.Read, FileShare.ReadWrite);
                         using var sr = new StreamReader(fs);
                         content = await sr.ReadToEndAsync(ct);
                     }
-                    catch (IOException) { continue; }
                     catch (UnauthorizedAccessException) { continue; }
+                    catch (IOException) { continue; }
 
-                    foreach (var opt in CheatLaunchOptions)
+                    var matchedKeyword = suspiciousVdfKeywords.FirstOrDefault(k =>
+                        content.Contains(k, StringComparison.OrdinalIgnoreCase));
+
+                    if (matchedKeyword == null) continue;
+
+                    ctx.AddFinding(new Finding
                     {
-                        if (content.Contains(opt, StringComparison.OrdinalIgnoreCase))
+                        Module = Name,
+                        Title = $"Steam Config File Contains Cheat Keyword: {Path.GetFileName(vdfFile)}",
+                        Risk = RiskLevel.Medium,
+                        Location = vdfFile,
+                        FileName = Path.GetFileName(vdfFile),
+                        Reason = $"Steam configuration file '{Path.GetFileName(vdfFile)}' contains the keyword " +
+                                 $"'{matchedKeyword}', which may indicate a cheat-related workshop subscription, " +
+                                 "a modified launch option, or evidence of cheat tool integration with Steam.",
+                        Detail = $"Path: {vdfFile} | Keyword: {matchedKeyword}"
+                    });
+                }
+
+                await Task.Yield();
+            }
+
+            // Check steamapps directory for suspicious app manifests (acf files with cheat app names)
+            var steamAppsDir = Path.Combine(steamDir, "steamapps");
+            if (ct.IsCancellationRequested || !Directory.Exists(steamAppsDir)) return;
+
+            string[] acfFiles;
+            try { acfFiles = Directory.GetFiles(steamAppsDir, "*.acf", SearchOption.TopDirectoryOnly); }
+            catch (UnauthorizedAccessException) { return; }
+            catch (IOException) { return; }
+
+            foreach (var acfFile in acfFiles)
+            {
+                if (ct.IsCancellationRequested) return;
+                ctx.IncrementFiles();
+
+                string content;
+                try
+                {
+                    using var fs = new FileStream(acfFile, FileMode.Open,
+                        FileAccess.Read, FileShare.ReadWrite);
+                    using var sr = new StreamReader(fs);
+                    content = await sr.ReadToEndAsync(ct);
+                }
+                catch (UnauthorizedAccessException) { continue; }
+                catch (IOException) { continue; }
+
+                var matchedKw = suspiciousVdfKeywords.FirstOrDefault(k =>
+                    content.Contains(k, StringComparison.OrdinalIgnoreCase));
+
+                if (matchedKw == null) continue;
+
+                ctx.AddFinding(new Finding
+                {
+                    Module = Name,
+                    Title = $"Suspicious Steam App Manifest: {Path.GetFileName(acfFile)}",
+                    Risk = RiskLevel.Medium,
+                    Location = acfFile,
+                    FileName = Path.GetFileName(acfFile),
+                    Reason = $"Steam app manifest '{Path.GetFileName(acfFile)}' contains keyword '{matchedKw}'. " +
+                             "This may indicate a cheat application installed via Steam or a modified game " +
+                             "manifest referencing cheat-related content.",
+                    Detail = $"Path: {acfFile} | Keyword: {matchedKw}"
+                });
+            }
+        }, ct);
+
+    // -------------------------------------------------------------------------
+    // Check 5: Steam cheat download artifacts
+    // -------------------------------------------------------------------------
+
+    private Task CheckSteamCheatDownloadArtifacts(ScanContext ctx, CancellationToken ct) =>
+        Task.Run(async () =>
+        {
+            var searchDirs = new[] { DownloadsDir, DesktopDir };
+
+            foreach (var dir in searchDirs)
+            {
+                if (ct.IsCancellationRequested) return;
+                if (!Directory.Exists(dir)) continue;
+
+                string[] files;
+                try { files = Directory.GetFiles(dir, "*", SearchOption.TopDirectoryOnly); }
+                catch (UnauthorizedAccessException) { continue; }
+                catch (IOException) { continue; }
+
+                foreach (var file in files)
+                {
+                    if (ct.IsCancellationRequested) return;
+                    ctx.IncrementFiles();
+
+                    var fn = Path.GetFileName(file);
+
+                    // Exact match
+                    if (KnownSteamCheatArchives.Contains(fn))
+                    {
+                        ctx.AddFinding(new Finding
                         {
+                            Module = Name,
+                            Title = $"Steam Cheat Archive in Downloads/Desktop: {fn}",
+                            Risk = RiskLevel.High,
+                            Location = file,
+                            FileName = fn,
+                            Reason = $"Archive '{fn}' matches a known Steam cheat or VAC bypass toolkit " +
+                                     "distribution package. These archives are downloaded from cheat distribution " +
+                                     "forums and contain tools for bypassing Steam's anti-cheat systems.",
+                            Detail = $"Path: {file}"
+                        });
+                        continue;
+                    }
+
+                    // Heuristic keyword match on archive names
+                    var ext = Path.GetExtension(fn).ToLowerInvariant();
+                    if (ext != ".zip" && ext != ".rar" && ext != ".7z") continue;
+
+                    bool hasSteamCheatKeyword =
+                        fn.Contains("vac_bypass", StringComparison.OrdinalIgnoreCase) ||
+                        fn.Contains("vacbypass", StringComparison.OrdinalIgnoreCase) ||
+                        fn.Contains("steam_cheat", StringComparison.OrdinalIgnoreCase) ||
+                        fn.Contains("steamcheat", StringComparison.OrdinalIgnoreCase) ||
+                        fn.Contains("steam_inject", StringComparison.OrdinalIgnoreCase) ||
+                        fn.Contains("steam_hack", StringComparison.OrdinalIgnoreCase) ||
+                        fn.Contains("steam_bypass", StringComparison.OrdinalIgnoreCase) ||
+                        fn.Contains("steambypass", StringComparison.OrdinalIgnoreCase) ||
+                        fn.Contains("goldberg_emu", StringComparison.OrdinalIgnoreCase) ||
+                        fn.Contains("steam_emu", StringComparison.OrdinalIgnoreCase) ||
+                        fn.Contains("cream_api", StringComparison.OrdinalIgnoreCase) ||
+                        fn.Contains("workshop_cheat", StringComparison.OrdinalIgnoreCase) ||
+                        fn.Contains("workshop_bypass", StringComparison.OrdinalIgnoreCase) ||
+                        fn.Contains("steamapi_bypass", StringComparison.OrdinalIgnoreCase) ||
+                        fn.Contains("steam_crack", StringComparison.OrdinalIgnoreCase);
+
+                    if (!hasSteamCheatKeyword) continue;
+
+                    ctx.AddFinding(new Finding
+                    {
+                        Module = Name,
+                        Title = $"Suspicious Steam Cheat-Related Archive: {fn}",
+                        Risk = RiskLevel.High,
+                        Location = file,
+                        FileName = fn,
+                        Reason = $"Archive '{fn}' contains keywords associated with Steam cheat and VAC bypass " +
+                                 "tool distributions. The filename pattern matches packages commonly shared on " +
+                                 "cheat forums to circumvent Steam's anti-cheat mechanisms.",
+                        Detail = $"Path: {file}"
+                    });
+                }
+
+                await Task.Yield();
+            }
+        }, ct);
+
+    // -------------------------------------------------------------------------
+    // Check 6: Steam overlay cheat artifacts
+    // -------------------------------------------------------------------------
+
+    private Task CheckSteamOverlayCheatArtifacts(ScanContext ctx, CancellationToken ct) =>
+        Task.Run(async () =>
+        {
+            var steamDir = ResolveSteamDir();
+            var steamAppsCommonDir = Path.Combine(steamDir, "steamapps", "common");
+
+            if (!Directory.Exists(steamAppsCommonDir)) return;
+
+            string[] gameDirs;
+            try { gameDirs = Directory.GetDirectories(steamAppsCommonDir); }
+            catch (UnauthorizedAccessException) { return; }
+            catch (IOException) { return; }
+
+            foreach (var gameDir in gameDirs)
+            {
+                if (ct.IsCancellationRequested) return;
+
+                // Check for known cheat overlay DLL names in game directories
+                foreach (var overlayDll in CheatOverlayDlls)
+                {
+                    if (ct.IsCancellationRequested) return;
+
+                    string[] matches;
+                    try
+                    {
+                        matches = Directory.GetFiles(gameDir, overlayDll,
+                            SearchOption.AllDirectories);
+                    }
+                    catch (UnauthorizedAccessException) { continue; }
+                    catch (IOException) { continue; }
+
+                    foreach (var match in matches)
+                    {
+                        if (ct.IsCancellationRequested) return;
+                        ctx.IncrementFiles();
+
+                        // Skip the real Steam overlay DLLs in the Steam install dir itself
+                        if (match.StartsWith(steamDir, StringComparison.OrdinalIgnoreCase)
+                            && !match.StartsWith(steamAppsCommonDir, StringComparison.OrdinalIgnoreCase))
+                            continue;
+
+                        ctx.AddFinding(new Finding
+                        {
+                            Module = Name,
+                            Title = $"Cheat Overlay DLL in Steam Game Directory: {Path.GetFileName(match)}",
+                            Risk = RiskLevel.High,
+                            Location = match,
+                            FileName = Path.GetFileName(match),
+                            Reason = $"Overlay DLL '{Path.GetFileName(match)}' found in Steam game directory " +
+                                     $"'{Path.GetFileName(gameDir)}'. This file name is associated with cheat " +
+                                     "injection via the Steam overlay mechanism. Cheats inject into game " +
+                                     "processes by hooking or replacing the overlay renderer DLL.",
+                            Detail = $"Path: {match} | Game: {Path.GetFileName(gameDir)}"
+                        });
+                    }
+                }
+
+                await Task.Yield();
+            }
+        }, ct);
+
+    // -------------------------------------------------------------------------
+    // Check 7: Steam cheat registry artifacts
+    // -------------------------------------------------------------------------
+
+    private Task CheckSteamCheatRegistryArtifacts(ScanContext ctx, CancellationToken ct) =>
+        Task.Run(() =>
+        {
+            // 7a — HKCU\Software\Valve\Steam — check for suspicious modifications
+            try
+            {
+                using var steamKey = Registry.CurrentUser.OpenSubKey(
+                    @"Software\Valve\Steam", writable: false);
+                if (steamKey != null)
+                {
+                    ctx.IncrementRegistryKeys();
+
+                    // Check for workshop-bypass-related values
+                    foreach (var valName in steamKey.GetValueNames())
+                    {
+                        if (ct.IsCancellationRequested) return;
+                        ctx.IncrementRegistryKeys();
+
+                        bool isSuspicious =
+                            valName.Contains("bypass", StringComparison.OrdinalIgnoreCase) ||
+                            valName.Contains("cheat", StringComparison.OrdinalIgnoreCase) ||
+                            valName.Contains("crack", StringComparison.OrdinalIgnoreCase) ||
+                            valName.Contains("patch", StringComparison.OrdinalIgnoreCase) ||
+                            valName.Contains("inject", StringComparison.OrdinalIgnoreCase);
+
+                        if (!isSuspicious) continue;
+
+                        var valData = steamKey.GetValue(valName)?.ToString() ?? "";
+
+                        ctx.AddFinding(new Finding
+                        {
+                            Module = Name,
+                            Title = $"Suspicious Value in Steam Registry Key: {valName}",
+                            Risk = RiskLevel.Medium,
+                            Location = $@"HKCU\Software\Valve\Steam",
+                            Reason = $"Registry value '{valName}' under the Steam configuration key contains " +
+                                     "keywords suggesting a cheat tool modification to the Steam client " +
+                                     "or its settings.",
+                            Detail = $"Value: {valName} = {valData}"
+                        });
+                    }
+                }
+            }
+            catch (IOException) { }
+
+            // 7b — UserAssist — ROT13 scan for Steam cheat launcher names
+            try
+            {
+                using var uaRoot = Registry.CurrentUser.OpenSubKey(
+                    @"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\UserAssist",
+                    writable: false);
+                if (uaRoot != null)
+                {
+                    foreach (var guidName in uaRoot.GetSubKeyNames())
+                    {
+                        if (ct.IsCancellationRequested) return;
+                        ctx.IncrementRegistryKeys();
+
+                        using var countKey = uaRoot.OpenSubKey($@"{guidName}\Count", writable: false);
+                        if (countKey == null) continue;
+
+                        foreach (var valName in countKey.GetValueNames())
+                        {
+                            if (ct.IsCancellationRequested) return;
+                            ctx.IncrementRegistryKeys();
+
+                            var decoded = Rot13Decode(valName);
+                            var fn = Path.GetFileName(decoded);
+
+                            if (!SteamCheatUserAssistNames.Contains(fn)) continue;
+
                             ctx.AddFinding(new Finding
                             {
-                                Module = "Steam Workshop Cheat Artifact Forensic Scan",
-                                Title = $"Steam localconfig.vdf: cheat launch option ({opt})",
-                                Risk = opt.Equals("-insecure", StringComparison.OrdinalIgnoreCase)
-                                    ? RiskLevel.Critical : RiskLevel.High,
-                                Location = localConfig,
-                                FileName = "localconfig.vdf",
-                                Reason = $"Steam local config file '{localConfig}' contains cheat-related " +
-                                         $"launch option '{opt}'. " +
-                                         "Launch options like -insecure disable VAC, while -nobreakpad disables " +
-                                         "crash reporting to prevent forensic analysis. These options are set " +
-                                         "by cheat loaders and are left behind as artifacts.",
-                                Detail = $"Config: {localConfig} | Option: {opt}"
+                                Module = Name,
+                                Title = $"Steam Cheat Launcher in UserAssist: {fn}",
+                                Risk = RiskLevel.High,
+                                Location = $@"HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\UserAssist\" +
+                                           $@"{guidName}\Count",
+                                FileName = fn,
+                                Reason = $"UserAssist entry decodes (ROT13) to '{fn}', a known Steam cheat " +
+                                         "launcher or VAC bypass tool. UserAssist records GUI execution history " +
+                                         "with run counts and timestamps — this provides forensic evidence of " +
+                                         "the tool being executed even after deletion.",
+                                Detail = $"Encoded: {valName} | Decoded: {decoded}"
                             });
                         }
                     }
                 }
             }
-            catch (UnauthorizedAccessException) { }
+            catch (IOException) { }
 
-            var globalConfig = Path.Combine(steamPath, "config", "config.vdf");
-            if (File.Exists(globalConfig))
+            // 7c — MUICache — Steam cheat execution evidence
+            var muiCachePaths = new[]
             {
-                ctx.IncrementFiles();
-                string content;
+                @"Software\Classes\Local Settings\Software\Microsoft\Windows\Shell\MuiCache",
+                @"Software\Microsoft\Windows\ShellNoRoam\MUICache",
+            };
+
+            foreach (var muiPath in muiCachePaths)
+            {
+                if (ct.IsCancellationRequested) return;
                 try
                 {
-                    using var fs = new FileStream(globalConfig, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-                    using var sr = new StreamReader(fs);
-                    content = await sr.ReadToEndAsync(ct);
-                }
-                catch (IOException) { return; }
-                catch (UnauthorizedAccessException) { return; }
+                    using var muiKey = Registry.CurrentUser.OpenSubKey(muiPath, writable: false);
+                    if (muiKey == null) continue;
 
-                foreach (var opt in CheatLaunchOptions)
+                    foreach (var valName in muiKey.GetValueNames())
+                    {
+                        if (ct.IsCancellationRequested) return;
+                        ctx.IncrementRegistryKeys();
+
+                        var fn = Path.GetFileName(valName);
+                        if (!SteamCheatMuiCacheNames.Contains(fn)) continue;
+
+                        ctx.AddFinding(new Finding
+                        {
+                            Module = Name,
+                            Title = $"Steam Cheat Tool in MUICache: {fn}",
+                            Risk = RiskLevel.High,
+                            Location = $@"HKCU\{muiPath}",
+                            FileName = fn,
+                            Reason = $"MUICache entry '{fn}' references a known Steam cheat launcher or VAC " +
+                                     "bypass tool. MUICache stores the full path of all executed applications, " +
+                                     "providing forensic evidence of execution even after file deletion.",
+                            Detail = $"MUICache entry: {valName}"
+                        });
+                    }
+                }
+                catch (IOException) { }
+            }
+
+            // 7d — HKLM\Software — fake Steam emulator installation keys
+            foreach (var emuKeyPath in FakeSteamEmuRegistryPaths)
+            {
+                if (ct.IsCancellationRequested) return;
+                try
                 {
-                    if (content.Contains(opt, StringComparison.OrdinalIgnoreCase))
+                    using var emuKey = Registry.LocalMachine.OpenSubKey(emuKeyPath, writable: false)
+                                    ?? Registry.CurrentUser.OpenSubKey(emuKeyPath, writable: false);
+                    if (emuKey == null) continue;
+
+                    ctx.IncrementRegistryKeys();
+
+                    ctx.AddFinding(new Finding
+                    {
+                        Module = Name,
+                        Title = $"Steam Emulator Registry Key Found: {Path.GetFileName(emuKeyPath)}",
+                        Risk = RiskLevel.High,
+                        Location = $@"HKLM\{emuKeyPath}",
+                        Reason = $"Registry key '{emuKeyPath}' is associated with a known Steam emulator " +
+                                 "(Goldberg, ALI213, SKIDROW, CODEX, etc.). These emulators replace the " +
+                                 "legitimate Steam API to bypass DRM and potentially VAC authentication.",
+                        Detail = $"Key: {emuKeyPath}"
+                    });
+                }
+                catch (IOException) { }
+            }
+
+            // 7e — Run/RunOnce — Steam cheat auto-start entries
+            var runKeys = new[]
+            {
+                @"SOFTWARE\Microsoft\Windows\CurrentVersion\Run",
+                @"SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce",
+            };
+
+            foreach (var runKeyPath in runKeys)
+            {
+                if (ct.IsCancellationRequested) return;
+                foreach (var hive in new[] { Registry.CurrentUser, Registry.LocalMachine })
+                {
+                    try
+                    {
+                        using var runKey = hive.OpenSubKey(runKeyPath, writable: false);
+                        if (runKey == null) continue;
+
+                        foreach (var valName in runKey.GetValueNames())
+                        {
+                            if (ct.IsCancellationRequested) return;
+                            ctx.IncrementRegistryKeys();
+
+                            var valData = runKey.GetValue(valName)?.ToString() ?? "";
+                            var fn = Path.GetFileName(valData.Trim('"').Split(' ')[0]);
+
+                            if (!KnownSteamCheatLaunchers.Contains(fn)) continue;
+
+                            ctx.AddFinding(new Finding
+                            {
+                                Module = Name,
+                                Title = $"Steam Cheat Tool Auto-Start Entry: {valName}",
+                                Risk = RiskLevel.High,
+                                Location = $@"HKCU\{runKeyPath}",
+                                FileName = fn,
+                                Reason = $"Auto-start registry entry '{valName}' references the known Steam " +
+                                         $"cheat tool '{fn}'. The tool is configured to launch automatically " +
+                                         "at system startup, a common persistence technique for cheat loaders.",
+                                Detail = $"Key: {runKeyPath} | Value: {valName} | Data: {valData}"
+                            });
+                        }
+                    }
+                    catch (IOException) { }
+                }
+            }
+        }, ct);
+
+    // -------------------------------------------------------------------------
+    // Check 8: Steam cheat config files in game dirs and Downloads
+    // -------------------------------------------------------------------------
+
+    private Task CheckSteamCheatConfigFiles(ScanContext ctx, CancellationToken ct) =>
+        Task.Run(async () =>
+        {
+            var steamDir = ResolveSteamDir();
+            var steamAppsCommon = Path.Combine(steamDir, "steamapps", "common");
+
+            var baseDirs = new List<string> { DownloadsDir, DesktopDir };
+            if (Directory.Exists(steamAppsCommon)) baseDirs.Add(steamAppsCommon);
+
+            var allConfigNames = SteamEmuConfigFiles.ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var baseDir in baseDirs)
+            {
+                if (ct.IsCancellationRequested) return;
+                if (!Directory.Exists(baseDir)) continue;
+
+                string[] files;
+                try
+                {
+                    files = Directory.GetFiles(baseDir, "*", SearchOption.AllDirectories);
+                }
+                catch (UnauthorizedAccessException) { continue; }
+                catch (IOException) { continue; }
+
+                foreach (var file in files)
+                {
+                    if (ct.IsCancellationRequested) return;
+
+                    var fn = Path.GetFileName(file);
+                    if (!allConfigNames.Contains(fn)) continue;
+
+                    ctx.IncrementFiles();
+
+                    string content;
+                    try
+                    {
+                        using var fs = new FileStream(file, FileMode.Open,
+                            FileAccess.Read, FileShare.ReadWrite);
+                        using var sr = new StreamReader(fs);
+                        content = await sr.ReadToEndAsync(ct);
+                    }
+                    catch (UnauthorizedAccessException) { continue; }
+                    catch (IOException) { continue; }
+
+                    var matchedKeyword = SteamCheatConfigKeywords.FirstOrDefault(k =>
+                        content.Contains(k, StringComparison.OrdinalIgnoreCase));
+
+                    if (matchedKeyword == null) continue;
+
+                    ctx.AddFinding(new Finding
+                    {
+                        Module = Name,
+                        Title = $"Steam Cheat/Emulator Config File: {fn}",
+                        Risk = RiskLevel.High,
+                        Location = file,
+                        FileName = fn,
+                        Reason = $"Steam emulator/cheat configuration file '{fn}' was found and contains the " +
+                                 $"keyword '{matchedKeyword}'. Files like ALI213.ini, cream_api.ini, and " +
+                                 "goldberg.ini configure cracked Steam API libraries that bypass DRM and VAC.",
+                        Detail = $"Path: {file} | Keyword: {matchedKeyword}"
+                    });
+                }
+
+                await Task.Yield();
+            }
+        }, ct);
+
+    // -------------------------------------------------------------------------
+    // Check 9: Steam cheat log files
+    // -------------------------------------------------------------------------
+
+    private Task CheckSteamCheatLogFiles(ScanContext ctx, CancellationToken ct) =>
+        Task.Run(async () =>
+        {
+            var steamDir = ResolveSteamDir();
+
+            var logDirs = new[]
+            {
+                Path.Combine(RoamingAppDataDir, "Steam", "logs"),
+                Path.Combine(steamDir, "logs"),
+            };
+
+            foreach (var logDir in logDirs)
+            {
+                if (ct.IsCancellationRequested) return;
+                if (!Directory.Exists(logDir)) continue;
+
+                string[] logFiles;
+                try
+                {
+                    logFiles = Directory.GetFiles(logDir, "*.txt", SearchOption.AllDirectories);
+                }
+                catch (UnauthorizedAccessException) { continue; }
+                catch (IOException) { continue; }
+
+                foreach (var logFile in logFiles)
+                {
+                    if (ct.IsCancellationRequested) return;
+                    ctx.IncrementFiles();
+
+                    string content;
+                    try
+                    {
+                        using var fs = new FileStream(logFile, FileMode.Open,
+                            FileAccess.Read, FileShare.ReadWrite);
+                        using var sr = new StreamReader(fs);
+                        content = await sr.ReadToEndAsync(ct);
+                    }
+                    catch (UnauthorizedAccessException) { continue; }
+                    catch (IOException) { continue; }
+
+                    var matchedPattern = SteamLogSuspiciousPatterns.FirstOrDefault(p =>
+                        content.Contains(p, StringComparison.OrdinalIgnoreCase));
+
+                    if (matchedPattern == null) continue;
+
+                    ctx.AddFinding(new Finding
+                    {
+                        Module = Name,
+                        Title = $"Steam Log Contains Cheat/Ban Pattern: {Path.GetFileName(logFile)}",
+                        Risk = RiskLevel.Medium,
+                        Location = logFile,
+                        FileName = Path.GetFileName(logFile),
+                        Reason = $"Steam log file '{Path.GetFileName(logFile)}' contains the pattern " +
+                                 $"'{matchedPattern}'. Steam log files record anti-cheat events, VAC " +
+                                 "authentication, bans, and suspicious activity detected by Valve's systems. " +
+                                 "The presence of these patterns may indicate prior cheat detection or ban events.",
+                        Detail = $"Path: {logFile} | Pattern: {matchedPattern}"
+                    });
+                }
+
+                await Task.Yield();
+            }
+        }, ct);
+
+    // -------------------------------------------------------------------------
+    // Check 10: VAC ban artifacts and bypass tools
+    // -------------------------------------------------------------------------
+
+    private Task CheckVACBanArtifacts(ScanContext ctx, CancellationToken ct) =>
+        Task.Run(async () =>
+        {
+            var searchDirs = new[] { DownloadsDir, DesktopDir, UserTempDir };
+
+            foreach (var dir in searchDirs)
+            {
+                if (ct.IsCancellationRequested) return;
+                if (!Directory.Exists(dir)) continue;
+
+                string[] files;
+                try { files = Directory.GetFiles(dir, "*", SearchOption.TopDirectoryOnly); }
+                catch (UnauthorizedAccessException) { continue; }
+                catch (IOException) { continue; }
+
+                foreach (var file in files)
+                {
+                    if (ct.IsCancellationRequested) return;
+                    ctx.IncrementFiles();
+
+                    var fn = Path.GetFileName(file);
+
+                    // Check for VAC bypass documentation files
+                    if (VacBypassDocFiles.Contains(fn))
                     {
                         ctx.AddFinding(new Finding
                         {
-                            Module = "Steam Workshop Cheat Artifact Forensic Scan",
-                            Title = $"Steam config.vdf: cheat launch option ({opt})",
+                            Module = Name,
+                            Title = $"VAC Ban Bypass Documentation Found: {fn}",
                             Risk = RiskLevel.High,
-                            Location = globalConfig,
-                            FileName = "config.vdf",
-                            Reason = $"Steam global config file contains cheat-related launch option '{opt}'. " +
-                                     "Global config launch options apply to all games and are a persistent " +
-                                     "artifact of cheat tool configuration.",
-                            Detail = $"Config: {globalConfig} | Option: {opt}"
+                            Location = file,
+                            FileName = fn,
+                            Reason = $"Documentation file '{fn}' associated with VAC ban bypass techniques " +
+                                     "was found. These files contain instructions, scripts, or guides for " +
+                                     "evading Valve Anti-Cheat bans, circumventing game bans, or removing " +
+                                     "bans via account manipulation techniques.",
+                            Detail = $"Path: {file}"
+                        });
+                        continue;
+                    }
+
+                    // Check for VAC bypass script files by name
+                    if (VacBypassScriptNames.Contains(fn))
+                    {
+                        ctx.AddFinding(new Finding
+                        {
+                            Module = Name,
+                            Title = $"VAC Bypass Script Found: {fn}",
+                            Risk = RiskLevel.High,
+                            Location = file,
+                            FileName = fn,
+                            Reason = $"Script file '{fn}' matches a known VAC bypass automation script name. " +
+                                     "These scripts automate steps for bypassing Valve Anti-Cheat, such as " +
+                                     "modifying Steam process memory, patching VAC modules, or configuring " +
+                                     "tools to evade VAC network scans.",
+                            Detail = $"Path: {file}"
+                        });
+                        continue;
+                    }
+
+                    // Heuristic: any script with vac_bypass, vacbypass, steam_bypass in name
+                    var ext = Path.GetExtension(fn).ToLowerInvariant();
+                    if (ext != ".ps1" && ext != ".bat" && ext != ".py") continue;
+
+                    bool hasVacBypassName =
+                        fn.Contains("vac_bypass", StringComparison.OrdinalIgnoreCase) ||
+                        fn.Contains("vacbypass", StringComparison.OrdinalIgnoreCase) ||
+                        fn.Contains("steam_bypass", StringComparison.OrdinalIgnoreCase) ||
+                        fn.Contains("vac_remove", StringComparison.OrdinalIgnoreCase) ||
+                        fn.Contains("unban_steam", StringComparison.OrdinalIgnoreCase) ||
+                        fn.Contains("vac_patch", StringComparison.OrdinalIgnoreCase) ||
+                        fn.Contains("vac_crack", StringComparison.OrdinalIgnoreCase);
+
+                    if (!hasVacBypassName) continue;
+
+                    ctx.AddFinding(new Finding
+                    {
+                        Module = Name,
+                        Title = $"VAC Bypass Script (Heuristic): {fn}",
+                        Risk = RiskLevel.High,
+                        Location = file,
+                        FileName = fn,
+                        Reason = $"Script '{fn}' has a filename strongly suggesting VAC (Valve Anti-Cheat) " +
+                                 "bypass functionality. The filename pattern matches automation scripts used " +
+                                 "to circumvent Steam's anti-cheat detection mechanisms.",
+                        Detail = $"Path: {file}"
+                    });
+                }
+
+                await Task.Yield();
+            }
+        }, ct);
+
+    // -------------------------------------------------------------------------
+    // Check 11: Steam installer cheat records (uninstall keys, emulator evidence)
+    // -------------------------------------------------------------------------
+
+    private Task CheckSteamInstallerCheatRecords(ScanContext ctx, CancellationToken ct) =>
+        Task.Run(() =>
+        {
+            // 11a — HKLM Uninstall keys for Steam cheat installer entries
+            var uninstallPaths = new[]
+            {
+                @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall",
+                @"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall",
+            };
+
+            var cheatInstallerKeywords = new[]
+            {
+                "vac bypass", "steam cheat", "steam hack", "steam inject",
+                "goldberg emulator", "ali213", "cream api", "steamemu",
+                "steam bypass", "workshop cheat", "workshop bypass",
+                "steam api bypass", "steamapi bypass", "steam crack",
+                "steam loader", "vacbypass", "vac_bypass",
+            };
+
+            foreach (var uninstallPath in uninstallPaths)
+            {
+                if (ct.IsCancellationRequested) return;
+                try
+                {
+                    using var uninstallKey = Registry.LocalMachine.OpenSubKey(
+                        uninstallPath, writable: false);
+                    if (uninstallKey == null) continue;
+
+                    foreach (var appKey in uninstallKey.GetSubKeyNames())
+                    {
+                        if (ct.IsCancellationRequested) return;
+                        ctx.IncrementRegistryKeys();
+
+                        try
+                        {
+                            using var appSubKey = uninstallKey.OpenSubKey(appKey, writable: false);
+                            if (appSubKey == null) continue;
+
+                            var displayName = appSubKey.GetValue("DisplayName")?.ToString() ?? "";
+                            var publisher = appSubKey.GetValue("Publisher")?.ToString() ?? "";
+                            ctx.IncrementRegistryKeys();
+
+                            var combined = displayName + " " + publisher;
+
+                            var matchedKw = cheatInstallerKeywords.FirstOrDefault(k =>
+                                combined.Contains(k, StringComparison.OrdinalIgnoreCase));
+
+                            if (matchedKw == null) continue;
+
+                            ctx.AddFinding(new Finding
+                            {
+                                Module = Name,
+                                Title = $"Steam Cheat Tool Installer Record: {displayName}",
+                                Risk = RiskLevel.High,
+                                Location = $@"HKLM\{uninstallPath}\{appKey}",
+                                Reason = $"Uninstall entry '{displayName}' (publisher: '{publisher}') contains " +
+                                         $"keyword '{matchedKw}' associated with Steam cheat or emulator tools. " +
+                                         "This provides evidence that a Steam cheat tool was formally installed " +
+                                         "on this system.",
+                                Detail = $"DisplayName: {displayName} | Publisher: {publisher} | " +
+                                         $"Key: {uninstallPath}\\{appKey}"
+                            });
+                        }
+                        catch (IOException) { }
+                    }
+                }
+                catch (IOException) { }
+            }
+
+            // 11b — Goldberg / ALI213 emulator installation file evidence
+            var goldbergPaths = new[]
+            {
+                Path.Combine(LocalAppDataDir, "goldberg_steam_emu"),
+                Path.Combine(RoamingAppDataDir, "goldberg_steam_emu"),
+                Path.Combine(LocalAppDataDir, "Goldberg Emulator"),
+                Path.Combine(RoamingAppDataDir, "Goldberg Emulator"),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
+                    "goldberg_steam_emu"),
+            };
+
+            foreach (var gbPath in goldbergPaths)
+            {
+                if (ct.IsCancellationRequested) return;
+                if (!Directory.Exists(gbPath)) continue;
+
+                ctx.AddFinding(new Finding
+                {
+                    Module = Name,
+                    Title = $"Goldberg Steam Emulator Installation Directory Found",
+                    Risk = RiskLevel.High,
+                    Location = gbPath,
+                    Reason = "The Goldberg Steam Emulator data directory was found. Goldberg Emulator is a " +
+                             "well-known Steam DRM bypass tool that replaces the legitimate Steam API to allow " +
+                             "games to run without Steam authentication, potentially enabling VAC bypass.",
+                    Detail = $"Path: {gbPath}"
+                });
+            }
+
+            // 11c — ALI213 emulator data directory
+            var ali213Paths = new[]
+            {
+                Path.Combine(LocalAppDataDir, "Ali213"),
+                Path.Combine(RoamingAppDataDir, "Ali213"),
+                Path.Combine(LocalAppDataDir, "ALI213"),
+                Path.Combine(RoamingAppDataDir, "ALI213"),
+            };
+
+            foreach (var aliPath in ali213Paths)
+            {
+                if (ct.IsCancellationRequested) return;
+                if (!Directory.Exists(aliPath)) continue;
+
+                ctx.AddFinding(new Finding
+                {
+                    Module = Name,
+                    Title = "ALI213 Steam Emulator Installation Directory Found",
+                    Risk = RiskLevel.High,
+                    Location = aliPath,
+                    Reason = "The ALI213 Steam Emulator data directory was found. ALI213 is a Steam bypass " +
+                             "emulator used to circumvent Steam DRM and authentication. Its presence indicates " +
+                             "the system has been configured to run cracked Steam games.",
+                    Detail = $"Path: {aliPath}"
+                });
+            }
+
+            // 11d — Cream API presence in game directories
+            var steamDir = ResolveSteamDir();
+            var steamAppsCommon = Path.Combine(steamDir, "steamapps", "common");
+
+            if (ct.IsCancellationRequested || !Directory.Exists(steamAppsCommon)) return;
+
+            string[] gameDirs;
+            try { gameDirs = Directory.GetDirectories(steamAppsCommon); }
+            catch (UnauthorizedAccessException) { return; }
+            catch (IOException) { return; }
+
+            foreach (var gameDir in gameDirs)
+            {
+                if (ct.IsCancellationRequested) return;
+
+                // Check for CreamAPI.ini or cream_api.ini as definitive evidence
+                foreach (var creamFile in new[] { "CreamAPI.ini", "cream_api.ini", "CreamAPI.dll" })
+                {
+                    string[] matches;
+                    try
+                    {
+                        matches = Directory.GetFiles(gameDir, creamFile,
+                            SearchOption.AllDirectories);
+                    }
+                    catch (UnauthorizedAccessException) { continue; }
+                    catch (IOException) { continue; }
+
+                    foreach (var match in matches)
+                    {
+                        if (ct.IsCancellationRequested) return;
+                        ctx.IncrementFiles();
+
+                        ctx.AddFinding(new Finding
+                        {
+                            Module = Name,
+                            Title = $"Cream API (Steam DRM Bypass) in Game Directory: {Path.GetFileName(match)}",
+                            Risk = RiskLevel.High,
+                            Location = match,
+                            FileName = Path.GetFileName(match),
+                            Reason = $"Cream API file '{Path.GetFileName(match)}' found in Steam game directory " +
+                                     $"'{Path.GetFileName(gameDir)}'. Cream API is a Steam DRM bypass that " +
+                                     "unlocks DLC without purchase by spoofing Steam ownership calls. It " +
+                                     "replaces or augments the steam_api.dll to bypass license checks.",
+                            Detail = $"Path: {match} | Game: {Path.GetFileName(gameDir)}"
                         });
                     }
                 }
             }
         }, ct);
 
-    private Task CheckSteamUserData(ScanContext ctx, CancellationToken ct) =>
-        Task.Run(async () =>
+    // -------------------------------------------------------------------------
+    // ROT13 decoder for UserAssist registry values
+    // -------------------------------------------------------------------------
+
+    private static string Rot13Decode(string s)
+    {
+        var sb = new System.Text.StringBuilder(s.Length);
+        foreach (char c in s)
         {
-            var steamPath = GetSteamPath();
-            if (steamPath is null) return;
-
-            var userdataDir = Path.Combine(steamPath, "userdata");
-            if (!Directory.Exists(userdataDir)) return;
-
-            try
-            {
-                foreach (var userDir in Directory.EnumerateDirectories(userdataDir))
-                {
-                    if (ct.IsCancellationRequested) return;
-                    try
-                    {
-                        foreach (var gameDir in Directory.EnumerateDirectories(userDir))
-                        {
-                            if (ct.IsCancellationRequested) return;
-                            var remoteDir = Path.Combine(gameDir, "remote");
-                            if (!Directory.Exists(remoteDir)) continue;
-
-                            try
-                            {
-                                foreach (var file in Directory.EnumerateFiles(remoteDir, "*", SearchOption.AllDirectories))
-                                {
-                                    if (ct.IsCancellationRequested) return;
-                                    ctx.IncrementFiles();
-
-                                    var fi = new FileInfo(file);
-                                    if (fi.Length > 2 * 1024 * 1024) continue;
-
-                                    var nameLower = Path.GetFileName(file).ToLowerInvariant();
-                                    if (UserDataCheatCloudPatterns.Any(p =>
-                                        nameLower.Contains(p, StringComparison.OrdinalIgnoreCase)))
-                                    {
-                                        ctx.AddFinding(new Finding
-                                        {
-                                            Module = "Steam Workshop Cheat Artifact Forensic Scan",
-                                            Title = $"Steam userdata: cheat config cloud-synced ({Path.GetFileName(file)})",
-                                            Risk = RiskLevel.High,
-                                            Location = file,
-                                            FileName = Path.GetFileName(file),
-                                            Reason = $"Steam remote storage (cloud sync) file '{Path.GetFileName(file)}' " +
-                                                     $"in userdata for game '{Path.GetFileName(gameDir)}' " +
-                                                     "matches a cheat configuration name pattern. " +
-                                                     "Cheat configurations are sometimes cloud-synced via Steam " +
-                                                     "remote storage, leaving them as persistent artifacts.",
-                                            Detail = $"File: {file} | GameID: {Path.GetFileName(gameDir)} | User: {Path.GetFileName(userDir)}"
-                                        });
-                                        continue;
-                                    }
-
-                                    var ext = Path.GetExtension(file).ToLowerInvariant();
-                                    if (ext == ".cfg" || ext == ".ini" || ext == ".json" || ext == ".txt")
-                                    {
-                                        string content;
-                                        try
-                                        {
-                                            using var fs = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-                                            using var sr = new StreamReader(fs);
-                                            content = await sr.ReadToEndAsync(ct);
-                                        }
-                                        catch (IOException) { continue; }
-                                        catch (UnauthorizedAccessException) { continue; }
-
-                                        foreach (var pattern in UserDataCheatCloudPatterns)
-                                        {
-                                            if (content.Contains(pattern, StringComparison.OrdinalIgnoreCase))
-                                            {
-                                                ctx.AddFinding(new Finding
-                                                {
-                                                    Module = "Steam Workshop Cheat Artifact Forensic Scan",
-                                                    Title = $"Steam userdata: cloud config with cheat content ({Path.GetFileName(file)})",
-                                                    Risk = RiskLevel.High,
-                                                    Location = file,
-                                                    FileName = Path.GetFileName(file),
-                                                    Reason = $"Steam cloud-synced config file '{Path.GetFileName(file)}' " +
-                                                             $"contains cheat-related content matching '{pattern}'. " +
-                                                             "Cheat settings (aimbot sensitivity, ESP keys, rage bot config) " +
-                                                             "are often stored in game config files that sync via Steam Cloud.",
-                                                    Detail = $"File: {file} | Pattern: {pattern} | Game: {Path.GetFileName(gameDir)}"
-                                                });
-                                                break;
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                            catch (UnauthorizedAccessException) { }
-                        }
-                    }
-                    catch (UnauthorizedAccessException) { }
-                }
-            }
-            catch (UnauthorizedAccessException) { }
-        }, ct);
-
-    private Task CheckSteamRegistryLaunchArgs(ScanContext ctx, CancellationToken ct) =>
-        Task.Run(() =>
-        {
-            const string steamKey = @"Software\Valve\Steam";
-            const string steamKeyLm = @"SOFTWARE\Valve\Steam";
-            const string steamKeyLmWow = @"SOFTWARE\WOW6432Node\Valve\Steam";
-
-            var suspiciousSteamValues = new[]
-            {
-                ("SteamExe", "steam executable path"),
-                ("SteamPath", "steam install path"),
-                ("LastGameNameUsed", "last game"),
-            };
-
-            var suspiciousFlagsInArgs = new[]
-            {
-                "-dev", "-insecure", "-nobreakpad", "-allowdebug",
-                "-nocheatcheck", "-norestrictions", "-unsafe",
-                "+sv_cheats", "+sv_lan", "-bypass", "-hack",
-                "-disable_anticheat", "-eac_disable", "-be_disable",
-            };
-
-            try
-            {
-                using var key = Registry.CurrentUser.OpenSubKey(steamKey, writable: false);
-                if (key is not null)
-                {
-                    ctx.IncrementRegistryKeys();
-                    foreach (var valueName in key.GetValueNames())
-                    {
-                        ctx.IncrementRegistryKeys();
-                        var val = key.GetValue(valueName) as string ?? "";
-                        var valLower = val.ToLowerInvariant();
-                        var nameLower = valueName.ToLowerInvariant();
-
-                        if (nameLower.Contains("launch", StringComparison.OrdinalIgnoreCase) ||
-                            nameLower.Contains("args", StringComparison.OrdinalIgnoreCase) ||
-                            nameLower.Contains("param", StringComparison.OrdinalIgnoreCase))
-                        {
-                            foreach (var flag in suspiciousFlagsInArgs)
-                            {
-                                if (valLower.Contains(flag, StringComparison.OrdinalIgnoreCase))
-                                {
-                                    ctx.AddFinding(new Finding
-                                    {
-                                        Module = "Steam Workshop Cheat Artifact Forensic Scan",
-                                        Title = $"Steam registry: cheat launch flag ({flag})",
-                                        Risk = RiskLevel.High,
-                                        Location = $@"HKCU\{steamKey}",
-                                        Reason = $"Steam registry value '{valueName}' contains cheat-related " +
-                                                 $"launch argument '{flag}'. " +
-                                                 "Registry-stored launch flags are set by cheat loaders to " +
-                                                 "ensure games start in an insecure or debuggable state.",
-                                        Detail = $"Key: HKCU\\{steamKey} | Value: {valueName} | Content: {val}"
-                                    });
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            catch { }
-
-            foreach (var lmKey in new[] { steamKeyLm, steamKeyLmWow })
-            {
-                try
-                {
-                    using var key = Registry.LocalMachine.OpenSubKey(lmKey, writable: false);
-                    if (key is null) continue;
-                    ctx.IncrementRegistryKeys();
-
-                    var installPath = key.GetValue("InstallPath") as string ?? "";
-                    if (!string.IsNullOrEmpty(installPath))
-                    {
-                        var steamExe = Path.Combine(installPath, "Steam.exe");
-                        if (File.Exists(steamExe))
-                        {
-                            // Check if steam exe is in an unusual location (could indicate fake Steam)
-                            if (!installPath.Contains("Steam", StringComparison.OrdinalIgnoreCase) &&
-                                !installPath.Contains("Valve", StringComparison.OrdinalIgnoreCase))
-                            {
-                                ctx.AddFinding(new Finding
-                                {
-                                    Module = "Steam Workshop Cheat Artifact Forensic Scan",
-                                    Title = "Steam installed in non-standard location (possible fake Steam)",
-                                    Risk = RiskLevel.Medium,
-                                    Location = steamExe,
-                                    FileName = "Steam.exe",
-                                    Reason = $"Steam is registered as installed at '{installPath}' which does not " +
-                                             "contain 'Steam' or 'Valve' in the path. " +
-                                             "Cheat loaders sometimes bundle a modified Steam client " +
-                                             "or redirect Steam to a fake installation path.",
-                                    Detail = $"Registry: HKLM\\{lmKey} | InstallPath: {installPath}"
-                                });
-                            }
-                        }
-                    }
-                }
-                catch { }
-            }
-        }, ct);
-
-    private Task CheckSteamLibrarySystemDlls(ScanContext ctx, CancellationToken ct) =>
-        Task.Run(() =>
-        {
-            var steamPath = GetSteamPath();
-            if (steamPath is null) return;
-
-            var steamApiHashes = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-            {
-                { "steam_api.dll", "known-good-hash-placeholder" },
-                { "steam_api64.dll", "known-good-hash-placeholder" },
-            };
-
-            var suspiciousSteamApiNames = new[]
-            {
-                "steam_api.dll", "steam_api64.dll",
-                "steamclient.dll", "steamclient64.dll",
-            };
-
-            var knownSteamApiReplacements = new[]
-            {
-                "goldberg_steam_emu", "steamemu", "smartsteamemu",
-                "creamapi", "cream_api", "skidrow", "codex",
-                "orbital_emulator", "rld", "rld!",
-                "steam_bypass", "steam_emu", "nosteam",
-                "gog_galaxy", "steamless",
-            };
-
-            foreach (var library in GetAllSteamLibraries(steamPath))
-            {
-                if (ct.IsCancellationRequested) return;
-                var commonDir = Path.Combine(library, "steamapps", "common");
-                if (!Directory.Exists(commonDir)) continue;
-
-                try
-                {
-                    foreach (var gameDir in Directory.EnumerateDirectories(commonDir))
-                    {
-                        if (ct.IsCancellationRequested) return;
-                        try
-                        {
-                            foreach (var apiName in suspiciousSteamApiNames)
-                            {
-                                var apiPath = Path.Combine(gameDir, apiName);
-                                if (!File.Exists(apiPath)) continue;
-                                ctx.IncrementFiles();
-
-                                var fi = new FileInfo(apiPath);
-
-                                string? contentSample = null;
-                                try
-                                {
-                                    var bytes = new byte[Math.Min(4096, fi.Length)];
-                                    using var fs = new FileStream(apiPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-                                    int read = fs.Read(bytes, 0, bytes.Length);
-                                    contentSample = Encoding.Latin1.GetString(bytes, 0, read);
-                                }
-                                catch (IOException) { }
-                                catch (UnauthorizedAccessException) { }
-
-                                if (contentSample is not null)
-                                {
-                                    foreach (var replacement in knownSteamApiReplacements)
-                                    {
-                                        if (contentSample.Contains(replacement, StringComparison.OrdinalIgnoreCase))
-                                        {
-                                            ctx.AddFinding(new Finding
-                                            {
-                                                Module = "Steam Workshop Cheat Artifact Forensic Scan",
-                                                Title = $"Replaced steam_api.dll: Steam emulator detected ({replacement})",
-                                                Risk = RiskLevel.Critical,
-                                                Location = apiPath,
-                                                FileName = apiName,
-                                                Reason = $"'{apiName}' in game '{Path.GetFileName(gameDir)}' " +
-                                                         $"contains strings matching Steam emulator '{replacement}'. " +
-                                                         "Replacing steam_api.dll with an emulator bypasses Steam " +
-                                                         "authentication, VAC, and game ownership checks. " +
-                                                         "This is used to play cracked games and to bypass " +
-                                                         "Steam-based anti-cheat integrations.",
-                                                Detail = $"Path: {apiPath} | Emulator: {replacement} | Game: {Path.GetFileName(gameDir)}"
-                                            });
-                                            break;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        catch (UnauthorizedAccessException) { }
-                    }
-                }
-                catch (UnauthorizedAccessException) { }
-            }
-        }, ct);
-
-    private Task CheckSteamBinOverlayDlls(ScanContext ctx, CancellationToken ct) =>
-        Task.Run(() =>
-        {
-            var steamPath = GetSteamPath();
-            if (steamPath is null) return;
-
-            var binDirs = new[]
-            {
-                Path.Combine(steamPath, "bin"),
-                Path.Combine(steamPath, "bin", "cef"),
-                Path.Combine(steamPath, "GameOverlayUI"),
-                Path.Combine(steamPath, "public"),
-                steamPath,
-            };
-
-            foreach (var binDir in binDirs)
-            {
-                if (!Directory.Exists(binDir)) continue;
-                try
-                {
-                    foreach (var file in Directory.EnumerateFiles(binDir, "*.dll"))
-                    {
-                        if (ct.IsCancellationRequested) return;
-                        ctx.IncrementFiles();
-
-                        var name = Path.GetFileName(file);
-
-                        foreach (var suspDll in KnownSteamCheatOverlayDlls)
-                        {
-                            if (name.Equals(suspDll, StringComparison.OrdinalIgnoreCase))
-                            {
-                                ctx.AddFinding(new Finding
-                                {
-                                    Module = "Steam Workshop Cheat Artifact Forensic Scan",
-                                    Title = $"Steam bin: known cheat overlay DLL ({name})",
-                                    Risk = RiskLevel.Critical,
-                                    Location = file,
-                                    FileName = name,
-                                    Reason = $"Known cheat or Steam emulator DLL '{name}' found in Steam " +
-                                             $"binary directory '{binDir}'. " +
-                                             "Placing cheat DLLs in Steam's own directories allows them to " +
-                                             "load with Steam's process trust and can bypass DLL verification.",
-                                    Detail = $"Path: {file} | Matched: {suspDll}"
-                                });
-                                break;
-                            }
-                        }
-
-                        if (name.StartsWith("gameoverlayrenderer", StringComparison.OrdinalIgnoreCase))
-                        {
-                            var fi = new FileInfo(file);
-                            if (fi.Length < 100 * 1024)
-                            {
-                                ctx.AddFinding(new Finding
-                                {
-                                    Module = "Steam Workshop Cheat Artifact Forensic Scan",
-                                    Title = $"Steam overlay DLL suspiciously small (possible replacement): {name}",
-                                    Risk = RiskLevel.High,
-                                    Location = file,
-                                    FileName = name,
-                                    Reason = $"Steam overlay DLL '{name}' is unusually small ({fi.Length} bytes). " +
-                                             "The legitimate Steam overlay renderer is several megabytes. " +
-                                             "A small replacement may be a stub that loads a cheat overlay " +
-                                             "while pretending to be the Steam overlay.",
-                                    Detail = $"Path: {file} | Size: {fi.Length} bytes"
-                                });
-                            }
-                        }
-                    }
-                }
-                catch (UnauthorizedAccessException) { }
-            }
-        }, ct);
-
-    private Task CheckSteamCrashDumps(ScanContext ctx, CancellationToken ct) =>
-        Task.Run(async () =>
-        {
-            var steamPath = GetSteamPath();
-            if (steamPath is null) return;
-
-            var crashDumpDirs = new[]
-            {
-                Path.Combine(steamPath, "dumps"),
-                Path.Combine(steamPath, "logs"),
-                Path.Combine(LocalAppData, "Steam", "minidumps"),
-                Path.Combine(LocalAppData, "Microsoft", "Windows", "WER", "ReportArchive"),
-                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
-                    "Microsoft", "Windows", "WER", "ReportArchive"),
-            };
-
-            foreach (var dumpDir in crashDumpDirs)
-            {
-                if (!Directory.Exists(dumpDir)) continue;
-                try
-                {
-                    foreach (var file in Directory.EnumerateFiles(dumpDir, "*", SearchOption.AllDirectories))
-                    {
-                        if (ct.IsCancellationRequested) return;
-                        ctx.IncrementFiles();
-
-                        var ext = Path.GetExtension(file).ToLowerInvariant();
-                        if (ext != ".dmp" && ext != ".log" && ext != ".txt" && ext != ".wer") continue;
-
-                        var fi = new FileInfo(file);
-                        if (fi.Length > 8 * 1024 * 1024) continue;
-
-                        string content;
-                        try
-                        {
-                            if (ext == ".dmp")
-                            {
-                                var bytes = new byte[Math.Min(65536, fi.Length)];
-                                using var fs = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-                                int read = fs.Read(bytes, 0, bytes.Length);
-                                content = Encoding.Latin1.GetString(bytes, 0, read);
-                            }
-                            else
-                            {
-                                using var fs = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-                                using var sr = new StreamReader(fs);
-                                content = await sr.ReadToEndAsync(ct);
-                            }
-                        }
-                        catch (IOException) { continue; }
-                        catch (UnauthorizedAccessException) { continue; }
-
-                        foreach (var pattern in CheatStackTracePatterns)
-                        {
-                            if (content.Contains(pattern, StringComparison.OrdinalIgnoreCase))
-                            {
-                                ctx.AddFinding(new Finding
-                                {
-                                    Module = "Steam Workshop Cheat Artifact Forensic Scan",
-                                    Title = $"Steam crash dump: cheat tool stack trace artifact ({pattern})",
-                                    Risk = RiskLevel.High,
-                                    Location = file,
-                                    FileName = Path.GetFileName(file),
-                                    Reason = $"Steam crash dump or log file '{Path.GetFileName(file)}' " +
-                                             $"contains cheat-related string '{pattern}'. " +
-                                             "Crash dumps capture the full stack trace at the time of a crash, " +
-                                             "preserving evidence of cheat DLLs and modules even after they " +
-                                             "are deleted. This is a high-value forensic artifact.",
-                                    Detail = $"Dump: {file} | Pattern: {pattern} | Size: {fi.Length} bytes"
-                                });
-                                break;
-                            }
-                        }
-                    }
-                }
-                catch (UnauthorizedAccessException) { }
-            }
-        }, ct);
-
-    private Task CheckUserAssistSteamCheats(ScanContext ctx, CancellationToken ct) =>
-        Task.Run(() =>
-        {
-            const string UserAssistBase =
-                @"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\UserAssist";
-
-            var steamCheatExecutables = new[]
-            {
-                "cheatloader", "hackloader", "steambypass", "steamhook",
-                "steamcheat", "gamehack", "aimbot", "wallhack",
-                "esploader", "injectloader", "bypassloader",
-                "spooferloader", "hwidspoofer", "serialspoofer",
-                "vacbypass", "eacbypass", "battleyebypass",
-                "steamemu", "smartsteamemu", "goldbergemu",
-                "creamapi", "cream_api", "skidrow", "codex",
-                "kiddion", "2take1", "cherax", "ozark", "tsunami",
-                "neverlose", "onetap", "gamesense", "aimware", "fatality",
-                "nixware", "fecurity", "lumina", "injector",
-                "xenos", "extremeinjector", "manualmap",
-                "scripthookv", "scripthookvdotnet",
-                "memprocfs", "pcileech",
-                "workshop_cheat", "workshop_hack", "workshop_loader",
-                "steam_workshop_cheat",
-            };
-
-            try
-            {
-                using var baseKey = Registry.CurrentUser.OpenSubKey(UserAssistBase, writable: false);
-                if (baseKey is null) return;
-
-                foreach (var guidName in baseKey.GetSubKeyNames())
-                {
-                    if (ct.IsCancellationRequested) return;
-                    try
-                    {
-                        using var countKey = baseKey.OpenSubKey($@"{guidName}\Count", writable: false);
-                        if (countKey is null) continue;
-
-                        foreach (var encodedName in countKey.GetValueNames())
-                        {
-                            ctx.IncrementRegistryKeys();
-                            var decoded = Rot13Decode(encodedName).ToLowerInvariant();
-
-                            foreach (var exe in steamCheatExecutables)
-                            {
-                                if (decoded.Contains(exe, StringComparison.OrdinalIgnoreCase))
-                                {
-                                    int runCount = 0;
-                                    DateTime? lastRun = null;
-                                    try
-                                    {
-                                        var data = countKey.GetValue(encodedName) as byte[];
-                                        if (data is { Length: >= 16 })
-                                        {
-                                            runCount = BitConverter.ToInt32(data, 4);
-                                            var ft = BitConverter.ToInt64(data, 8);
-                                            if (ft > 0) lastRun = DateTime.FromFileTimeUtc(ft);
-                                        }
-                                    }
-                                    catch { }
-
-                                    ctx.AddFinding(new Finding
-                                    {
-                                        Module = "Steam Workshop Cheat Artifact Forensic Scan",
-                                        Title = $"UserAssist: Steam cheat tool executed ({exe})",
-                                        Risk = RiskLevel.High,
-                                        Location = $@"HKCU\{UserAssistBase}\{guidName}\Count",
-                                        FileName = Path.GetFileName(decoded),
-                                        Reason = $"UserAssist registry shows execution of '{Path.GetFileName(decoded)}' " +
-                                                 $"matching Steam cheat tool '{exe}' " +
-                                                 $"({runCount} runs" +
-                                                 (lastRun.HasValue ? $", last: {lastRun.Value:yyyy-MM-dd HH:mm} UTC" : "") +
-                                                 "). UserAssist entries persist after the binary is deleted, " +
-                                                 "making this a reliable forensic execution artifact.",
-                                        Detail = $"Decoded: {decoded} | Tool: {exe} | Runs: {runCount} | " +
-                                                 $"Last: {(lastRun.HasValue ? lastRun.Value.ToString("O") : "unknown")}"
-                                    });
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                    catch { }
-                }
-            }
-            catch { }
-        }, ct);
-
-    private Task CheckMuiCacheSteamCheats(ScanContext ctx, CancellationToken ct) =>
-        Task.Run(() =>
-        {
-            const string MuiCacheKey =
-                @"SOFTWARE\Classes\Local Settings\Software\Microsoft\Windows\Shell\MuiCache";
-
-            var steamCheatToolNames = new[]
-            {
-                "kiddion", "2take1", "cherax", "ozark", "tsunami",
-                "yimmenu", "lambda menu", "absolute menu", "spectre menu",
-                "susano", "hyperion", "nexus menu", "scarlet", "celestial",
-                "neverlose", "onetap", "gamesense", "aimware", "fatality",
-                "nixware", "fecurity", "lumina", "interium", "skeet",
-                "steambypass", "steamemu", "smartsteamemu", "goldbergemu",
-                "creamapi", "cream_api", "orbital_emulator",
-                "scripthookv", "scripthookvdotnet", "asiloader",
-                "cheat_loader", "hack_loader", "bypass_loader",
-                "steamhook", "gamehack", "workshop_loader",
-                "eac_bypass", "battleye_bypass", "vac_bypass",
-                "memprocfs", "pcileech", "dma_software",
-                "xenos", "extremeinjector", "manualmap",
-                "cheatengine", "x64dbg",
-            };
-
-            try
-            {
-                using var key = Registry.CurrentUser.OpenSubKey(MuiCacheKey, writable: false);
-                if (key is null) return;
-
-                foreach (var valueName in key.GetValueNames())
-                {
-                    if (ct.IsCancellationRequested) return;
-                    ctx.IncrementRegistryKeys();
-
-                    var dotIdx = valueName.LastIndexOf('.');
-                    var cleanPath = (dotIdx > 0 && !valueName[dotIdx..].Contains('\\'))
-                        ? valueName[..dotIdx] : valueName;
-
-                    var combined = (cleanPath + " " + (key.GetValue(valueName) as string ?? ""))
-                        .ToLowerInvariant();
-
-                    foreach (var toolName in steamCheatToolNames)
-                    {
-                        if (combined.Contains(toolName, StringComparison.OrdinalIgnoreCase))
-                        {
-                            bool fileExists = File.Exists(cleanPath);
-                            ctx.AddFinding(new Finding
-                            {
-                                Module = "Steam Workshop Cheat Artifact Forensic Scan",
-                                Title = $"MuiCache: Steam cheat tool executed ({toolName})",
-                                Risk = RiskLevel.High,
-                                Location = $@"HKCU\{MuiCacheKey}",
-                                FileName = Path.GetFileName(cleanPath),
-                                Reason = $"MuiCache entry indicates execution of '{Path.GetFileName(cleanPath)}' " +
-                                         $"matching Steam cheat tool '{toolName}'. " +
-                                         (fileExists ? "File still present on disk." :
-                                             "File has been deleted but execution is proven by MuiCache artifact.") +
-                                         " MuiCache is populated when Windows displays a binary's friendly name " +
-                                         "and persists indefinitely.",
-                                Detail = $"Path: {cleanPath} | Tool: {toolName} | Exists: {fileExists}"
-                            });
-                            break;
-                        }
-                    }
-                }
-            }
-            catch { }
-        }, ct);
-
-    private Task CheckSteamRunKeys(ScanContext ctx, CancellationToken ct) =>
-        Task.Run(() =>
-        {
-            var runKeyPaths = new[]
-            {
-                @"SOFTWARE\Microsoft\Windows\CurrentVersion\Run",
-                @"SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce",
-                @"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Run",
-                @"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\RunOnce",
-            };
-
-            foreach (var runKeyPath in runKeyPaths)
-            {
-                if (ct.IsCancellationRequested) return;
-
-                foreach (var hive in new[] { Registry.CurrentUser, Registry.LocalMachine })
-                {
-                    try
-                    {
-                        using var key = hive.OpenSubKey(runKeyPath, writable: false);
-                        if (key is null) continue;
-
-                        foreach (var valueName in key.GetValueNames())
-                        {
-                            if (ct.IsCancellationRequested) return;
-                            ctx.IncrementRegistryKeys();
-
-                            var val = key.GetValue(valueName) as string ?? "";
-                            var nameLower = valueName.ToLowerInvariant();
-                            var valLower = val.ToLowerInvariant();
-                            var combined = nameLower + " " + valLower;
-
-                            foreach (var cheatRunKey in SteamCheatRunKeys)
-                            {
-                                if (combined.Contains(cheatRunKey, StringComparison.OrdinalIgnoreCase))
-                                {
-                                    var hiveName = hive == Registry.CurrentUser ? "HKCU" : "HKLM";
-                                    ctx.AddFinding(new Finding
-                                    {
-                                        Module = "Steam Workshop Cheat Artifact Forensic Scan",
-                                        Title = $"Run key: Steam cheat loader autostart ({cheatRunKey})",
-                                        Risk = RiskLevel.Critical,
-                                        Location = $@"{hiveName}\{runKeyPath}",
-                                        FileName = Path.GetFileName(val.Split(' ')[0].Trim('"')),
-                                        Reason = $"Registry autorun key '{valueName}' = '{val}' in " +
-                                                 $"'{hiveName}\\{runKeyPath}' matches Steam cheat loader " +
-                                                 $"name '{cheatRunKey}'. " +
-                                                 "Cheat loaders and Steam emulators set autorun keys to " +
-                                                 "start before games launch, ensuring they are in place " +
-                                                 "before anti-cheat initializes.",
-                                        Detail = $"Key: {hiveName}\\{runKeyPath} | Name: {valueName} | Value: {val} | Match: {cheatRunKey}"
-                                    });
-                                    break;
-                                }
-                            }
-
-                            if (valLower.Contains("steam", StringComparison.OrdinalIgnoreCase))
-                            {
-                                foreach (var flag in CheatLaunchOptions)
-                                {
-                                    if (valLower.Contains(flag, StringComparison.OrdinalIgnoreCase))
-                                    {
-                                        var hiveName = hive == Registry.CurrentUser ? "HKCU" : "HKLM";
-                                        ctx.AddFinding(new Finding
-                                        {
-                                            Module = "Steam Workshop Cheat Artifact Forensic Scan",
-                                            Title = $"Run key: Steam started with cheat flag ({flag})",
-                                            Risk = RiskLevel.High,
-                                            Location = $@"{hiveName}\{runKeyPath}",
-                                            FileName = "Steam.exe",
-                                            Reason = $"Autorun registry entry '{valueName}' starts Steam " +
-                                                     $"with cheat-related flag '{flag}'. " +
-                                                     "Cheat loaders modify Steam autostart entries to inject " +
-                                                     "launch arguments that disable VAC, enable developer " +
-                                                     "mode, or suppress crash reporting.",
-                                            Detail = $"Key: {hiveName}\\{runKeyPath} | Value: {val} | Flag: {flag}"
-                                        });
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    catch { }
-                }
-            }
-        }, ct);
+            if (c >= 'a' && c <= 'z')
+                sb.Append((char)('a' + (c - 'a' + 13) % 26));
+            else if (c >= 'A' && c <= 'Z')
+                sb.Append((char)('A' + (c - 'A' + 13) % 26));
+            else
+                sb.Append(c);
+        }
+        return sb.ToString();
+    }
 }
