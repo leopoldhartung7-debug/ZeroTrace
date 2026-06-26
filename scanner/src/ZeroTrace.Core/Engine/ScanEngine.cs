@@ -637,6 +637,10 @@ public sealed class ScanEngine
         if (o.ScanRageMPAdminAbuseForensic) modules.Add(new RageMPAdminAbuseForensicScanModule());
         if (o.ScanAltVAdminAbuseForensic) modules.Add(new AltVAdminAbuseForensicScanModule());
         if (o.ScanFiveMESXHack) modules.Add(new FiveMESXHackForensicScanModule());
+        if (o.ScanAltVResourceTamper) modules.Add(new AltVResourceTamperScanModule());
+        if (o.ScanFiveMIdentitySpoof) modules.Add(new FiveMIdentitySpoofScanModule());
+        if (o.ScanFiveMNUIExploit) modules.Add(new FiveMNUIExploitScanModule());
+        if (o.ScanRageMPKickExploit) modules.Add(new RageMPKickExploitScanModule());
         if (o.ScanCheatSourceCodeRepo) modules.Add(new CheatSourceCodeRepoScanModule());
 
         // ── Group 5: forensic / trace artefacts ──────────────────────────────
