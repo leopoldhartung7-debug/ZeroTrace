@@ -480,6 +480,140 @@ public sealed class ApexLegendsMacroForensicScanModule : IScanModule
         "apl triggerbot",
     };
 
+    private static readonly string[] PrefetchMacroNames =
+    {
+        "APEX_MACRO",
+        "APEX_SCRIPT",
+        "APEX_AHK",
+        "APEX_RECOIL_SCRIPT",
+        "APEX_NORECOIL",
+        "APEX_NO_RECOIL",
+        "APEX_RAPID_FIRE",
+        "APEX_RAPIDFIRE",
+        "APEX_BHOP",
+        "APEX_AIMBOT",
+        "APEX_TRIGGERBOT",
+        "APEX_SILENT_AIM",
+        "APEX_JITTER_AIM",
+        "APEX_STRAFE",
+        "APEX_CHEAT",
+        "APEX_HACK",
+        "APEX_LOGITECH_MACRO",
+        "APEX_RAZER_MACRO",
+        "APEX_EAC_BYPASS",
+        "APL_MACRO",
+        "APL_SCRIPT",
+        "APL_NORECOIL",
+        "APL_RAPID_FIRE",
+        "APL_AIMBOT",
+        "MACRO_APEX",
+        "NORECOIL_APEX",
+        "AIMBOT_APEX",
+    };
+
+    private static readonly string[] EnvVarMacroKeywords =
+    {
+        "apex_macro",
+        "apex_script",
+        "apex_norecoil",
+        "apex_aimbot",
+        "apex_cheat",
+        "apex_hack",
+        "apl_macro",
+        "apl_script",
+        "apl_aimbot",
+        "apex_bypass",
+        "apex_inject",
+        "apex_eac",
+        "norecoil_apex",
+        "aimbot_apex",
+    };
+
+    private static readonly string[] StartupFolderMacroPatterns =
+    {
+        "apex_macro",
+        "apex_script",
+        "apex_norecoil",
+        "apex_rapid_fire",
+        "apex_aimbot",
+        "apex_cheat",
+        "apex_hack",
+        "apl_macro",
+        "apl_script",
+        "apl_aimbot",
+        "macro_apex",
+        "norecoil_apex",
+        "aimbot_apex",
+        "apex_logitech",
+        "apex_eac_bypass",
+    };
+
+    private static readonly string[] ScheduledTaskMacroKeywords =
+    {
+        "apex_macro",
+        "apex_script",
+        "apex_norecoil",
+        "apex_aimbot",
+        "apex_cheat",
+        "apex_hack",
+        "apl_macro",
+        "apl_aimbot",
+        "macro_apex",
+        "norecoil_apex",
+        "apex_bypass",
+        "apex_inject",
+        "apex_logitech_macro",
+        "apex_eac",
+    };
+
+    private static readonly string[] RecentFilesMacroPatterns =
+    {
+        "apex_macro",
+        "apex_script",
+        "apex_norecoil",
+        "apex_rapid_fire",
+        "apex_aimbot",
+        "apex_cheat",
+        "apex_hack",
+        "apex_silent_aim",
+        "apex_jitter_aim",
+        "apex_strafe",
+        "apex_bhop",
+        "apl_macro",
+        "apl_script",
+        "apl_aimbot",
+        "apl_norecoil",
+        "macro_apex",
+        "norecoil_apex",
+        "aimbot_apex",
+        "apex_logitech",
+        "apex_eac_bypass",
+    };
+
+    private static readonly string[] EacBypassRegistryPaths =
+    {
+        @"SYSTEM\CurrentControlSet\Services\EasyAntiCheat",
+        @"SYSTEM\CurrentControlSet\Services\EasyAntiCheat_EOS",
+        @"SOFTWARE\EasyAntiCheat",
+    };
+
+    private static readonly string[] ApexCheatWatermarkPatterns =
+    {
+        "apexhack",
+        "apex_cheat",
+        "apex_hack",
+        "apexaimbot",
+        "apextrigger",
+        "apexnorecoil",
+        "apexjitter",
+        "apexstrafe",
+        "apexmacro",
+        "ringone",
+        "ringone apex",
+        "predator legend apex",
+        "blackcell apex",
+    };
+
     public Task RunAsync(ScanContext ctx, CancellationToken ct)
     {
         ctx.Report(0.0, Name, "Starting Apex Legends macro forensic scan...");
@@ -491,7 +625,13 @@ public sealed class ApexLegendsMacroForensicScanModule : IScanModule
             CheckApexConfigFiles(ctx, ct),
             CheckApexDownloadArtifacts(ctx, ct),
             CheckApexGameLogs(ctx, ct),
-            CheckApexRegistryArtifacts(ctx, ct)
+            CheckApexRegistryArtifacts(ctx, ct),
+            CheckApexPrefetchArtifacts(ctx, ct),
+            CheckApexStartupFolderArtifacts(ctx, ct),
+            CheckApexScheduledTaskArtifacts(ctx, ct),
+            CheckApexEnvironmentVariables(ctx, ct),
+            CheckApexRecentDocuments(ctx, ct),
+            CheckApexEacBypassArtifacts(ctx, ct)
         );
     }
 
