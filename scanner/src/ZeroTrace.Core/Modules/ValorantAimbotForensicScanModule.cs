@@ -1261,6 +1261,243 @@ public sealed class ValorantAimbotForensicScanModule : IScanModule
         catch { }
     }
 
+    private Task CheckValorantPrefetchArtifacts(ScanContext ctx, CancellationToken ct) =>
+        Task.Run(async () =>
+        {
+            await Task.Yield();
+            var prefetchDir = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.Windows), "Prefetch");
+            if (!Directory.Exists(prefetchDir)) return;
+            string[] prefetchFiles = Array.Empty<string>();
+            try
+            {
+                prefetchFiles = Directory.GetFiles(prefetchDir, "*.pf");
+            }
+            catch (UnauthorizedAccessException) { return; }
+            foreach (var pf in prefetchFiles)
+            {
+                if (ct.IsCancellationRequested) return;
+                ctx.IncrementFiles();
+                var pfName = Path.GetFileNameWithoutExtension(pf).ToUpperInvariant();
+                bool isHit = PrefetchAimbotNames.Any(n =>
+                    pfName.StartsWith(n, StringComparison.OrdinalIgnoreCase));
+                if (!isHit) continue;
+                DateTime? lastRun = null;
+                try { lastRun = File.GetLastWriteTimeUtc(pf); } catch { }
+                ctx.AddFinding(new Finding
+                {
+                    Module   = Name,
+                    Title    = $"Prefetch: Valorant Aimbot Executed: {pfName}",
+                    Risk     = RiskLevel.High,
+                    Location = pf,
+                    FileName = Path.GetFileName(pf),
+                    Reason   = $"Windows Prefetch file '{pfName}' indicates prior execution of a Valorant " +
+                               "aimbot or cheat tool. Prefetch files are created by Windows when an " +
+                               "executable runs and persist even after the executable is deleted. " +
+                               (lastRun.HasValue
+                                   ? $"Last execution approximately {lastRun.Value:yyyy-MM-dd HH:mm} UTC. "
+                                   : "") +
+                               "This is a reliable forensic artifact of prior cheat tool execution.",
+                    Detail   = $"Prefetch: {pf} | Last modified: {lastRun?.ToString("O") ?? "unknown"}"
+                });
+            }
+        }, ct);
+
+    private Task CheckValorantStartupFolderArtifacts(ScanContext ctx, CancellationToken ct) =>
+        Task.Run(async () =>
+        {
+            await Task.Yield();
+            var startupDirs = new[]
+            {
+                Environment.GetFolderPath(Environment.SpecialFolder.Startup),
+                Environment.GetFolderPath(Environment.SpecialFolder.CommonStartup),
+            };
+            foreach (var startupDir in startupDirs)
+            {
+                if (ct.IsCancellationRequested) return;
+                if (!Directory.Exists(startupDir)) continue;
+                string[] startupFiles = Array.Empty<string>();
+                try
+                {
+                    startupFiles = Directory.GetFiles(startupDir, "*", SearchOption.AllDirectories);
+                }
+                catch (UnauthorizedAccessException) { continue; }
+                foreach (var file in startupFiles)
+                {
+                    if (ct.IsCancellationRequested) return;
+                    ctx.IncrementFiles();
+                    var fileName = Path.GetFileName(file).ToLowerInvariant();
+                    bool isHit = StartupFolderAimbotPatterns.Any(p =>
+                        fileName.Contains(p, StringComparison.OrdinalIgnoreCase));
+                    if (!isHit) continue;
+                    ctx.AddFinding(new Finding
+                    {
+                        Module   = Name,
+                        Title    = $"Startup Folder: Valorant Aimbot Persistence: {Path.GetFileName(file)}",
+                        Risk     = RiskLevel.High,
+                        Location = file,
+                        FileName = Path.GetFileName(file),
+                        Reason   = $"Valorant aimbot or cheat tool shortcut/executable '{Path.GetFileName(file)}' " +
+                                   $"found in Windows startup folder '{startupDir}'. " +
+                                   "Items in the startup folder execute automatically when Windows starts, " +
+                                   "indicating the cheat was configured for persistent automatic launch " +
+                                   "before each Valorant gaming session.",
+                        Detail   = $"Startup folder: {startupDir} | File: {file}"
+                    });
+                }
+            }
+            await Task.CompletedTask;
+        }, ct);
+
+    private Task CheckValorantScheduledTaskArtifacts(ScanContext ctx, CancellationToken ct) =>
+        Task.Run(async () =>
+        {
+            await Task.Yield();
+            var taskFolders = new[]
+            {
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows),
+                    "System32", "Tasks"),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows),
+                    "SysWOW64", "Tasks"),
+            };
+            foreach (var taskFolder in taskFolders)
+            {
+                if (ct.IsCancellationRequested) return;
+                if (!Directory.Exists(taskFolder)) continue;
+                IEnumerable<string> taskFiles = Enumerable.Empty<string>();
+                try
+                {
+                    taskFiles = Directory.EnumerateFiles(taskFolder, "*", SearchOption.AllDirectories);
+                }
+                catch (UnauthorizedAccessException) { continue; }
+                foreach (var taskFile in taskFiles)
+                {
+                    if (ct.IsCancellationRequested) return;
+                    ctx.IncrementFiles();
+                    var taskName = Path.GetFileName(taskFile).ToLowerInvariant();
+                    bool nameHit = ScheduledTaskAimbotKeywords.Any(k =>
+                        taskName.Contains(k, StringComparison.OrdinalIgnoreCase));
+                    string content = string.Empty;
+                    if (!nameHit)
+                    {
+                        try
+                        {
+                            using var fs = new FileStream(taskFile, FileMode.Open, FileAccess.Read,
+                                FileShare.ReadWrite);
+                            using var sr = new StreamReader(fs);
+                            content = await sr.ReadToEndAsync(ct);
+                        }
+                        catch (IOException) { continue; }
+                        nameHit = ScheduledTaskAimbotKeywords.Any(k =>
+                            content.Contains(k, StringComparison.OrdinalIgnoreCase));
+                    }
+                    if (!nameHit) continue;
+                    ctx.AddFinding(new Finding
+                    {
+                        Module   = Name,
+                        Title    = $"Scheduled Task: Valorant Aimbot Persistence: {Path.GetFileName(taskFile)}",
+                        Risk     = RiskLevel.High,
+                        Location = taskFile,
+                        FileName = Path.GetFileName(taskFile),
+                        Reason   = $"Scheduled task file '{Path.GetFileName(taskFile)}' contains references " +
+                                   "to Valorant aimbot or cheat tool. Scheduled tasks are used by cheat " +
+                                   "software to establish persistent execution on a timer or at logon, " +
+                                   "ensuring the aimbot is always active when Valorant is launched.",
+                        Detail   = $"Task file: {taskFile}"
+                    });
+                }
+            }
+        }, ct);
+
+    private Task CheckValorantEnvironmentVariables(ScanContext ctx, CancellationToken ct) =>
+        Task.Run(async () =>
+        {
+            await Task.Yield();
+            var targets = new[]
+            {
+                EnvironmentVariableTarget.Process,
+                EnvironmentVariableTarget.User,
+                EnvironmentVariableTarget.Machine,
+            };
+            foreach (var target in targets)
+            {
+                if (ct.IsCancellationRequested) return;
+                System.Collections.IDictionary envVars;
+                try
+                {
+                    envVars = Environment.GetEnvironmentVariables(target);
+                }
+                catch { continue; }
+                foreach (System.Collections.DictionaryEntry entry in envVars)
+                {
+                    if (ct.IsCancellationRequested) return;
+                    var key = (entry.Key as string ?? string.Empty).ToLowerInvariant();
+                    var value = (entry.Value as string ?? string.Empty).ToLowerInvariant();
+                    var combined = key + " " + value;
+                    bool isHit = EnvVarAimbotKeywords.Any(k =>
+                        combined.Contains(k, StringComparison.OrdinalIgnoreCase));
+                    if (!isHit) continue;
+                    ctx.AddFinding(new Finding
+                    {
+                        Module   = Name,
+                        Title    = $"Environment Variable: Valorant Cheat Reference: {entry.Key}",
+                        Risk     = RiskLevel.High,
+                        Location = $"Environment ({target})",
+                        Reason   = $"Environment variable '{entry.Key}' = '{entry.Value}' contains " +
+                                   "a reference to a Valorant aimbot or cheat tool. " +
+                                   "Some cheat loaders and injectors configure environment variables " +
+                                   "to pass cheat parameters or DLL paths to the target process, " +
+                                   "or to communicate between cheat components.",
+                        Detail   = $"Target: {target} | Key: {entry.Key} | Value: {entry.Value}"
+                    });
+                }
+            }
+            await Task.CompletedTask;
+        }, ct);
+
+    private Task CheckValorantRecentDocuments(ScanContext ctx, CancellationToken ct) =>
+        Task.Run(async () =>
+        {
+            await Task.Yield();
+            var recentDir = Environment.GetFolderPath(Environment.SpecialFolder.Recent);
+            if (!Directory.Exists(recentDir)) return;
+            string[] recentFiles = Array.Empty<string>();
+            try
+            {
+                recentFiles = Directory.GetFiles(recentDir, "*.lnk");
+            }
+            catch (UnauthorizedAccessException) { return; }
+            foreach (var lnkFile in recentFiles)
+            {
+                if (ct.IsCancellationRequested) return;
+                ctx.IncrementFiles();
+                var lnkName = Path.GetFileNameWithoutExtension(lnkFile).ToLowerInvariant();
+                bool isHit = RecentFilesAimbotPatterns.Any(p =>
+                    lnkName.Contains(p, StringComparison.OrdinalIgnoreCase));
+                if (!isHit) continue;
+                DateTime? lastAccess = null;
+                try { lastAccess = File.GetLastWriteTimeUtc(lnkFile); } catch { }
+                ctx.AddFinding(new Finding
+                {
+                    Module   = Name,
+                    Title    = $"Recent Documents: Valorant Aimbot Artifact: {Path.GetFileNameWithoutExtension(lnkFile)}",
+                    Risk     = RiskLevel.High,
+                    Location = lnkFile,
+                    FileName = Path.GetFileName(lnkFile),
+                    Reason   = $"Windows Recent Documents shortcut '{Path.GetFileNameWithoutExtension(lnkFile)}' " +
+                               "references a Valorant aimbot or cheat tool. " +
+                               "Recent document shortcuts (.lnk files) are created when a user opens or " +
+                               "interacts with a file and persist after the original file is deleted, " +
+                               "providing forensic evidence of prior cheat tool access." +
+                               (lastAccess.HasValue
+                                   ? $" Last accessed approximately {lastAccess.Value:yyyy-MM-dd HH:mm} UTC."
+                                   : ""),
+                    Detail   = $"LNK: {lnkFile} | Last modified: {lastAccess?.ToString("O") ?? "unknown"}"
+                });
+            }
+            await Task.CompletedTask;
+        }, ct);
+
     private static string[] GetStandardSearchDirectories()
     {
         var dirs = new List<string>();

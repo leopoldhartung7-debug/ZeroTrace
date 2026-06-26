@@ -1303,4 +1303,340 @@ public sealed class CS2WallhackForensicScanModule : IScanModule
             }
         }
     }
+
+    private void CheckCS2VacBypassDriverRegistry(ScanContext ctx, CancellationToken ct)
+    {
+        var vacBypassDriverNames = new[]
+        {
+            "vac_bypass.sys", "vac_kill.sys", "vac_disable.sys",
+            "steam_bypass.sys", "steamclient_bypass.sys", "cs2_bypass.sys",
+            "csgo_bypass.sys", "vac_hook.sys", "vac_patch.sys",
+            "cs2_kernel.sys", "vac_spoof.sys", "antivac_bypass.sys",
+        };
+
+        var driversDir = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.System), "drivers");
+
+        if (Directory.Exists(driversDir))
+        {
+            string[] driverFiles;
+            try { driverFiles = Directory.GetFiles(driversDir, "*.sys"); }
+            catch (UnauthorizedAccessException) { driverFiles = Array.Empty<string>(); }
+            catch (IOException) { driverFiles = Array.Empty<string>(); }
+
+            foreach (var file in driverFiles)
+            {
+                ct.ThrowIfCancellationRequested();
+                ctx.IncrementFiles();
+                var fn = Path.GetFileName(file);
+
+                var matched = vacBypassDriverNames.FirstOrDefault(d =>
+                    fn.Equals(d, StringComparison.OrdinalIgnoreCase));
+
+                if (matched is not null)
+                {
+                    ctx.AddFinding(new Finding
+                    {
+                        Module = Name,
+                        Title = $"CS2 VAC Bypass Driver Found: {fn}",
+                        Risk = RiskLevel.Critical,
+                        Location = file,
+                        FileName = fn,
+                        Reason = $"Known CS2 VAC bypass kernel driver '{fn}' found in the system drivers directory. " +
+                                 "This driver is designed to intercept and neutralize Valve Anti-Cheat (VAC) " +
+                                 "scanning in Counter-Strike 2, enabling wallhack and other cheat software to " +
+                                 "operate undetected at kernel level. Pattern matched: " + matched,
+                        Detail = $"Driver path: {file}"
+                    });
+                }
+
+                var fnLower = fn.ToLowerInvariant();
+                bool isVacBypass =
+                    (fnLower.Contains("vac") || fnLower.Contains("steam")) &&
+                    (fnLower.Contains("bypass") || fnLower.Contains("kill") || fnLower.Contains("disable") ||
+                     fnLower.Contains("hook") || fnLower.Contains("patch") || fnLower.Contains("spoof"));
+                bool isCS2Driver =
+                    (fnLower.Contains("cs2") || fnLower.Contains("csgo")) &&
+                    (fnLower.Contains("bypass") || fnLower.Contains("kernel") || fnLower.Contains("cheat") ||
+                     fnLower.Contains("driver") || fnLower.Contains("hack"));
+
+                if ((isVacBypass || isCS2Driver) && matched is null)
+                {
+                    ctx.AddFinding(new Finding
+                    {
+                        Module = Name,
+                        Title = $"Suspicious CS2/VAC-Targeting Driver (Heuristic): {fn}",
+                        Risk = RiskLevel.Critical,
+                        Location = file,
+                        FileName = fn,
+                        Reason = $"Kernel driver '{fn}' has a name indicating it targets VAC or CS2 " +
+                                 "with bypass/kill/disable/hook operations. VAC bypass drivers operate at " +
+                                 "kernel level to intercept VAC's memory scanning before it can detect " +
+                                 "wallhack or other cheat DLLs injected into CS2.",
+                        Detail = $"Driver: {file}"
+                    });
+                }
+            }
+        }
+
+        try
+        {
+            using var servicesKey = Registry.LocalMachine.OpenSubKey(
+                @"SYSTEM\CurrentControlSet\Services", writable: false);
+            if (servicesKey is null) return;
+
+            foreach (var svcName in servicesKey.GetSubKeyNames())
+            {
+                ct.ThrowIfCancellationRequested();
+                ctx.IncrementRegistryKeys();
+                try
+                {
+                    using var svc = servicesKey.OpenSubKey(svcName, writable: false);
+                    if (svc is null) continue;
+
+                    var imgPath = (svc.GetValue("ImagePath") as string ?? "").ToLowerInvariant();
+                    var type = svc.GetValue("Type") as int? ?? 0;
+                    if (type != 1) continue;
+
+                    var matched = vacBypassDriverNames.FirstOrDefault(d =>
+                        imgPath.Contains(d, StringComparison.OrdinalIgnoreCase) ||
+                        svcName.Contains(d.Replace(".sys", ""), StringComparison.OrdinalIgnoreCase));
+
+                    if (matched is null) continue;
+
+                    ctx.AddFinding(new Finding
+                    {
+                        Module = Name,
+                        Title = $"CS2 VAC Bypass Driver Service: {svcName}",
+                        Risk = RiskLevel.Critical,
+                        Location = $@"HKLM\SYSTEM\CurrentControlSet\Services\{svcName}",
+                        FileName = svcName,
+                        Reason = $"Kernel driver service '{svcName}' matches a known CS2/VAC bypass driver " +
+                                 $"pattern '{matched}'. ImagePath: '{imgPath}'. " +
+                                 "This driver-level bypass intercepts VAC scanning before CS2 loads " +
+                                 "to prevent detection of wallhack and ESP cheat software.",
+                        Detail = $"Service: {svcName} | ImagePath: {imgPath} | Matched: {matched}"
+                    });
+                }
+                catch { }
+            }
+        }
+        catch { }
+    }
+
+    private void CheckCS2IFEOHijack(ScanContext ctx, CancellationToken ct)
+    {
+        const string ifeoBase =
+            @"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options";
+
+        var cs2Binaries = new[]
+        {
+            "cs2.exe", "csgo.exe", "steamservice.exe",
+            "steam.exe", "gameoverlayui.exe", "steamwebhelper.exe",
+        };
+
+        foreach (var targetExe in cs2Binaries)
+        {
+            ct.ThrowIfCancellationRequested();
+            try
+            {
+                using var ifeoKey = Registry.LocalMachine.OpenSubKey(
+                    $@"{ifeoBase}\{targetExe}", writable: false);
+
+                if (ifeoKey is null) continue;
+                ctx.IncrementRegistryKeys();
+
+                var debugger = ifeoKey.GetValue("Debugger") as string;
+                var globalFlag = ifeoKey.GetValue("GlobalFlag") as int?;
+
+                if (!string.IsNullOrEmpty(debugger))
+                {
+                    ctx.AddFinding(new Finding
+                    {
+                        Module = Name,
+                        Title = $"IFEO Hijack on CS2/Steam Binary: {targetExe}",
+                        Risk = RiskLevel.Critical,
+                        Location = $@"HKLM\{ifeoBase}\{targetExe}",
+                        FileName = targetExe,
+                        Reason = $"Image File Execution Options (IFEO) Debugger key is set for '{targetExe}'. " +
+                                 $"Debugger value: '{debugger}'. " +
+                                 "This causes Windows to launch the debugger binary instead of the legitimate " +
+                                 $"'{targetExe}'. CS2 cheat developers use IFEO to intercept game or Steam " +
+                                 "startup and redirect execution to a cheat loader, or to inject a wallhack " +
+                                 "DLL before the game process is fully initialized.",
+                        Detail = $"Debugger: {debugger} | GlobalFlag: {globalFlag}"
+                    });
+                }
+
+                if (globalFlag.HasValue && globalFlag.Value != 0)
+                {
+                    ctx.AddFinding(new Finding
+                    {
+                        Module = Name,
+                        Title = $"IFEO GlobalFlag Set for CS2 Binary: {targetExe}",
+                        Risk = RiskLevel.High,
+                        Location = $@"HKLM\{ifeoBase}\{targetExe}",
+                        FileName = targetExe,
+                        Reason = $"IFEO GlobalFlag is non-zero ({globalFlag}) for '{targetExe}'. " +
+                                 "Non-zero GlobalFlag values can interfere with CS2 or VAC process behavior " +
+                                 "in ways exploited by cheat tools to prevent VAC scanning or to facilitate " +
+                                 "wallhack injection.",
+                        Detail = $"GlobalFlag: 0x{globalFlag:X8}"
+                    });
+                }
+            }
+            catch { }
+        }
+    }
+
+    private void CheckCS2SuspiciousDllsInGameDir(ScanContext ctx, CancellationToken ct)
+    {
+        var cs2InstallDir = TryFindCS2InstallDir();
+        if (string.IsNullOrEmpty(cs2InstallDir)) return;
+
+        var cs2BinDirs = new List<string>
+        {
+            Path.Combine(cs2InstallDir, "game", "bin", "win64"),
+            Path.Combine(cs2InstallDir, "game", "csgo", "bin", "win64"),
+            Path.Combine(cs2InstallDir, "bin", "win64"),
+        };
+
+        var suspiciousProxyDlls = new[]
+        {
+            "d3d11.dll", "d3d12.dll", "dxgi.dll", "winmm.dll",
+            "version.dll", "dinput8.dll", "xinput1_3.dll", "xinput1_4.dll",
+            "wsock32.dll", "ws2_32.dll", "opengl32.dll", "d3dcompiler_47.dll",
+            "tier0.dll", "vstdlib.dll", "filesystem_stdio.dll",
+        };
+
+        foreach (var binDir in cs2BinDirs)
+        {
+            if (!Directory.Exists(binDir)) continue;
+            ct.ThrowIfCancellationRequested();
+
+            string[] dllFiles;
+            try { dllFiles = Directory.GetFiles(binDir, "*.dll", SearchOption.TopDirectoryOnly); }
+            catch (UnauthorizedAccessException) { continue; }
+            catch (IOException) { continue; }
+
+            foreach (var dllFile in dllFiles)
+            {
+                ct.ThrowIfCancellationRequested();
+                ctx.IncrementFiles();
+                var fn = Path.GetFileName(dllFile);
+
+                var cheatMatch = CS2WallhackDlls.FirstOrDefault(c =>
+                    fn.Equals(c, StringComparison.OrdinalIgnoreCase));
+
+                if (cheatMatch is not null)
+                {
+                    ctx.AddFinding(new Finding
+                    {
+                        Module = Name,
+                        Title = $"CS2 Wallhack DLL in Game Binaries: {fn}",
+                        Risk = RiskLevel.Critical,
+                        Location = dllFile,
+                        FileName = fn,
+                        Reason = $"Known CS2 wallhack DLL '{fn}' was found inside the CS2 game binary directory. " +
+                                 $"Pattern: '{cheatMatch}'. Cheat tools place DLLs in the game's executable " +
+                                 "directory for DLL side-loading or hijacking attacks, allowing the wallhack " +
+                                 "to be loaded by CS2 itself without traditional injection.",
+                        Detail = $"Path: {dllFile}"
+                    });
+                    continue;
+                }
+
+                var matchedProxy = suspiciousProxyDlls.FirstOrDefault(d =>
+                    fn.Equals(d, StringComparison.OrdinalIgnoreCase));
+
+                if (matchedProxy is null) continue;
+
+                try
+                {
+                    var fi = new FileInfo(dllFile);
+                    if (fi.Length < 200 * 1024)
+                    {
+                        ctx.AddFinding(new Finding
+                        {
+                            Module = Name,
+                            Title = $"Suspiciously Small System DLL in CS2 Dir: {fn}",
+                            Risk = RiskLevel.High,
+                            Location = dllFile,
+                            FileName = fn,
+                            Reason = $"System DLL '{fn}' found in CS2 game directory is only {fi.Length} bytes. " +
+                                     "Legitimate versions of this Windows system DLL are significantly larger. " +
+                                     "Cheat tools place small proxy DLLs with system DLL names in the game " +
+                                     "directory to intercept CS2's DLL loading and inject wallhack code before " +
+                                     "VAC initializes. This is a classic DLL hijacking vector for CS2 cheats.",
+                            Detail = $"Path: {dllFile} | Size: {fi.Length} bytes"
+                        });
+                    }
+                }
+                catch { }
+            }
+        }
+    }
+
+    private void CheckCS2VacTempArtifacts(ScanContext ctx, CancellationToken ct)
+    {
+        var tempDirs = new[]
+        {
+            Path.GetTempPath(),
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Temp"),
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "Temp"),
+        };
+
+        var cs2CheatTempPatterns = new[]
+        {
+            "cs2_wh", "cs2_esp", "cs2_wallhack", "cs2_glow", "cs2_chams",
+            "cs2_xray", "cs2_radar", "cs2_aimbot", "cs2_triggerbot",
+            "wallhack_cs2", "esp_cs2", "glow_cs2", "chams_cs2",
+            "vac_bypass", "steam_bypass", "cs2_loader", "cs2_injector",
+            "cs2_cheat", "cs2_hack", "csgo_cheat", "csgo_hack",
+            "cs2_bypass", "cs2_external", "cs2_internal",
+        };
+
+        foreach (var tempDir in tempDirs)
+        {
+            if (!Directory.Exists(tempDir)) continue;
+            ct.ThrowIfCancellationRequested();
+
+            string[] files;
+            try { files = Directory.GetFiles(tempDir, "*", SearchOption.TopDirectoryOnly); }
+            catch (UnauthorizedAccessException) { continue; }
+            catch (IOException) { continue; }
+
+            foreach (var file in files)
+            {
+                ct.ThrowIfCancellationRequested();
+                ctx.IncrementFiles();
+                var fn = Path.GetFileName(file);
+                var fnLower = fn.ToLowerInvariant();
+                var ext = Path.GetExtension(fn).ToLowerInvariant();
+
+                if (ext is not (".exe" or ".dll" or ".sys" or ".dat" or ".log" or ".cfg" or ".ini" or ".zip" or ".rar" or ".7z"))
+                    continue;
+
+                var matchedPattern = cs2CheatTempPatterns.FirstOrDefault(p =>
+                    fnLower.Contains(p, StringComparison.OrdinalIgnoreCase));
+
+                if (matchedPattern is null) continue;
+
+                ctx.AddFinding(new Finding
+                {
+                    Module = Name,
+                    Title = $"CS2 Wallhack Artifact in Temp Folder: {fn}",
+                    Risk = ext is ".exe" or ".dll" or ".sys" ? RiskLevel.High : RiskLevel.Medium,
+                    Location = file,
+                    FileName = fn,
+                    Reason = $"File '{fn}' in the system temp folder contains CS2 wallhack/cheat related " +
+                             $"keywords (matched: '{matchedPattern}'). CS2 cheat tools commonly extract and " +
+                             "run from temp directories to avoid persistent footprints in standard locations " +
+                             "and to complicate forensic attribution. Temp artifacts are particularly " +
+                             "common with loader-based wallhack distribution.",
+                    Detail = $"Path: {file} | Pattern: {matchedPattern} | Extension: {ext}"
+                });
+            }
+        }
+    }
 }
