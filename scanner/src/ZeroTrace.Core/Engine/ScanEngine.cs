@@ -650,6 +650,11 @@ public sealed class ScanEngine
         if (o.ScanCS2WallhackForensic) modules.Add(new CS2WallhackForensicScanModule());
         if (o.ScanFiveMPoliceAbuse) modules.Add(new FiveMPoliceAbuseScanModule());
         if (o.ScanRustCheatForensic) modules.Add(new RustCheatForensicScanModule());
+        if (o.ScanAltVVehicleHack) modules.Add(new AltVVehicleHackScanModule());
+        if (o.ScanFiveMBankHackForensic) modules.Add(new FiveMBankHackForensicScanModule());
+        if (o.ScanFiveMSpeedHackForensic) modules.Add(new FiveMSpeedHackForensicScanModule());
+        if (o.ScanRageMPAntibanForensic) modules.Add(new RageMPAntibanForensicScanModule());
+        if (o.ScanWarzoneCheatForensic) modules.Add(new WarzoneCheatForensicScanModule());
         if (o.ScanCheatSourceCodeRepo) modules.Add(new CheatSourceCodeRepoScanModule());
 
         // ── Group 5: forensic / trace artefacts ──────────────────────────────

@@ -1243,6 +1243,311 @@ public sealed class ApexLegendsMacroForensicScanModule : IScanModule
         }
     }
 
+    private Task CheckApexPrefetchArtifacts(ScanContext ctx, CancellationToken ct) =>
+        Task.Run(async () =>
+        {
+            await Task.Yield();
+            var prefetchDir = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.Windows), "Prefetch");
+            if (!Directory.Exists(prefetchDir)) return;
+            string[] prefetchFiles = Array.Empty<string>();
+            try
+            {
+                prefetchFiles = Directory.GetFiles(prefetchDir, "*.pf");
+            }
+            catch (UnauthorizedAccessException) { return; }
+            foreach (var pf in prefetchFiles)
+            {
+                if (ct.IsCancellationRequested) return;
+                ctx.IncrementFiles();
+                var pfName = Path.GetFileNameWithoutExtension(pf).ToUpperInvariant();
+                bool isHit = PrefetchMacroNames.Any(n =>
+                    pfName.StartsWith(n, StringComparison.OrdinalIgnoreCase));
+                if (!isHit) continue;
+                DateTime? lastRun = null;
+                try { lastRun = File.GetLastWriteTimeUtc(pf); } catch { }
+                ctx.AddFinding(new Finding
+                {
+                    Module   = Name,
+                    Title    = $"Prefetch: Apex Legends Macro Tool Executed: {pfName}",
+                    Risk     = RiskLevel.High,
+                    Location = pf,
+                    FileName = Path.GetFileName(pf),
+                    Reason   = $"Windows Prefetch file '{pfName}' indicates prior execution of an Apex " +
+                               "Legends macro or cheat tool. Prefetch files are created by Windows when " +
+                               "an executable runs and persist even after the executable is deleted, " +
+                               "providing a reliable forensic timeline of cheat tool execution." +
+                               (lastRun.HasValue
+                                   ? $" Last execution approximately {lastRun.Value:yyyy-MM-dd HH:mm} UTC."
+                                   : ""),
+                    Detail   = $"Prefetch: {pf} | Last modified: {lastRun?.ToString("O") ?? "unknown"}"
+                });
+            }
+        }, ct);
+
+    private Task CheckApexStartupFolderArtifacts(ScanContext ctx, CancellationToken ct) =>
+        Task.Run(async () =>
+        {
+            await Task.Yield();
+            var startupDirs = new[]
+            {
+                Environment.GetFolderPath(Environment.SpecialFolder.Startup),
+                Environment.GetFolderPath(Environment.SpecialFolder.CommonStartup),
+            };
+            foreach (var startupDir in startupDirs)
+            {
+                if (ct.IsCancellationRequested) return;
+                if (!Directory.Exists(startupDir)) continue;
+                string[] startupFiles = Array.Empty<string>();
+                try
+                {
+                    startupFiles = Directory.GetFiles(startupDir, "*", SearchOption.AllDirectories);
+                }
+                catch (UnauthorizedAccessException) { continue; }
+                foreach (var file in startupFiles)
+                {
+                    if (ct.IsCancellationRequested) return;
+                    ctx.IncrementFiles();
+                    var fileName = Path.GetFileName(file).ToLowerInvariant();
+                    bool isHit = StartupFolderMacroPatterns.Any(p =>
+                        fileName.Contains(p, StringComparison.OrdinalIgnoreCase));
+                    if (!isHit) continue;
+                    ctx.AddFinding(new Finding
+                    {
+                        Module   = Name,
+                        Title    = $"Startup Folder: Apex Macro Tool Persistence: {Path.GetFileName(file)}",
+                        Risk     = RiskLevel.High,
+                        Location = file,
+                        FileName = Path.GetFileName(file),
+                        Reason   = $"Apex Legends macro or cheat tool shortcut/executable '{Path.GetFileName(file)}' " +
+                                   $"found in Windows startup folder '{startupDir}'. " +
+                                   "Items in the startup folder execute automatically when Windows starts, " +
+                                   "indicating the macro or cheat tool was configured for persistent launch " +
+                                   "to ensure it is always active before Apex Legends sessions begin.",
+                        Detail   = $"Startup folder: {startupDir} | File: {file}"
+                    });
+                }
+            }
+            await Task.CompletedTask;
+        }, ct);
+
+    private Task CheckApexScheduledTaskArtifacts(ScanContext ctx, CancellationToken ct) =>
+        Task.Run(async () =>
+        {
+            await Task.Yield();
+            var taskFolders = new[]
+            {
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows),
+                    "System32", "Tasks"),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows),
+                    "SysWOW64", "Tasks"),
+            };
+            foreach (var taskFolder in taskFolders)
+            {
+                if (ct.IsCancellationRequested) return;
+                if (!Directory.Exists(taskFolder)) continue;
+                IEnumerable<string> taskFiles = Enumerable.Empty<string>();
+                try
+                {
+                    taskFiles = Directory.EnumerateFiles(taskFolder, "*", SearchOption.AllDirectories);
+                }
+                catch (UnauthorizedAccessException) { continue; }
+                foreach (var taskFile in taskFiles)
+                {
+                    if (ct.IsCancellationRequested) return;
+                    ctx.IncrementFiles();
+                    var taskName = Path.GetFileName(taskFile).ToLowerInvariant();
+                    bool nameHit = ScheduledTaskMacroKeywords.Any(k =>
+                        taskName.Contains(k, StringComparison.OrdinalIgnoreCase));
+                    string content = string.Empty;
+                    if (!nameHit)
+                    {
+                        try
+                        {
+                            using var fs = new FileStream(taskFile, FileMode.Open, FileAccess.Read,
+                                FileShare.ReadWrite);
+                            using var sr = new StreamReader(fs);
+                            content = await sr.ReadToEndAsync(ct);
+                        }
+                        catch (IOException) { continue; }
+                        nameHit = ScheduledTaskMacroKeywords.Any(k =>
+                            content.Contains(k, StringComparison.OrdinalIgnoreCase));
+                    }
+                    if (!nameHit) continue;
+                    ctx.AddFinding(new Finding
+                    {
+                        Module   = Name,
+                        Title    = $"Scheduled Task: Apex Macro Tool Persistence: {Path.GetFileName(taskFile)}",
+                        Risk     = RiskLevel.High,
+                        Location = taskFile,
+                        FileName = Path.GetFileName(taskFile),
+                        Reason   = $"Scheduled task '{Path.GetFileName(taskFile)}' contains references " +
+                                   "to an Apex Legends macro or cheat tool. Scheduled tasks are used by " +
+                                   "cheat software to establish persistent execution on a timer or at logon, " +
+                                   "ensuring the macro or aimbot is active whenever Apex Legends is launched.",
+                        Detail   = $"Task file: {taskFile}"
+                    });
+                }
+            }
+        }, ct);
+
+    private Task CheckApexEnvironmentVariables(ScanContext ctx, CancellationToken ct) =>
+        Task.Run(async () =>
+        {
+            await Task.Yield();
+            var targets = new[]
+            {
+                EnvironmentVariableTarget.Process,
+                EnvironmentVariableTarget.User,
+                EnvironmentVariableTarget.Machine,
+            };
+            foreach (var target in targets)
+            {
+                if (ct.IsCancellationRequested) return;
+                System.Collections.IDictionary envVars;
+                try
+                {
+                    envVars = Environment.GetEnvironmentVariables(target);
+                }
+                catch { continue; }
+                foreach (System.Collections.DictionaryEntry entry in envVars)
+                {
+                    if (ct.IsCancellationRequested) return;
+                    var key = (entry.Key as string ?? string.Empty).ToLowerInvariant();
+                    var value = (entry.Value as string ?? string.Empty).ToLowerInvariant();
+                    var combined = key + " " + value;
+                    bool isHit = EnvVarMacroKeywords.Any(k =>
+                        combined.Contains(k, StringComparison.OrdinalIgnoreCase));
+                    if (!isHit) continue;
+                    ctx.AddFinding(new Finding
+                    {
+                        Module   = Name,
+                        Title    = $"Environment Variable: Apex Macro Reference: {entry.Key}",
+                        Risk     = RiskLevel.High,
+                        Location = $"Environment ({target})",
+                        Reason   = $"Environment variable '{entry.Key}' = '{entry.Value}' contains " +
+                                   "a reference to an Apex Legends macro or cheat tool. " +
+                                   "Some cheat loaders and macro tools configure environment variables " +
+                                   "to pass script paths, DLL locations, or configuration parameters " +
+                                   "between macro components targeting Apex Legends.",
+                        Detail   = $"Target: {target} | Key: {entry.Key} | Value: {entry.Value}"
+                    });
+                }
+            }
+            await Task.CompletedTask;
+        }, ct);
+
+    private Task CheckApexRecentDocuments(ScanContext ctx, CancellationToken ct) =>
+        Task.Run(async () =>
+        {
+            await Task.Yield();
+            var recentDir = Environment.GetFolderPath(Environment.SpecialFolder.Recent);
+            if (!Directory.Exists(recentDir)) return;
+            string[] recentFiles = Array.Empty<string>();
+            try
+            {
+                recentFiles = Directory.GetFiles(recentDir, "*.lnk");
+            }
+            catch (UnauthorizedAccessException) { return; }
+            foreach (var lnkFile in recentFiles)
+            {
+                if (ct.IsCancellationRequested) return;
+                ctx.IncrementFiles();
+                var lnkName = Path.GetFileNameWithoutExtension(lnkFile).ToLowerInvariant();
+                bool isHit = RecentFilesMacroPatterns.Any(p =>
+                    lnkName.Contains(p, StringComparison.OrdinalIgnoreCase));
+                if (!isHit) continue;
+                DateTime? lastAccess = null;
+                try { lastAccess = File.GetLastWriteTimeUtc(lnkFile); } catch { }
+                ctx.AddFinding(new Finding
+                {
+                    Module   = Name,
+                    Title    = $"Recent Documents: Apex Macro Artifact: {Path.GetFileNameWithoutExtension(lnkFile)}",
+                    Risk     = RiskLevel.High,
+                    Location = lnkFile,
+                    FileName = Path.GetFileName(lnkFile),
+                    Reason   = $"Windows Recent Documents shortcut '{Path.GetFileNameWithoutExtension(lnkFile)}' " +
+                               "references an Apex Legends macro or cheat tool. " +
+                               "Recent document shortcuts (.lnk files) are created when a user opens or " +
+                               "interacts with a file and persist after the original file is deleted, " +
+                               "providing forensic evidence of prior macro tool interaction." +
+                               (lastAccess.HasValue
+                                   ? $" Last accessed approximately {lastAccess.Value:yyyy-MM-dd HH:mm} UTC."
+                                   : ""),
+                    Detail   = $"LNK: {lnkFile} | Last modified: {lastAccess?.ToString("O") ?? "unknown"}"
+                });
+            }
+            await Task.CompletedTask;
+        }, ct);
+
+    private Task CheckApexEacBypassArtifacts(ScanContext ctx, CancellationToken ct) =>
+        Task.Run(async () =>
+        {
+            await Task.Yield();
+            foreach (var regPath in EacBypassRegistryPaths)
+            {
+                if (ct.IsCancellationRequested) return;
+                ctx.IncrementRegistryKeys();
+                try
+                {
+                    using var key = Registry.LocalMachine.OpenSubKey(regPath, writable: false);
+                    if (key is null) continue;
+                    var start = key.GetValue("Start") as int?;
+                    var imagePath = (key.GetValue("ImagePath") as string ?? string.Empty).ToLowerInvariant();
+                    bool bypassSuspected = ApexCheatWatermarkPatterns.Any(k =>
+                        imagePath.Contains(k, StringComparison.OrdinalIgnoreCase));
+                    if (start == 4 || bypassSuspected)
+                    {
+                        ctx.AddFinding(new Finding
+                        {
+                            Module   = Name,
+                            Title    = $"EAC Anti-Cheat Anomaly: {regPath}",
+                            Risk     = RiskLevel.High,
+                            Location = $@"HKLM\{regPath}",
+                            Reason   = $"Easy Anti-Cheat (EAC) driver registry entry at '{regPath}' shows " +
+                                       $"anomalous configuration. StartType: {start?.ToString() ?? "unknown"}. " +
+                                       (start == 4 ? "Driver is disabled (StartType=4). " : "") +
+                                       (bypassSuspected
+                                           ? $"ImagePath contains cheat keyword: '{imagePath}'. "
+                                           : "") +
+                                       "Disabling or tampering with EAC's kernel driver is a common " +
+                                       "technique used by Apex Legends cheat loaders to bypass anti-cheat " +
+                                       "detection while running macro, aimbot, or triggerbot software.",
+                            Detail   = $"Key: {regPath} | Start: {start} | ImagePath: {imagePath}"
+                        });
+                    }
+                }
+                catch { }
+            }
+            var eacBypassFiles = new[]
+            {
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows),
+                    "System32", "drivers", "apex_eac_bypass.sys"),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows),
+                    "SysWOW64", "drivers", "apex_eac_bypass.sys"),
+            };
+            foreach (var bypassFile in eacBypassFiles)
+            {
+                if (ct.IsCancellationRequested) return;
+                ctx.IncrementFiles();
+                if (!File.Exists(bypassFile)) continue;
+                ctx.AddFinding(new Finding
+                {
+                    Module   = Name,
+                    Title    = $"EAC Bypass Driver Found: {Path.GetFileName(bypassFile)}",
+                    Risk     = RiskLevel.High,
+                    Location = bypassFile,
+                    FileName = Path.GetFileName(bypassFile),
+                    Reason   = $"Easy Anti-Cheat bypass driver '{Path.GetFileName(bypassFile)}' found at " +
+                               $"'{bypassFile}'. This driver is used to neutralize Easy Anti-Cheat " +
+                               "protection in Apex Legends, enabling macro tools, aimbot, triggerbot, " +
+                               "and other cheat software to operate without EAC detection.",
+                    Detail   = $"Path: {bypassFile}"
+                });
+            }
+            await Task.CompletedTask;
+        }, ct);
+
     private static string[] GetStandardSearchDirectories()
     {
         var dirs = new List<string>();

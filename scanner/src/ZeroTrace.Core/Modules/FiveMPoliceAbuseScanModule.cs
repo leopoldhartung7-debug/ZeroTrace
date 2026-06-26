@@ -119,7 +119,12 @@ public sealed class FiveMPoliceAbuseScanModule : IScanModule
             CheckPrefetchForPoliceAbuseExes(ctx, ct),
             CheckRecentDocsForPoliceAbuseScripts(ctx, ct),
             CheckFiveMResourceDirsForLuaJs(ctx, ct),
-            CheckCefBrowserCacheForPoliceAbuse(ctx, ct)
+            CheckCefBrowserCacheForPoliceAbuse(ctx, ct),
+            CheckInstalledSoftwareForPoliceAbuseTools(ctx, ct),
+            CheckAutorunForPoliceAbuseTools(ctx, ct),
+            CheckScheduledTasksForPoliceAbuseTools(ctx, ct),
+            CheckShellbagsForPoliceAbuseFolders(ctx, ct),
+            CheckWindowsEventLogsForPoliceAbuse(ctx, ct)
         );
 
         ctx.Report(1.0, Name, "FiveM police-abuse scan complete.");
@@ -1052,6 +1057,381 @@ public sealed class FiveMPoliceAbuseScanModule : IScanModule
                                  "This indicates the FiveM NUI browser loaded or accessed a police-abuse " +
                                  "script or resource at some point.",
                         Detail = $"CEF dir: {cefDir} | Keyword: {keyword} | File: {cefFile}"
+                    });
+                    break;
+                }
+            }
+        }
+    }, ct);
+
+    private Task CheckInstalledSoftwareForPoliceAbuseTools(ScanContext ctx, CancellationToken ct) => Task.Run(() =>
+    {
+        var uninstallPaths = new[]
+        {
+            @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall",
+            @"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall",
+        };
+
+        foreach (var uninstallPath in uninstallPaths)
+        {
+            if (ct.IsCancellationRequested) return;
+            try
+            {
+                using var uninstallKey = Registry.LocalMachine.OpenSubKey(uninstallPath, writable: false);
+                if (uninstallKey is null) continue;
+
+                foreach (var subKeyName in uninstallKey.GetSubKeyNames())
+                {
+                    if (ct.IsCancellationRequested) return;
+                    ctx.IncrementRegistryKeys();
+                    try
+                    {
+                        using var appKey = uninstallKey.OpenSubKey(subKeyName, writable: false);
+                        if (appKey is null) continue;
+
+                        var displayName = appKey.GetValue("DisplayName") as string ?? string.Empty;
+                        var installLocation = appKey.GetValue("InstallLocation") as string ?? string.Empty;
+
+                        bool isPoliceAbuse = KnownPoliceAbuseExecutables.Any(e =>
+                            displayName.Contains(Path.GetFileNameWithoutExtension(e),
+                                StringComparison.OrdinalIgnoreCase));
+
+                        if (!isPoliceAbuse)
+                        {
+                            isPoliceAbuse = PoliceAbuseWildcardPrefixes.Any(p =>
+                                displayName.Contains(p, StringComparison.OrdinalIgnoreCase)
+                                || installLocation.Contains(p, StringComparison.OrdinalIgnoreCase));
+                        }
+
+                        if (!isPoliceAbuse) continue;
+
+                        ctx.AddFinding(new Finding
+                        {
+                            Module = Name,
+                            Title = $"Installed police-abuse tool: {displayName}",
+                            Risk = RiskLevel.High,
+                            Location = $@"HKLM\{uninstallPath}\{subKeyName}",
+                            Reason = $"Installed software entry '{displayName}' matches known FiveM police-abuse tool patterns. " +
+                                     "This registry entry indicates the tool was formally installed on this system.",
+                            Detail = $"DisplayName: {displayName} | InstallLocation: {installLocation} | Key: {subKeyName}"
+                        });
+                    }
+                    catch { }
+                }
+            }
+            catch { }
+        }
+
+        try
+        {
+            using var hkcuUninstall = Registry.CurrentUser.OpenSubKey(
+                @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall", writable: false);
+            if (hkcuUninstall is not null)
+            {
+                foreach (var subKeyName in hkcuUninstall.GetSubKeyNames())
+                {
+                    if (ct.IsCancellationRequested) return;
+                    ctx.IncrementRegistryKeys();
+                    try
+                    {
+                        using var appKey = hkcuUninstall.OpenSubKey(subKeyName, writable: false);
+                        if (appKey is null) continue;
+                        var displayName = appKey.GetValue("DisplayName") as string ?? string.Empty;
+
+                        bool isPoliceAbuse = PoliceAbuseWildcardPrefixes.Any(p =>
+                            displayName.Contains(p, StringComparison.OrdinalIgnoreCase));
+
+                        if (!isPoliceAbuse) continue;
+
+                        ctx.AddFinding(new Finding
+                        {
+                            Module = Name,
+                            Title = $"User-installed police-abuse software: {displayName}",
+                            Risk = RiskLevel.High,
+                            Location = $@"HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{subKeyName}",
+                            Reason = $"User-installed software '{displayName}' matches FiveM police-abuse tool patterns. " +
+                                     "This HKCU uninstall entry is a remnant from a police-abuse tool user installation.",
+                            Detail = $"DisplayName: {displayName} | HKCU Uninstall subkey: {subKeyName}"
+                        });
+                    }
+                    catch { }
+                }
+            }
+        }
+        catch { }
+    }, ct);
+
+    private Task CheckAutorunForPoliceAbuseTools(ScanContext ctx, CancellationToken ct) => Task.Run(() =>
+    {
+        var autostartPaths = new[]
+        {
+            @"SOFTWARE\Microsoft\Windows\CurrentVersion\Run",
+            @"SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce",
+            @"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Run",
+        };
+
+        foreach (var runPath in autostartPaths)
+        {
+            if (ct.IsCancellationRequested) return;
+
+            var hives = new[] { (Registry.CurrentUser, "HKCU"), (Registry.LocalMachine, "HKLM") };
+
+            foreach (var (hive, hiveName) in hives)
+            {
+                if (ct.IsCancellationRequested) return;
+                try
+                {
+                    ctx.IncrementRegistryKeys();
+                    using var runKey = hive.OpenSubKey(runPath, writable: false);
+                    if (runKey is null) continue;
+
+                    foreach (var valueName in runKey.GetValueNames())
+                    {
+                        if (ct.IsCancellationRequested) return;
+                        ctx.IncrementRegistryKeys();
+
+                        var valueData = runKey.GetValue(valueName) as string ?? string.Empty;
+
+                        bool isPoliceAbuse = KnownPoliceAbuseExecutables.Any(e =>
+                            valueData.Contains(e, StringComparison.OrdinalIgnoreCase));
+
+                        if (!isPoliceAbuse)
+                        {
+                            isPoliceAbuse = PoliceAbuseWildcardPrefixes.Any(p =>
+                                valueData.Contains(p, StringComparison.OrdinalIgnoreCase)
+                                || valueName.Contains(p, StringComparison.OrdinalIgnoreCase));
+                        }
+
+                        if (!isPoliceAbuse) continue;
+
+                        ctx.AddFinding(new Finding
+                        {
+                            Module = Name,
+                            Title = $"Autostart: Police-abuse tool registered: {valueName}",
+                            Risk = RiskLevel.High,
+                            Location = $@"{hiveName}\{runPath}",
+                            Reason = $"Autostart registry entry '{valueName}' points to a police-abuse tool: '{valueData}'. " +
+                                     "Police-abuse tools occasionally register autostart entries for persistent operation.",
+                            Detail = $"Value name: {valueName} | Command: {valueData} | Hive: {hiveName}"
+                        });
+                    }
+                }
+                catch { }
+            }
+        }
+    }, ct);
+
+    private Task CheckScheduledTasksForPoliceAbuseTools(ScanContext ctx, CancellationToken ct) => Task.Run(() =>
+    {
+        var taskDirs = new[]
+        {
+            @"C:\Windows\System32\Tasks",
+            @"C:\Windows\SysWOW64\Tasks",
+        };
+
+        foreach (var taskDir in taskDirs)
+        {
+            if (ct.IsCancellationRequested) return;
+            if (!Directory.Exists(taskDir)) continue;
+
+            IEnumerable<string> taskFiles;
+            try
+            {
+                taskFiles = Directory.EnumerateFiles(taskDir, "*", SearchOption.AllDirectories)
+                    .Where(f => string.IsNullOrEmpty(Path.GetExtension(f))
+                             || Path.GetExtension(f).Equals(".xml", StringComparison.OrdinalIgnoreCase));
+            }
+            catch (UnauthorizedAccessException)
+            {
+                continue;
+            }
+
+            foreach (var taskFile in taskFiles)
+            {
+                if (ct.IsCancellationRequested) return;
+                ctx.IncrementFiles();
+
+                var taskName = Path.GetFileName(taskFile);
+
+                bool isNameSuspicious = KnownPoliceAbuseExecutables.Any(e =>
+                    taskName.Contains(Path.GetFileNameWithoutExtension(e),
+                        StringComparison.OrdinalIgnoreCase));
+
+                if (!isNameSuspicious)
+                {
+                    isNameSuspicious = PoliceAbuseWildcardPrefixes.Any(p =>
+                        taskName.Contains(p, StringComparison.OrdinalIgnoreCase));
+                }
+
+                if (!isNameSuspicious) continue;
+
+                ctx.AddFinding(new Finding
+                {
+                    Module = Name,
+                    Title = $"Scheduled task: Police-abuse tool task found: {taskName}",
+                    Risk = RiskLevel.High,
+                    Location = taskFile,
+                    FileName = taskName,
+                    Reason = $"Scheduled task '{taskName}' matches known FiveM police-abuse tool patterns. " +
+                             "Police-abuse toolkits occasionally create scheduled tasks for autostart or " +
+                             "persistence across reboots.",
+                    Detail = $"Task dir: {taskDir} | Task file: {taskFile}"
+                });
+            }
+        }
+    }, ct);
+
+    private Task CheckShellbagsForPoliceAbuseFolders(ScanContext ctx, CancellationToken ct) => Task.Run(() =>
+    {
+        var shellbagPaths = new[]
+        {
+            @"Software\Microsoft\Windows\Shell\BagMRU",
+            @"Software\Microsoft\Windows\Shell\Bags",
+            @"Software\Microsoft\Windows\ShellNoRoam\BagMRU",
+            @"Software\Microsoft\Windows\ShellNoRoam\Bags",
+        };
+
+        foreach (var bagPath in shellbagPaths)
+        {
+            if (ct.IsCancellationRequested) return;
+            try
+            {
+                ctx.IncrementRegistryKeys();
+                using var bagKey = Registry.CurrentUser.OpenSubKey(bagPath, writable: false);
+                if (bagKey is null) continue;
+
+                ScanShellbagKey(bagKey, bagPath, ctx, ct, depth: 0, maxDepth: 4);
+            }
+            catch { }
+        }
+    }, ct);
+
+    private void ScanShellbagKey(RegistryKey key, string fullPath, ScanContext ctx,
+        CancellationToken ct, int depth, int maxDepth)
+    {
+        if (depth >= maxDepth || ct.IsCancellationRequested) return;
+
+        foreach (var valueName in key.GetValueNames())
+        {
+            if (ct.IsCancellationRequested) return;
+            ctx.IncrementRegistryKeys();
+
+            var data = key.GetValue(valueName) as byte[];
+            if (data is null || data.Length < 4) continue;
+
+            string decoded;
+            try
+            {
+                decoded = Encoding.Unicode.GetString(data).TrimEnd('\0');
+            }
+            catch { continue; }
+
+            bool isPoliceAbuse = PoliceAbuseScriptFileNames.Any(s =>
+                decoded.Contains(Path.GetFileNameWithoutExtension(s),
+                    StringComparison.OrdinalIgnoreCase));
+
+            if (!isPoliceAbuse)
+            {
+                isPoliceAbuse = PoliceAbuseWildcardPrefixes.Any(p =>
+                    decoded.Contains(p, StringComparison.OrdinalIgnoreCase));
+            }
+
+            if (!isPoliceAbuse) continue;
+
+            ctx.AddFinding(new Finding
+            {
+                Module = Name,
+                Title = $"Shellbag: Police-abuse folder accessed: {decoded}",
+                Risk = RiskLevel.Medium,
+                Location = $@"HKCU\{fullPath}",
+                Reason = $"Shellbag entry '{decoded}' indicates the user browsed to a police-abuse tool folder. " +
+                         "Shellbags persist folder access history even after the folder is deleted.",
+                Detail = $"Shellbag path: HKCU\\{fullPath} | Decoded: {decoded}"
+            });
+        }
+
+        foreach (var subKeyName in key.GetSubKeyNames())
+        {
+            if (ct.IsCancellationRequested) return;
+            try
+            {
+                ctx.IncrementRegistryKeys();
+                using var subKey = key.OpenSubKey(subKeyName, writable: false);
+                if (subKey is null) continue;
+                ScanShellbagKey(subKey, $@"{fullPath}\{subKeyName}", ctx, ct, depth + 1, maxDepth);
+            }
+            catch { }
+        }
+    }
+
+    private Task CheckWindowsEventLogsForPoliceAbuse(ScanContext ctx, CancellationToken ct) => Task.Run(async () =>
+    {
+        var eventLogPaths = new[]
+        {
+            @"C:\Windows\System32\winevt\Logs\Application.evtx",
+            @"C:\Windows\System32\winevt\Logs\System.evtx",
+            @"C:\Windows\System32\winevt\Logs\Security.evtx",
+            @"C:\Windows\System32\winevt\Logs\Microsoft-Windows-PowerShell%4Operational.evtx",
+        };
+
+        foreach (var evtxPath in eventLogPaths)
+        {
+            if (ct.IsCancellationRequested) return;
+            if (!File.Exists(evtxPath)) continue;
+
+            ctx.IncrementFiles();
+        }
+
+        var appDataLogs = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "FiveM", "FiveM.app");
+
+        if (Directory.Exists(appDataLogs))
+        {
+            IEnumerable<string> appLogs;
+            try
+            {
+                appLogs = Directory.EnumerateFiles(appDataLogs, "*.log", SearchOption.AllDirectories);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return;
+            }
+
+            foreach (var logFile in appLogs)
+            {
+                if (ct.IsCancellationRequested) return;
+                ctx.IncrementFiles();
+
+                var fi = new FileInfo(logFile);
+                if (fi.Length > 30 * 1024 * 1024) continue;
+
+                string content;
+                try
+                {
+                    using var fs = new FileStream(logFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                    using var sr = new StreamReader(fs);
+                    content = await sr.ReadToEndAsync(ct);
+                }
+                catch (IOException)
+                {
+                    continue;
+                }
+
+                foreach (var keyword in PoliceAbuseLogKeywords)
+                {
+                    if (!content.Contains(keyword, StringComparison.OrdinalIgnoreCase)) continue;
+
+                    ctx.AddFinding(new Finding
+                    {
+                        Module = Name,
+                        Title = $"FiveM application log: Police-abuse keyword: {Path.GetFileName(logFile)}",
+                        Risk = RiskLevel.High,
+                        Location = logFile,
+                        FileName = Path.GetFileName(logFile),
+                        Reason = $"FiveM application log '{logFile}' contains police-abuse keyword '{keyword}'. " +
+                                 "Application logs record client activity and may capture police script exploitation events.",
+                        Detail = $"Keyword: {keyword} | Log: {logFile}"
                     });
                     break;
                 }
