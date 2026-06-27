@@ -1416,6 +1416,16 @@ public sealed class ScanOptions
     public bool ScanBypassRuntimeAction { get; set; } = true;
     public bool ScanCleanerExecutionTrace { get; set; } = true;
     public bool ScanGeneralAntiForensicAction { get; set; } = true;
+    /// <summary>Detect the live ACTIONS performed by bypass and cleaner tools: AC service deletions,
+    /// known BYOVD vulnerable driver files, PowerShell bypass commands, VSS deletion artifacts,
+    /// Windows Defender tampering via registry, cleaner tool execution traces (MUICache/UserAssist/
+    /// Prefetch/Recent), WMI/scheduled-task persistence, and startup entries for bypass tools.</summary>
+    public bool ScanBypassCleanerAction { get; set; } = true;
+    /// <summary>Scan Windows Defender threat history, quarantine, and MPLog files for cheat tool
+    /// detections; Defender service status and tamper protection state; exclusion lists for cheat
+    /// paths; third-party AV logs (Avast, AVG, Malwarebytes, ESET, Kaspersky, Bitdefender, Sophos)
+    /// for cheat detections; Security Center suppression and signature age.</summary>
+    public bool ScanAntivirusHistory { get; set; } = true;
     /// <summary>Detect cheat source code and development artifacts: .git repos with cheat remote
     /// URLs, Visual Studio cheat projects (.sln/.vcxproj with cheat keywords), compiled build
     /// artifacts (cheat.pdb, x64/Release DLLs), game SDK directories, offset header files,
@@ -2304,6 +2314,8 @@ public static class ScanProfiles
         ScanBypassRuntimeAction = true,
         ScanCleanerExecutionTrace = true,
         ScanGeneralAntiForensicAction = true,
+        ScanBypassCleanerAction = true,
+        ScanAntivirusHistory = true,
         ScanCheatSourceCodeRepo = true,        // cheat git repo/VS project/SDK/PDB artifact scan — fast
         DeepDriveScan = false,
         // No per-module timeout — every Quick module runs to completion. Quick stays
