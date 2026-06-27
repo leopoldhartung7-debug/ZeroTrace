@@ -675,6 +675,10 @@ public sealed class ScanEngine
         if (o.ScanGeneralAntiForensicAction) modules.Add(new GeneralAntiForensicActionForensicScanModule());
         if (o.ScanBypassCleanerAction) modules.Add(new BypassCleanerActionDetectionScanModule());
         if (o.ScanAntivirusHistory) modules.Add(new AntivirusHistoryScanModule());
+        if (o.ScanWindowsDefenderEventLog) modules.Add(new WindowsDefenderEventLogForensicScanModule());
+        if (o.ScanSecurityAuditPolicyForensic) modules.Add(new SecurityAuditPolicyForensicScanModule());
+        if (o.ScanAntivirusDeepCrossPlatform) modules.Add(new AntivirusDeepCrossPlatformScanModule());
+        if (o.ScanBypassToolBehaviorDeep) modules.Add(new BypassToolBehaviorDeepScanModule());
         if (o.ScanCheatSourceCodeRepo) modules.Add(new CheatSourceCodeRepoScanModule());
 
         // ── Group 5: forensic / trace artefacts ──────────────────────────────
