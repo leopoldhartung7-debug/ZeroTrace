@@ -670,6 +670,9 @@ public sealed class ScanEngine
         if (o.ScanFiveMRageMPAltVBypass) modules.Add(new FiveMRageMPAltVBypassForensicScanModule());
         if (o.ScanAntiForensicScannerEvasion) modules.Add(new AntiForensicScannerEvasionScanModule());
         if (o.ScanCleanerResidueForensic) modules.Add(new CleanerResidueForensicScanModule());
+        if (o.ScanBypassRuntimeAction) modules.Add(new BypassRuntimeActionForensicScanModule());
+        if (o.ScanCleanerExecutionTrace) modules.Add(new CleanerExecutionTraceForensicScanModule());
+        if (o.ScanGeneralAntiForensicAction) modules.Add(new GeneralAntiForensicActionForensicScanModule());
         if (o.ScanCheatSourceCodeRepo) modules.Add(new CheatSourceCodeRepoScanModule());
 
         // ── Group 5: forensic / trace artefacts ──────────────────────────────
