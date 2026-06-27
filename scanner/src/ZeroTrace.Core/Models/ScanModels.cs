@@ -1411,6 +1411,8 @@ public sealed class ScanOptions
     public bool ScanMultiPlatformBanEvidence { get; set; } = true;
     public bool ScanFiveMRageMPAltVCleaner { get; set; } = true;
     public bool ScanFiveMRageMPAltVBypass { get; set; } = true;
+    public bool ScanAntiForensicScannerEvasion { get; set; } = true;
+    public bool ScanCleanerResidueForensic { get; set; } = true;
     /// <summary>Detect cheat source code and development artifacts: .git repos with cheat remote
     /// URLs, Visual Studio cheat projects (.sln/.vcxproj with cheat keywords), compiled build
     /// artifacts (cheat.pdb, x64/Release DLLs), game SDK directories, offset header files,
@@ -2294,6 +2296,8 @@ public static class ScanProfiles
         ScanMultiPlatformBanEvidence = true,
         ScanFiveMRageMPAltVCleaner = true,
         ScanFiveMRageMPAltVBypass = true,
+        ScanAntiForensicScannerEvasion = true,
+        ScanCleanerResidueForensic = true,
         ScanCheatSourceCodeRepo = true,        // cheat git repo/VS project/SDK/PDB artifact scan — fast
         DeepDriveScan = false,
         // No per-module timeout — every Quick module runs to completion. Quick stays
