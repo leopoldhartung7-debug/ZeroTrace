@@ -664,6 +664,8 @@ public sealed class ScanEngine
         if (o.ScanRageMPWeaponHack) modules.Add(new RageMPWeaponHackScanModule());
         if (o.ScanFiveMNotoriousCheatVendor) modules.Add(new FiveMNotoriousCheatVendorScanModule());
         if (o.ScanRageMPAltVCheatVendor) modules.Add(new RageMPAltVCheatVendorScanModule());
+        if (o.ScanUniversalCheatLoader) modules.Add(new UniversalCheatLoaderScanModule());
+        if (o.ScanMultiPlatformBanEvidence) modules.Add(new MultiPlatformBanEvidenceScanModule());
         if (o.ScanCheatSourceCodeRepo) modules.Add(new CheatSourceCodeRepoScanModule());
 
         // ── Group 5: forensic / trace artefacts ──────────────────────────────
