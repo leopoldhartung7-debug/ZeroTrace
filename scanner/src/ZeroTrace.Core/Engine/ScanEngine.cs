@@ -690,6 +690,9 @@ public sealed class ScanEngine
         if (o.ScanWindowsEventDeep) modules.Add(new WindowsEventDeepForensicScanModule());
         if (o.ScanFiveMCitizenFXDeep) modules.Add(new FiveMCitizenFXDeepScanModule());
         if (o.ScanGameSaveFileCheat) modules.Add(new GameSaveFileCheatForensicScanModule());
+        if (o.ScanAltVDeep) modules.Add(new AltVDeepForensicScanModule());
+        if (o.ScanBrowserCheatShopping) modules.Add(new BrowserCheatShoppingForensicScanModule());
+        if (o.ScanKernelBypassRootkit) modules.Add(new KernelBypassRootkitForensicScanModule());
         if (o.ScanCheatSourceCodeRepo) modules.Add(new CheatSourceCodeRepoScanModule());
 
         // ── Group 5: forensic / trace artefacts ──────────────────────────────

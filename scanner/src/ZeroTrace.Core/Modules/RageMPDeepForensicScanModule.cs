@@ -1,1246 +1,859 @@
+using System.Runtime.Versioning;
+using System.Text;
 using Microsoft.Win32;
 using ZeroTrace.Core.Engine;
 using ZeroTrace.Core.Models;
 
 namespace ZeroTrace.Core.Modules;
 
+[SupportedOSPlatform("windows")]
 public sealed class RageMPDeepForensicScanModule : IScanModule
 {
-    public string Name => "RageMP Deep Cheat Forensic Scan";
-    public double Weight => 4.1;
+    public string Name => "RageMP Deep Forensics";
+    public double Weight => 1.0;
     public int ParallelGroup => 4;
-    public int ModuleTimeoutSeconds => 0;
 
-    private static readonly string AppData =
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-    private static readonly string LocalAppData =
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-    private static readonly string UserProfile =
-        Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-    private static readonly string Desktop =
-        Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
+    private static readonly string[] CheatPackageNames = new[]
+    {
+        "cheat", "hack", "esp", "aimbot", "wallhack", "noclip", "godmode", "bypass",
+        "inject", "trainer", "menu", "mod", "exploit", "speedhack", "bhop",
+        "triggerbot", "spinbot", "silentaim", "nofall", "vehicle", "teleport",
+        "moneymod", "rpmod", "kiddion", "stand", "cherax", "2take1",
+        "radar", "overlay", "evade", "unban", "spoof", "hwid",
+        "ragemod", "rage_mod", "rage-mod", "ragecheat", "rage_cheat",
+        "pvp_cheat", "pvpmod", "ragemp_bypass", "mp_cheat",
+        "anticheat_bypass", "ac_bypass", "rage_bypass",
+    };
 
-    private static readonly string[] RageMPAppDataPaths =
-    [
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "RAGEMP"),
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "RAGEMP"),
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "ragemp"),
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "ragemp"),
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "rage-multiplayer"),
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "rage-multiplayer"),
-    ];
+    private static readonly string[] CheatBridgeScriptKeywords = new[]
+    {
+        "mp.events.add", "mp.players.forEach", "mp.vehicles.forEach",
+        "mp.blips.new", "mp.markers.new",
+        "PLAYER_PED_ID", "SET_ENTITY_COORDS", "GIVE_WEAPON_TO_PED",
+        "SET_PLAYER_INVINCIBLE", "SET_PED_MAX_HEALTH",
+        "ADD_EXPLOSION", "SHOOT_SINGLE_BULLET_BETWEEN_COORDS",
+        "esp", "aimbot", "wallhack", "godmode", "noclip", "bypass",
+        "cheat", "hack", "inject", "speedhack", "teleport",
+        "DISABLE_CONTROL_ACTION", "SET_VEHICLE_ENGINE_HEALTH",
+        "GET_CLOSEST_PED", "GET_NEARBY_PEDS",
+        "SET_ENTITY_ALPHA", "SET_ENTITY_VISIBLE",
+        "mp.trigger", "mp.callRemote",
+        "require('./cheat')", "require('./hack')", "require('./esp')",
+        "module.exports.*cheat", "module.exports.*hack",
+        "process.exit.*anticheat", "throw.*anticheat",
+    };
 
-    private static readonly string[] RageMPCheatExecutables =
-    [
-        "ragemp_cheat.exe",
-        "ragemp_hack.exe",
-        "ragemp_menu.exe",
-        "ragemp_modmenu.exe",
-        "ragemp_trainer.exe",
-        "ragemp_esp.exe",
-        "ragemp_aimbot.exe",
-        "ragemp_wallhack.exe",
-        "ragemp_godmode.exe",
-        "ragemp_noclip.exe",
-        "ragemp_speed.exe",
-        "ragemp_speedhack.exe",
-        "ragemp_teleport.exe",
-        "ragemp_money.exe",
-        "ragemp_bypass.exe",
-        "ragemp_inject.exe",
-        "ragemp_injector.exe",
-        "ragemp_internal.exe",
-        "ragemp_external.exe",
-        "gta5_ragemp_cheat.exe",
-        "gta5_ragemp_hack.exe",
-        "rage_cheat.exe",
-        "rage_hack.exe",
-        "rage_menu.exe",
-        "rage_modmenu.exe",
-        "rage_trainer.exe",
-        "rage_esp.exe",
-        "rage_aimbot.exe",
-        "rage_wallhack.exe",
-        "rage_godmode.exe",
-        "rage_noclip.exe",
-        "rage_bypass.exe",
-        "rage_inject.exe",
-        "ragemp_exploit.exe",
-        "ragemp_recovery.exe",
-        "ragemp_native_exec.exe",
-        "ragemp_lua_exec.exe",
-        "ragemp_js_exec.exe",
-        "ragemp_client_exec.exe",
-        "ragemp_dumper.exe",
-        "ragemp_vehicle.exe",
-        "ragemp_weapon.exe",
-        "ragemp_spawnmenu.exe",
-        "ragemp_fly.exe",
-        "ragemp_flasher.exe",
-        "ragemp_evader.exe",
-        "ragemp_anticheat_bypass.exe",
-        "ragemp_radar.exe",
-        "ragemp_maphack.exe",
-        "ragemp_cash.exe",
-        "ragemp_rp_boost.exe",
-        "ragemp_freeze.exe",
-        "ragemp_kick.exe",
-        "ragemp_crasher.exe",
-        "ragemp_spinbot.exe",
-        "ragemp_triggerbot.exe",
-        "ragemp_bunnyhop.exe",
-    ];
+    private static readonly string[] RageMPCheatServerHosts = new[]
+    {
+        "ragemp-cheat", "ragemp-hack", "rage-cheat", "rage-hack",
+        "ragemod", "ragecheat", "ragebypass", "ragemp.hack",
+        "ragemp-esp", "ragemp-inject",
+        "kiddion", "stand.gg", "cherax", "2take1",
+        "mpgh", "unknowncheats", "nexusmods",
+        "cheat-ragemp", "hack-ragemp",
+        "inject-rage", "bypass-rage",
+    };
 
-    private static readonly string[] RageMPCheatDlls =
-    [
-        "ragemp_bypass.dll",
-        "ragemp_anticheat_bypass.dll",
-        "ragemp_evader.dll",
-        "ragemp_hook.dll",
-        "ragemp_cheat.dll",
-        "ragemp_hack.dll",
-        "ragemp_inject.dll",
-        "ragemp_esp.dll",
-        "ragemp_aimbot.dll",
-        "ragemp_wallhack.dll",
-        "ragemp_godmode.dll",
-        "ragemp_noclip.dll",
-        "ragemp_speed.dll",
-        "ragemp_teleport.dll",
-        "ragemp_fly.dll",
-        "ragemp_money.dll",
-        "ragemp_vehicle.dll",
-        "ragemp_weapon.dll",
-        "ragemp_crash.dll",
-        "ragemp_native.dll",
-        "ragemp_lua.dll",
-        "ragemp_js.dll",
-        "ragemp_script.dll",
-        "ragemp_internal.dll",
-        "ragemp_external.dll",
-        "ragemp_d3d.dll",
-        "ragemp_overlay.dll",
-        "ragemp_radar.dll",
-        "ragemp_maphack.dll",
-        "ragemp_bypasser.dll",
-        "ragemp_evader.dll",
-        "ragemp_antiac.dll",
-        "rage_bypass.dll",
-        "rage_hook.dll",
-        "rage_inject.dll",
-        "rage_cheat.dll",
-    ];
+    private static readonly string[] RageMPPaths = new[]
+    {
+        @"AppData\Roaming\RAGE Multiplayer",
+        @"AppData\Local\RAGE Multiplayer",
+    };
 
-    private static readonly string[] RageMPPackageInjectionFiles =
-    [
-        "ragemp_packages_inject.exe",
-        "ragemp_node_inject.exe",
-        "ragemp_clientscript_inject.dll",
-        "ragemp_package_loader.exe",
-        "ragemp_cef_inject.exe",
-        "ragemp_cef_bypass.dll",
-        "ragemp_node_bypass.dll",
-        "ragemp_package_inject.dll",
-        "ragemp_npm_inject.exe",
-        "ragemp_script_inject.dll",
-        "ragemp_clientpackage_inject.exe",
-    ];
-
-    private static readonly string[] RageMPConfigArtifacts =
-    [
-        "ragemp_cheat_config.json",
-        "ragemp_offsets.json",
-        "ragemp_addresses.txt",
-        "ragemp_offsets.txt",
-        "ragemp_patterns.txt",
-        "ragemp_natives.json",
-        "ragemp_native_list.txt",
-        "ragemp_functions.json",
-        "ragemp_structs.txt",
-        "ragemp_cheat_settings.json",
-        "ragemp_hack_config.json",
-        "ragemp_aimbot_config.json",
-        "ragemp_esp_config.json",
-        "ragemp_bypass_config.json",
-        "ragemp_menu_config.json",
-        "ragemp_trainer_config.json",
-        "ragemp_modmenu_config.json",
-        "ragemp_sdk_offsets.txt",
-        "ragemp_class_list.txt",
-        "gta5_ragemp_offsets.txt",
-        "gta5_ragemp_addresses.json",
-        "rage_offsets.json",
-        "rage_addresses.txt",
-        "rage_patterns.txt",
-    ];
-
-    private static readonly string[] RageMPCheatPackageNames =
-    [
-        "ragemp-cheat",
-        "ragemp-hack",
-        "ragemp-menu",
-        "ragemp-modmenu",
-        "ragemp-trainer",
-        "ragemp-godmode",
-        "ragemp-noclip",
-        "ragemp-speedhack",
-        "ragemp-aimbot",
-        "ragemp-esp",
-        "ragemp-teleport",
-        "ragemp-fly",
-        "ragemp-money",
-        "ragemp-vehicle",
-        "ragemp-weapon",
-        "ragemp-crasher",
-        "ragemp-bypass",
-        "ragemp-evader",
-        "ragemp-inject",
-        "ragemp-exploit",
-        "ragemp-recovery",
-        "ragemp-native-exec",
-        "ragemp-lua-exec",
-        "ragemp-js-exec",
-        "ragemp-anticheat-bypass",
-        "ragemp-radar",
-        "ragemp-maphack",
-        "rage-cheat",
-        "rage-hack",
-        "rage-menu",
-        "rage-bypass",
-        "cheat",
-        "hack",
-        "modmenu",
-        "trainer",
-        "godmode",
-        "noclip",
-        "speedhack",
-        "aimbot",
-        "esp",
-        "wallhack",
-        "bypass",
-        "evader",
-        "exploiter",
-        "money_drop",
-        "weapon_give",
-        "vehicle_spawn",
-        "teleport_menu",
-        "fly_hack",
-        "anticheat_bypass",
-    ];
-
-    private static readonly string[] RageMPClientLogCheatPatterns =
-    [
-        "ragemp cheat",
-        "ragemp hack",
-        "ragemp bypass",
-        "ragemp exploit",
-        "cheat menu",
-        "mod menu",
-        "godmode enabled",
-        "noclip enabled",
-        "speedhack enabled",
-        "aimbot enabled",
-        "esp enabled",
-        "wallhack enabled",
-        "teleport hack",
-        "fly hack",
-        "money cheat",
-        "vehicle spam",
-        "native exec",
-        "native bypass",
-        "anticheat bypass",
-        "bypass anticheat",
-        "evader loaded",
-        "evade rage",
-        "rage bypass",
-        "packages injected",
-        "client script injected",
-        "cef injected",
-        "node injected",
-        "inject success",
-        "hooked rage",
-        "hook installed",
-        "rage hook",
-        "spinbot",
-        "triggerbot",
-        "bunnyhop",
-        "aim assist",
-        "player esp",
-        "vehicle esp",
-        "bone aim",
-        "silent aim",
-        "rage cheat",
-    ];
-
-    private static readonly string[] RageMPServerLogCheatPatterns =
-    [
-        "cheat detected",
-        "hack detected",
-        "exploit detected",
-        "godmode detected",
-        "speedhack detected",
-        "teleport detected",
-        "aimbot detected",
-        "esp detected",
-        "noclip detected",
-        "vehicle spawn spam",
-        "weapon spawn spam",
-        "money cheat detected",
-        "invalid native",
-        "native blocked",
-        "illegal native call",
-        "native exploit",
-        "package exploit",
-        "script exploit",
-        "event exploit",
-        "event spam",
-        "event flood",
-        "event rate limit",
-        "client crash",
-        "player crash",
-        "crash exploit",
-        "ban for cheating",
-        "kick for cheating",
-        "ban reason: cheat",
-        "kick reason: cheat",
-        "detected cheat",
-        "banned cheater",
-        "package injection",
-        "injected package",
-        "unauthorized package",
-        "package blacklisted",
-        "package blocked",
-        "cef bypass",
-        "node bypass",
-        "rage bypass detected",
-        "ragemp bypass",
-        "anticheat triggered",
-        "trigger anticheat",
-        "rage anticheat",
-    ];
-
-    private static readonly string[] RageMPNodeJsCheatPatterns =
-    [
-        "mp.players.forEachFast",
-        "mp.events.add('cheat'",
-        "mp.events.add(\"cheat\"",
-        "bypassAnticheat",
-        "disableAnticheat",
-        "evadeAnticheat",
-        "callNative(",
-        "invokeNative(",
-        "executeNative(",
-        "mp.game.invoke(",
-        "setEntityHealth(0",
-        "giveWeaponToPed(",
-        "createVehicle(",
-        "setEntityCoords(",
-        "setEntityVelocity(",
-        "setEntityInvincible(",
-        "aimbot",
-        "wallhack",
-        "esp",
-        "speedhack",
-        "noclip",
-        "godmode",
-        "moneyCheat",
-        "vehicleSpawn",
-        "weaponGive",
-        "teleportPlayer",
-        "crashPlayer",
-        "kickPlayer",
-        "freezePlayer",
-        "spectatePlayer",
-        "packageInject",
-        "injectPackage",
-        "cefBypass",
-        "nodeBypass",
-        "hookRage",
-        "patchRage",
-        "bypass(",
-        "exploit(",
-    ];
-
-    private static readonly string[] RageMPDownloadArtifacts =
-    [
-        "ragemp_cheat.zip",
-        "ragemp_hack.zip",
-        "ragemp_menu.zip",
-        "ragemp_modmenu.zip",
-        "ragemp_cheat.rar",
-        "ragemp_hack.rar",
-        "ragemp_menu.rar",
-        "ragemp_modmenu.rar",
-        "ragemp_cheat.7z",
-        "ragemp_hack.7z",
-        "ragemp_cheat_setup.exe",
-        "ragemp_hack_setup.exe",
-        "ragemp_menu_setup.exe",
-        "ragemp_bypass_setup.exe",
-        "ragemp_injector_setup.exe",
-        "ragemp_modmenu_v2.exe",
-        "ragemp_trainer_v2.exe",
-        "ragemp_cheat_v2.exe",
-        "ragemp_hack_v2.exe",
-        "ragemp_evader.zip",
-        "ragemp_bypass.zip",
-        "ragemp_anticheat_bypass.zip",
-        "ragemp_anticheat_bypass.rar",
-        "rage_cheat.zip",
-        "rage_hack.zip",
-        "rage_menu.zip",
-        "rage_modmenu.zip",
-        "rage_cheat.rar",
-        "rage_hack.rar",
-        "ragemp_esp.zip",
-        "ragemp_aimbot.zip",
-        "ragemp_godmode.zip",
-        "ragemp_noclip.zip",
-        "ragemp_loader.exe",
-        "ragemp_cheats_loader.exe",
-    ];
-
-    private static readonly string[] RageMPRegistryCheatKeys =
-    [
-        @"SOFTWARE\RageMPCheat",
-        @"SOFTWARE\RageMPHack",
-        @"SOFTWARE\RageMPMenu",
-        @"SOFTWARE\RageMPBypass",
-        @"SOFTWARE\RageMPModMenu",
-        @"SOFTWARE\RageMPTrainer",
-        @"SOFTWARE\RageMPGodmode",
-        @"SOFTWARE\RageMPInjector",
-        @"SOFTWARE\RageMPEvader",
-        @"SOFTWARE\RageBypass",
-        @"SOFTWARE\RageHack",
-        @"SOFTWARE\RageCheat",
-    ];
+    private static readonly string[] NativeHashCheatPatterns = new[]
+    {
+        "0x9A2938DB", "0xD3A7B003", "0xB9EFD6B7", "0xE9F2CF43",
+        "0x12A8E5A0", "0xFC8202EF", "0x6ABFA3E0", "0xEB1C5B24",
+        "Citizen.InvokeNative", "InvokeNative", "NATIVE_CALL",
+        "nativeCall", "native_call", "callNative",
+        "0x2F7A49D3", "0x7D40A50F",
+    };
 
     public async Task RunAsync(ScanContext ctx, CancellationToken ct)
     {
         await Task.WhenAll(
-            CheckRageMPCheatExecutables(ctx, ct),
-            CheckRageMPCheatDlls(ctx, ct),
-            CheckRageMPPackageInjectionFiles(ctx, ct),
-            CheckRageMPConfigArtifacts(ctx, ct),
-            CheckRageMPPackageFolders(ctx, ct),
-            CheckRageMPClientLogs(ctx, ct),
-            CheckRageMPServerLogs(ctx, ct),
-            CheckRageMPNodeJsCheatScripts(ctx, ct),
-            CheckRageMPDownloadArtifacts(ctx, ct),
-            CheckRegistryKeysForRageMPCheats(ctx, ct),
-            CheckUserAssistForRageMPCheats(ctx, ct),
-            CheckMuiCacheForRageMPCheats(ctx, ct),
-            CheckRageMPInstallerRecords(ctx, ct),
-            CheckRageMPCacheForCheatDlls(ctx, ct),
-            CheckRageMPRecentDocuments(ctx, ct),
-            CheckRageMPRunKeys(ctx, ct)
+            CheckRageMPPackages(ctx, ct),
+            CheckRageMPClientScripts(ctx, ct),
+            CheckRageMPBridgeScripts(ctx, ct),
+            CheckRageMPConfig(ctx, ct),
+            CheckRageMPLogs(ctx, ct),
+            CheckRageMPCEFCache(ctx, ct),
+            CheckRageMPPluginDLLs(ctx, ct),
+            CheckRageMPServerHistory(ctx, ct),
+            CheckRageMPCrashDumps(ctx, ct),
+            CheckRageMPNativeHashPatterns(ctx, ct),
+            CheckRageMPLauncherArtifacts(ctx, ct),
+            CheckRageMPDownloadedCheats(ctx, ct),
+            CheckRageMPRegistryArtifacts(ctx, ct),
+            CheckRageMPUpdateArtifacts(ctx, ct),
+            CheckRageMPInjectedDLLs(ctx, ct),
+            CheckRageMPAntiCheatBypass(ctx, ct),
+            CheckRageMPScreenshotBypass(ctx, ct),
+            CheckRageMPCustomBinaries(ctx, ct)
         );
     }
 
-    private Task CheckRageMPCheatExecutables(ScanContext ctx, CancellationToken ct) => Task.Run(() =>
+    private Task CheckRageMPPackages(ScanContext ctx, CancellationToken ct) => Task.Run(async () =>
     {
-        var scanDirs = new List<string>(RageMPAppDataPaths)
+        string userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        foreach (string rageRelPath in RageMPPaths)
         {
-            Path.Combine(UserProfile, "Downloads"),
-            Desktop,
-            Path.Combine(LocalAppData, "Temp"),
-            Path.Combine(UserProfile, "Documents"),
-            Path.Combine(UserProfile, "Desktop"),
-        };
+            string packagesPath = Path.Combine(userProfile, rageRelPath, "packages");
+            if (!Directory.Exists(packagesPath)) continue;
 
-        foreach (var dir in scanDirs)
-        {
-            if (!Directory.Exists(dir)) continue;
-            try
+            foreach (string packageDir in Directory.GetDirectories(packagesPath, "*", SearchOption.TopDirectoryOnly))
             {
-                foreach (var file in Directory.EnumerateFiles(dir, "*.exe", SearchOption.AllDirectories))
+                if (ct.IsCancellationRequested) return;
+                string packageName = Path.GetFileName(packageDir).ToLowerInvariant();
+
+                foreach (string cheatName in CheatPackageNames)
                 {
-                    ct.ThrowIfCancellationRequested();
-                    ctx.IncrementFiles();
-                    var fn = Path.GetFileName(file);
-                    if (RageMPCheatExecutables.Any(k => fn.Equals(k, StringComparison.OrdinalIgnoreCase)))
+                    if (packageName.Contains(cheatName, StringComparison.OrdinalIgnoreCase))
                     {
                         ctx.AddFinding(new Finding
                         {
                             Module = Name,
-                            Title = "RageMP cheat executable detected",
-                            Risk = RiskLevel.Critical,
-                            Location = Path.GetDirectoryName(file) ?? dir,
-                            FileName = fn,
-                            Reason = $"Known RageMP cheat executable '{fn}' found on disk. This is a forensic artifact indicating the presence of cheat software targeting the RageMP GTA:V multiplayer framework.",
-                            Detail = $"Full path: {file}"
+                            Title = "RageMP Package — Cheat Package Installed",
+                            Risk = Risk.Critical,
+                            Location = packageDir,
+                            FileName = packageName,
+                            Reason = $"RageMP package directory matches cheat pattern: '{cheatName}'",
+                            Detail = "RageMP packages are client-side code bundles — a cheat-named package proves cheat was installed and active"
                         });
+                        break;
                     }
                 }
-            }
-            catch (UnauthorizedAccessException) { }
-            catch (IOException) { }
-        }
-    }, ct);
 
-    private Task CheckRageMPCheatDlls(ScanContext ctx, CancellationToken ct) => Task.Run(() =>
-    {
-        var scanDirs = new List<string>(RageMPAppDataPaths)
-        {
-            Path.Combine(UserProfile, "Downloads"),
-            Desktop,
-            Path.Combine(LocalAppData, "Temp"),
-            Path.Combine(UserProfile, "Documents"),
-        };
-
-        foreach (var dir in scanDirs)
-        {
-            if (!Directory.Exists(dir)) continue;
-            try
-            {
-                foreach (var file in Directory.EnumerateFiles(dir, "*.dll", SearchOption.AllDirectories))
+                foreach (string scriptFile in new[]
                 {
-                    ct.ThrowIfCancellationRequested();
-                    ctx.IncrementFiles();
-                    var fn = Path.GetFileName(file);
-                    if (RageMPCheatDlls.Any(k => fn.Equals(k, StringComparison.OrdinalIgnoreCase)))
-                    {
-                        ctx.AddFinding(new Finding
-                        {
-                            Module = Name,
-                            Title = "RageMP cheat DLL detected",
-                            Risk = RiskLevel.Critical,
-                            Location = Path.GetDirectoryName(file) ?? dir,
-                            FileName = fn,
-                            Reason = $"Known RageMP cheat DLL '{fn}' found on disk. Cheat DLLs are typically injected into the GTA:V or RageMP process to enable aimbot, ESP, godmode, or anticheat bypass functionality.",
-                            Detail = $"Full path: {file}"
-                        });
-                    }
-                }
-            }
-            catch (UnauthorizedAccessException) { }
-            catch (IOException) { }
-        }
-    }, ct);
-
-    private Task CheckRageMPPackageInjectionFiles(ScanContext ctx, CancellationToken ct) => Task.Run(() =>
-    {
-        var scanDirs = new List<string>(RageMPAppDataPaths)
-        {
-            Path.Combine(UserProfile, "Downloads"),
-            Desktop,
-            Path.Combine(LocalAppData, "Temp"),
-            Path.Combine(UserProfile, "Documents"),
-        };
-
-        foreach (var dir in scanDirs)
-        {
-            if (!Directory.Exists(dir)) continue;
-            try
-            {
-                foreach (var file in Directory.EnumerateFiles(dir, "*", SearchOption.AllDirectories))
+                    Path.Combine(packageDir, "index.js"),
+                    Path.Combine(packageDir, "client.js"),
+                }.Where(File.Exists))
                 {
-                    ct.ThrowIfCancellationRequested();
-                    ctx.IncrementFiles();
-                    var fn = Path.GetFileName(file);
-                    if (RageMPPackageInjectionFiles.Any(k => fn.Equals(k, StringComparison.OrdinalIgnoreCase)))
-                    {
-                        ctx.AddFinding(new Finding
-                        {
-                            Module = Name,
-                            Title = "RageMP package/CEF/Node.js injection tool",
-                            Risk = RiskLevel.Critical,
-                            Location = Path.GetDirectoryName(file) ?? dir,
-                            FileName = fn,
-                            Reason = $"RageMP package injection tool '{fn}' found. These tools inject unauthorized client-side packages, Node.js modules, or CEF scripts into the RageMP client to enable cheat functionality while evading server-side detection.",
-                            Detail = $"Full path: {file}"
-                        });
-                    }
-                }
-            }
-            catch (UnauthorizedAccessException) { }
-            catch (IOException) { }
-        }
-    }, ct);
-
-    private Task CheckRageMPConfigArtifacts(ScanContext ctx, CancellationToken ct) => Task.Run(() =>
-    {
-        var scanDirs = new List<string>(RageMPAppDataPaths)
-        {
-            Path.Combine(UserProfile, "Downloads"),
-            Desktop,
-            Path.Combine(LocalAppData, "Temp"),
-            Path.Combine(UserProfile, "Documents"),
-        };
-
-        foreach (var dir in scanDirs)
-        {
-            if (!Directory.Exists(dir)) continue;
-            try
-            {
-                foreach (var file in Directory.EnumerateFiles(dir, "*", SearchOption.AllDirectories))
-                {
-                    ct.ThrowIfCancellationRequested();
-                    ctx.IncrementFiles();
-                    var fn = Path.GetFileName(file);
-                    if (RageMPConfigArtifacts.Any(k => fn.Equals(k, StringComparison.OrdinalIgnoreCase)))
-                    {
-                        ctx.AddFinding(new Finding
-                        {
-                            Module = Name,
-                            Title = "RageMP cheat config/offset file",
-                            Risk = RiskLevel.High,
-                            Location = Path.GetDirectoryName(file) ?? dir,
-                            FileName = fn,
-                            Reason = $"RageMP cheat configuration or offset file '{fn}' found. These files contain memory offsets, GTA:V native function addresses, or cheat settings used by RageMP cheats for memory manipulation and feature configuration.",
-                            Detail = $"Full path: {file}"
-                        });
-                    }
-                }
-            }
-            catch (UnauthorizedAccessException) { }
-            catch (IOException) { }
-        }
-    }, ct);
-
-    private Task CheckRageMPPackageFolders(ScanContext ctx, CancellationToken ct) => Task.Run(() =>
-    {
-        foreach (var rageMPDir in RageMPAppDataPaths)
-        {
-            var packagesDir = Path.Combine(rageMPDir, "packages");
-            if (!Directory.Exists(packagesDir)) continue;
-            try
-            {
-                foreach (var dir in Directory.EnumerateDirectories(packagesDir, "*", SearchOption.TopDirectoryOnly))
-                {
-                    ct.ThrowIfCancellationRequested();
-                    var folderName = Path.GetFileName(dir);
-                    if (RageMPCheatPackageNames.Any(k => folderName.Equals(k, StringComparison.OrdinalIgnoreCase)
-                        || folderName.Contains(k, StringComparison.OrdinalIgnoreCase)))
-                    {
-                        ctx.AddFinding(new Finding
-                        {
-                            Module = Name,
-                            Title = "Suspicious RageMP package folder",
-                            Risk = RiskLevel.High,
-                            Location = packagesDir,
-                            FileName = folderName,
-                            Reason = $"RageMP package folder '{folderName}' has a cheat-related name. RageMP packages are client-side JavaScript/Node.js modules that run inside the game client; cheat packages abuse this to run unauthorized scripts.",
-                            Detail = $"Package path: {dir}"
-                        });
-                    }
-                }
-            }
-            catch (UnauthorizedAccessException) { }
-            catch (IOException) { }
-
-            var clientPackagesDir = Path.Combine(rageMPDir, "client_packages");
-            if (!Directory.Exists(clientPackagesDir)) continue;
-            try
-            {
-                foreach (var dir in Directory.EnumerateDirectories(clientPackagesDir, "*", SearchOption.TopDirectoryOnly))
-                {
-                    ct.ThrowIfCancellationRequested();
-                    var folderName = Path.GetFileName(dir);
-                    if (RageMPCheatPackageNames.Any(k => folderName.Equals(k, StringComparison.OrdinalIgnoreCase)
-                        || folderName.Contains(k, StringComparison.OrdinalIgnoreCase)))
-                    {
-                        ctx.AddFinding(new Finding
-                        {
-                            Module = Name,
-                            Title = "Suspicious RageMP client_packages folder",
-                            Risk = RiskLevel.High,
-                            Location = clientPackagesDir,
-                            FileName = folderName,
-                            Reason = $"RageMP client_packages folder '{folderName}' has a cheat-related name. Client packages run as privileged Node.js code inside the RageMP process with access to native GTA:V functions.",
-                            Detail = $"Package path: {dir}"
-                        });
-                    }
-                }
-            }
-            catch (UnauthorizedAccessException) { }
-            catch (IOException) { }
-        }
-
-        var downloadsDir = Path.Combine(UserProfile, "Downloads");
-        if (Directory.Exists(downloadsDir))
-        {
-            try
-            {
-                foreach (var dir in Directory.EnumerateDirectories(downloadsDir, "*", SearchOption.TopDirectoryOnly))
-                {
-                    ct.ThrowIfCancellationRequested();
-                    var folderName = Path.GetFileName(dir);
-                    if (RageMPCheatPackageNames.Any(k => folderName.Equals(k, StringComparison.OrdinalIgnoreCase))
-                        || folderName.Contains("ragemp", StringComparison.OrdinalIgnoreCase) && (
-                            folderName.Contains("cheat", StringComparison.OrdinalIgnoreCase) ||
-                            folderName.Contains("hack", StringComparison.OrdinalIgnoreCase) ||
-                            folderName.Contains("menu", StringComparison.OrdinalIgnoreCase) ||
-                            folderName.Contains("bypass", StringComparison.OrdinalIgnoreCase)))
-                    {
-                        ctx.AddFinding(new Finding
-                        {
-                            Module = Name,
-                            Title = "Suspicious RageMP-related folder in Downloads",
-                            Risk = RiskLevel.High,
-                            Location = downloadsDir,
-                            FileName = folderName,
-                            Reason = $"Downloads folder contains a directory '{folderName}' that matches known RageMP cheat package naming patterns.",
-                            Detail = $"Folder path: {dir}"
-                        });
-                    }
-                }
-            }
-            catch (UnauthorizedAccessException) { }
-            catch (IOException) { }
-        }
-    }, ct);
-
-    private Task CheckRageMPClientLogs(ScanContext ctx, CancellationToken ct) => Task.Run(async () =>
-    {
-        foreach (var rageMPDir in RageMPAppDataPaths)
-        {
-            if (!Directory.Exists(rageMPDir)) continue;
-            try
-            {
-                var logFiles = Directory.EnumerateFiles(rageMPDir, "*.log", SearchOption.AllDirectories)
-                    .Concat(Directory.EnumerateFiles(rageMPDir, "*.txt", SearchOption.AllDirectories));
-
-                foreach (var logFile in logFiles)
-                {
-                    ct.ThrowIfCancellationRequested();
                     ctx.IncrementFiles();
                     try
                     {
-                        using var fs = new FileStream(logFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                        using var fs = new FileStream(scriptFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
                         using var sr = new StreamReader(fs);
                         string content = await sr.ReadToEndAsync(ct);
-                        var lower = content.ToLowerInvariant();
-                        foreach (var pattern in RageMPClientLogCheatPatterns)
+                        int matchCount = 0;
+                        string? lastKw = null;
+                        foreach (string kw in CheatBridgeScriptKeywords)
                         {
-                            if (lower.Contains(pattern.ToLowerInvariant()))
-                            {
-                                ctx.AddFinding(new Finding
-                                {
-                                    Module = Name,
-                                    Title = "RageMP client log: cheat activity artifact",
-                                    Risk = RiskLevel.High,
-                                    Location = Path.GetDirectoryName(logFile) ?? rageMPDir,
-                                    FileName = Path.GetFileName(logFile),
-                                    Reason = $"RageMP client log contains cheat-related pattern: '{pattern}'. Client logs may record cheat tool startup messages, hook confirmations, or module load events.",
-                                    Detail = $"Log file: {logFile}, matched pattern: {pattern}"
-                                });
-                                break;
-                            }
+                            if (content.Contains(kw, StringComparison.OrdinalIgnoreCase)) { matchCount++; lastKw = kw; }
                         }
-                    }
-                    catch (IOException) { }
-                }
-            }
-            catch (UnauthorizedAccessException) { }
-            catch (IOException) { }
-        }
-    }, ct);
-
-    private Task CheckRageMPServerLogs(ScanContext ctx, CancellationToken ct) => Task.Run(async () =>
-    {
-        var serverLogDirs = new[]
-        {
-            Path.Combine(UserProfile, "ragemp-server", "logs"),
-            Path.Combine(UserProfile, "rage-server", "logs"),
-            Path.Combine(UserProfile, "ragemp_server", "logs"),
-            Path.Combine(UserProfile, "Documents", "ragemp-server", "logs"),
-            Path.Combine(UserProfile, "Documents", "rage-server", "logs"),
-            @"C:\ragemp-server\logs",
-            @"C:\ragemp_server\logs",
-            @"C:\rage-server\logs",
-            @"C:\ragemp\server\logs",
-        };
-
-        foreach (var logDir in serverLogDirs)
-        {
-            if (!Directory.Exists(logDir)) continue;
-            try
-            {
-                var logFiles = Directory.EnumerateFiles(logDir, "*.log", SearchOption.AllDirectories)
-                    .Concat(Directory.EnumerateFiles(logDir, "*.txt", SearchOption.AllDirectories));
-
-                foreach (var logFile in logFiles)
-                {
-                    ct.ThrowIfCancellationRequested();
-                    ctx.IncrementFiles();
-                    try
-                    {
-                        using var fs = new FileStream(logFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-                        using var sr = new StreamReader(fs);
-                        string content = await sr.ReadToEndAsync(ct);
-                        var lower = content.ToLowerInvariant();
-                        foreach (var pattern in RageMPServerLogCheatPatterns)
-                        {
-                            if (lower.Contains(pattern.ToLowerInvariant()))
-                            {
-                                ctx.AddFinding(new Finding
-                                {
-                                    Module = Name,
-                                    Title = "RageMP server log: cheat detection record",
-                                    Risk = RiskLevel.High,
-                                    Location = logDir,
-                                    FileName = Path.GetFileName(logFile),
-                                    Reason = $"RageMP server log contains cheat detection record: '{pattern}'. Server logs record detected cheat events, bans, and anticheat triggers that indicate the user ran cheat software on this machine.",
-                                    Detail = $"Log file: {logFile}, matched pattern: {pattern}"
-                                });
-                                break;
-                            }
-                        }
-                    }
-                    catch (IOException) { }
-                }
-            }
-            catch (UnauthorizedAccessException) { }
-            catch (IOException) { }
-        }
-    }, ct);
-
-    private Task CheckRageMPNodeJsCheatScripts(ScanContext ctx, CancellationToken ct) => Task.Run(async () =>
-    {
-        foreach (var rageMPDir in RageMPAppDataPaths)
-        {
-            var packagesDir = Path.Combine(rageMPDir, "packages");
-            var clientPackagesDir = Path.Combine(rageMPDir, "client_packages");
-
-            foreach (var searchRoot in new[] { packagesDir, clientPackagesDir })
-            {
-                if (!Directory.Exists(searchRoot)) continue;
-                try
-                {
-                    var jsFiles = Directory.EnumerateFiles(searchRoot, "*.js", SearchOption.AllDirectories)
-                        .Concat(Directory.EnumerateFiles(searchRoot, "*.mjs", SearchOption.AllDirectories))
-                        .Concat(Directory.EnumerateFiles(searchRoot, "*.cjs", SearchOption.AllDirectories))
-                        .Concat(Directory.EnumerateFiles(searchRoot, "*.ts", SearchOption.AllDirectories));
-
-                    foreach (var jsFile in jsFiles)
-                    {
-                        ct.ThrowIfCancellationRequested();
-                        ctx.IncrementFiles();
-                        try
-                        {
-                            using var fs = new FileStream(jsFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-                            using var sr = new StreamReader(fs);
-                            string content = await sr.ReadToEndAsync(ct);
-                            var lower = content.ToLowerInvariant();
-                            int hits = 0;
-                            string firstMatch = string.Empty;
-                            foreach (var pattern in RageMPNodeJsCheatPatterns)
-                            {
-                                if (lower.Contains(pattern.ToLowerInvariant()))
-                                {
-                                    hits++;
-                                    if (firstMatch.Length == 0) firstMatch = pattern;
-                                }
-                            }
-                            if (hits >= 3)
-                            {
-                                ctx.AddFinding(new Finding
-                                {
-                                    Module = Name,
-                                    Title = "RageMP Node.js/JS package with cheat patterns",
-                                    Risk = RiskLevel.Critical,
-                                    Location = Path.GetDirectoryName(jsFile) ?? searchRoot,
-                                    FileName = Path.GetFileName(jsFile),
-                                    Reason = $"RageMP JavaScript package file contains {hits} cheat-related patterns (first match: '{firstMatch}'). Node.js packages in RageMP run with elevated privileges and can invoke GTA:V natives directly, enabling aimbot, ESP, godmode, and anticheat bypass.",
-                                    Detail = $"File: {jsFile}, pattern hits: {hits}"
-                                });
-                            }
-                        }
-                        catch (IOException) { }
-                    }
-                }
-                catch (UnauthorizedAccessException) { }
-                catch (IOException) { }
-            }
-        }
-    }, ct);
-
-    private Task CheckRageMPDownloadArtifacts(ScanContext ctx, CancellationToken ct) => Task.Run(() =>
-    {
-        var scanDirs = new[]
-        {
-            Path.Combine(UserProfile, "Downloads"),
-            Desktop,
-        };
-
-        foreach (var dir in scanDirs)
-        {
-            if (!Directory.Exists(dir)) continue;
-            try
-            {
-                foreach (var file in Directory.EnumerateFiles(dir, "*", SearchOption.AllDirectories))
-                {
-                    ct.ThrowIfCancellationRequested();
-                    ctx.IncrementFiles();
-                    var fn = Path.GetFileName(file);
-                    if (RageMPDownloadArtifacts.Any(k => fn.Equals(k, StringComparison.OrdinalIgnoreCase)))
-                    {
-                        ctx.AddFinding(new Finding
-                        {
-                            Module = Name,
-                            Title = "RageMP cheat download artifact",
-                            Risk = RiskLevel.High,
-                            Location = Path.GetDirectoryName(file) ?? dir,
-                            FileName = fn,
-                            Reason = $"RageMP cheat package or installer file '{fn}' found in {dir}. Downloaded cheat archives and setup executables indicate prior acquisition of cheat software targeting RageMP.",
-                            Detail = $"Full path: {file}"
-                        });
-                    }
-                }
-            }
-            catch (UnauthorizedAccessException) { }
-            catch (IOException) { }
-        }
-    }, ct);
-
-    private Task CheckRegistryKeysForRageMPCheats(ScanContext ctx, CancellationToken ct) => Task.Run(() =>
-    {
-        foreach (var keyPath in RageMPRegistryCheatKeys)
-        {
-            try
-            {
-                ctx.IncrementRegistryKeys();
-                using var key = Registry.CurrentUser.OpenSubKey(keyPath);
-                if (key != null)
-                {
-                    ctx.AddFinding(new Finding
-                    {
-                        Module = Name,
-                        Title = "RageMP cheat registry key",
-                        Risk = RiskLevel.High,
-                        Location = @"HKCU\" + keyPath,
-                        FileName = string.Empty,
-                        Reason = $"Registry key '{keyPath}' was left behind by a RageMP cheat tool installation or configuration. These keys are typically written by cheat loaders to store settings or license data.",
-                        Detail = $"Key: HKCU\\{keyPath}"
-                    });
-                }
-            }
-            catch (Exception) { }
-
-            try
-            {
-                ctx.IncrementRegistryKeys();
-                using var key = Registry.LocalMachine.OpenSubKey(keyPath);
-                if (key != null)
-                {
-                    ctx.AddFinding(new Finding
-                    {
-                        Module = Name,
-                        Title = "RageMP cheat registry key (HKLM)",
-                        Risk = RiskLevel.High,
-                        Location = @"HKLM\" + keyPath,
-                        FileName = string.Empty,
-                        Reason = $"System-level registry key '{keyPath}' was left behind by a RageMP cheat tool. Keys written to HKLM indicate the cheat ran with administrator privileges.",
-                        Detail = $"Key: HKLM\\{keyPath}"
-                    });
-                }
-            }
-            catch (Exception) { }
-        }
-    }, ct);
-
-    private Task CheckUserAssistForRageMPCheats(ScanContext ctx, CancellationToken ct) => Task.Run(() =>
-    {
-        const string uaPath = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\UserAssist";
-        try
-        {
-            using var ua = Registry.CurrentUser.OpenSubKey(uaPath);
-            if (ua == null) return;
-            foreach (var guidName in ua.GetSubKeyNames())
-            {
-                try
-                {
-                    using var count = Registry.CurrentUser.OpenSubKey($@"{uaPath}\{guidName}\Count");
-                    if (count == null) continue;
-                    foreach (var valName in count.GetValueNames())
-                    {
-                        ct.ThrowIfCancellationRequested();
-                        ctx.IncrementRegistryKeys();
-                        var decoded = Rot13Decode(valName);
-                        var lower = decoded.ToLowerInvariant();
-                        bool isCheat = RageMPCheatExecutables.Any(k =>
-                                lower.Contains(k.Replace(".exe", string.Empty), StringComparison.OrdinalIgnoreCase))
-                            || lower.Contains("ragemp cheat")
-                            || lower.Contains("ragemp hack")
-                            || lower.Contains("ragemp bypass")
-                            || lower.Contains("ragemp modmenu")
-                            || lower.Contains("ragemp trainer")
-                            || lower.Contains("ragemp injector")
-                            || lower.Contains("ragemp evader")
-                            || lower.Contains("rage cheat")
-                            || lower.Contains("rage hack")
-                            || lower.Contains("rage bypass");
-                        if (isCheat)
+                        if (matchCount >= 3)
                         {
                             ctx.AddFinding(new Finding
                             {
                                 Module = Name,
-                                Title = "RageMP cheat execution (UserAssist)",
-                                Risk = RiskLevel.High,
-                                Location = $@"HKCU\{uaPath}\{guidName}\Count",
-                                FileName = decoded,
-                                Reason = $"Windows UserAssist registry records execution of a RageMP cheat tool: '{decoded}'. UserAssist tracks every GUI program launched by the user and is a reliable forensic indicator of prior execution.",
-                                Detail = $"Decoded entry: {decoded}"
+                                Title = "RageMP Package Script — Cheat Logic",
+                                Risk = Risk.Critical,
+                                Location = scriptFile,
+                                FileName = Path.GetFileName(scriptFile),
+                                Reason = $"Package script contains {matchCount} cheat-related API patterns (last: '{lastKw}')",
+                                Detail = $"Package '{packageName}' client script uses multiple cheat native/event API patterns"
                             });
                         }
                     }
+                    catch { }
                 }
-                catch (Exception) { }
-            }
-        }
-        catch (Exception) { }
-    }, ct);
-
-    private Task CheckMuiCacheForRageMPCheats(ScanContext ctx, CancellationToken ct) => Task.Run(() =>
-    {
-        var muiPaths = new[]
-        {
-            @"SOFTWARE\Classes\Local Settings\Software\Microsoft\Windows\Shell\MuiCache",
-            @"SOFTWARE\Microsoft\Windows\ShellNoRoam\MUICache",
-        };
-
-        foreach (var muiPath in muiPaths)
-        {
-            try
-            {
-                using var mui = Registry.CurrentUser.OpenSubKey(muiPath);
-                if (mui == null) continue;
-                foreach (var valName in mui.GetValueNames())
-                {
-                    ct.ThrowIfCancellationRequested();
-                    ctx.IncrementRegistryKeys();
-                    var lower = valName.ToLowerInvariant();
-                    bool isCheat = RageMPCheatExecutables.Any(k =>
-                            lower.Contains(k.Replace(".exe", string.Empty), StringComparison.OrdinalIgnoreCase))
-                        || lower.Contains("ragemp cheat")
-                        || lower.Contains("ragemp hack")
-                        || lower.Contains("ragemp bypass")
-                        || lower.Contains("ragemp modmenu")
-                        || lower.Contains("ragemp trainer")
-                        || lower.Contains("ragemp injector")
-                        || lower.Contains("ragemp evader")
-                        || lower.Contains("rage cheat")
-                        || lower.Contains("rage hack");
-                    if (isCheat)
-                    {
-                        ctx.AddFinding(new Finding
-                        {
-                            Module = Name,
-                            Title = "RageMP cheat execution (MUICache)",
-                            Risk = RiskLevel.High,
-                            Location = @"HKCU\" + muiPath,
-                            FileName = Path.GetFileName(valName),
-                            Reason = $"Windows MUICache records a RageMP cheat executable was run: '{valName}'. MUICache stores the friendly name of every EXE ever executed and persists even after the file is deleted.",
-                            Detail = $"MUICache entry: {valName}"
-                        });
-                    }
-                }
-            }
-            catch (Exception) { }
-        }
-    }, ct);
-
-    private Task CheckRageMPInstallerRecords(ScanContext ctx, CancellationToken ct) => Task.Run(() =>
-    {
-        var uninstallPaths = new[]
-        {
-            @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall",
-            @"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall",
-        };
-
-        foreach (var uninstallPath in uninstallPaths)
-        {
-            try
-            {
-                using var uninst = Registry.LocalMachine.OpenSubKey(uninstallPath);
-                if (uninst == null) continue;
-                foreach (var subKeyName in uninst.GetSubKeyNames())
-                {
-                    ct.ThrowIfCancellationRequested();
-                    ctx.IncrementRegistryKeys();
-                    try
-                    {
-                        using var sub = uninst.OpenSubKey(subKeyName);
-                        var displayName = sub?.GetValue("DisplayName")?.ToString() ?? string.Empty;
-                        var installLocation = sub?.GetValue("InstallLocation")?.ToString() ?? string.Empty;
-                        var lower = displayName.ToLowerInvariant();
-                        var locLower = installLocation.ToLowerInvariant();
-                        bool isCheat = lower.Contains("ragemp cheat")
-                            || lower.Contains("ragemp hack")
-                            || lower.Contains("ragemp bypass")
-                            || lower.Contains("ragemp modmenu")
-                            || lower.Contains("ragemp trainer")
-                            || lower.Contains("rage cheat")
-                            || lower.Contains("rage hack")
-                            || locLower.Contains("ragemp cheat")
-                            || locLower.Contains("ragemp hack")
-                            || locLower.Contains("ragemp bypass");
-                        if (isCheat)
-                        {
-                            ctx.AddFinding(new Finding
-                            {
-                                Module = Name,
-                                Title = "RageMP cheat installer record",
-                                Risk = RiskLevel.High,
-                                Location = $@"HKLM\{uninstallPath}\{subKeyName}",
-                                FileName = displayName,
-                                Reason = $"Uninstall registry record found for RageMP cheat software: '{displayName}'. This indicates a cheat tool was formally installed on this system.",
-                                Detail = $"Key: {subKeyName}, DisplayName: {displayName}, Location: {installLocation}"
-                            });
-                        }
-                    }
-                    catch (Exception) { }
-                }
-            }
-            catch (Exception) { }
-        }
-    }, ct);
-
-    private Task CheckRageMPCacheForCheatDlls(ScanContext ctx, CancellationToken ct) => Task.Run(() =>
-    {
-        foreach (var rageMPDir in RageMPAppDataPaths)
-        {
-            var cacheDirs = new[]
-            {
-                Path.Combine(rageMPDir, "cache"),
-                Path.Combine(rageMPDir, "data"),
-                Path.Combine(rageMPDir, "temp"),
-                Path.Combine(rageMPDir, "bin"),
-            };
-
-            foreach (var cacheDir in cacheDirs)
-            {
-                if (!Directory.Exists(cacheDir)) continue;
-                try
-                {
-                    foreach (var file in Directory.EnumerateFiles(cacheDir, "*.dll", SearchOption.AllDirectories))
-                    {
-                        ct.ThrowIfCancellationRequested();
-                        ctx.IncrementFiles();
-                        var fn = Path.GetFileName(file);
-                        if (RageMPCheatDlls.Any(k => fn.Equals(k, StringComparison.OrdinalIgnoreCase)))
-                        {
-                            ctx.AddFinding(new Finding
-                            {
-                                Module = Name,
-                                Title = "Cheat DLL inside RageMP cache/data folder",
-                                Risk = RiskLevel.Critical,
-                                Location = Path.GetDirectoryName(file) ?? cacheDir,
-                                FileName = fn,
-                                Reason = $"Known RageMP cheat DLL '{fn}' found inside the RageMP application cache or data folder. Cheat tools sometimes store their DLLs inside the game framework directory to evade detection and enable auto-loading.",
-                                Detail = $"Full path: {file}"
-                            });
-                        }
-                    }
-                }
-                catch (UnauthorizedAccessException) { }
-                catch (IOException) { }
             }
         }
     }, ct);
 
-    private Task CheckRageMPRecentDocuments(ScanContext ctx, CancellationToken ct) => Task.Run(() =>
+    private Task CheckRageMPClientScripts(ScanContext ctx, CancellationToken ct) => Task.Run(async () =>
     {
-        var recentDir = Path.Combine(AppData, "Microsoft", "Windows", "Recent");
-        if (!Directory.Exists(recentDir)) return;
-        try
+        string userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        foreach (string rageRelPath in RageMPPaths)
         {
-            foreach (var lnk in Directory.EnumerateFiles(recentDir, "*.lnk", SearchOption.TopDirectoryOnly))
+            string clientPath = Path.Combine(userProfile, rageRelPath, "client_packages");
+            if (!Directory.Exists(clientPath)) continue;
+            foreach (string jsFile in Directory.GetFiles(clientPath, "*.js", SearchOption.AllDirectories))
             {
-                ct.ThrowIfCancellationRequested();
+                if (ct.IsCancellationRequested) return;
                 ctx.IncrementFiles();
-                var fn = Path.GetFileNameWithoutExtension(lnk).ToLowerInvariant();
-                bool isRageMPCheat = fn.Contains("ragemp cheat")
-                    || fn.Contains("ragemp hack")
-                    || fn.Contains("ragemp bypass")
-                    || fn.Contains("ragemp modmenu")
-                    || fn.Contains("ragemp trainer")
-                    || fn.Contains("ragemp inject")
-                    || fn.Contains("ragemp evader")
-                    || fn.Contains("rage cheat")
-                    || fn.Contains("rage hack")
-                    || RageMPDownloadArtifacts.Any(k =>
-                        fn.Contains(k.Replace(".exe", string.Empty)
-                            .Replace(".zip", string.Empty)
-                            .Replace(".rar", string.Empty)
-                            .Replace(".7z", string.Empty), StringComparison.OrdinalIgnoreCase));
-                if (isRageMPCheat)
+                try
                 {
-                    ctx.AddFinding(new Finding
+                    using var fs = new FileStream(jsFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                    using var sr = new StreamReader(fs);
+                    string content = await sr.ReadToEndAsync(ct);
+                    foreach (string kw in CheatBridgeScriptKeywords)
                     {
-                        Module = Name,
-                        Title = "RageMP cheat recent document artifact",
-                        Risk = RiskLevel.Medium,
-                        Location = recentDir,
-                        FileName = Path.GetFileName(lnk),
-                        Reason = $"Windows Recent Documents folder contains a shortcut to a RageMP cheat file: '{fn}'. Recent Documents tracks files opened or accessed by the user and provides forensic evidence of cheat file interaction.",
-                        Detail = $"Shortcut: {lnk}"
-                    });
+                        if (content.Contains(kw, StringComparison.OrdinalIgnoreCase))
+                        {
+                            ctx.AddFinding(new Finding
+                            {
+                                Module = Name,
+                                Title = "RageMP Client Script — Cheat Code",
+                                Risk = Risk.Critical,
+                                Location = jsFile,
+                                FileName = Path.GetFileName(jsFile),
+                                Reason = $"RageMP client script contains cheat keyword: '{kw}'",
+                                Detail = "Client-side RageMP JavaScript can implement ESP, aimbot, speedhack and other cheats"
+                            });
+                            break;
+                        }
+                    }
                 }
+                catch { }
             }
         }
-        catch (UnauthorizedAccessException) { }
-        catch (IOException) { }
     }, ct);
 
-    private Task CheckRageMPRunKeys(ScanContext ctx, CancellationToken ct) => Task.Run(() =>
+    private Task CheckRageMPBridgeScripts(ScanContext ctx, CancellationToken ct) => Task.Run(async () =>
     {
-        var runKeyPaths = new[]
+        string userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        foreach (string rageRelPath in RageMPPaths)
         {
-            (@"SOFTWARE\Microsoft\Windows\CurrentVersion\Run", Registry.CurrentUser, "HKCU"),
-            (@"SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce", Registry.CurrentUser, "HKCU"),
-            (@"SOFTWARE\Microsoft\Windows\CurrentVersion\Run", Registry.LocalMachine, "HKLM"),
-            (@"SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce", Registry.LocalMachine, "HKLM"),
-            (@"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Run", Registry.LocalMachine, "HKLM"),
-        };
-
-        foreach (var (keyPath, hive, hiveName) in runKeyPaths)
-        {
-            try
+            string bridgePath = Path.Combine(userProfile, rageRelPath, "bridge");
+            if (!Directory.Exists(bridgePath)) continue;
+            foreach (string jsFile in Directory.GetFiles(bridgePath, "*.js", SearchOption.AllDirectories))
             {
-                ctx.IncrementRegistryKeys();
-                using var run = hive.OpenSubKey(keyPath);
-                if (run == null) continue;
-                foreach (var val in run.GetValueNames())
+                if (ct.IsCancellationRequested) return;
+                ctx.IncrementFiles();
+                try
                 {
-                    ct.ThrowIfCancellationRequested();
-                    var data = run.GetValue(val)?.ToString() ?? string.Empty;
-                    var lower = data.ToLowerInvariant();
-                    bool isCheat = lower.Contains("ragemp cheat")
-                        || lower.Contains("ragemp hack")
-                        || lower.Contains("ragemp bypass")
-                        || lower.Contains("ragemp modmenu")
-                        || lower.Contains("ragemp trainer")
-                        || lower.Contains("ragemp inject")
-                        || lower.Contains("ragemp evader")
-                        || lower.Contains("rage cheat")
-                        || lower.Contains("rage hack")
-                        || RageMPCheatExecutables.Any(k => lower.Contains(k.Replace(".exe", string.Empty), StringComparison.OrdinalIgnoreCase));
-                    if (isCheat)
+                    using var fs = new FileStream(jsFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                    using var sr = new StreamReader(fs);
+                    string content = await sr.ReadToEndAsync(ct);
+                    foreach (string kw in CheatBridgeScriptKeywords)
+                    {
+                        if (content.Contains(kw, StringComparison.OrdinalIgnoreCase))
+                        {
+                            ctx.AddFinding(new Finding
+                            {
+                                Module = Name,
+                                Title = "RageMP Bridge Script — Cheat Modification",
+                                Risk = Risk.Critical,
+                                Location = jsFile,
+                                FileName = Path.GetFileName(jsFile),
+                                Reason = $"RageMP bridge script modified with cheat keyword: '{kw}'",
+                                Detail = "RageMP bridge scripts mediate between CEF and game — modification here enables deep cheat integration"
+                            });
+                            break;
+                        }
+                    }
+                }
+                catch { }
+            }
+        }
+    }, ct);
+
+    private Task CheckRageMPConfig(ScanContext ctx, CancellationToken ct) => Task.Run(async () =>
+    {
+        string userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        string[] configCheatKeywords = new[]
+        {
+            "bypass", "cheat", "hack", "inject", "no_anticheat",
+            "disable_anticheat", "disable_protection",
+            "no_screenshot", "screenshot_bypass", "dev_mode",
+        };
+        foreach (string rageRelPath in RageMPPaths)
+        {
+            string basePath = Path.Combine(userProfile, rageRelPath);
+            if (!Directory.Exists(basePath)) continue;
+            foreach (string configFile in Directory.GetFiles(basePath, "*.json", SearchOption.TopDirectoryOnly)
+                .Concat(Directory.GetFiles(basePath, "*.cfg", SearchOption.TopDirectoryOnly)))
+            {
+                if (ct.IsCancellationRequested) return;
+                ctx.IncrementFiles();
+                try
+                {
+                    using var fs = new FileStream(configFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                    using var sr = new StreamReader(fs);
+                    string content = await sr.ReadToEndAsync(ct);
+                    foreach (string cfgKw in configCheatKeywords)
+                    {
+                        if (content.Contains(cfgKw, StringComparison.OrdinalIgnoreCase))
+                        {
+                            ctx.AddFinding(new Finding
+                            {
+                                Module = Name,
+                                Title = "RageMP Config — Cheat/Bypass Setting",
+                                Risk = Risk.High,
+                                Location = configFile,
+                                FileName = Path.GetFileName(configFile),
+                                Reason = $"RageMP config contains suspicious setting: '{cfgKw}'",
+                                Detail = "RageMP configuration modified to disable security features or enable cheat-compatible settings"
+                            });
+                            break;
+                        }
+                    }
+                }
+                catch { }
+            }
+        }
+    }, ct);
+
+    private Task CheckRageMPLogs(ScanContext ctx, CancellationToken ct) => Task.Run(async () =>
+    {
+        string userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        foreach (string rageRelPath in RageMPPaths)
+        {
+            string logPath = Path.Combine(userProfile, rageRelPath);
+            if (!Directory.Exists(logPath)) continue;
+            foreach (string logFile in Directory.GetFiles(logPath, "*.log", SearchOption.AllDirectories))
+            {
+                if (ct.IsCancellationRequested) return;
+                ctx.IncrementFiles();
+                try
+                {
+                    using var fs = new FileStream(logFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                    using var sr = new StreamReader(fs);
+                    string content = await sr.ReadToEndAsync(ct);
+                    foreach (string cheatHost in RageMPCheatServerHosts)
+                    {
+                        if (content.Contains(cheatHost, StringComparison.OrdinalIgnoreCase))
+                        {
+                            ctx.AddFinding(new Finding
+                            {
+                                Module = Name,
+                                Title = "RageMP Log — Cheat Server Connection",
+                                Risk = Risk.Critical,
+                                Location = logFile,
+                                FileName = Path.GetFileName(logFile),
+                                Reason = $"RageMP log shows connection to cheat server: '{cheatHost}'",
+                                Detail = "RageMP logs record all server connections — cheat server references are definitive forensic evidence"
+                            });
+                            break;
+                        }
+                    }
+                    foreach (string cheatKw in CheatPackageNames)
+                    {
+                        if (content.Contains(cheatKw, StringComparison.OrdinalIgnoreCase))
+                        {
+                            ctx.AddFinding(new Finding
+                            {
+                                Module = Name,
+                                Title = "RageMP Log — Cheat Package Reference",
+                                Risk = Risk.High,
+                                Location = logFile,
+                                FileName = Path.GetFileName(logFile),
+                                Reason = $"RageMP log references cheat package: '{cheatKw}'",
+                                Detail = "Log entries naming cheat packages indicate the cheat was loaded and active"
+                            });
+                            break;
+                        }
+                    }
+                }
+                catch { }
+            }
+        }
+    }, ct);
+
+    private Task CheckRageMPCEFCache(ScanContext ctx, CancellationToken ct) => Task.Run(async () =>
+    {
+        string userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        foreach (string rageRelPath in RageMPPaths)
+        {
+            string cefCachePath = Path.Combine(userProfile, rageRelPath, "cef_cache");
+            if (!Directory.Exists(cefCachePath)) continue;
+            int scanned = 0;
+            foreach (string cacheFile in Directory.GetFiles(cefCachePath, "f_*", SearchOption.AllDirectories))
+            {
+                if (ct.IsCancellationRequested || scanned > 200) break;
+                scanned++;
+                ctx.IncrementFiles();
+                try
+                {
+                    using var fs = new FileStream(cacheFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                    byte[] buf = new byte[Math.Min(fs.Length, 256 * 1024)];
+                    int read = await fs.ReadAsync(buf, 0, buf.Length, ct);
+                    string content = Encoding.UTF8.GetString(buf, 0, read);
+                    foreach (string cheatKw in CheatPackageNames)
+                    {
+                        if (content.Contains(cheatKw, StringComparison.OrdinalIgnoreCase))
+                        {
+                            ctx.AddFinding(new Finding
+                            {
+                                Module = Name,
+                                Title = "RageMP CEF Cache — Cheat UI Artifact",
+                                Risk = Risk.High,
+                                Location = cacheFile,
+                                FileName = Path.GetFileName(cacheFile),
+                                Reason = $"RageMP CEF cache contains cheat keyword: '{cheatKw}'",
+                                Detail = "CEF cache in RageMP stores cheat overlay/menu UI assets loaded from cheat servers"
+                            });
+                            break;
+                        }
+                    }
+                }
+                catch { }
+            }
+        }
+    }, ct);
+
+    private Task CheckRageMPPluginDLLs(ScanContext ctx, CancellationToken ct) => Task.Run(async () =>
+    {
+        string userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        foreach (string rageRelPath in RageMPPaths)
+        {
+            string pluginPath = Path.Combine(userProfile, rageRelPath, "plugins");
+            if (!Directory.Exists(pluginPath)) continue;
+            foreach (string dllFile in Directory.GetFiles(pluginPath, "*.dll", SearchOption.AllDirectories))
+            {
+                if (ct.IsCancellationRequested) return;
+                ctx.IncrementFiles();
+                string dllName = Path.GetFileName(dllFile).ToLowerInvariant();
+                foreach (string cheatName in CheatPackageNames)
+                {
+                    if (dllName.Contains(cheatName, StringComparison.OrdinalIgnoreCase))
                     {
                         ctx.AddFinding(new Finding
                         {
                             Module = Name,
-                            Title = "RageMP cheat autostart (Run key)",
-                            Risk = RiskLevel.High,
-                            Location = $@"{hiveName}\{keyPath}",
-                            FileName = val,
-                            Reason = $"RageMP cheat tool configured to auto-start via Windows Run registry key. Value '{val}' points to: '{data}'. Auto-start entries indicate persistent cheat installation.",
-                            Detail = $"Value: {val} = {data}"
+                            Title = "RageMP Plugin DLL — Cheat Library",
+                            Risk = Risk.Critical,
+                            Location = dllFile,
+                            FileName = Path.GetFileName(dllFile),
+                            Reason = $"RageMP plugin DLL matches cheat pattern: '{cheatName}'",
+                            Detail = "RageMP plugin DLLs are loaded into the game process and can implement any cheat functionality"
+                        });
+                        break;
+                    }
+                }
+                try
+                {
+                    using var fs = new FileStream(dllFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                    byte[] buf = new byte[Math.Min(fs.Length, 256 * 1024)];
+                    int read = await fs.ReadAsync(buf, 0, buf.Length, ct);
+                    string content = Encoding.UTF8.GetString(buf, 0, read);
+                    if (CheatBridgeScriptKeywords.Any(k => content.Contains(k, StringComparison.OrdinalIgnoreCase)) &&
+                        (content.Contains("RAGE", StringComparison.OrdinalIgnoreCase) ||
+                         content.Contains("ragemp", StringComparison.OrdinalIgnoreCase)))
+                    {
+                        ctx.AddFinding(new Finding
+                        {
+                            Module = Name,
+                            Title = "RageMP Plugin DLL — Cheat Native Calls",
+                            Risk = Risk.Critical,
+                            Location = dllFile,
+                            FileName = Path.GetFileName(dllFile),
+                            Reason = "RageMP plugin DLL references RAGE API alongside cheat-related patterns",
+                            Detail = "Plugin DLL hooking the RAGE Multiplayer API with cheat native call patterns"
                         });
                     }
                 }
+                catch { }
             }
-            catch (Exception) { }
         }
     }, ct);
 
-    private static string Rot13Decode(string s)
+    private Task CheckRageMPServerHistory(ScanContext ctx, CancellationToken ct) => Task.Run(async () =>
     {
-        return new string(s.Select(c =>
-            c >= 'a' && c <= 'z' ? (char)('a' + (c - 'a' + 13) % 26) :
-            c >= 'A' && c <= 'Z' ? (char)('A' + (c - 'A' + 13) % 26) : c).ToArray());
-    }
+        string userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        foreach (string rageRelPath in RageMPPaths)
+        {
+            foreach (string histFile in new[]
+            {
+                Path.Combine(userProfile, rageRelPath, "config.xml"),
+                Path.Combine(userProfile, rageRelPath, "settings.xml"),
+                Path.Combine(userProfile, rageRelPath, "recent_servers.json"),
+                Path.Combine(userProfile, rageRelPath, "favorites.json"),
+            }.Where(File.Exists))
+            {
+                if (ct.IsCancellationRequested) return;
+                ctx.IncrementFiles();
+                try
+                {
+                    using var fs = new FileStream(histFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                    using var sr = new StreamReader(fs);
+                    string content = await sr.ReadToEndAsync(ct);
+                    foreach (string cheatHost in RageMPCheatServerHosts)
+                    {
+                        if (content.Contains(cheatHost, StringComparison.OrdinalIgnoreCase))
+                        {
+                            ctx.AddFinding(new Finding
+                            {
+                                Module = Name,
+                                Title = "RageMP Server History — Cheat Server",
+                                Risk = Risk.Critical,
+                                Location = histFile,
+                                FileName = Path.GetFileName(histFile),
+                                Reason = $"RageMP server history contains cheat server: '{cheatHost}'",
+                                Detail = "Server connection history proves active use of RageMP cheat-providing servers"
+                            });
+                            break;
+                        }
+                    }
+                }
+                catch { }
+            }
+        }
+    }, ct);
+
+    private Task CheckRageMPCrashDumps(ScanContext ctx, CancellationToken ct) => Task.Run(() =>
+    {
+        string userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        foreach (string rageRelPath in RageMPPaths)
+        {
+            string crashPath = Path.Combine(userProfile, rageRelPath, "crash_dumps");
+            if (!Directory.Exists(crashPath)) continue;
+            foreach (string dmpFile in Directory.GetFiles(crashPath, "*.dmp", SearchOption.AllDirectories))
+            {
+                if (ct.IsCancellationRequested) return;
+                ctx.IncrementFiles();
+                ctx.AddFinding(new Finding
+                {
+                    Module = Name,
+                    Title = "RageMP Crash Dump — Forensic Artifact",
+                    Risk = Risk.Medium,
+                    Location = dmpFile,
+                    FileName = Path.GetFileName(dmpFile),
+                    Reason = "RageMP crash dump found — may contain cheat module evidence in process memory",
+                    Detail = "Crash dumps capture loaded DLLs and memory state — may reveal injected cheat modules"
+                });
+            }
+        }
+    }, ct);
+
+    private Task CheckRageMPNativeHashPatterns(ScanContext ctx, CancellationToken ct) => Task.Run(async () =>
+    {
+        string userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        foreach (string rageRelPath in RageMPPaths)
+        {
+            string basePath = Path.Combine(userProfile, rageRelPath);
+            if (!Directory.Exists(basePath)) continue;
+            foreach (string jsFile in Directory.GetFiles(basePath, "*.js", SearchOption.AllDirectories))
+            {
+                if (ct.IsCancellationRequested) return;
+                ctx.IncrementFiles();
+                try
+                {
+                    using var fs = new FileStream(jsFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                    using var sr = new StreamReader(fs);
+                    string content = await sr.ReadToEndAsync(ct);
+                    foreach (string hashPattern in NativeHashCheatPatterns)
+                    {
+                        if (content.Contains(hashPattern, StringComparison.OrdinalIgnoreCase))
+                        {
+                            ctx.AddFinding(new Finding
+                            {
+                                Module = Name,
+                                Title = "RageMP Script — Raw Native Hash Calls",
+                                Risk = Risk.High,
+                                Location = jsFile,
+                                FileName = Path.GetFileName(jsFile),
+                                Reason = $"Script uses raw native hash: '{hashPattern}'",
+                                Detail = "Direct native hash invocations are used by cheat scripts to call game functions without API restrictions"
+                            });
+                            break;
+                        }
+                    }
+                }
+                catch { }
+            }
+        }
+    }, ct);
+
+    private Task CheckRageMPLauncherArtifacts(ScanContext ctx, CancellationToken ct) => Task.Run(() =>
+    {
+        string userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        foreach (string launcherPath in new[]
+        {
+            Path.Combine(userProfile, @"AppData\Local\RAGE Multiplayer"),
+            Path.Combine(userProfile, @"AppData\Local\ragemp"),
+        })
+        {
+            if (!Directory.Exists(launcherPath)) continue;
+            foreach (string exeFile in Directory.GetFiles(launcherPath, "*.exe", SearchOption.TopDirectoryOnly))
+            {
+                if (ct.IsCancellationRequested) return;
+                string exeName = Path.GetFileName(exeFile).ToLowerInvariant();
+                foreach (string cheatName in CheatPackageNames)
+                {
+                    if (exeName.Contains(cheatName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        ctx.IncrementFiles();
+                        ctx.AddFinding(new Finding
+                        {
+                            Module = Name,
+                            Title = "RageMP Launcher — Cheat Executable",
+                            Risk = Risk.Critical,
+                            Location = exeFile,
+                            FileName = Path.GetFileName(exeFile),
+                            Reason = $"Cheat executable in RageMP launcher directory: '{cheatName}'",
+                            Detail = "Cheat executables placed in the RageMP launcher directory run alongside the multiplayer client"
+                        });
+                        break;
+                    }
+                }
+            }
+        }
+    }, ct);
+
+    private Task CheckRageMPDownloadedCheats(ScanContext ctx, CancellationToken ct) => Task.Run(() =>
+    {
+        string userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        foreach (string dir in new[]
+        {
+            Path.Combine(userProfile, "Downloads"),
+            Path.Combine(userProfile, "Desktop"),
+            Path.Combine(userProfile, @"AppData\Local\Temp"),
+        })
+        {
+            if (!Directory.Exists(dir)) continue;
+            foreach (string file in Directory.GetFiles(dir, "*", SearchOption.TopDirectoryOnly))
+            {
+                if (ct.IsCancellationRequested) return;
+                string fileName = Path.GetFileName(file).ToLowerInvariant();
+                if (fileName.Contains("rage", StringComparison.OrdinalIgnoreCase) &&
+                    CheatPackageNames.Any(c => fileName.Contains(c, StringComparison.OrdinalIgnoreCase)))
+                {
+                    ctx.IncrementFiles();
+                    ctx.AddFinding(new Finding
+                    {
+                        Module = Name,
+                        Title = "Downloaded RageMP Cheat File",
+                        Risk = Risk.Critical,
+                        Location = file,
+                        FileName = Path.GetFileName(file),
+                        Reason = $"Downloaded file matches RageMP cheat pattern: '{fileName}'",
+                        Detail = "File with RageMP and cheat keywords in name found in Downloads/Desktop/Temp"
+                    });
+                }
+            }
+        }
+    }, ct);
+
+    private Task CheckRageMPRegistryArtifacts(ScanContext ctx, CancellationToken ct) => Task.Run(() =>
+    {
+        foreach (string regPath in new[]
+        {
+            @"SOFTWARE\RAGE Multiplayer",
+            @"SOFTWARE\RAGEMP",
+            @"SOFTWARE\WOW6432Node\RAGE Multiplayer",
+        })
+        {
+            try
+            {
+                using var key = Registry.LocalMachine.OpenSubKey(regPath) ??
+                                Registry.CurrentUser.OpenSubKey(regPath);
+                if (key == null) continue;
+                ctx.IncrementRegistryKeys();
+                foreach (string valueName in key.GetValueNames())
+                {
+                    string val = key.GetValue(valueName)?.ToString() ?? string.Empty;
+                    foreach (string cheatKw in CheatPackageNames)
+                    {
+                        if (val.Contains(cheatKw, StringComparison.OrdinalIgnoreCase) ||
+                            valueName.Contains(cheatKw, StringComparison.OrdinalIgnoreCase))
+                        {
+                            ctx.AddFinding(new Finding
+                            {
+                                Module = Name,
+                                Title = "Registry — RageMP Cheat Artifact",
+                                Risk = Risk.High,
+                                Location = $@"Registry\{regPath}\{valueName}",
+                                FileName = valueName,
+                                Reason = $"RageMP registry entry contains cheat keyword: '{cheatKw}'",
+                                Detail = "RageMP registry configuration modified by cheat tools"
+                            });
+                            break;
+                        }
+                    }
+                }
+            }
+            catch { }
+        }
+    }, ct);
+
+    private Task CheckRageMPUpdateArtifacts(ScanContext ctx, CancellationToken ct) => Task.Run(async () =>
+    {
+        string userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        foreach (string rageRelPath in RageMPPaths)
+        {
+            string updatePath = Path.Combine(userProfile, rageRelPath, "updater");
+            if (!Directory.Exists(updatePath)) continue;
+            foreach (string logFile in Directory.GetFiles(updatePath, "*.log", SearchOption.TopDirectoryOnly))
+            {
+                if (ct.IsCancellationRequested) return;
+                ctx.IncrementFiles();
+                try
+                {
+                    using var fs = new FileStream(logFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                    using var sr = new StreamReader(fs);
+                    string content = await sr.ReadToEndAsync(ct);
+                    foreach (string cheatKw in CheatPackageNames)
+                    {
+                        if (content.Contains(cheatKw, StringComparison.OrdinalIgnoreCase))
+                        {
+                            ctx.AddFinding(new Finding
+                            {
+                                Module = Name,
+                                Title = "RageMP Updater Log — Cheat Update",
+                                Risk = Risk.High,
+                                Location = logFile,
+                                FileName = Path.GetFileName(logFile),
+                                Reason = $"RageMP updater log references cheat: '{cheatKw}'",
+                                Detail = "Update logs reveal cheat packages downloaded or updated via the RageMP updater"
+                            });
+                            break;
+                        }
+                    }
+                }
+                catch { }
+            }
+        }
+    }, ct);
+
+    private Task CheckRageMPInjectedDLLs(ScanContext ctx, CancellationToken ct) => Task.Run(async () =>
+    {
+        string userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        string[] proxyDllNames = new[]
+        {
+            "dinput8.dll", "dsound.dll", "winmm.dll", "version.dll",
+            "d3d11.dll", "dxgi.dll", "winhttp.dll",
+        };
+        foreach (string rageRelPath in RageMPPaths)
+        {
+            string basePath = Path.Combine(userProfile, rageRelPath);
+            if (!Directory.Exists(basePath)) continue;
+            foreach (string proxyDll in proxyDllNames)
+            {
+                string dllPath = Path.Combine(basePath, proxyDll);
+                if (!File.Exists(dllPath)) continue;
+                ctx.IncrementFiles();
+                try
+                {
+                    using var fs = new FileStream(dllPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                    byte[] buf = new byte[Math.Min(fs.Length, 256 * 1024)];
+                    int read = await fs.ReadAsync(buf, 0, buf.Length, ct);
+                    string content = Encoding.UTF8.GetString(buf, 0, read);
+                    if (CheatPackageNames.Any(c => content.Contains(c, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        ctx.AddFinding(new Finding
+                        {
+                            Module = Name,
+                            Title = "RageMP Root — Proxy DLL with Cheat Strings",
+                            Risk = Risk.Critical,
+                            Location = dllPath,
+                            FileName = proxyDll,
+                            Reason = $"Proxy DLL '{proxyDll}' in RageMP root contains cheat strings",
+                            Detail = "Proxy DLLs in the multiplayer client root intercept API calls to inject cheat code"
+                        });
+                    }
+                }
+                catch { }
+            }
+        }
+    }, ct);
+
+    private Task CheckRageMPAntiCheatBypass(ScanContext ctx, CancellationToken ct) => Task.Run(async () =>
+    {
+        string userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        string[] bypassKeywords = new[]
+        {
+            "anticheat_bypass", "ac_bypass", "disable_ac",
+            "bypass_detection", "evade_detection",
+            "hook_anticheat", "patch_anticheat",
+        };
+        foreach (string rageRelPath in RageMPPaths)
+        {
+            string basePath = Path.Combine(userProfile, rageRelPath);
+            if (!Directory.Exists(basePath)) continue;
+            foreach (string file in Directory.GetFiles(basePath, "*.js", SearchOption.AllDirectories)
+                .Concat(Directory.GetFiles(basePath, "*.json", SearchOption.AllDirectories)))
+            {
+                if (ct.IsCancellationRequested) return;
+                ctx.IncrementFiles();
+                try
+                {
+                    using var fs = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                    using var sr = new StreamReader(fs);
+                    string content = await sr.ReadToEndAsync(ct);
+                    foreach (string bpKw in bypassKeywords)
+                    {
+                        if (content.Contains(bpKw, StringComparison.OrdinalIgnoreCase))
+                        {
+                            ctx.AddFinding(new Finding
+                            {
+                                Module = Name,
+                                Title = "RageMP — Anti-Cheat Bypass Script",
+                                Risk = Risk.Critical,
+                                Location = file,
+                                FileName = Path.GetFileName(file),
+                                Reason = $"RageMP script contains anti-cheat bypass keyword: '{bpKw}'",
+                                Detail = "Anti-cheat bypass scripts in RageMP data are used to evade server-side detection"
+                            });
+                            break;
+                        }
+                    }
+                }
+                catch { }
+            }
+        }
+    }, ct);
+
+    private Task CheckRageMPScreenshotBypass(ScanContext ctx, CancellationToken ct) => Task.Run(async () =>
+    {
+        string userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        foreach (string rageRelPath in RageMPPaths)
+        {
+            string basePath = Path.Combine(userProfile, rageRelPath);
+            if (!Directory.Exists(basePath)) continue;
+            foreach (string jsFile in Directory.GetFiles(basePath, "*.js", SearchOption.AllDirectories))
+            {
+                if (ct.IsCancellationRequested) return;
+                ctx.IncrementFiles();
+                try
+                {
+                    using var fs = new FileStream(jsFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                    using var sr = new StreamReader(fs);
+                    string content = await sr.ReadToEndAsync(ct);
+                    if ((content.Contains("screenshot", StringComparison.OrdinalIgnoreCase) ||
+                         content.Contains("screengrab", StringComparison.OrdinalIgnoreCase)) &&
+                        content.Contains("bypass", StringComparison.OrdinalIgnoreCase))
+                    {
+                        ctx.AddFinding(new Finding
+                        {
+                            Module = Name,
+                            Title = "RageMP — Screenshot Bypass Artifact",
+                            Risk = Risk.Critical,
+                            Location = jsFile,
+                            FileName = Path.GetFileName(jsFile),
+                            Reason = "RageMP script contains screenshot bypass logic",
+                            Detail = "Screenshot bypass hides cheat overlays/ESPs from server-side AC screenshot captures"
+                        });
+                    }
+                }
+                catch { }
+            }
+        }
+    }, ct);
+
+    private Task CheckRageMPCustomBinaries(ScanContext ctx, CancellationToken ct) => Task.Run(() =>
+    {
+        string userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        string[] expectedBinaries = new[]
+        {
+            "RAGEMP.exe", "updater.exe", "browser_sandbox.exe",
+            "d3dcompiler_47.dll", "libcef.dll",
+        };
+        foreach (string rageRelPath in RageMPPaths)
+        {
+            string basePath = Path.Combine(userProfile, rageRelPath);
+            if (!Directory.Exists(basePath)) continue;
+            foreach (string exeFile in Directory.GetFiles(basePath, "*.exe", SearchOption.TopDirectoryOnly))
+            {
+                if (ct.IsCancellationRequested) return;
+                string exeName = Path.GetFileName(exeFile);
+                if (!expectedBinaries.Contains(exeName, StringComparer.OrdinalIgnoreCase))
+                {
+                    ctx.IncrementFiles();
+                    ctx.AddFinding(new Finding
+                    {
+                        Module = Name,
+                        Title = "RageMP Directory — Unexpected Executable",
+                        Risk = Risk.High,
+                        Location = exeFile,
+                        FileName = exeName,
+                        Reason = $"Unexpected executable in RageMP root: '{exeName}'",
+                        Detail = "Non-standard executables in the RageMP directory may be cheat launchers or injectors"
+                    });
+                }
+            }
+        }
+    }, ct);
 }
