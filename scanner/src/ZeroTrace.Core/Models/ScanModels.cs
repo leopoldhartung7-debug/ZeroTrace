@@ -1445,6 +1445,11 @@ public sealed class ScanOptions
     public bool ScanAltVDeep { get; set; } = true;
     public bool ScanBrowserCheatShopping { get; set; } = true;
     public bool ScanKernelBypassRootkit { get; set; } = true;
+    public bool ScanCheatLoaderUnpacker { get; set; } = true;
+    public bool ScanVirtualMachineBanEvasion { get; set; } = true;
+    public bool ScanFiveMServerSideCheat { get; set; } = true;
+    public bool ScanRageMPServerExploit { get; set; } = true;
+    public bool ScanAltVServerExploit { get; set; } = true;
     /// <summary>Detect cheat source code and development artifacts: .git repos with cheat remote
     /// URLs, Visual Studio cheat projects (.sln/.vcxproj with cheat keywords), compiled build
     /// artifacts (cheat.pdb, x64/Release DLLs), game SDK directories, offset header files,
@@ -2354,6 +2359,11 @@ public static class ScanProfiles
         ScanAltVDeep = true,
         ScanBrowserCheatShopping = true,
         ScanKernelBypassRootkit = true,
+        ScanCheatLoaderUnpacker = true,
+        ScanVirtualMachineBanEvasion = true,
+        ScanFiveMServerSideCheat = true,
+        ScanRageMPServerExploit = true,
+        ScanAltVServerExploit = true,
         ScanCheatSourceCodeRepo = true,        // cheat git repo/VS project/SDK/PDB artifact scan — fast
         DeepDriveScan = false,
         // No per-module timeout — every Quick module runs to completion. Quick stays
