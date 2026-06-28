@@ -1440,6 +1440,7 @@ public sealed class ScanOptions
     public bool ScanDiscordCheatCommunication { get; set; } = true;
     public bool ScanWindowsEventDeep { get; set; } = true;
     public bool ScanFiveMCitizenFXDeep { get; set; } = true;
+    public bool ScanFiveMDeepForensic { get; set; } = true;
     public bool ScanGameSaveFileCheat { get; set; } = true;
     public bool ScanAltVDeep { get; set; } = true;
     public bool ScanBrowserCheatShopping { get; set; } = true;
@@ -2348,6 +2349,7 @@ public static class ScanProfiles
         ScanDiscordCheatCommunication = true,
         ScanWindowsEventDeep = true,
         ScanFiveMCitizenFXDeep = true,
+        ScanFiveMDeepForensic = true,
         ScanGameSaveFileCheat = true,
         ScanAltVDeep = true,
         ScanBrowserCheatShopping = true,

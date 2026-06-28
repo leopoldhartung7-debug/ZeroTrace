@@ -689,6 +689,7 @@ public sealed class ScanEngine
         if (o.ScanDiscordCheatCommunication) modules.Add(new DiscordCheatCommunicationScanModule());
         if (o.ScanWindowsEventDeep) modules.Add(new WindowsEventDeepForensicScanModule());
         if (o.ScanFiveMCitizenFXDeep) modules.Add(new FiveMCitizenFXDeepScanModule());
+        if (o.ScanFiveMDeepForensic) modules.Add(new FiveMDeepForensicScanModule());
         if (o.ScanGameSaveFileCheat) modules.Add(new GameSaveFileCheatForensicScanModule());
         if (o.ScanAltVDeep) modules.Add(new AltVDeepForensicScanModule());
         if (o.ScanBrowserCheatShopping) modules.Add(new BrowserCheatShoppingForensicScanModule());
