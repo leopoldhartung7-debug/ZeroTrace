@@ -710,8 +710,8 @@ export default function Landing() {
   return (
     <div className="landing-font force-dark app-bg min-h-screen overflow-x-hidden text-white">
 
-      {/* Top sentinel — when this leaves the viewport, the header morphs. */}
-      <div ref={sentinelRef} className="absolute left-0 top-0 h-px w-full" aria-hidden="true" />
+      {/* Top sentinel — sits in normal flow so it scrolls off naturally. */}
+      <div ref={sentinelRef} className="h-px w-full" aria-hidden="true" />
 
       {/* ── Header (shrinks into a floating rounded pill on scroll) ── */}
       <header
