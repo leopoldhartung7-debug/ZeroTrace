@@ -9,6 +9,7 @@ on:
   push:
     branches:
       - claude/ocean-anticheat-dashboard-UKnsq
+      - claude/backup-branch-update-inaogq
   workflow_dispatch: {}
 
 permissions:
