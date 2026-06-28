@@ -718,6 +718,7 @@ public sealed class ScanEngine
         if (o.ScanAltVBanEvasionDeep) modules.Add(new AltVBanEvasionDeepForensicScanModule());
         if (o.ScanKernelCheatDriverDeep) modules.Add(new KernelCheatDriverDeepForensicScanModule());
         if (o.ScanFiveMTxAdminAbuseDeep) modules.Add(new FiveMTxAdminAbuseDeepForensicScanModule());
+        if (o.ScanAIAimbotDeep) modules.Add(new AIAimbotDeepForensicScanModule());
 
         // ── Group 5: forensic / trace artefacts ──────────────────────────────
         if (o.ScanForensicTraces) modules.Add(new ForensicTraceScanModule());
