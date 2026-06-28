@@ -402,7 +402,7 @@ export default function Landing() {
     <div className="landing-font force-dark app-bg min-h-screen overflow-x-hidden text-white">
       {/* ── Header (shrinks into a floating rounded pill on scroll) ── */}
       <header
-        className={`sticky top-0 z-30 transition-all duration-300 ease-out ${
+        className={`fixed inset-x-0 top-0 z-30 transition-all duration-300 ease-out ${
           scrolled ? 'px-4 md:px-6' : 'px-0'
         }`}
         style={{
