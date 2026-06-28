@@ -200,19 +200,39 @@ function VerdictGraphic() {
   )
 }
 
-/* ── Hero stat card with entrance ── */
+/* ── Animated numeric value — counts up when it enters the viewport.
+   Parses "500+", "99.9%", "<1 min" gracefully. ── */
+function AnimatedNumber({ value, duration = 1400, className = '' }) {
+  const [ref, visible] = useScrollReveal(0.3)
+  const match = String(value).match(/^([<>]?)([\d.]+)(.*)$/)
+  const hasNumber = !!match
+  const prefix = match?.[1] ?? ''
+  const num    = hasNumber ? parseFloat(match[2]) : 0
+  const suffix = match?.[3] ?? ''
+  const isInt  = hasNumber && Number.isInteger(num)
+  const target = isInt ? num : Math.round(num * 10)
+  const animated = useCountUp(target, duration, visible)
+  const display = !hasNumber
+    ? value
+    : prefix + (isInt ? animated : (animated / 10).toFixed(1)) + suffix
+  return <span ref={ref} className={`tabular-nums ${className}`}>{display}</span>
+}
+
+/* ── Hero stat card with entrance + animated count-up ── */
 function StatCard({ icon: Icon, label, value }) {
   return (
-    <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-5 py-4 backdrop-blur transition-all duration-300 hover:-translate-y-1 hover:border-white/20 hover:shadow-[0_0_24px_rgba(14,165,233,0.15)]">
+    <div className="group flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-5 py-4 backdrop-blur transition-all duration-300 hover:-translate-y-1 hover:border-sky-500/30 hover:bg-white/[0.05] hover:shadow-[0_0_28px_rgba(14,165,233,0.2)]">
       <span
-        className="flex h-11 w-11 items-center justify-center rounded-xl bg-sky-500/15 text-sky-300 transition-transform duration-300 hover:scale-110"
+        className="flex h-11 w-11 items-center justify-center rounded-xl bg-sky-500/15 text-sky-300 transition-all duration-300 group-hover:scale-110 group-hover:rotate-3 group-hover:bg-sky-500/25"
         style={{ boxShadow: `0 0 22px ${GLOW}0.25)` }}
       >
         <Icon size={20} />
       </span>
       <div>
         <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-500">{label}</p>
-        <p className="text-2xl font-extrabold tracking-tight text-white">{value}</p>
+        <p className="text-2xl font-extrabold tracking-tight text-white">
+          <AnimatedNumber value={value} />
+        </p>
       </div>
     </div>
   )
@@ -309,13 +329,26 @@ const BENTO = [
   { icon: BellRing, title: 'Pushed straight\nto your team', text: 'The moment a scan finishes, the full verdict, risk score and flagged servers land in your Discord webhook — no polling, no waiting.', mock: <WebhookMock />, wide: true },
 ]
 
-/* ── Feature card with scroll-reveal + stagger ── */
+/* ── Feature card: scroll-reveal + cursor spotlight that follows the mouse ── */
 function GlowCard({ icon: Icon, title, text, delay = 0 }) {
-  const [ref, visible] = useScrollReveal(0.1)
+  const [revealRef, visible] = useScrollReveal(0.1)
+  const cardRef = useRef(null)
+  const onMove = (e) => {
+    const el = cardRef.current
+    if (!el) return
+    const rect = el.getBoundingClientRect()
+    el.style.setProperty('--mx', `${e.clientX - rect.left}px`)
+    el.style.setProperty('--my', `${e.clientY - rect.top}px`)
+  }
+  const setRef = (node) => {
+    cardRef.current = node
+    revealRef.current = node
+  }
   return (
     <div
-      ref={ref}
-      className="group rounded-3xl border border-white/10 bg-white/[0.02] p-7 transition-all duration-300 hover:-translate-y-2 hover:border-sky-500/30 hover:bg-white/[0.04] hover:shadow-[0_0_40px_rgba(14,165,233,0.12)]"
+      ref={setRef}
+      onMouseMove={onMove}
+      className="zt-spotlight group relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.02] p-7 transition-all duration-300 hover:-translate-y-2 hover:border-sky-500/30 hover:bg-white/[0.04] hover:shadow-[0_0_40px_rgba(14,165,233,0.12)]"
       style={{
         opacity: visible ? 1 : 0,
         transform: visible ? 'translateY(0)' : 'translateY(28px)',
@@ -323,13 +356,13 @@ function GlowCard({ icon: Icon, title, text, delay = 0 }) {
       }}
     >
       <span
-        className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-sky-500/15 text-sky-300 transition-all duration-300 group-hover:scale-110 group-hover:bg-sky-500/25 group-hover:shadow-[0_0_20px_rgba(14,165,233,0.4)]"
+        className="relative z-10 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-sky-500/15 text-sky-300 transition-all duration-300 group-hover:scale-110 group-hover:rotate-6 group-hover:bg-sky-500/25 group-hover:shadow-[0_0_20px_rgba(14,165,233,0.4)]"
         style={{ boxShadow: `0 0 26px ${GLOW}0.3)` }}
       >
         <Icon size={24} />
       </span>
-      <h3 className="mt-6 text-xl font-bold text-white">{title}</h3>
-      <p className="mt-3 text-sm leading-relaxed text-neutral-400">{text}</p>
+      <h3 className="relative z-10 mt-6 text-xl font-bold text-white">{title}</h3>
+      <p className="relative z-10 mt-3 text-sm leading-relaxed text-neutral-400">{text}</p>
     </div>
   )
 }
@@ -356,7 +389,9 @@ function MetricCard({ value, label, delay = 0 }) {
         transition: `opacity 0.5s ${delay}s ease, transform 0.5s ${delay}s ease`,
       }}
     >
-      <p className="text-4xl font-extrabold tracking-tight text-sky-300">{value}</p>
+      <p className="text-4xl font-extrabold tracking-tight text-sky-300">
+        <AnimatedNumber value={value} />
+      </p>
       <p className="mt-1 text-sm text-neutral-400">{label}</p>
     </div>
   )
@@ -646,7 +681,7 @@ export default function Landing() {
               </button>
               <button
                 onClick={() => nav('/login?register=1')}
-                className="zt-cta-pulse rounded-full bg-sky-500 px-5 py-2 text-sm font-semibold text-[#0b0c0e] transition-all hover:bg-sky-400"
+                className="zt-sweep rounded-full bg-sky-500 px-5 py-2 text-sm font-semibold text-[#0b0c0e] transition-all duration-200 hover:bg-sky-400 hover:-translate-y-0.5 hover:shadow-[0_0_24px_rgba(14,165,233,0.45)]"
               >
                 Sign Up
               </button>
@@ -690,7 +725,7 @@ export default function Landing() {
             <div className="zt-hero-line-4 mt-9 flex flex-wrap items-center gap-4">
               <button
                 onClick={enter}
-                className="zt-cta-pulse zt-sweep group flex items-center gap-2 rounded-full bg-sky-500 px-7 py-3.5 text-base font-bold text-[#0b0c0e] transition-all hover:bg-sky-400 hover:scale-105 active:scale-100"
+                className="zt-sweep group flex items-center gap-2 rounded-full bg-sky-500 px-7 py-3.5 text-base font-bold text-[#0b0c0e] shadow-[0_0_24px_rgba(14,165,233,0.35)] transition-all duration-200 hover:bg-sky-400 hover:scale-105 hover:shadow-[0_0_36px_rgba(14,165,233,0.55)] active:scale-100"
               >
                 <span className="relative z-10 flex items-center gap-2">
                   Get Started
@@ -884,7 +919,7 @@ export default function Landing() {
             <Reveal dir="left" delay={0.2} className="flex items-center gap-6">
               <button
                 onClick={enter}
-                className="zt-cta-pulse zt-sweep group rounded-full bg-sky-500 px-10 py-5 text-lg font-bold text-[#0b0c0e] transition-all hover:bg-sky-400 hover:scale-105 active:scale-100"
+                className="zt-sweep group rounded-full bg-sky-500 px-10 py-5 text-lg font-bold text-[#0b0c0e] shadow-[0_0_28px_rgba(14,165,233,0.4)] transition-all duration-200 hover:bg-sky-400 hover:scale-105 hover:shadow-[0_0_44px_rgba(14,165,233,0.6)] active:scale-100"
               >
                 <span className="relative z-10">Get Started</span>
               </button>

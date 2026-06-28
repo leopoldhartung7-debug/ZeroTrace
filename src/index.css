@@ -408,6 +408,30 @@ a:active,
 }
 .zt-flagged-tile { animation: zt-flagged-pulse 2.5s ease-in-out infinite; }
 
+/* ── Cursor-following spotlight (paint a soft sky-blue halo where the mouse is) ── */
+.zt-spotlight::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    340px circle at var(--mx, 50%) var(--my, 50%),
+    rgba(14, 165, 233, 0.18),
+    rgba(14, 165, 233, 0.06) 30%,
+    transparent 60%
+  );
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  pointer-events: none;
+  z-index: 0;
+}
+.zt-spotlight:hover::before {
+  opacity: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .zt-spotlight::before { transition: none; }
+}
+
 /* ── Extra ambient utilities (additive, no JSX rewrites needed) ── */
 
 @keyframes zt-pulse-soft {
