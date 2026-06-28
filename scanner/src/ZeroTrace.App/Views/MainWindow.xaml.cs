@@ -50,18 +50,7 @@ public partial class MainWindow : Window
 
         _boxes = new[] { P0, P1, P2, P3, P4, P5 };
         TryLoadEmbeddedPin();
-
-        // Fallback: if the video never fires MediaEnded (codec missing, WMP not
-        // installed, file corrupt) we still advance to GameView after 5 seconds
-        // so the user is never stuck on a blank intro screen.
-        var introFallback = new DispatcherTimer { Interval = TimeSpan.FromSeconds(5) };
-        introFallback.Tick += (_, _) =>
-        {
-            introFallback.Stop();
-            if (IntroView.Visibility == Visibility.Visible)
-                ShowStep(GameView);
-        };
-        introFallback.Start();
+        // GameView is visible by default in XAML; no intro timer needed.
     }
 
     // ===== Step navigation =====
