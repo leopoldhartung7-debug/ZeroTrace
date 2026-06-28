@@ -418,7 +418,7 @@ export default function Landing() {
           }`}
         >
         <button onClick={() => nav('/')} className="flex items-center gap-3">
-          <Logo size="md" />
+          <Logo size="md" iconOnly={scrolled} />
         </button>
         <nav className="hidden items-center gap-7 lg:flex">
           {NAV.map((n) => (
