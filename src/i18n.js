@@ -1176,6 +1176,128 @@ export const DE = {
 
   // ---- Misc ----
   'Bot lookup failed — using scan data': 'Bot-Abfrage fehlgeschlagen — nutze Scan-Daten',
+
+  // ---- Landing page (AURA-style hero + sections) ----
+  'Start Scanning Today': 'Jetzt scannen',
+  'ZeroTrace runs a deep, consent-based forensic scan that surfaces what live anti-cheats overlook — then hands you a clear verdict in about a minute.':
+    'ZeroTrace führt einen tiefen, einwilligungsbasierten forensischen Scan durch, der aufdeckt was Live-Anti-Cheats übersehen — und liefert dir in etwa einer Minute ein klares Verdict.',
+
+  // Sample verdict section
+  'Forensic Screenshare': 'Forensischer Screenshare',
+  'A scan you can act on.': 'Ein Scan, mit dem du handeln kannst.',
+  'One clear number, one decision — with the artifacts attached. We surface what live anti-cheats overlook and hand you a verdict in about a minute.':
+    'Eine klare Zahl, eine Entscheidung — mit allen Artefakten dabei. Wir decken auf, was Live-Anti-Cheats übersehen, und liefern dir in etwa einer Minute ein Verdict.',
+  'See how it works': 'So funktioniert es',
+  'Servers': 'Server',
+  'Accuracy': 'Genauigkeit',
+
+  // See why teams switch (Bento)
+  'See why teams switch': 'Warum Teams wechseln',
+  'What makes ZeroTrace different': 'Was ZeroTrace anders macht',
+  'A verdict in\nunder a minute': 'Ein Verdict in\nweniger als einer Minute',
+  'ZeroTrace is built around a strict time budget — most scans wrap up in about 58 seconds, so checks never stall a tournament.':
+    'ZeroTrace ist auf ein striktes Zeitbudget ausgelegt — die meisten Scans sind in ca. 58 Sekunden durch, damit Checks ein Turnier nie aufhalten.',
+  'Three clear\nverdict tiers': 'Drei klare\nVerdict-Stufen',
+  'Every scan resolves to a clean, suspicious or cheating verdict, backed by the exact artifacts that drove the call.':
+    'Jeder Scan endet mit einem Clean-, Suspicious- oder Cheating-Verdict, gestützt auf genau die Artefakte, die das Urteil ausgelöst haben.',
+  'Pushed straight\nto your team': 'Direkt zu\ndeinem Team',
+  'The moment a scan finishes, the full verdict, risk score and flagged servers land in your Discord webhook — no polling, no waiting.':
+    'Sobald ein Scan fertig ist, landen das vollständige Verdict, der Risk-Score und alle markierten Server in deinem Discord-Webhook — kein Polling, kein Warten.',
+
+  // Features section
+  'Everything you need to ban with confidence': 'Alles was du brauchst, um sicher zu bannen',
+  'The core features and options that ship with every ZeroTrace plan.':
+    'Die Kernfunktionen und Optionen, die in jedem ZeroTrace-Plan enthalten sind.',
+  'Three scan profiles': 'Drei Scan-Profile',
+  'Pick Quick, Standard or Deep — same engine, different time budget. Quick for spot checks, Deep for tournament-grade evidence.':
+    'Wähle Quick, Standard oder Deep — gleiche Engine, anderes Zeitbudget. Quick für Spot-Checks, Deep für Turnier-Beweise.',
+  'Windows-deep forensics': 'Windows-tiefe Forensik',
+  '30+ modules covering processes, kernel drivers, ETW tampering, registry persistence, memory protections, hypervisor traces and on-disk remnants.':
+    '30+ Module für Prozesse, Kernel-Treiber, ETW-Manipulation, Registry-Persistenz, Speicher-Schutzmechanismen, Hypervisor-Spuren und Festplatten-Überreste.',
+  'Game-aware detection': 'Spielspezifische Erkennung',
+  'Dedicated modules for FiveM, CS2, Valorant, Sea of Thieves, RageMP and AltV — beyond generic process and signature checks.':
+    'Dedizierte Module für FiveM, CS2, Valorant, Sea of Thieves, RageMP und AltV — über generische Prozess- und Signatur-Checks hinaus.',
+  'Discord webhook delivery': 'Discord-Webhook-Auslieferung',
+  'The full verdict, risk score and flagged artifacts post straight to your moderation channel the moment the scan finishes.':
+    'Vollständiges Verdict, Risk-Score und markierte Artefakte landen direkt in deinem Moderations-Channel, sobald der Scan fertig ist.',
+  'Consent-first by design': 'Einwilligung an erster Stelle',
+  'A 6-digit PIN ties every scan to a single user. They see the consent screen, can decline, and the artifacts never leave their machine without their tap.':
+    'Ein 6-stelliger PIN bindet jeden Scan an einen einzelnen Nutzer. Er sieht den Consent-Screen, kann ablehnen, und ohne sein Tippen verlassen die Artefakte den Rechner nie.',
+  'Support that shows up': 'Support, der erreichbar ist',
+  'A response team that actually answers, around the clock, so you are never stuck mid-screenshare.':
+    'Ein Response-Team das wirklich antwortet, rund um die Uhr — damit du nie mitten im Screenshare festhängst.',
+
+  // Metrics
+  'Standard scan time': 'Standard-Scan-Dauer',
+  'Detection modules': 'Erkennungsmodule',
+  'Active servers': 'Aktive Server',
+  'Typical scan time': 'Typische Scan-Dauer',
+
+  // Comparison
+  'Where ZeroTrace fits': 'Wo ZeroTrace passt',
+  'Live anti-cheats are great at stopping "loud" cheats as they run. ZeroTrace takes over where they stop — proving what slipped past, after the fact.':
+    'Live-Anti-Cheats sind gut darin, „laute" Cheats live zu stoppen. ZeroTrace übernimmt da, wo sie aufhören — und beweist nachträglich, was durchgeschlüpft ist.',
+  'Live Anti-Cheat': 'Live-Anti-Cheat',
+  'Approach': 'Ansatz',
+  'Timing': 'Zeitpunkt',
+  'Outcome': 'Ergebnis',
+  'Performance': 'Performance',
+  'Watches the game in real time': 'Beobachtet das Spiel in Echtzeit',
+  'Investigates the PC after the fact': 'Untersucht den PC im Nachhinein',
+  'Always running in the background': 'Läuft ständig im Hintergrund',
+  'One deep scan, around a minute': 'Ein tiefer Scan, etwa eine Minute',
+  'Blocks cheats while they run': 'Blockiert Cheats während sie laufen',
+  'Surfaces what was hidden or wiped': 'Deckt auf, was versteckt oder gelöscht wurde',
+  'Constant CPU overhead': 'Dauerhafte CPU-Last',
+  'No impact on game performance': 'Kein Einfluss auf die Spiel-Performance',
+  'Run them together — live protection up front, ZeroTrace for the proof.':
+    'Setze beide zusammen ein — Live-Schutz vorne, ZeroTrace für den Beweis.',
+
+  // How it works
+  'From download to verdict': 'Vom Download zum Verdict',
+  'Three short steps — download, scan, review. No complications, no lengthy processes.':
+    'Drei kurze Schritte — Download, Scan, Review. Keine Komplikationen, keine langwierigen Prozesse.',
+  'Downloading': 'Herunterladen',
+  'Two clicks and the scanner handles the rest — no setup, no config files, no friction.':
+    'Zwei Klicks und der Scanner erledigt den Rest — kein Setup, keine Config-Dateien, keine Reibung.',
+  'Scanning': 'Scannen',
+  'Sit back while ZeroTrace works through memory, modules, drivers and disk, then assembles the evidence.':
+    'Lehn dich zurück, während ZeroTrace Speicher, Module, Treiber und Disk durchgeht und dann die Beweise zusammenstellt.',
+  'Data Review': 'Daten-Review',
+  'Read the verdict on the dashboard, open the underlying artifacts, and make the call with confidence.':
+    'Lies das Verdict im Dashboard, öffne die zugehörigen Artefakte und triff die Entscheidung mit Vertrauen.',
+
+  // FAQ
+  'Answer your': 'Beantworte deine',
+  'questions': 'Fragen',
+  "You've got": 'Du hast',
+  'answers': 'Antworten',
+  'Why should you use ZeroTrace?': 'Warum solltest du ZeroTrace nutzen?',
+  'ZeroTrace delivers fast, consent-based forensic screenshare scans with precise, trustworthy results — a clear verdict in around a minute, backed by every artifact that drove the call.':
+    'ZeroTrace liefert schnelle, einwilligungsbasierte forensische Screenshare-Scans mit präzisen, vertrauenswürdigen Ergebnissen — ein klares Verdict in etwa einer Minute, gestützt auf jedes Artefakt, das das Urteil ausgelöst hat.',
+  'Which games does the scanner cover?': 'Welche Spiele deckt der Scanner ab?',
+  'Dedicated modules ship for FiveM, CS2, Valorant, Sea of Thieves, RageMP and AltV — on top of generic process, driver, registry and memory checks that apply to every title.':
+    'Dedizierte Module gibt es für FiveM, CS2, Valorant, Sea of Thieves, RageMP und AltV — zusätzlich zu generischen Prozess-, Treiber-, Registry- und Speicher-Checks, die für jedes Spiel greifen.',
+  'What operating system does the scanner support?': 'Welches Betriebssystem unterstützt der Scanner?',
+  'The scanner is Windows-only (a single-file .exe on .NET 8 — no install). The dashboard works in any modern browser.':
+    'Der Scanner läuft nur unter Windows (eine Single-File .exe auf .NET 8 — keine Installation). Das Dashboard funktioniert in jedem modernen Browser.',
+  'What type of data does ZeroTrace collect?': 'Welche Daten sammelt ZeroTrace?',
+  'Only anti-cheat artifacts (processes, modules, drivers, registry persistence, on-disk traces) gathered with explicit PIN-based consent. Dashboard data stays in your browser; nothing is sold or shared.':
+    'Nur Anti-Cheat-Artefakte (Prozesse, Module, Treiber, Registry-Persistenz, Festplatten-Spuren), gesammelt mit ausdrücklicher PIN-basierter Einwilligung. Dashboard-Daten bleiben in deinem Browser; nichts wird verkauft oder geteilt.',
+  'How does the consent flow work?': 'Wie funktioniert der Consent-Flow?',
+  'You create a pin in the dashboard, the player downloads a one-file scanner with the PIN baked in, taps Accept on the consent screen, and the verdict lands in your Discord webhook when the scan finishes.':
+    'Du erstellst einen Pin im Dashboard, der Spieler lädt einen Single-File-Scanner mit eingebettetem PIN herunter, tippt auf Accept im Consent-Screen, und das Verdict landet in deinem Discord-Webhook, sobald der Scan fertig ist.',
+  'What payment methods do you accept?': 'Welche Zahlungsmethoden akzeptiert ihr?',
+  'Payments are handled by our Merchant of Record (card and common online methods). See the Pricing page for plans.':
+    'Zahlungen werden über unseren Merchant of Record abgewickelt (Karte und gängige Online-Methoden). Siehe Pricing-Seite für Tarife.',
+
+  // Final CTA
+  'Two clicks': 'Zwei Klicks',
+  'to certainty': 'zur Sicherheit',
+  'Trusted by': 'Vertraut von',
+  '500+ communities': '500+ Communities',
+  'Download ZeroTrace': 'ZeroTrace herunterladen',
+  'Join our Community': 'Tritt unserer Community bei',
 }
 
 // Dynamic patterns (computed strings)
