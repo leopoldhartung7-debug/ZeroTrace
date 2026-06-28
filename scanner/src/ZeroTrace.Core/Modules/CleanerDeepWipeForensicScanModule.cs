@@ -180,7 +180,7 @@ public sealed class CleanerDeepWipeForensicScanModule : IScanModule
                 ctx.AddFinding(new Finding
                 {
                     Module = Name, Title = "CCleaner: Installation Directory Found",
-                    Risk = Risk.Medium, Location = ccRoot,
+                    Risk = RiskLevel.Medium, Location = ccRoot,
                     FileName = "CCleaner",
                     Reason = "CCleaner directory found — used to erase cheat evidence (browser history, temp files, registry)",
                     Detail = $"Path: {ccRoot}"
@@ -205,7 +205,7 @@ public sealed class CleanerDeepWipeForensicScanModule : IScanModule
                                 ctx.AddFinding(new Finding
                                 {
                                     Module = Name, Title = "CCleaner Config: Cheat Path in Cleanup List",
-                                    Risk = Risk.Critical, Location = file,
+                                    Risk = RiskLevel.Critical, Location = file,
                                     FileName = Path.GetFileName(file),
                                     Reason = $"CCleaner config/log contains cheat path '{kw}' — configured to erase cheat evidence",
                                     Detail = content.Length > 500 ? content[..500] : content
@@ -237,7 +237,7 @@ public sealed class CleanerDeepWipeForensicScanModule : IScanModule
                 ctx.AddFinding(new Finding
                 {
                     Module = Name, Title = "CCleaner Registry: Run History",
-                    Risk = Risk.Medium,
+                    Risk = RiskLevel.Medium,
                     Location = $@"HKCU\{ccReg}",
                     FileName = "CCleaner",
                     Reason = "CCleaner registry artifact with run history — evidence of CCleaner usage",
@@ -266,7 +266,7 @@ public sealed class CleanerDeepWipeForensicScanModule : IScanModule
                 ctx.AddFinding(new Finding
                 {
                     Module = Name, Title = "BleachBit: Installation/Data Directory",
-                    Risk = Risk.High, Location = bbRoot,
+                    Risk = RiskLevel.High, Location = bbRoot,
                     FileName = "BleachBit",
                     Reason = "BleachBit directory found — aggressive file shredder, used to permanently destroy cheat evidence",
                     Detail = $"Path: {bbRoot}"
@@ -290,7 +290,7 @@ public sealed class CleanerDeepWipeForensicScanModule : IScanModule
                                 ctx.AddFinding(new Finding
                                 {
                                     Module = Name, Title = "BleachBit Log: Cheat Path Erased",
-                                    Risk = Risk.Critical, Location = file,
+                                    Risk = RiskLevel.Critical, Location = file,
                                     FileName = Path.GetFileName(file),
                                     Reason = $"BleachBit log shows cheat path '{kw}' was erased",
                                     Detail = content.Length > 500 ? content[..500] : content
@@ -322,7 +322,7 @@ public sealed class CleanerDeepWipeForensicScanModule : IScanModule
             ctx.AddFinding(new Finding
             {
                 Module = Name, Title = "PrivaZer: Privacy Cleaner Artifact",
-                Risk = Risk.High, Location = pzRoot,
+                Risk = RiskLevel.High, Location = pzRoot,
                 FileName = "PrivaZer",
                 Reason = "PrivaZer directory found — deep privacy cleaner that permanently destroys forensic evidence",
                 Detail = $"Path: {pzRoot}"
@@ -345,7 +345,7 @@ public sealed class CleanerDeepWipeForensicScanModule : IScanModule
                             ctx.AddFinding(new Finding
                             {
                                 Module = Name, Title = "PrivaZer Log: Cheat Evidence Erased",
-                                Risk = Risk.Critical, Location = file,
+                                Risk = RiskLevel.Critical, Location = file,
                                 FileName = Path.GetFileName(file),
                                 Reason = "PrivaZer log references cheat-related paths — cheat evidence was permanently destroyed",
                                 Detail = content.Length > 500 ? content[..500] : content
@@ -374,7 +374,7 @@ public sealed class CleanerDeepWipeForensicScanModule : IScanModule
             ctx.AddFinding(new Finding
             {
                 Module = Name, Title = "Eraser: File Shredder Artifact",
-                Risk = Risk.High, Location = eraserRoot,
+                Risk = RiskLevel.High, Location = eraserRoot,
                 FileName = "Eraser",
                 Reason = "Eraser file shredder directory found — used to permanently overwrite and destroy cheat artifacts",
                 Detail = $"Path: {eraserRoot}"
@@ -400,7 +400,7 @@ public sealed class CleanerDeepWipeForensicScanModule : IScanModule
                                 ctx.AddFinding(new Finding
                                 {
                                     Module = Name, Title = "Eraser Task: Cheat Path Scheduled for Erasure",
-                                    Risk = Risk.Critical, Location = file,
+                                    Risk = RiskLevel.Critical, Location = file,
                                     FileName = Path.GetFileName(file),
                                     Reason = $"Eraser task file references cheat path '{kw}' — cheat evidence scheduled for permanent destruction",
                                     Detail = content.Length > 500 ? content[..500] : content
@@ -447,7 +447,7 @@ public sealed class CleanerDeepWipeForensicScanModule : IScanModule
                             ctx.AddFinding(new Finding
                             {
                                 Module = Name, Title = "Cheat Cleaner Tool: Dedicated Artifact Wiper",
-                                Risk = Risk.Critical, Location = file,
+                                Risk = RiskLevel.Critical, Location = file,
                                 FileName = Path.GetFileName(file),
                                 Reason = $"Cheat-specific cleaner tool '{cleanerName}' found — designed to destroy cheat evidence before scans",
                                 Detail = $"Path: {file}"
@@ -481,7 +481,7 @@ public sealed class CleanerDeepWipeForensicScanModule : IScanModule
                     ctx.AddFinding(new Finding
                     {
                         Module = Name, Title = $"Cleaner Registry: '{cleanerName}' Artifact",
-                        Risk = Risk.Medium,
+                        Risk = RiskLevel.Medium,
                         Location = $@"HKCU\{regPath}",
                         FileName = cleanerName,
                         Reason = $"Registry artifact from cleaner tool '{cleanerName}' — evidence of systematic file cleanup",
@@ -512,7 +512,7 @@ public sealed class CleanerDeepWipeForensicScanModule : IScanModule
                         ctx.AddFinding(new Finding
                         {
                             Module = Name, Title = "Prefetch: Cleaner Tool Execution History",
-                            Risk = Risk.High, Location = pf,
+                            Risk = RiskLevel.High, Location = pf,
                             FileName = Path.GetFileName(pf),
                             Reason = $"Cleaner tool '{cleanerExe}' prefetch entry — confirms cleaner was run on this system",
                             Detail = $"Prefetch: {pf}"
@@ -529,7 +529,7 @@ public sealed class CleanerDeepWipeForensicScanModule : IScanModule
                         ctx.AddFinding(new Finding
                         {
                             Module = Name, Title = "Prefetch: Cheat Cleaner Tool Execution",
-                            Risk = Risk.Critical, Location = pf,
+                            Risk = RiskLevel.Critical, Location = pf,
                             FileName = Path.GetFileName(pf),
                             Reason = $"Cheat-specific cleaner '{cleanerName}' prefetch — cheat evidence destruction tool was run",
                             Detail = $"Prefetch: {pf}"
@@ -570,7 +570,7 @@ public sealed class CleanerDeepWipeForensicScanModule : IScanModule
                         ctx.AddFinding(new Finding
                         {
                             Module = Name, Title = "PS History: Cheat Evidence Cleanup Command",
-                            Risk = Risk.Critical, Location = psPath,
+                            Risk = RiskLevel.Critical, Location = psPath,
                             FileName = Path.GetFileName(psPath),
                             Reason = $"Cheat evidence cleanup pattern '{pattern}' found in PowerShell history",
                             Detail = content.Length > 600 ? content[..600] : content
@@ -586,7 +586,7 @@ public sealed class CleanerDeepWipeForensicScanModule : IScanModule
                     ctx.AddFinding(new Finding
                     {
                         Module = Name, Title = "PS History: Systematic Cheat Evidence Destruction",
-                        Risk = Risk.Critical, Location = psPath,
+                        Risk = RiskLevel.Critical, Location = psPath,
                         FileName = Path.GetFileName(psPath),
                         Reason = $"{cleanupCommandCount} different cheat cleanup commands in PS history — systematic evidence destruction",
                         Detail = content.Length > 600 ? content[..600] : content
@@ -629,7 +629,7 @@ public sealed class CleanerDeepWipeForensicScanModule : IScanModule
                         ctx.AddFinding(new Finding
                         {
                             Module = Name, Title = "Batch Script: Cheat Cleaner Script Name",
-                            Risk = Risk.Critical, Location = file,
+                            Risk = RiskLevel.Critical, Location = file,
                             FileName = Path.GetFileName(file),
                             Reason = "Batch/VBS script with cheat cleaner name — designed to erase cheat artifacts",
                             Detail = $"Path: {file}"
@@ -651,7 +651,7 @@ public sealed class CleanerDeepWipeForensicScanModule : IScanModule
                             ctx.AddFinding(new Finding
                             {
                                 Module = Name, Title = "Batch Script: Cheat Path Deletion Script",
-                                Risk = Risk.Critical, Location = file,
+                                Risk = RiskLevel.Critical, Location = file,
                                 FileName = Path.GetFileName(file),
                                 Reason = "Batch script deletes cheat-related paths — designed to destroy cheat evidence",
                                 Detail = content.Length > 600 ? content[..600] : content
@@ -699,7 +699,7 @@ public sealed class CleanerDeepWipeForensicScanModule : IScanModule
                             ctx.AddFinding(new Finding
                             {
                                 Module = Name, Title = "Scheduled Task: Cheat Cleaner Auto-Run",
-                                Risk = Risk.Critical, Location = file,
+                                Risk = RiskLevel.Critical, Location = file,
                                 FileName = Path.GetFileName(file),
                                 Reason = "Scheduled task configured to automatically clean cheat evidence",
                                 Detail = content.Length > 500 ? content[..500] : content
@@ -739,7 +739,7 @@ public sealed class CleanerDeepWipeForensicScanModule : IScanModule
                                 ctx.AddFinding(new Finding
                                 {
                                     Module = Name, Title = "Startup: Cleaner Tool Auto-Start",
-                                    Risk = Risk.High,
+                                    Risk = RiskLevel.High,
                                     Location = $@"HKCU\{startupPath}\{valueName}",
                                     FileName = valueName,
                                     Reason = $"Cleaner tool '{cleanerExe}' in startup — runs on every boot to destroy evidence",
@@ -756,7 +756,7 @@ public sealed class CleanerDeepWipeForensicScanModule : IScanModule
                                 ctx.AddFinding(new Finding
                                 {
                                     Module = Name, Title = "Startup: Cheat Cleaner Auto-Start",
-                                    Risk = Risk.Critical,
+                                    Risk = RiskLevel.Critical,
                                     Location = $@"HKCU\{startupPath}\{valueName}",
                                     FileName = valueName,
                                     Reason = $"Cheat-specific cleaner '{cleanerName}' in startup — persistent cheat evidence erasure",
@@ -807,7 +807,7 @@ public sealed class CleanerDeepWipeForensicScanModule : IScanModule
                             ctx.AddFinding(new Finding
                             {
                                 Module = Name, Title = "Cleaner Log: Cheat Evidence Destruction Logged",
-                                Risk = Risk.Critical, Location = file,
+                                Risk = RiskLevel.Critical, Location = file,
                                 FileName = Path.GetFileName(file),
                                 Reason = "Cleaner log shows cheat-related files were deleted/erased",
                                 Detail = content.Length > 600 ? content[..600] : content
@@ -854,7 +854,7 @@ public sealed class CleanerDeepWipeForensicScanModule : IScanModule
                             ctx.AddFinding(new Finding
                             {
                                 Module = Name, Title = "Cleaner Config: Cheat Paths Explicitly Targeted",
-                                Risk = Risk.Critical, Location = file,
+                                Risk = RiskLevel.Critical, Location = file,
                                 FileName = Path.GetFileName(file),
                                 Reason = $"Cleaner config explicitly targets {cheatKwCount} cheat-related paths",
                                 Detail = content.Length > 600 ? content[..600] : content
@@ -894,7 +894,7 @@ public sealed class CleanerDeepWipeForensicScanModule : IScanModule
                             ctx.AddFinding(new Finding
                             {
                                 Module = Name, Title = "Windows CleanMgr: Scheduled Cleanup Configured",
-                                Risk = Risk.Medium,
+                                Risk = RiskLevel.Medium,
                                 Location = $@"HKLM\{cleanMgrPath}\{cacheName}",
                                 FileName = cacheName,
                                 Reason = $"Windows Disk Cleanup scheduled to clear '{cacheName}' — may remove cheat logs/temps",
@@ -940,7 +940,7 @@ public sealed class CleanerDeepWipeForensicScanModule : IScanModule
                                     ctx.AddFinding(new Finding
                                     {
                                         Module = Name, Title = "Recycle Bin: Cleaner Tool Deleted",
-                                        Risk = Risk.High, Location = iFile,
+                                        Risk = RiskLevel.High, Location = iFile,
                                         FileName = Path.GetFileName(iFile),
                                         Reason = $"Cleaner tool '{cleanerExe}' was deleted to Recycle Bin — attempted to hide cleaner usage",
                                         Detail = content.Length > 200 ? content[..200] : content
@@ -972,7 +972,7 @@ public sealed class CleanerDeepWipeForensicScanModule : IScanModule
             ctx.AddFinding(new Finding
             {
                 Module = Name, Title = "Wise Disk Cleaner: Installation/Data Directory",
-                Risk = Risk.High, Location = wiseRoot,
+                Risk = RiskLevel.High, Location = wiseRoot,
                 FileName = "Wise Disk Cleaner",
                 Reason = "Wise Disk Cleaner found — configurable file deletion tool used to erase cheat artifacts",
                 Detail = $"Path: {wiseRoot}"
@@ -994,7 +994,7 @@ public sealed class CleanerDeepWipeForensicScanModule : IScanModule
                             ctx.AddFinding(new Finding
                             {
                                 Module = Name, Title = "Wise Disk Cleaner Config: Cheat Path Target",
-                                Risk = Risk.Critical, Location = file,
+                                Risk = RiskLevel.Critical, Location = file,
                                 FileName = Path.GetFileName(file),
                                 Reason = "Wise Disk Cleaner config includes cheat paths — configured to erase cheat evidence",
                                 Detail = content.Length > 500 ? content[..500] : content
@@ -1027,7 +1027,7 @@ public sealed class CleanerDeepWipeForensicScanModule : IScanModule
                 ctx.AddFinding(new Finding
                 {
                     Module = Name, Title = "PS History: Multi-Cleaner Chain Detected",
-                    Risk = Risk.Critical, Location = psHistoryPath,
+                    Risk = RiskLevel.Critical, Location = psHistoryPath,
                     FileName = Path.GetFileName(psHistoryPath),
                     Reason = $"{cleanerToolCount} different cleaner tools referenced in PS history — chained cleaning operation to defeat forensic recovery",
                     Detail = content.Length > 600 ? content[..600] : content
@@ -1041,7 +1041,7 @@ public sealed class CleanerDeepWipeForensicScanModule : IScanModule
                 ctx.AddFinding(new Finding
                 {
                     Module = Name, Title = "PS History: Cheat Cleaner + General Cleaner Chain",
-                    Risk = Risk.Critical, Location = psHistoryPath,
+                    Risk = RiskLevel.Critical, Location = psHistoryPath,
                     FileName = Path.GetFileName(psHistoryPath),
                     Reason = "Both cheat-specific cleaner and general cleaner used — maximum evidence destruction chain",
                     Detail = content.Length > 600 ? content[..600] : content
@@ -1065,7 +1065,7 @@ public sealed class CleanerDeepWipeForensicScanModule : IScanModule
             ctx.AddFinding(new Finding
             {
                 Module = Name, Title = "Glary Utilities: System Cleaner Artifact",
-                Risk = Risk.Medium, Location = glaryRoot,
+                Risk = RiskLevel.Medium, Location = glaryRoot,
                 FileName = "Glary Utilities",
                 Reason = "Glary Utilities found — comprehensive system cleaner that can erase cheat artifacts",
                 Detail = $"Path: {glaryRoot}"
@@ -1087,7 +1087,7 @@ public sealed class CleanerDeepWipeForensicScanModule : IScanModule
                             ctx.AddFinding(new Finding
                             {
                                 Module = Name, Title = "Glary Utilities Log: Cheat Path Cleaned",
-                                Risk = Risk.Critical, Location = file,
+                                Risk = RiskLevel.Critical, Location = file,
                                 FileName = Path.GetFileName(file),
                                 Reason = "Glary Utilities log shows cheat-related path was cleaned",
                                 Detail = content.Length > 500 ? content[..500] : content

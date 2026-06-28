@@ -282,7 +282,7 @@ public sealed class AntivirusDeepCrossPlatformScanModule : IScanModule
                                     {
                                         Module = Name,
                                         Title = $"Cheat Tool Detected in {avProduct.Key} Log",
-                                        Risk = Risk.Critical,
+                                        Risk = RiskLevel.Critical,
                                         Location = file,
                                         FileName = Path.GetFileName(file),
                                         Reason = $"{avProduct.Key} log records cheat/hack detection: '{keyword}'",
@@ -301,7 +301,7 @@ public sealed class AntivirusDeepCrossPlatformScanModule : IScanModule
                                     {
                                         Module = Name,
                                         Title = $"AV Bypass/Tamper Event in {avProduct.Key} Log",
-                                        Risk = Risk.High,
+                                        Risk = RiskLevel.High,
                                         Location = file,
                                         FileName = Path.GetFileName(file),
                                         Reason = $"{avProduct.Key} log records bypass/tamper event: '{bk}'",
@@ -345,7 +345,7 @@ public sealed class AntivirusDeepCrossPlatformScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = $"Cheat Tool in {avProduct.Key} Quarantine",
-                                    Risk = Risk.Critical,
+                                    Risk = RiskLevel.Critical,
                                     Location = file,
                                     FileName = Path.GetFileName(file),
                                     Reason = $"{avProduct.Key} quarantine contains file matching cheat keyword: '{keyword}'",
@@ -362,7 +362,7 @@ public sealed class AntivirusDeepCrossPlatformScanModule : IScanModule
                         {
                             Module = Name,
                             Title = $"{avProduct.Key} Quarantine Has {fileCount} File(s)",
-                            Risk = Risk.Medium,
+                            Risk = RiskLevel.Medium,
                             Location = fullPath,
                             FileName = "Quarantine",
                             Reason = $"{avProduct.Key} quarantine contains {fileCount} quarantined file(s) — review for cheat tool detections",
@@ -404,7 +404,7 @@ public sealed class AntivirusDeepCrossPlatformScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = $"{avProduct.Key} Protection Feature Disabled",
-                                    Risk = Risk.High,
+                                    Risk = RiskLevel.High,
                                     Location = $@"{hivePrefix}\{keyPath}\{valName}",
                                     FileName = "Registry",
                                     Reason = $"{avProduct.Key} registry shows disabled protection: {valName}={val}",
@@ -457,7 +457,7 @@ public sealed class AntivirusDeepCrossPlatformScanModule : IScanModule
                 var start = key.GetValue("Start");
                 if (start is int s && (s == 4 || s == 3))
                 {
-                    var risk = s == 4 ? Risk.Critical : Risk.High;
+                    var risk = s == 4 ? RiskLevel.Critical : RiskLevel.High;
                     ctx.AddFinding(new Finding
                     {
                         Module = Name,
@@ -477,7 +477,7 @@ public sealed class AntivirusDeepCrossPlatformScanModule : IScanModule
                     {
                         Module = Name,
                         Title = $"AV Service Binary Missing: {svc.Value}",
-                        Risk = Risk.High,
+                        Risk = RiskLevel.High,
                         Location = $@"HKLM\SYSTEM\CurrentControlSet\Services\{svc.Key}",
                         FileName = "Registry",
                         Reason = $"AV service '{svc.Value}' ImagePath points to non-existent binary — AV may have been removed/corrupted",
@@ -522,7 +522,7 @@ public sealed class AntivirusDeepCrossPlatformScanModule : IScanModule
                     {
                         Module = Name,
                         Title = $"Windows Defender: {check.Value.description}",
-                        Risk = Risk.Critical,
+                        Risk = RiskLevel.Critical,
                         Location = $@"HKLM\{check.Value.path}\{check.Value.value}",
                         FileName = "Registry",
                         Reason = $"Defender protection weakened: {check.Value.description} — bypass tool action detected",
@@ -547,7 +547,7 @@ public sealed class AntivirusDeepCrossPlatformScanModule : IScanModule
                     {
                         Module = Name,
                         Title = $"Defender Has {excCount} Path Exclusions (Excessive)",
-                        Risk = Risk.High,
+                        Risk = RiskLevel.High,
                         Location = @"HKLM\SOFTWARE\Microsoft\Windows Defender\Exclusions\Paths",
                         FileName = "Registry",
                         Reason = $"Defender has {excCount} path exclusions — excessive exclusions often added by cheat tools to hide their directories",
@@ -565,7 +565,7 @@ public sealed class AntivirusDeepCrossPlatformScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Defender Exclusion in High-Risk User Directory",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = $@"HKLM\SOFTWARE\Microsoft\Windows Defender\Exclusions\Paths\{excPath}",
                             FileName = "Registry",
                             Reason = $"Defender excludes user-writable high-risk directory: '{excPath}' — cheat tools use this to hide payloads",
@@ -626,7 +626,7 @@ public sealed class AntivirusDeepCrossPlatformScanModule : IScanModule
                 {
                     Module = Name,
                     Title = $"{avProduct.Key} Installation Directory Found",
-                    Risk = Risk.Low,
+                    Risk = RiskLevel.Low,
                     Location = installPath,
                     FileName = Path.GetFileName(installPath),
                     Reason = $"{avProduct.Key} AV is installed at '{installPath}' — check its quarantine and logs for cheat detections",
@@ -648,7 +648,7 @@ public sealed class AntivirusDeepCrossPlatformScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = $"{avProduct.Key} Executable Suspiciously Small",
-                                    Risk = Risk.High,
+                                    Risk = RiskLevel.High,
                                     Location = exe,
                                     FileName = Path.GetFileName(exe),
                                     Reason = $"{avProduct.Key} executable is only {fi.Length} bytes — may be stub/hollowed binary",
@@ -710,7 +710,7 @@ public sealed class AntivirusDeepCrossPlatformScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = $"AV Product in Add/Remove Programs: {appKey?.GetValue("DisplayName")}",
-                                    Risk = Risk.Low,
+                                    Risk = RiskLevel.Low,
                                     Location = $@"HKLM\{keyPath}\{subKeyName}",
                                     FileName = "Registry",
                                     Reason = $"AV product '{appKey?.GetValue("DisplayName")}' registered in Add/Remove Programs — check logs and quarantine",
@@ -761,7 +761,7 @@ public sealed class AntivirusDeepCrossPlatformScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = "Cheat Tool Referenced in Network Protection Log",
-                                    Risk = Risk.Critical,
+                                    Risk = RiskLevel.Critical,
                                     Location = file,
                                     FileName = Path.GetFileName(file),
                                     Reason = $"Defender network protection log references cheat tool: '{ck}'",
@@ -819,7 +819,7 @@ public sealed class AntivirusDeepCrossPlatformScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = $"AV Startup Entry Points to Missing Binary: {avName}",
-                                    Risk = Risk.High,
+                                    Risk = RiskLevel.High,
                                     Location = $@"HKLM\{keyPath}\{valName}",
                                     FileName = "Registry",
                                     Reason = $"AV product '{avName}' startup entry points to non-existent binary — AV may have been removed/corrupted by bypass tool",
@@ -867,7 +867,7 @@ public sealed class AntivirusDeepCrossPlatformScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = $"Cheat-Related Exclusion in {kvp.Value}",
-                                Risk = Risk.Critical,
+                                Risk = RiskLevel.Critical,
                                 Location = $@"HKLM\{kvp.Key}\{valName}",
                                 FileName = "Registry",
                                 Reason = $"{kvp.Value} exclusion references cheat tool: '{ck}'",
@@ -910,7 +910,7 @@ public sealed class AntivirusDeepCrossPlatformScanModule : IScanModule
                         {
                             Module = Name,
                             Title = $"AV Scheduled Task Disabled: {Path.GetFileName(file)}",
-                            Risk = Risk.High,
+                            Risk = RiskLevel.High,
                             Location = file,
                             FileName = Path.GetFileName(file),
                             Reason = $"AV-related scheduled task is disabled: '{Path.GetFileName(file)}' — bypass tool may have disabled AV update/scan task",
@@ -950,7 +950,7 @@ public sealed class AntivirusDeepCrossPlatformScanModule : IScanModule
                     {
                         Module = Name,
                         Title = $"AV Event Log Channel Disabled: {channel.Key}",
-                        Risk = Risk.Critical,
+                        Risk = RiskLevel.Critical,
                         Location = $@"HKLM\{channel.Value}",
                         FileName = "Registry",
                         Reason = $"AV event log channel '{channel.Key}' disabled — AV detection events not recorded",
@@ -991,7 +991,7 @@ public sealed class AntivirusDeepCrossPlatformScanModule : IScanModule
                     {
                         Module = Name,
                         Title = $"EDR Service Disabled: {edr.Value}",
-                        Risk = Risk.Critical,
+                        Risk = RiskLevel.Critical,
                         Location = $@"HKLM\{edr.Key}",
                         FileName = "Registry",
                         Reason = $"EDR/endpoint security service '{edr.Value}' disabled (Start=4) — active bypass of enterprise security monitoring",
@@ -1016,7 +1016,7 @@ public sealed class AntivirusDeepCrossPlatformScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "Windows Defender ATP Not Onboarded",
-                        Risk = Risk.Medium,
+                        Risk = RiskLevel.Medium,
                         Location = @"HKLM\SOFTWARE\Microsoft\Windows Advanced Threat Protection\Status\OnboardingState",
                         FileName = "Registry",
                         Reason = "Windows Defender ATP not onboarded — no cloud-based threat detection and investigation",
@@ -1042,7 +1042,7 @@ public sealed class AntivirusDeepCrossPlatformScanModule : IScanModule
                 {
                     Module = Name,
                     Title = "No AV Registered in Security Center",
-                    Risk = Risk.High,
+                    Risk = RiskLevel.High,
                     Location = @"HKLM\SOFTWARE\Microsoft\Security Center\Provider\Av",
                     FileName = "Registry",
                     Reason = "No antivirus product registered with Windows Security Center — either no AV installed or bypass tool removed registration",
@@ -1069,7 +1069,7 @@ public sealed class AntivirusDeepCrossPlatformScanModule : IScanModule
                         {
                             Module = Name,
                             Title = $"AV Registered in Security Center: {displayName}",
-                            Risk = Risk.Low,
+                            Risk = RiskLevel.Low,
                             Location = $@"HKLM\SOFTWARE\Microsoft\Security Center\Provider\Av\{subKey}",
                             FileName = "Registry",
                             Reason = $"AV product '{displayName}' registered with Security Center — verify logs for cheat detections",
@@ -1109,7 +1109,7 @@ public sealed class AntivirusDeepCrossPlatformScanModule : IScanModule
                     {
                         Module = Name,
                         Title = $"{dbPath.Value} Signature Database Empty",
-                        Risk = Risk.High,
+                        Risk = RiskLevel.High,
                         Location = dbPath.Key,
                         FileName = Path.GetFileName(dbPath.Key),
                         Reason = $"{dbPath.Value} signature/definition database directory is empty — AV may be non-functional or databases were deleted",
@@ -1131,7 +1131,7 @@ public sealed class AntivirusDeepCrossPlatformScanModule : IScanModule
                         {
                             Module = Name,
                             Title = $"{dbPath.Value} Signatures Not Updated in {daysSinceUpdate:F0} Days",
-                            Risk = daysSinceUpdate > 30 ? Risk.High : Risk.Medium,
+                            Risk = daysSinceUpdate > 30 ? RiskLevel.High : RiskLevel.Medium,
                             Location = dbPath.Key,
                             FileName = Path.GetFileName(dbPath.Key),
                             Reason = $"{dbPath.Value} signature database not updated in {daysSinceUpdate:F0} days — outdated AV may miss recent cheat tools",

@@ -160,7 +160,7 @@ public sealed class EasyAntiCheatBypassScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = "EAC Bypass Executable Detected",
-                                    Risk = Risk.Critical,
+                                    Risk = RiskLevel.Critical,
                                     Location = file,
                                     FileName = fn,
                                     Reason = "Known Easy Anti-Cheat bypass tool found",
@@ -198,7 +198,7 @@ public sealed class EasyAntiCheatBypassScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = "EAC Bypass DLL Detected",
-                                    Risk = Risk.Critical,
+                                    Risk = RiskLevel.Critical,
                                     Location = file,
                                     FileName = fn,
                                     Reason = "Known EAC hook/bypass DLL found in user directory",
@@ -237,7 +237,7 @@ public sealed class EasyAntiCheatBypassScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = "EAC Bypass Directory Found",
-                                    Risk = Risk.High,
+                                    Risk = RiskLevel.High,
                                     Location = dir,
                                     FileName = dn,
                                     Reason = "Directory name matches known EAC bypass tool pattern",
@@ -295,7 +295,7 @@ public sealed class EasyAntiCheatBypassScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = "EAC Bypass Tool Planted in EAC Install Directory",
-                                    Risk = Risk.Critical,
+                                    Risk = RiskLevel.Critical,
                                     Location = file,
                                     FileName = fn,
                                     Reason = "Bypass file placed inside EAC installation folder",
@@ -333,7 +333,7 @@ public sealed class EasyAntiCheatBypassScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "EAC Service Disabled in Registry",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = $@"HKLM\SYSTEM\CurrentControlSet\Services\{svcName}",
                             FileName = "registry",
                             Reason = $"Service '{svcName}' has Start=4 (disabled) — EAC bypass technique",
@@ -355,7 +355,7 @@ public sealed class EasyAntiCheatBypassScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "EAC Service Binary Path Tampered",
-                                Risk = Risk.Critical,
+                                Risk = RiskLevel.Critical,
                                 Location = $@"HKLM\SYSTEM\CurrentControlSet\Services\{svcName}",
                                 FileName = "registry",
                                 Reason = $"Service '{svcName}' ImagePath contains suspicious bypass keywords",
@@ -387,7 +387,7 @@ public sealed class EasyAntiCheatBypassScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "EAC Bypass Registry Key Found",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = regKey,
                             FileName = "registry",
                             Reason = "Known EAC bypass tool created this registry key",
@@ -423,7 +423,7 @@ public sealed class EasyAntiCheatBypassScanModule : IScanModule
                                         {
                                             Module = Name,
                                             Title = "EAC Bypass Tool Execution Evidence in UserAssist",
-                                            Risk = Risk.Critical,
+                                            Risk = RiskLevel.Critical,
                                             Location = @"HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\UserAssist",
                                             FileName = "registry",
                                             Reason = "EAC bypass tool was previously launched (UserAssist execution log)",
@@ -471,7 +471,7 @@ public sealed class EasyAntiCheatBypassScanModule : IScanModule
                                     {
                                         Module = Name,
                                         Title = "EAC Bypass Config Keyword Found",
-                                        Risk = Risk.High,
+                                        Risk = RiskLevel.High,
                                         Location = file,
                                         FileName = Path.GetFileName(file),
                                         Reason = $"Config file contains EAC bypass keyword: '{keyword}'",
@@ -512,7 +512,7 @@ public sealed class EasyAntiCheatBypassScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = "EAC Certificate Bypass File Detected",
-                                    Risk = Risk.Critical,
+                                    Risk = RiskLevel.Critical,
                                     Location = file,
                                     FileName = fn,
                                     Reason = "EAC certificate/TLS bypass artifact file found",
@@ -551,7 +551,7 @@ public sealed class EasyAntiCheatBypassScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "EAC Driver File Suspiciously Small",
-                            Risk = Risk.High,
+                            Risk = RiskLevel.High,
                             Location = sysPath,
                             FileName = sysFile,
                             Reason = "EAC driver file is abnormally small — may be replaced with stub",
@@ -591,7 +591,7 @@ public sealed class EasyAntiCheatBypassScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = "EAC Bypass Software in Installed Programs List",
-                                    Risk = Risk.Critical,
+                                    Risk = RiskLevel.Critical,
                                     Location = @"HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\" + sub,
                                     FileName = "registry",
                                     Reason = $"Installed program name matches EAC bypass pattern: '{displayName}'",

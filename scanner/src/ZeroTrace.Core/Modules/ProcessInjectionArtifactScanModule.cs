@@ -224,7 +224,7 @@ public sealed class ProcessInjectionArtifactScanModule : IScanModule
                 {
                     await ScanDirectoryForNamesAsync(ctx, ct, dir, InjectorExeNames,
                         "DLL/Process Injector Executable Detected",
-                        Risk.Critical,
+                        RiskLevel.Critical,
                         "Known process or DLL injector executable found in user directory. Injectors are the primary delivery mechanism for cheat DLLs — they load cheat code into game processes to enable aimbot, ESP, and other cheats while evading process-level anti-cheat detection.");
                 }
                 catch (UnauthorizedAccessException) { }
@@ -245,7 +245,7 @@ public sealed class ProcessInjectionArtifactScanModule : IScanModule
                 {
                     await ScanDirectoryForNamesAsync(ctx, ct, dir, InjectorDllNames,
                         "Injector DLL Component Detected",
-                        Risk.Critical,
+                        RiskLevel.Critical,
                         "Known injector DLL component found. These DLLs implement injection techniques such as manual mapping, reflective loading, or APC injection and are loaded by injector executables as part of the cheat delivery pipeline.");
                 }
                 catch (UnauthorizedAccessException) { }
@@ -286,7 +286,7 @@ public sealed class ProcessInjectionArtifactScanModule : IScanModule
                         {
                             Module = Name,
                             Title = $"Injection Tool Directory Found: {dirName}",
-                            Risk = Risk.High,
+                            Risk = RiskLevel.High,
                             Location = subDir,
                             FileName = dirName,
                             Reason = $"Directory name '{dirName}' matches a known injection tool folder pattern. Cheat injection tools are typically organised in named directories that reflect their injection technique (manual mapping, reflective loading, APC injection, etc.).",
@@ -356,7 +356,7 @@ public sealed class ProcessInjectionArtifactScanModule : IScanModule
                     {
                         Module = Name,
                         Title = $"Injection Tool Configuration File: {fileName}",
-                        Risk = Risk.High,
+                        Risk = RiskLevel.High,
                         Location = file,
                         FileName = fileName,
                         Reason = $"Configuration file '{fileName}' contains injection-related keyword '{matchedKeyword}'. These config files control how DLL injection tools operate, specifying the target process, DLL path, and injection technique to use.",
@@ -427,7 +427,7 @@ public sealed class ProcessInjectionArtifactScanModule : IScanModule
                     {
                         Module = Name,
                         Title = $"Shellcode / Payload Binary File Detected: {fileName}",
-                        Risk = hasMzHeader ? Risk.Critical : Risk.High,
+                        Risk = hasMzHeader ? RiskLevel.Critical : RiskLevel.High,
                         Location = file,
                         FileName = fileName,
                         Reason = hasMzHeader
@@ -465,7 +465,7 @@ public sealed class ProcessInjectionArtifactScanModule : IScanModule
                         {
                             Module = Name,
                             Title = $"Injector Tool Registry Key Present: {toolName}",
-                            Risk = Risk.High,
+                            Risk = RiskLevel.High,
                             Location = $@"{hiveName}\{keyPath}",
                             Reason = $"Registry key '{hiveName}\\{keyPath}' associated with the injection tool '{toolName}' was found. This key is created by the tool on installation or first run, indicating that a process injector has been present on this system.",
                             Detail = $"Hive: {hiveName}, Key: {keyPath}"
@@ -529,7 +529,7 @@ public sealed class ProcessInjectionArtifactScanModule : IScanModule
                 {
                     Module = Name,
                     Title = $"Scheduled Task Contains Injection Keyword: {taskName}",
-                    Risk = Risk.Critical,
+                    Risk = RiskLevel.Critical,
                     Location = taskFile,
                     FileName = taskName,
                     Reason = $"Scheduled task '{taskName}' XML contains injection-related keyword '{matchedKeyword}'. Persistence via scheduled tasks is a known cheat loader technique — the task re-injects the cheat DLL after reboots or anti-cheat restarts.",
@@ -591,7 +591,7 @@ public sealed class ProcessInjectionArtifactScanModule : IScanModule
                 {
                     Module = Name,
                     Title = $"Suspicious DLL in Temp with Injection Strings: {fileName}",
-                    Risk = Risk.Critical,
+                    Risk = RiskLevel.Critical,
                     Location = file,
                     FileName = fileName,
                     Reason = $"DLL file '{fileName}' in %TEMP% has a valid PE (MZ) header and contains process-injection API name strings (VirtualAllocEx, WriteProcessMemory, CreateRemoteThread, etc.). Injector payload DLLs staged in the temp directory commonly exhibit this pattern before being loaded into a target process.",
@@ -640,7 +640,7 @@ public sealed class ProcessInjectionArtifactScanModule : IScanModule
                     {
                         Module = Name,
                         Title = $"Injection Log File Found: {fileName}",
-                        Risk = Risk.High,
+                        Risk = RiskLevel.High,
                         Location = file,
                         FileName = fileName,
                         Reason = $"Log file '{fileName}' matching a known injection tool output pattern found. Injection tools frequently write log files recording successful injections, target process names, and injected DLL paths — these are direct evidence artifacts of prior injection activity.",
@@ -691,7 +691,7 @@ public sealed class ProcessInjectionArtifactScanModule : IScanModule
                         {
                             Module = Name,
                             Title = $"Injector Tool AppData Subdirectory: {dirName}",
-                            Risk = Risk.High,
+                            Risk = RiskLevel.High,
                             Location = subDir,
                             FileName = dirName,
                             Reason = $"AppData subdirectory '{dirName}' contains injection tool keywords. Cheat injectors commonly create folders in AppData to store their payload DLLs, configuration, and logs, using these directories as staging areas for the injection pipeline.",
@@ -744,7 +744,7 @@ public sealed class ProcessInjectionArtifactScanModule : IScanModule
                         {
                             Module = Name,
                             Title = $"User-Mode Rootkit Staging Directory Detected: {dirName}",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = subDir,
                             FileName = dirName,
                             Reason = $"Directory '{dirName}' matches a user-mode (Ring-3) rootkit staging directory naming pattern. User-mode rootkits are sometimes combined with process injection to hide cheat DLLs from anti-cheat process and module enumeration by hooking system APIs in userspace.",
@@ -824,7 +824,7 @@ public sealed class ProcessInjectionArtifactScanModule : IScanModule
                     {
                         Module = Name,
                         Title = $"Unsigned PE Without Version Info and With Injection Strings in Temp: {fileName}",
-                        Risk = Risk.Critical,
+                        Risk = RiskLevel.Critical,
                         Location = file,
                         FileName = fileName,
                         Reason = $"Portable executable '{fileName}' in the Temp directory has no PE version information resource and contains process injection API strings (VirtualAllocEx, WriteProcessMemory, CreateRemoteThread, etc.). Legitimate software virtually always carries version information; the absence combined with injection API strings strongly suggests an unpacked injector payload staged for execution.",
@@ -889,7 +889,7 @@ public sealed class ProcessInjectionArtifactScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = $"Injector Tool Uninstaller Registry Entry: {displayName}",
-                                    Risk = Risk.High,
+                                    Risk = RiskLevel.High,
                                     Location = $@"{hiveName}\{uninstallPath}\{appKeyName}",
                                     Reason = $"Uninstaller registry entry '{displayName}' contains injection-related keyword '{matched}'. This entry was created when the injection tool was installed and persists as evidence even if the tool binary has been deleted.",
                                     Detail = $"DisplayName: {displayName} | InstallLocation: {installLocation} | Keyword: {matched}"

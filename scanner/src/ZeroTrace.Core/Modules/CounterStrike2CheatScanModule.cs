@@ -1380,9 +1380,4 @@ public sealed class CounterStrike2CheatScanModule : IScanModule
         return paths;
     }
 
-    private static string ProgramFiles =>
-        Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
-
-    private static string ProgramFilesX86 =>
-        Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
 }

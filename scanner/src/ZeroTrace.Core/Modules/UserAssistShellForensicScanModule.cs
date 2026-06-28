@@ -129,7 +129,7 @@ public sealed class UserAssistShellForensicScanModule : IScanModule
                             ctx.AddFinding(new Finding
                             {
                                 Module = Name, Title = "UserAssist: Cheat Tool Execution History",
-                                Risk = Risk.Critical,
+                                Risk = RiskLevel.Critical,
                                 Location = $@"HKCU\{uaPath}",
                                 FileName = Path.GetFileName(decoded.Split('\\').Last()),
                                 Reason = $"Cheat tool '{tool}' in UserAssist execution history — confirms tool was run",
@@ -172,7 +172,7 @@ public sealed class UserAssistShellForensicScanModule : IScanModule
                             ctx.AddFinding(new Finding
                             {
                                 Module = Name, Title = "MUICache: Cheat Tool Launch History",
-                                Risk = Risk.Critical,
+                                Risk = RiskLevel.Critical,
                                 Location = $@"HKCU\{muiPath}",
                                 FileName = Path.GetFileName(valueName.Split('.')[0]),
                                 Reason = $"Cheat tool '{tool}' in MUICache — tool was launched on this system",
@@ -224,7 +224,7 @@ public sealed class UserAssistShellForensicScanModule : IScanModule
                         ctx.AddFinding(new Finding
                         {
                             Module = Name, Title = "ShellBag: Cheat Tool Folder Navigation",
-                            Risk = Risk.High,
+                            Risk = RiskLevel.High,
                             Location = $@"HKCU\{path}",
                             FileName = valueName,
                             Reason = $"ShellBag records navigation to cheat-related folder '{cheatPath}' — user browsed to cheat directory",
@@ -270,7 +270,7 @@ public sealed class UserAssistShellForensicScanModule : IScanModule
                         ctx.AddFinding(new Finding
                         {
                             Module = Name, Title = "Recent Documents: Cheat File Accessed",
-                            Risk = Risk.High, Location = file,
+                            Risk = RiskLevel.High, Location = file,
                             FileName = Path.GetFileName(file),
                             Reason = $"Recent Documents entry '{name}' contains cheat keyword '{kw}'",
                             Detail = $"LNK: {file}"
@@ -292,7 +292,7 @@ public sealed class UserAssistShellForensicScanModule : IScanModule
                             ctx.AddFinding(new Finding
                             {
                                 Module = Name, Title = "Recent Documents LNK: Cheat Target Path",
-                                Risk = Risk.High, Location = file,
+                                Risk = RiskLevel.High, Location = file,
                                 FileName = Path.GetFileName(file),
                                 Reason = $"Recent LNK file points to cheat-related path ('{kw}')",
                                 Detail = $"LNK content contains: {kw}"
@@ -337,7 +337,7 @@ public sealed class UserAssistShellForensicScanModule : IScanModule
                         ctx.AddFinding(new Finding
                         {
                             Module = Name, Title = "LNK File: Cheat Tool Shortcut",
-                            Risk = Risk.High, Location = file,
+                            Risk = RiskLevel.High, Location = file,
                             FileName = Path.GetFileName(file),
                             Reason = $"LNK shortcut name '{lnkName}' contains cheat keyword — cheat tool was present",
                             Detail = $"Shortcut: {file}"
@@ -361,7 +361,7 @@ public sealed class UserAssistShellForensicScanModule : IScanModule
                                 ctx.AddFinding(new Finding
                                 {
                                     Module = Name, Title = "LNK File: Points to Cheat Tool Path",
-                                    Risk = Risk.High, Location = file,
+                                    Risk = RiskLevel.High, Location = file,
                                     FileName = Path.GetFileName(file),
                                     Reason = $"LNK shortcut target path contains cheat keyword '{kw}'",
                                     Detail = $"Shortcut: {file}"
@@ -412,7 +412,7 @@ public sealed class UserAssistShellForensicScanModule : IScanModule
                                 ctx.AddFinding(new Finding
                                 {
                                     Module = Name, Title = "Jump List: Cheat Tool in Recent Items",
-                                    Risk = Risk.High, Location = file,
+                                    Risk = RiskLevel.High, Location = file,
                                     FileName = Path.GetFileName(file),
                                     Reason = $"Jump list entry contains cheat keyword '{kw}' — cheat tool was recently used",
                                     Detail = $"Jump list: {file}"
@@ -448,7 +448,7 @@ public sealed class UserAssistShellForensicScanModule : IScanModule
                         ctx.AddFinding(new Finding
                         {
                             Module = Name, Title = "Run MRU: Cheat Tool Run Command",
-                            Risk = Risk.High,
+                            Risk = RiskLevel.High,
                             Location = $@"HKCU\{runMRUPath}",
                             FileName = valueName,
                             Reason = $"Run dialog history contains cheat tool '{kw}' — user ran cheat tool directly",
@@ -490,7 +490,7 @@ public sealed class UserAssistShellForensicScanModule : IScanModule
                                 ctx.AddFinding(new Finding
                                 {
                                     Module = Name, Title = "App Paths: Cheat Tool Registered",
-                                    Risk = Risk.High,
+                                    Risk = RiskLevel.High,
                                     Location = $@"HKLM\{appPathsRoot}\{appName}",
                                     FileName = appName,
                                     Reason = $"Cheat tool '{tool}' registered in App Paths — was installed as application",
@@ -527,7 +527,7 @@ public sealed class UserAssistShellForensicScanModule : IScanModule
                         ctx.AddFinding(new Finding
                         {
                             Module = Name, Title = "Explorer Typed Paths: Cheat Directory Typed",
-                            Risk = Risk.High,
+                            Risk = RiskLevel.High,
                             Location = $@"HKCU\{typedPathsRoot}",
                             FileName = valueName,
                             Reason = $"Cheat path '{kw}' typed in Explorer address bar — user navigated to cheat directory",
@@ -572,7 +572,7 @@ public sealed class UserAssistShellForensicScanModule : IScanModule
                                     ctx.AddFinding(new Finding
                                     {
                                         Module = Name, Title = "Open/Save MRU: Cheat File Dialog History",
-                                        Risk = Risk.High,
+                                        Risk = RiskLevel.High,
                                         Location = $@"HKCU\{mruPath}\{extName}",
                                         FileName = valueName,
                                         Reason = $"Open/Save dialog history shows cheat-related file '{kw}' was opened/saved",
@@ -610,7 +610,7 @@ public sealed class UserAssistShellForensicScanModule : IScanModule
                         ctx.AddFinding(new Finding
                         {
                             Module = Name, Title = "LastVisited MRU: Cheat Tool Dialog Path",
-                            Risk = Risk.High,
+                            Risk = RiskLevel.High,
                             Location = $@"HKCU\{lvMRUPath}",
                             FileName = valueName,
                             Reason = $"Last visited folder dialog shows cheat path '{kw}'",
@@ -651,7 +651,7 @@ public sealed class UserAssistShellForensicScanModule : IScanModule
                             ctx.AddFinding(new Finding
                             {
                                 Module = Name, Title = "Windows Search History: Cheat Tool Search",
-                                Risk = Risk.High, Location = file,
+                                Risk = RiskLevel.High, Location = file,
                                 FileName = Path.GetFileName(file),
                                 Reason = $"Windows Explorer search history contains cheat keyword '{kw}'",
                                 Detail = $"File: {file}"
@@ -692,7 +692,7 @@ public sealed class UserAssistShellForensicScanModule : IScanModule
                             ctx.AddFinding(new Finding
                             {
                                 Module = Name, Title = "Pinned Jump List: Cheat Tool Pinned",
-                                Risk = Risk.High, Location = file,
+                                Risk = RiskLevel.High, Location = file,
                                 FileName = Path.GetFileName(file),
                                 Reason = $"Cheat keyword '{kw}' in pinned jump list — cheat tool was pinned to taskbar",
                                 Detail = $"CustomDestinations: {file}"
@@ -734,7 +734,7 @@ public sealed class UserAssistShellForensicScanModule : IScanModule
                             ctx.AddFinding(new Finding
                             {
                                 Module = Name, Title = "Start Menu: Cheat Tool Shortcut",
-                                Risk = Risk.High, Location = file,
+                                Risk = RiskLevel.High, Location = file,
                                 FileName = Path.GetFileName(file),
                                 Reason = $"Cheat tool shortcut '{name}' in Start Menu — cheat tool was installed",
                                 Detail = $"Shortcut: {file}"
@@ -767,7 +767,7 @@ public sealed class UserAssistShellForensicScanModule : IScanModule
                         ctx.AddFinding(new Finding
                         {
                             Module = Name, Title = "Desktop: Cheat Tool Shortcut",
-                            Risk = Risk.High, Location = file,
+                            Risk = RiskLevel.High, Location = file,
                             FileName = Path.GetFileName(file),
                             Reason = $"Cheat shortcut '{name}' on Desktop — cheat tool was present",
                             Detail = $"Shortcut: {file}"
@@ -818,7 +818,7 @@ public sealed class UserAssistShellForensicScanModule : IScanModule
                         ctx.AddFinding(new Finding
                         {
                             Module = Name, Title = "Browser Bookmarks: Cheat Site Bookmarked",
-                            Risk = Risk.High, Location = bookmarkFile,
+                            Risk = RiskLevel.High, Location = bookmarkFile,
                             FileName = Path.GetFileName(bookmarkFile),
                             Reason = $"Cheat keyword '{kw}' in browser bookmarks — cheat site was bookmarked",
                             Detail = content.Length > 300 ? content[..300] : content
@@ -852,7 +852,7 @@ public sealed class UserAssistShellForensicScanModule : IScanModule
                         ctx.AddFinding(new Finding
                         {
                             Module = Name, Title = "UserAssist: Anti-Forensic Tool Run Count",
-                            Risk = Risk.High,
+                            Risk = RiskLevel.High,
                             Location = $@"HKCU\{uaPath}",
                             FileName = Path.GetFileName(decoded.Split('\\').Last()),
                             Reason = $"Anti-forensic tool '{tool}' in UserAssist — confirms tool was executed",
@@ -886,7 +886,7 @@ public sealed class UserAssistShellForensicScanModule : IScanModule
                         ctx.AddFinding(new Finding
                         {
                             Module = Name, Title = "AppCompat Store: Cheat Tool Compatibility Entry",
-                            Risk = Risk.High,
+                            Risk = RiskLevel.High,
                             Location = $@"HKCU\{recentAppsPath}",
                             FileName = Path.GetFileName(valueName),
                             Reason = $"Cheat tool '{tool}' in AppCompat store — confirms application was executed",

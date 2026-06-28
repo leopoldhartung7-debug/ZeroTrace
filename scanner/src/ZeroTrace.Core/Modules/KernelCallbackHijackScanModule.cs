@@ -162,7 +162,7 @@ public sealed class KernelCallbackHijackScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = "Kernel Callback Hijack Driver in System32",
-                                    Risk = Risk.Critical,
+                                    Risk = RiskLevel.Critical,
                                     Location = file,
                                     FileName = fn,
                                     Reason = "Known kernel callback hijack/DKOM/hook driver found in system directory",
@@ -194,7 +194,7 @@ public sealed class KernelCallbackHijackScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = "Kernel Hijack Driver Found in User Directory",
-                                    Risk = Risk.Critical,
+                                    Risk = RiskLevel.Critical,
                                     Location = file,
                                     FileName = fn,
                                     Reason = "Known kernel callback hijack driver file found staged in user directory",
@@ -232,7 +232,7 @@ public sealed class KernelCallbackHijackScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = "Kernel Hijack Tool Executable Found",
-                                    Risk = Risk.Critical,
+                                    Risk = RiskLevel.Critical,
                                     Location = file,
                                     FileName = fn,
                                     Reason = "Known kernel mapping/hooking tool detected",
@@ -270,7 +270,7 @@ public sealed class KernelCallbackHijackScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = "BYOVD Vulnerable Driver Found in User Directory",
-                                    Risk = Risk.Critical,
+                                    Risk = RiskLevel.Critical,
                                     Location = file,
                                     FileName = fn,
                                     Reason = "Known Bring-Your-Own-Vulnerable-Driver file staged for kernel exploitation",
@@ -317,7 +317,7 @@ public sealed class KernelCallbackHijackScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = "BYOVD Vulnerable Driver Registered as Service",
-                                    Risk = Risk.Critical,
+                                    Risk = RiskLevel.Critical,
                                     Location = $@"HKLM\SYSTEM\CurrentControlSet\Services\{svcName}",
                                     FileName = vulnDriver,
                                     Reason = "Known vulnerable driver registered as a system service — BYOVD kernel exploit pattern",
@@ -352,7 +352,7 @@ public sealed class KernelCallbackHijackScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Kernel Hijack Tool Registry Key Found",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = regKey,
                             FileName = "registry",
                             Reason = "Known kernel callback hijack tool created this registry key",
@@ -383,7 +383,7 @@ public sealed class KernelCallbackHijackScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Windows Test Signing Mode Enabled",
-                            Risk = Risk.High,
+                            Risk = RiskLevel.High,
                             Location = @"HKLM\BCD00000000",
                             FileName = "registry",
                             Reason = "Test signing mode allows unsigned kernel drivers — required by some kernel cheats",
@@ -408,7 +408,7 @@ public sealed class KernelCallbackHijackScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Vulnerable Driver Blocklist Disabled",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = @"HKLM\SYSTEM\CurrentControlSet\Control\CI\Config",
                             FileName = "registry",
                             Reason = "Microsoft vulnerable driver blocklist was disabled — allows BYOVD attacks",
@@ -451,7 +451,7 @@ public sealed class KernelCallbackHijackScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = "Driver Signature Enforcement Bypass Tool Found",
-                                    Risk = Risk.Critical,
+                                    Risk = RiskLevel.Critical,
                                     Location = file,
                                     FileName = fn,
                                     Reason = "DSE/CI bypass tool disables kernel driver signature enforcement",
@@ -498,7 +498,7 @@ public sealed class KernelCallbackHijackScanModule : IScanModule
                                     {
                                         Module = Name,
                                         Title = "Kernel Mapper/Hooker Config Keyword Found",
-                                        Risk = Risk.High,
+                                        Risk = RiskLevel.High,
                                         Location = file,
                                         FileName = Path.GetFileName(file),
                                         Reason = $"Config file contains kernel hijack keyword: '{kw}'",
@@ -546,7 +546,7 @@ public sealed class KernelCallbackHijackScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "KdMapper/BYOVD Service Name Found",
-                                Risk = Risk.Critical,
+                                Risk = RiskLevel.Critical,
                                 Location = $@"HKLM\SYSTEM\CurrentControlSet\Services\{svcName}",
                                 FileName = "registry",
                                 Reason = $"Service name matches known BYOVD/kernel mapper pattern: '{svcName}'",
@@ -599,7 +599,7 @@ public sealed class KernelCallbackHijackScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "Suspicious Executable Payload in Temp Directory",
-                                Risk = Risk.High,
+                                Risk = RiskLevel.High,
                                 Location = file,
                                 FileName = fn,
                                 Reason = "File in %TEMP% has PE/MZ header but non-executable extension — kernel payload staging",

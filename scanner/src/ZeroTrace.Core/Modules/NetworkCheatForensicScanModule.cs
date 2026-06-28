@@ -148,7 +148,7 @@ public sealed class NetworkCheatForensicScanModule : IScanModule
                     ctx.AddFinding(new Finding
                     {
                         Module = Name, Title = "Hosts File: Anti-Cheat Server Blocked",
-                        Risk = Risk.Critical, Location = hostsPath,
+                        Risk = RiskLevel.Critical, Location = hostsPath,
                         FileName = "hosts",
                         Reason = $"Anti-cheat domain '{domain}' blocked in hosts file — prevents AC server communication",
                         Detail = string.Join("; ", lines.Take(5))
@@ -163,7 +163,7 @@ public sealed class NetworkCheatForensicScanModule : IScanModule
                     ctx.AddFinding(new Finding
                     {
                         Module = Name, Title = "Hosts File: Cheat Server Entry",
-                        Risk = Risk.High, Location = hostsPath,
+                        Risk = RiskLevel.High, Location = hostsPath,
                         FileName = "hosts",
                         Reason = $"Cheat-related keyword '{kw}' in hosts file — potential cheat C2 server redirect",
                         Detail = content.Length > 600 ? content[..600] : content
@@ -181,7 +181,7 @@ public sealed class NetworkCheatForensicScanModule : IScanModule
                 ctx.AddFinding(new Finding
                 {
                     Module = Name, Title = "Hosts File: Unusually Large (Possible Block List)",
-                    Risk = Risk.Medium, Location = hostsPath,
+                    Risk = RiskLevel.Medium, Location = hostsPath,
                     FileName = "hosts",
                     Reason = $"Hosts file has {lines2.Count} non-comment entries — may contain AC server block list",
                     Detail = $"Entry count: {lines2.Count}"
@@ -213,7 +213,7 @@ public sealed class NetworkCheatForensicScanModule : IScanModule
                         ctx.AddFinding(new Finding
                         {
                             Module = Name, Title = "Firewall Rule: Anti-Cheat Server Blocked",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = $@"HKLM\{firewallRegPath}\{valueName}",
                             FileName = valueName,
                             Reason = $"Firewall rule blocks anti-cheat domain '{domain}' — active AC communication block",
@@ -231,7 +231,7 @@ public sealed class NetworkCheatForensicScanModule : IScanModule
                         ctx.AddFinding(new Finding
                         {
                             Module = Name, Title = "Firewall Rule: Cheat-Related Block Rule",
-                            Risk = Risk.High,
+                            Risk = RiskLevel.High,
                             Location = $@"HKLM\{firewallRegPath}\{valueName}",
                             FileName = valueName,
                             Reason = $"Firewall rule with cheat keyword '{kw}' — AC bypass attempt via network block",
@@ -264,7 +264,7 @@ public sealed class NetworkCheatForensicScanModule : IScanModule
                     ctx.AddFinding(new Finding
                     {
                         Module = Name, Title = "VPN Artifact: VPN Software Installed",
-                        Risk = Risk.Medium,
+                        Risk = RiskLevel.Medium,
                         Location = $@"HKCU\{vpnPath}",
                         FileName = vpnName,
                         Reason = $"VPN software '{vpnName}' registry artifact — used to anonymize cheat purchases and C2 traffic",
@@ -294,7 +294,7 @@ public sealed class NetworkCheatForensicScanModule : IScanModule
             ctx.AddFinding(new Finding
             {
                 Module = Name, Title = "VPN Artifact: VPN Data Directory Found",
-                Risk = Risk.Medium, Location = vpnData,
+                Risk = RiskLevel.Medium, Location = vpnData,
                 FileName = vpnName,
                 Reason = $"VPN client data directory '{vpnName}' found — VPNs used to hide cheat C2 and purchase traffic",
                 Detail = $"Path: {vpnData}"
@@ -333,7 +333,7 @@ public sealed class NetworkCheatForensicScanModule : IScanModule
                                 ctx.AddFinding(new Finding
                                 {
                                     Module = Name, Title = "Packet Sniffer Installed: AC Traffic Analysis Tool",
-                                    Risk = Risk.High,
+                                    Risk = RiskLevel.High,
                                     Location = $@"HKLM\{uninstallPath}\{subKeyName}",
                                     FileName = displayName,
                                     Reason = $"Packet sniffer '{displayName}' installed — used to analyze anti-cheat traffic patterns",
@@ -371,7 +371,7 @@ public sealed class NetworkCheatForensicScanModule : IScanModule
                 ctx.AddFinding(new Finding
                 {
                     Module = Name, Title = "Proxy Enabled: Potential AC Traffic Intercept",
-                    Risk = Risk.High,
+                    Risk = RiskLevel.High,
                     Location = $@"HKCU\{internetSettingsPath}",
                     FileName = "ProxyServer",
                     Reason = $"System proxy is enabled ({proxyServer}) — can intercept/modify anti-cheat network communication",
@@ -388,7 +388,7 @@ public sealed class NetworkCheatForensicScanModule : IScanModule
                         ctx.AddFinding(new Finding
                         {
                             Module = Name, Title = "Auto-Proxy Config: Cheat-Related PAC File",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = $@"HKCU\{internetSettingsPath}",
                             FileName = "AutoConfigURL",
                             Reason = $"Proxy auto-config URL contains cheat keyword '{kw}'",
@@ -421,7 +421,7 @@ public sealed class NetworkCheatForensicScanModule : IScanModule
             ctx.AddFinding(new Finding
             {
                 Module = Name, Title = "Tor Browser: Anonymous Browsing Artifact",
-                Risk = Risk.High, Location = torPath,
+                Risk = RiskLevel.High, Location = torPath,
                 FileName = "Tor Browser",
                 Reason = "Tor Browser installation found — used for anonymous cheat purchases and forum access",
                 Detail = $"Tor path: {torPath}"
@@ -444,7 +444,7 @@ public sealed class NetworkCheatForensicScanModule : IScanModule
                 ctx.AddFinding(new Finding
                 {
                     Module = Name, Title = "Tor Registry: Tor Software Artifact",
-                    Risk = Risk.Medium,
+                    Risk = RiskLevel.Medium,
                     Location = $@"HKCU\{torReg}",
                     FileName = "Tor",
                     Reason = "Tor Project registry artifact found — anonymous network usage",
@@ -472,7 +472,7 @@ public sealed class NetworkCheatForensicScanModule : IScanModule
                 ctx.AddFinding(new Finding
                 {
                     Module = Name, Title = $"Packet Capture Driver: {name} Installed",
-                    Risk = Risk.High,
+                    Risk = RiskLevel.High,
                     Location = $@"HKLM\{path}",
                     FileName = name,
                     Reason = $"Packet capture driver '{name}' installed — enables raw network capture to analyze AC traffic",
@@ -511,7 +511,7 @@ public sealed class NetworkCheatForensicScanModule : IScanModule
                                 ctx.AddFinding(new Finding
                                 {
                                     Module = Name, Title = "Winsock LSP: Suspicious DLL in Network Stack",
-                                    Risk = Risk.Critical,
+                                    Risk = RiskLevel.Critical,
                                     Location = $@"HKLM\{lspPath}\{subKeyName}",
                                     FileName = Path.GetFileName(libraryPath),
                                     Reason = $"Suspicious LSP DLL '{libraryPath}' in Winsock stack — can intercept game network traffic",
@@ -566,7 +566,7 @@ public sealed class NetworkCheatForensicScanModule : IScanModule
                                 ctx.AddFinding(new Finding
                                 {
                                     Module = Name, Title = "DNS Server: Suspicious DNS Configuration",
-                                    Risk = Risk.High,
+                                    Risk = RiskLevel.High,
                                     Location = $@"HKLM\{interfacePath}\{ifName}",
                                     FileName = "NameServer",
                                     Reason = $"Custom DNS server '{dns}' contains cheat keyword — may redirect AC DNS queries",
@@ -623,7 +623,7 @@ public sealed class NetworkCheatForensicScanModule : IScanModule
                                 ctx.AddFinding(new Finding
                                 {
                                     Module = Name, Title = "Network Capture: AC Traffic Recorded",
-                                    Risk = Risk.Critical, Location = file,
+                                    Risk = RiskLevel.Critical, Location = file,
                                     FileName = Path.GetFileName(file),
                                     Reason = $"AC domain '{domain}' in network capture log — anti-cheat traffic was intercepted/analyzed",
                                     Detail = content.Length > 400 ? content[..400] : content
@@ -689,7 +689,7 @@ public sealed class NetworkCheatForensicScanModule : IScanModule
                                     ctx.AddFinding(new Finding
                                     {
                                         Module = Name, Title = "Firefox History: Cheat Site Access",
-                                        Risk = Risk.High, Location = placesSqlite,
+                                        Risk = RiskLevel.High, Location = placesSqlite,
                                         FileName = "places.sqlite",
                                         Reason = $"Cheat keyword '{kw}' in Firefox browser history database",
                                         Detail = $"Profile: {Path.GetFileName(profile)}"
@@ -720,7 +720,7 @@ public sealed class NetworkCheatForensicScanModule : IScanModule
                         ctx.AddFinding(new Finding
                         {
                             Module = Name, Title = "Browser History: Cheat Shop/Forum Access",
-                            Risk = Risk.High, Location = histPath,
+                            Risk = RiskLevel.High, Location = histPath,
                             FileName = Path.GetFileName(histPath),
                             Reason = $"Cheat keyword '{kw}' found in Chrome/Edge browser history database",
                             Detail = $"Path: {histPath}"
@@ -750,7 +750,7 @@ public sealed class NetworkCheatForensicScanModule : IScanModule
                 ctx.AddFinding(new Finding
                 {
                     Module = Name, Title = "TCP/IP Security Filters: Custom IP Block",
-                    Risk = Risk.High,
+                    Risk = RiskLevel.High,
                     Location = $@"HKLM\{tcpipSecurityPath}",
                     FileName = "SecurityFilters",
                     Reason = "Custom TCP/IP security filters configured — may block anti-cheat server IPs",
@@ -787,7 +787,7 @@ public sealed class NetworkCheatForensicScanModule : IScanModule
                         ctx.AddFinding(new Finding
                         {
                             Module = Name, Title = "Network Driver Bypass: Suspicious Service",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = $@"HKLM\{servicesPath}\{svcName}",
                             FileName = svcName,
                             Reason = $"Suspicious network driver service '{svcName}' — may bypass WFP/TDI network filtering used by AC",
@@ -825,7 +825,7 @@ public sealed class NetworkCheatForensicScanModule : IScanModule
                     ctx.AddFinding(new Finding
                     {
                         Module = Name, Title = "PS History: Cheat C2 Server Connection",
-                        Risk = Risk.Critical, Location = networkLogPath,
+                        Risk = RiskLevel.Critical, Location = networkLogPath,
                         FileName = Path.GetFileName(networkLogPath),
                         Reason = $"Cheat C2 keyword '{kw}' in PowerShell history — potential cheat update/license server contact",
                         Detail = content.Length > 500 ? content[..500] : content
@@ -852,7 +852,7 @@ public sealed class NetworkCheatForensicScanModule : IScanModule
                 ctx.AddFinding(new Finding
                 {
                     Module = Name, Title = "Persistent Routes: Custom Network Routes",
-                    Risk = Risk.Medium,
+                    Risk = RiskLevel.Medium,
                     Location = $@"HKLM\{routingRegPath}",
                     FileName = "PersistentRoutes",
                     Reason = "Custom persistent network routes configured — may redirect anti-cheat server traffic",
@@ -878,7 +878,7 @@ public sealed class NetworkCheatForensicScanModule : IScanModule
                 ctx.AddFinding(new Finding
                 {
                     Module = Name, Title = "NetBIOS: P-Node Mode (Direct Query Only)",
-                    Risk = Risk.Low,
+                    Risk = RiskLevel.Low,
                     Location = $@"HKLM\{nbtRegPath}",
                     FileName = "NodeType",
                     Reason = "NetBIOS P-node mode configured — avoids broadcast-based network discovery (minor evasion)",
@@ -923,7 +923,7 @@ public sealed class NetworkCheatForensicScanModule : IScanModule
                             ctx.AddFinding(new Finding
                             {
                                 Module = Name, Title = "License Server Config: Cheat Authentication Server",
-                                Risk = Risk.Critical, Location = file,
+                                Risk = RiskLevel.Critical, Location = file,
                                 FileName = Path.GetFileName(file),
                                 Reason = "File references cheat license/authentication server — cheat software authentication artifact",
                                 Detail = content.Length > 500 ? content[..500] : content
@@ -955,7 +955,7 @@ public sealed class NetworkCheatForensicScanModule : IScanModule
             ctx.AddFinding(new Finding
             {
                 Module = Name, Title = "Packet Capture Driver: npcap/WinPcap System File",
-                Risk = Risk.High, Location = path,
+                Risk = RiskLevel.High, Location = path,
                 FileName = Path.GetFileName(path),
                 Reason = "Packet capture driver system file present — enables raw network packet capture of anti-cheat traffic",
                 Detail = $"Path: {path}"
@@ -973,7 +973,7 @@ public sealed class NetworkCheatForensicScanModule : IScanModule
             ctx.AddFinding(new Finding
             {
                 Module = Name, Title = "NPCAP Service: Packet Capture Driver Running",
-                Risk = Risk.High,
+                Risk = RiskLevel.High,
                 Location = $@"HKLM\{npcapService}",
                 FileName = "npcap",
                 Reason = "npcap packet capture service installed — enables Wireshark-style AC traffic capture",

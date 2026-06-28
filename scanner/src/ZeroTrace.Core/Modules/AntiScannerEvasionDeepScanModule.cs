@@ -167,7 +167,7 @@ public sealed class AntiScannerEvasionDeepScanModule : IScanModule
                                     ctx.AddFinding(new Finding
                                     {
                                         Module = Name, Title = "Anti-Forensic Tool Installed",
-                                        Risk = Risk.High,
+                                        Risk = RiskLevel.High,
                                         Location = $@"HKLM\{uninstallPath}\{subKeyName}",
                                         FileName = displayName,
                                         Reason = $"Anti-forensic / file wipe tool '{displayName}' is installed — used to destroy evidence",
@@ -204,7 +204,7 @@ public sealed class AntiScannerEvasionDeepScanModule : IScanModule
                     ctx.AddFinding(new Finding
                     {
                         Module = Name, Title = "Anti-Forensic Tool Registry Artifact",
-                        Risk = Risk.High,
+                        Risk = RiskLevel.High,
                         Location = $@"HKCU\{regPath}",
                         FileName = toolName,
                         Reason = $"Registry artifact from anti-forensic tool '{toolName}' — indicates evidence destruction tool usage",
@@ -247,7 +247,7 @@ public sealed class AntiScannerEvasionDeepScanModule : IScanModule
                                 ctx.AddFinding(new Finding
                                 {
                                     Module = Name, Title = "Scheduled Task: Scanner Evasion / Cleaner",
-                                    Risk = Risk.High, Location = file,
+                                    Risk = RiskLevel.High, Location = file,
                                     FileName = Path.GetFileName(file),
                                     Reason = $"Scheduled task contains cleanup keyword '{kw}' — may run before scans",
                                     Detail = content.Length > 500 ? content[..500] : content
@@ -263,7 +263,7 @@ public sealed class AntiScannerEvasionDeepScanModule : IScanModule
                                 ctx.AddFinding(new Finding
                                 {
                                     Module = Name, Title = "Scheduled Task: Scanner-Specific Evasion",
-                                    Risk = Risk.Critical, Location = file,
+                                    Risk = RiskLevel.Critical, Location = file,
                                     FileName = Path.GetFileName(file),
                                     Reason = $"Scheduled task references scanner name '{kw}' — designed to evade specific scanner",
                                     Detail = content.Length > 500 ? content[..500] : content
@@ -308,7 +308,7 @@ public sealed class AntiScannerEvasionDeepScanModule : IScanModule
                         ctx.AddFinding(new Finding
                         {
                             Module = Name, Title = "PowerShell History: Scanner Evasion Command",
-                            Risk = Risk.Critical, Location = psPath,
+                            Risk = RiskLevel.Critical, Location = psPath,
                             FileName = Path.GetFileName(psPath),
                             Reason = $"Scanner evasion pattern '{kw}' found in PowerShell history",
                             Detail = content.Length > 600 ? content[..600] : content
@@ -324,7 +324,7 @@ public sealed class AntiScannerEvasionDeepScanModule : IScanModule
                         ctx.AddFinding(new Finding
                         {
                             Module = Name, Title = "PowerShell History: Evidence Destruction Command",
-                            Risk = Risk.High, Location = psPath,
+                            Risk = RiskLevel.High, Location = psPath,
                             FileName = Path.GetFileName(psPath),
                             Reason = $"Evidence destruction command '{kw}' in PowerShell history",
                             Detail = content.Length > 600 ? content[..600] : content
@@ -371,7 +371,7 @@ public sealed class AntiScannerEvasionDeepScanModule : IScanModule
                             ctx.AddFinding(new Finding
                             {
                                 Module = Name, Title = "Temp Log: Bulk Cheat Artifact Deletion",
-                                Risk = Risk.High, Location = file,
+                                Risk = RiskLevel.High, Location = file,
                                 FileName = Path.GetFileName(file),
                                 Reason = "Temporary log shows deletion of cheat-related file paths",
                                 Detail = content.Length > 600 ? content[..600] : content
@@ -431,7 +431,7 @@ public sealed class AntiScannerEvasionDeepScanModule : IScanModule
                                 ctx.AddFinding(new Finding
                                 {
                                     Module = Name, Title = "Cleaner Config: Cheat Path Targeted",
-                                    Risk = Risk.Critical, Location = file,
+                                    Risk = RiskLevel.Critical, Location = file,
                                     FileName = Path.GetFileName(file),
                                     Reason = $"Cleaner config targets cheat-related path ('{kw}') — configured to erase cheat evidence",
                                     Detail = content.Length > 600 ? content[..600] : content
@@ -480,7 +480,7 @@ public sealed class AntiScannerEvasionDeepScanModule : IScanModule
                                 ctx.AddFinding(new Finding
                                 {
                                     Module = Name, Title = "Erasure Tool Log: Cheat Files Wiped",
-                                    Risk = Risk.Critical, Location = file,
+                                    Risk = RiskLevel.Critical, Location = file,
                                     FileName = Path.GetFileName(file),
                                     Reason = $"Erasure tool log contains cheat path '{kw}' — evidence of targeted cheat file destruction",
                                     Detail = content.Length > 600 ? content[..600] : content
@@ -511,7 +511,7 @@ public sealed class AntiScannerEvasionDeepScanModule : IScanModule
                 ctx.AddFinding(new Finding
                 {
                     Module = Name, Title = "Temp Folder: Completely Empty",
-                    Risk = Risk.Medium, Location = tempPath,
+                    Risk = RiskLevel.Medium, Location = tempPath,
                     FileName = "Temp",
                     Reason = "Temp folder is completely empty — suggests deliberate wipe before scan",
                     Detail = $"Temp path: {tempPath}"
@@ -530,7 +530,7 @@ public sealed class AntiScannerEvasionDeepScanModule : IScanModule
                         ctx.AddFinding(new Finding
                         {
                             Module = Name, Title = "Temp Folder: Anti-Forensic Tool Artifact",
-                            Risk = Risk.High, Location = file,
+                            Risk = RiskLevel.High, Location = file,
                             FileName = Path.GetFileName(file),
                             Reason = $"Anti-forensic tool artifact '{tool}' found in temp folder",
                             Detail = $"Path: {file}"
@@ -574,7 +574,7 @@ public sealed class AntiScannerEvasionDeepScanModule : IScanModule
                                     ctx.AddFinding(new Finding
                                     {
                                         Module = Name, Title = "Recycle Bin: Cheat File Deleted",
-                                        Risk = Risk.High, Location = iFile,
+                                        Risk = RiskLevel.High, Location = iFile,
                                         FileName = Path.GetFileName(iFile),
                                         Reason = $"Recycle Bin $I metadata shows deleted cheat-related file ('{kw}')",
                                         Detail = content.Length > 300 ? content[..300] : content
@@ -623,7 +623,7 @@ public sealed class AntiScannerEvasionDeepScanModule : IScanModule
                                 ctx.AddFinding(new Finding
                                 {
                                     Module = Name, Title = "Startup: Anti-Forensic Tool Auto-Run",
-                                    Risk = Risk.High,
+                                    Risk = RiskLevel.High,
                                     Location = $@"HKCU\{startupPath}\{valueName}",
                                     FileName = valueName,
                                     Reason = $"Anti-forensic tool '{tool}' configured to run at startup — persistent evidence erasure",
@@ -640,7 +640,7 @@ public sealed class AntiScannerEvasionDeepScanModule : IScanModule
                                 ctx.AddFinding(new Finding
                                 {
                                     Module = Name, Title = "Startup: Scanner Evasion Tool",
-                                    Risk = Risk.Critical,
+                                    Risk = RiskLevel.Critical,
                                     Location = $@"HKCU\{startupPath}\{valueName}",
                                     FileName = valueName,
                                     Reason = $"Startup entry references scanner name '{kw}' — scanner-specific evasion tool",
@@ -693,7 +693,7 @@ public sealed class AntiScannerEvasionDeepScanModule : IScanModule
                             ctx.AddFinding(new Finding
                             {
                                 Module = Name, Title = "Script: Scanner-Specific Evasion Script",
-                                Risk = Risk.Critical, Location = file,
+                                Risk = RiskLevel.Critical, Location = file,
                                 FileName = Path.GetFileName(file),
                                 Reason = "Script contains scanner-specific evasion keywords — designed to bypass forensic scan",
                                 Detail = content.Length > 600 ? content[..600] : content
@@ -704,7 +704,7 @@ public sealed class AntiScannerEvasionDeepScanModule : IScanModule
                             ctx.AddFinding(new Finding
                             {
                                 Module = Name, Title = "Script: Cheat Evidence Destruction Script",
-                                Risk = Risk.High, Location = file,
+                                Risk = RiskLevel.High, Location = file,
                                 FileName = Path.GetFileName(file),
                                 Reason = "Script combines evidence destruction commands with cheat path keywords",
                                 Detail = content.Length > 600 ? content[..600] : content
@@ -740,7 +740,7 @@ public sealed class AntiScannerEvasionDeepScanModule : IScanModule
                         ctx.AddFinding(new Finding
                         {
                             Module = Name, Title = "Timestomp Artifact: Future Timestamp",
-                            Risk = Risk.High, Location = file,
+                            Risk = RiskLevel.High, Location = file,
                             FileName = Path.GetFileName(file),
                             Reason = "File has a future timestamp — indicates timestomping (anti-forensic technique)",
                             Detail = $"Created: {creationTime:u}, Modified: {lastWriteTime:u}, Now: {now:u}"
@@ -752,7 +752,7 @@ public sealed class AntiScannerEvasionDeepScanModule : IScanModule
                         ctx.AddFinding(new Finding
                         {
                             Module = Name, Title = "Timestomp Artifact: Creation After Write Time",
-                            Risk = Risk.High, Location = file,
+                            Risk = RiskLevel.High, Location = file,
                             FileName = Path.GetFileName(file),
                             Reason = "File creation time is later than last write time — classic timestomping indicator",
                             Detail = $"Created: {creationTime:u}, Modified: {lastWriteTime:u}"
@@ -790,7 +790,7 @@ public sealed class AntiScannerEvasionDeepScanModule : IScanModule
                     ctx.AddFinding(new Finding
                     {
                         Module = Name, Title = "VSS Delete: Shadow Copies Destroyed via PowerShell",
-                        Risk = Risk.Critical, Location = psHistoryPath,
+                        Risk = RiskLevel.Critical, Location = psHistoryPath,
                         FileName = Path.GetFileName(psHistoryPath),
                         Reason = $"VSS shadow copy deletion command '{pattern}' found in PS history — destroys forensic restore points",
                         Detail = content.Length > 500 ? content[..500] : content
@@ -826,7 +826,7 @@ public sealed class AntiScannerEvasionDeepScanModule : IScanModule
                     ctx.AddFinding(new Finding
                     {
                         Module = Name, Title = "Event Log Clear: Anti-Forensic Command in PS History",
-                        Risk = Risk.Critical, Location = psHistoryPath,
+                        Risk = RiskLevel.Critical, Location = psHistoryPath,
                         FileName = Path.GetFileName(psHistoryPath),
                         Reason = $"Event log clear command '{pattern}' in PS history — destroys cheat activity logs",
                         Detail = content.Length > 500 ? content[..500] : content
@@ -868,7 +868,7 @@ public sealed class AntiScannerEvasionDeepScanModule : IScanModule
             ctx.AddFinding(new Finding
             {
                 Module = Name, Title = "ShellBags: All Entries Wiped",
-                Risk = Risk.High,
+                Risk = RiskLevel.High,
                 Location = @"HKCU\SOFTWARE\Microsoft\Windows\Shell",
                 FileName = "BagMRU",
                 Reason = "ShellBag entries are completely absent — deliberate wipe removes evidence of folder navigation history",
@@ -892,7 +892,7 @@ public sealed class AntiScannerEvasionDeepScanModule : IScanModule
                 ctx.AddFinding(new Finding
                 {
                     Module = Name, Title = "Prefetch: Folder Completely Empty",
-                    Risk = Risk.High, Location = prefetchPath,
+                    Risk = RiskLevel.High, Location = prefetchPath,
                     FileName = "Prefetch",
                     Reason = "Prefetch folder is empty — all execution history erased (anti-forensic)",
                     Detail = "Normal systems have 100-1024 prefetch files"
@@ -911,7 +911,7 @@ public sealed class AntiScannerEvasionDeepScanModule : IScanModule
                         ctx.AddFinding(new Finding
                         {
                             Module = Name, Title = "Prefetch: Anti-Forensic Tool Execution",
-                            Risk = Risk.High, Location = pf,
+                            Risk = RiskLevel.High, Location = pf,
                             FileName = Path.GetFileName(pf),
                             Reason = $"Anti-forensic tool '{tool}' prefetch entry — confirms tool was executed",
                             Detail = $"Path: {pf}"
@@ -950,7 +950,7 @@ public sealed class AntiScannerEvasionDeepScanModule : IScanModule
                     ctx.AddFinding(new Finding
                     {
                         Module = Name, Title = "MRU Wiped: Recent Document History Empty",
-                        Risk = Risk.Medium,
+                        Risk = RiskLevel.Medium,
                         Location = $@"HKCU\{mruPath}",
                         FileName = mruPath.Split('\\').Last(),
                         Reason = "MRU (Most Recently Used) list is empty — deliberate wipe removes file access history",
@@ -990,7 +990,7 @@ public sealed class AntiScannerEvasionDeepScanModule : IScanModule
                         ctx.AddFinding(new Finding
                         {
                             Module = Name, Title = "Anti-Forensic Chain: Cleaner Tool Artifact",
-                            Risk = Risk.High, Location = file,
+                            Risk = RiskLevel.High, Location = file,
                             FileName = Path.GetFileName(file),
                             Reason = "Multiple anti-forensic tool references in file — evidence of chained cleaning",
                             Detail = $"Path: {file}"
@@ -1010,7 +1010,7 @@ public sealed class AntiScannerEvasionDeepScanModule : IScanModule
                                 ctx.AddFinding(new Finding
                                 {
                                     Module = Name, Title = "Anti-Forensic Chain: Multi-Tool Erasure Script",
-                                    Risk = Risk.Critical, Location = file,
+                                    Risk = RiskLevel.Critical, Location = file,
                                     FileName = Path.GetFileName(file),
                                     Reason = $"Script invokes {cleanerCount} anti-forensic tools — chained erasure to defeat forensic recovery",
                                     Detail = content.Length > 600 ? content[..600] : content

@@ -160,7 +160,7 @@ public sealed class RootKitUserModeArtifactScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = "User-Mode Rootkit Executable Found",
-                                    Risk = Risk.Critical,
+                                    Risk = RiskLevel.Critical,
                                     Location = file,
                                     FileName = fn,
                                     Reason = "Known user-mode rootkit/process hider tool detected",
@@ -198,7 +198,7 @@ public sealed class RootKitUserModeArtifactScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = "User-Mode Rootkit/Hook DLL Found",
-                                    Risk = Risk.Critical,
+                                    Risk = RiskLevel.Critical,
                                     Location = file,
                                     FileName = fn,
                                     Reason = "Known user-mode rootkit/API hook library found in user directory",
@@ -237,7 +237,7 @@ public sealed class RootKitUserModeArtifactScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = "Hook Framework / Rootkit Directory Found",
-                                    Risk = Risk.High,
+                                    Risk = RiskLevel.High,
                                     Location = dir,
                                     FileName = dn,
                                     Reason = $"Directory '{dn}' matches known API hook/rootkit framework pattern",
@@ -284,7 +284,7 @@ public sealed class RootKitUserModeArtifactScanModule : IScanModule
                                     {
                                         Module = Name,
                                         Title = "User-Mode Rootkit Config Keyword Found",
-                                        Risk = Risk.High,
+                                        Risk = RiskLevel.High,
                                         Location = file,
                                         FileName = Path.GetFileName(file),
                                         Reason = $"Config file contains rootkit/hiding keyword: '{kw}'",
@@ -338,7 +338,7 @@ public sealed class RootKitUserModeArtifactScanModule : IScanModule
                                     {
                                         Module = Name,
                                         Title = "AppInit_DLLs Contains Suspicious Hook/Cheat DLL",
-                                        Risk = Risk.Critical,
+                                        Risk = RiskLevel.Critical,
                                         Location = $@"HKLM\{keyPath}",
                                         FileName = "registry",
                                         Reason = $"AppInit_DLLs has suspicious keyword '{indicator}' — DLL is injected into every process",
@@ -381,7 +381,7 @@ public sealed class RootKitUserModeArtifactScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = "Suspicious LSA Authentication Package Registered",
-                                    Risk = Risk.Critical,
+                                    Risk = RiskLevel.Critical,
                                     Location = @"HKLM\SYSTEM\CurrentControlSet\Control\Lsa",
                                     FileName = "registry",
                                     Reason = $"LSA authentication package '{pkg}' contains suspicious keyword '{indicator}'",
@@ -409,7 +409,7 @@ public sealed class RootKitUserModeArtifactScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = "Suspicious LSA Notification Package Registered",
-                                    Risk = Risk.Critical,
+                                    Risk = RiskLevel.Critical,
                                     Location = @"HKLM\SYSTEM\CurrentControlSet\Control\Lsa",
                                     FileName = "registry",
                                     Reason = $"LSA notification package '{pkg}' contains suspicious keyword '{indicator}'",
@@ -448,7 +448,7 @@ public sealed class RootKitUserModeArtifactScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "Known Rootkit DLL in AppInit_DLLs",
-                                Risk = Risk.Critical,
+                                Risk = RiskLevel.Critical,
                                 Location = @"HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows",
                                 FileName = "registry",
                                 Reason = $"Known rootkit DLL '{rkDll}' registered in AppInit_DLLs",
@@ -507,7 +507,7 @@ public sealed class RootKitUserModeArtifactScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = $"Winlogon '{valName}' Value Hijacked",
-                                Risk = Risk.Critical,
+                                Risk = RiskLevel.Critical,
                                 Location = $@"HKLM\{keyPath}",
                                 FileName = "registry",
                                 Reason = $"Winlogon '{valName}' set to unexpected value — rootkit persistence technique",
@@ -539,7 +539,7 @@ public sealed class RootKitUserModeArtifactScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "User-Mode Rootkit DLL Found in System32",
-                        Risk = Risk.Critical,
+                        Risk = RiskLevel.Critical,
                         Location = dllPath,
                         FileName = rkDll,
                         Reason = "Known rootkit/hook DLL found in System32 — persistence installation detected",
@@ -569,7 +569,7 @@ public sealed class RootKitUserModeArtifactScanModule : IScanModule
                                     {
                                         Module = Name,
                                         Title = "Rootkit DLL Staged in Temp Directory",
-                                        Risk = Risk.Critical,
+                                        Risk = RiskLevel.Critical,
                                         Location = file,
                                         FileName = fn,
                                         Reason = "Rootkit DLL found staged in Local\\Temp — pre-injection staging",
@@ -608,7 +608,7 @@ public sealed class RootKitUserModeArtifactScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "User-Mode Rootkit Tool Execution Evidence in MUICache",
-                                Risk = Risk.Critical,
+                                Risk = RiskLevel.Critical,
                                 Location = @"HKCU\SOFTWARE\Classes\Local Settings\Software\Microsoft\Windows\Shell\MuiCache",
                                 FileName = "registry",
                                 Reason = "MUICache records previous execution of rootkit/process hider tool",

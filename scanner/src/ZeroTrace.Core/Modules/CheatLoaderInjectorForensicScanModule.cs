@@ -157,7 +157,7 @@ public sealed class CheatLoaderInjectorForensicScanModule : IScanModule
                             ctx.AddFinding(new Finding
                             {
                                 Module = Name, Title = "Injector Tool: Known DLL Injector Artifact",
-                                Risk = Risk.Critical, Location = file,
+                                Risk = RiskLevel.Critical, Location = file,
                                 FileName = Path.GetFileName(file),
                                 Reason = $"Known injector tool name '{injName}' found — used to inject cheat DLLs into game process",
                                 Detail = $"Path: {file}"
@@ -206,7 +206,7 @@ public sealed class CheatLoaderInjectorForensicScanModule : IScanModule
                                     ctx.AddFinding(new Finding
                                     {
                                         Module = Name, Title = "Cheat Engine: Memory Editor Installed",
-                                        Risk = Risk.Critical,
+                                        Risk = RiskLevel.Critical,
                                         Location = $@"HKLM\{uninstallPath}\{subKeyName}",
                                         FileName = displayName,
                                         Reason = $"Cheat Engine / memory editor '{displayName}' installed — used to hack game memory",
@@ -239,7 +239,7 @@ public sealed class CheatLoaderInjectorForensicScanModule : IScanModule
                         ctx.AddFinding(new Finding
                         {
                             Module = Name, Title = "Cheat Engine: Execution Prefetch Entry",
-                            Risk = Risk.Critical, Location = pf,
+                            Risk = RiskLevel.Critical, Location = pf,
                             FileName = Path.GetFileName(pf),
                             Reason = $"Cheat Engine execution prefetch '{pfName}' — confirms Cheat Engine was run",
                             Detail = $"Prefetch: {pf}"
@@ -279,7 +279,7 @@ public sealed class CheatLoaderInjectorForensicScanModule : IScanModule
                             ctx.AddFinding(new Finding
                             {
                                 Module = Name, Title = "BYOVD Service: Vulnerable Driver Service Entry",
-                                Risk = Risk.Critical,
+                                Risk = RiskLevel.Critical,
                                 Location = $@"HKLM\{servicesPath}\{svcName}",
                                 FileName = svcName,
                                 Reason = $"Known BYOVD (Bring Your Own Vulnerable Driver) service '{svcName}' in registry — used to disable kernel protections",
@@ -291,7 +291,7 @@ public sealed class CheatLoaderInjectorForensicScanModule : IScanModule
                             ctx.AddFinding(new Finding
                             {
                                 Module = Name, Title = "BYOVD Service: Vulnerable Driver Service Entry",
-                                Risk = Risk.Critical,
+                                Risk = RiskLevel.Critical,
                                 Location = $@"HKLM\{servicesPath}\{svcName}",
                                 FileName = svcName,
                                 Reason = $"Known BYOVD driver service '{svcName}' in registry",
@@ -321,7 +321,7 @@ public sealed class CheatLoaderInjectorForensicScanModule : IScanModule
                         ctx.AddFinding(new Finding
                         {
                             Module = Name, Title = "BYOVD Driver: Vulnerable Driver File in System32",
-                            Risk = Risk.Critical, Location = sysFile,
+                            Risk = RiskLevel.Critical, Location = sysFile,
                             FileName = Path.GetFileName(sysFile),
                             Reason = $"Known BYOVD vulnerable driver '{sysName}.sys' in System32/drivers — enables kernel-level bypass",
                             Detail = $"Path: {sysFile}"
@@ -369,7 +369,7 @@ public sealed class CheatLoaderInjectorForensicScanModule : IScanModule
                                     ctx.AddFinding(new Finding
                                     {
                                         Module = Name, Title = "WER Crash Report: Cheat Module in Crash",
-                                        Risk = Risk.High, Location = file,
+                                        Risk = RiskLevel.High, Location = file,
                                         FileName = Path.GetFileName(file),
                                         Reason = $"Cheat keyword '{kw}' in Windows Error Report — process crashed with cheat module loaded",
                                         Detail = content.Length > 500 ? content[..500] : content
@@ -385,7 +385,7 @@ public sealed class CheatLoaderInjectorForensicScanModule : IScanModule
                                     ctx.AddFinding(new Finding
                                     {
                                         Module = Name, Title = "WER Crash Report: Injection Technique Indicator",
-                                        Risk = Risk.Critical, Location = file,
+                                        Risk = RiskLevel.Critical, Location = file,
                                         FileName = Path.GetFileName(file),
                                         Reason = $"Injection technique keyword '{inj}' in WER crash report",
                                         Detail = content.Length > 500 ? content[..500] : content
@@ -434,7 +434,7 @@ public sealed class CheatLoaderInjectorForensicScanModule : IScanModule
                                 ctx.AddFinding(new Finding
                                 {
                                     Module = Name, Title = "Minidump: Cheat Module Name in Dump Header",
-                                    Risk = Risk.Critical, Location = dmpFile,
+                                    Risk = RiskLevel.Critical, Location = dmpFile,
                                     FileName = Path.GetFileName(dmpFile),
                                     Reason = $"Cheat keyword '{kw}' in minidump header — indicates injected cheat DLL in crashed process",
                                     Detail = $"Dump: {dmpFile}"
@@ -470,7 +470,7 @@ public sealed class CheatLoaderInjectorForensicScanModule : IScanModule
                         ctx.AddFinding(new Finding
                         {
                             Module = Name, Title = "Prefetch: Injector Tool Execution History",
-                            Risk = Risk.Critical, Location = pf,
+                            Risk = RiskLevel.Critical, Location = pf,
                             FileName = Path.GetFileName(pf),
                             Reason = $"Injector tool '{injName}' execution prefetch — confirms injector was run",
                             Detail = $"Prefetch: {pf}"
@@ -486,7 +486,7 @@ public sealed class CheatLoaderInjectorForensicScanModule : IScanModule
                         ctx.AddFinding(new Finding
                         {
                             Module = Name, Title = "Prefetch: BYOVD Loader Execution",
-                            Risk = Risk.Critical, Location = pf,
+                            Risk = RiskLevel.Critical, Location = pf,
                             FileName = Path.GetFileName(pf),
                             Reason = $"BYOVD driver loader '{driverName}' in prefetch — vulnerable driver was executed",
                             Detail = $"Prefetch: {pf}"
@@ -533,7 +533,7 @@ public sealed class CheatLoaderInjectorForensicScanModule : IScanModule
                                 ctx.AddFinding(new Finding
                                 {
                                     Module = Name, Title = "Reflective DLL: Reflective Loader Signature",
-                                    Risk = Risk.Critical, Location = file,
+                                    Risk = RiskLevel.Critical, Location = file,
                                     FileName = Path.GetFileName(file),
                                     Reason = "DLL contains ReflectiveDll/ReflectiveLoader signature — self-loading injection technique",
                                     Detail = $"Path: {file}"
@@ -568,7 +568,7 @@ public sealed class CheatLoaderInjectorForensicScanModule : IScanModule
                     ctx.AddFinding(new Finding
                     {
                         Module = Name, Title = "PS History: Kernel Bypass Command",
-                        Risk = Risk.Critical, Location = psHistoryPath,
+                        Risk = RiskLevel.Critical, Location = psHistoryPath,
                         FileName = Path.GetFileName(psHistoryPath),
                         Reason = $"Kernel bypass keyword '{kw}' in PowerShell history — indicates kernel security bypass",
                         Detail = content.Length > 500 ? content[..500] : content
@@ -598,7 +598,7 @@ public sealed class CheatLoaderInjectorForensicScanModule : IScanModule
                     ctx.AddFinding(new Finding
                     {
                         Module = Name, Title = "DSE Bypass: Vulnerable Driver Blocklist Disabled",
-                        Risk = Risk.Critical,
+                        Risk = RiskLevel.Critical,
                         Location = $@"HKLM\{codeIntegrityPath}",
                         FileName = "VulnerableDriverBlocklistEnable",
                         Reason = "Windows vulnerable driver blocklist is DISABLED — enables BYOVD attacks",
@@ -622,7 +622,7 @@ public sealed class CheatLoaderInjectorForensicScanModule : IScanModule
                 ctx.AddFinding(new Finding
                 {
                     Module = Name, Title = "DSE Bypass: Code Integrity Protected Disabled",
-                    Risk = Risk.Critical,
+                    Risk = RiskLevel.Critical,
                     Location = $@"HKLM\{codeIntegrityPath2}",
                     FileName = "Disabled",
                     Reason = "Code Integrity protected state is disabled — Driver Signature Enforcement may be bypassed",
@@ -654,7 +654,7 @@ public sealed class CheatLoaderInjectorForensicScanModule : IScanModule
                         ctx.AddFinding(new Finding
                         {
                             Module = Name, Title = "MUICache: Injector Tool Execution History",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = $@"HKCU\{muiCachePath}",
                             FileName = Path.GetFileName(valueName.Split('.')[0]),
                             Reason = $"Injector tool '{injName}' in MUICache — confirms tool was executed on this system",
@@ -671,7 +671,7 @@ public sealed class CheatLoaderInjectorForensicScanModule : IScanModule
                         ctx.AddFinding(new Finding
                         {
                             Module = Name, Title = "MUICache: BYOVD Driver Loader Execution",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = $@"HKCU\{muiCachePath}",
                             FileName = valueName,
                             Reason = $"BYOVD driver '{driverName}' in MUICache — vulnerable driver tool was executed",
@@ -710,7 +710,7 @@ public sealed class CheatLoaderInjectorForensicScanModule : IScanModule
                         ctx.AddFinding(new Finding
                         {
                             Module = Name, Title = "Manual Mapper: Tool Artifact Found",
-                            Risk = Risk.Critical, Location = file,
+                            Risk = RiskLevel.Critical, Location = file,
                             FileName = Path.GetFileName(file),
                             Reason = "Manual mapping tool artifact — bypasses module enumeration and hides injected DLL from game/AC",
                             Detail = $"Path: {file}"
@@ -732,7 +732,7 @@ public sealed class CheatLoaderInjectorForensicScanModule : IScanModule
                                 ctx.AddFinding(new Finding
                                 {
                                     Module = Name, Title = "Manual Map: Injection Technique Referenced in File",
-                                    Risk = Risk.High, Location = file,
+                                    Risk = RiskLevel.High, Location = file,
                                     FileName = Path.GetFileName(file),
                                     Reason = "Manual mapping injection technique referenced in file",
                                     Detail = content.Length > 400 ? content[..400] : content
@@ -780,7 +780,7 @@ public sealed class CheatLoaderInjectorForensicScanModule : IScanModule
                         ctx.AddFinding(new Finding
                         {
                             Module = Name, Title = "DLL Search Order Hijack: System DLL in User Directory",
-                            Risk = Risk.High, Location = file,
+                            Risk = RiskLevel.High, Location = file,
                             FileName = dllName,
                             Reason = $"System DLL '{dllName}' found in user directory — DLL search order hijacking artifact",
                             Detail = $"Path: {file}"
@@ -821,7 +821,7 @@ public sealed class CheatLoaderInjectorForensicScanModule : IScanModule
                         ctx.AddFinding(new Finding
                         {
                             Module = Name, Title = "Kernel Driver: Suspicious Bypass Service",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = $@"HKLM\{servicesPath}\{svcName}",
                             FileName = svcName,
                             Reason = $"Suspicious kernel driver service '{svcName}' — potential PatchGuard/DSE/HVCI bypass driver",
@@ -859,7 +859,7 @@ public sealed class CheatLoaderInjectorForensicScanModule : IScanModule
                     ctx.AddFinding(new Finding
                     {
                         Module = Name, Title = "Cheat Engine Registry: Memory Editor Artifact",
-                        Risk = Risk.Critical,
+                        Risk = RiskLevel.Critical,
                         Location = $@"HKCU\{regPath}",
                         FileName = regPath.Split('\\').Last(),
                         Reason = $"Cheat Engine registry artifact '{regPath}' — memory editor was installed/used",
@@ -893,7 +893,7 @@ public sealed class CheatLoaderInjectorForensicScanModule : IScanModule
                     ctx.AddFinding(new Finding
                     {
                         Module = Name, Title = "CBS Log: BYOVD Driver Installation",
-                        Risk = Risk.Critical, Location = cbsLogPath,
+                        Risk = RiskLevel.Critical, Location = cbsLogPath,
                         FileName = "CBS.log",
                         Reason = $"BYOVD driver '{driverName}' referenced in CBS.log — driver was installed via CBS",
                         Detail = content.Length > 500 ? content[..500] : content
@@ -938,7 +938,7 @@ public sealed class CheatLoaderInjectorForensicScanModule : IScanModule
                                         ctx.AddFinding(new Finding
                                         {
                                             Module = Name, Title = "WER: GTA/FiveM Crash with Injection Indicators",
-                                            Risk = Risk.Critical, Location = file,
+                                            Risk = RiskLevel.Critical, Location = file,
                                             FileName = Path.GetFileName(file),
                                             Reason = $"GTA/FiveM crash report contains injection keyword '{kw}' — cheat injection caused crash",
                                             Detail = content.Length > 500 ? content[..500] : content
@@ -981,7 +981,7 @@ public sealed class CheatLoaderInjectorForensicScanModule : IScanModule
                             ctx.AddFinding(new Finding
                             {
                                 Module = Name, Title = "AppCompat Layer: Cheat Tool Compatibility Flag",
-                                Risk = Risk.High,
+                                Risk = RiskLevel.High,
                                 Location = $@"HKCU\{appCompatPath}",
                                 FileName = Path.GetFileName(valueName),
                                 Reason = $"AppCompat layer set for cheat-related path '{valueName}'",
@@ -1026,7 +1026,7 @@ public sealed class CheatLoaderInjectorForensicScanModule : IScanModule
                                 ctx.AddFinding(new Finding
                                 {
                                     Module = Name, Title = "Local Dump: Cheat Module in Process Dump",
-                                    Risk = Risk.Critical, Location = dumpFile,
+                                    Risk = RiskLevel.Critical, Location = dumpFile,
                                     FileName = Path.GetFileName(dumpFile),
                                     Reason = $"Cheat keyword '{kw}' in local dump — game process was dumped with cheat loaded",
                                     Detail = $"Dump: {dumpFile}"

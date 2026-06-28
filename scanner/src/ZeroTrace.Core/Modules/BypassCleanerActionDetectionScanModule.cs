@@ -213,7 +213,7 @@ public sealed class BypassCleanerActionDetectionScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "Anti-Cheat/Security Service Key Missing",
-                        Risk = Risk.High,
+                        Risk = RiskLevel.High,
                         Location = $@"HKLM\{keyPath}",
                         FileName = "Registry",
                         Reason = $"Service registry key for '{svcName}' is absent — may have been deleted by bypass/cleaner",
@@ -229,7 +229,7 @@ public sealed class BypassCleanerActionDetectionScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "Anti-Cheat Service Disabled in Registry",
-                        Risk = Risk.High,
+                        Risk = RiskLevel.High,
                         Location = $@"HKLM\{keyPath}",
                         FileName = "Registry",
                         Reason = $"Service '{svcName}' Start=4 (disabled) — likely disabled by bypass tool",
@@ -245,7 +245,7 @@ public sealed class BypassCleanerActionDetectionScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "Suspicious Driver Registered as Service",
-                        Risk = Risk.Critical,
+                        Risk = RiskLevel.Critical,
                         Location = $@"HKLM\{keyPath}",
                         FileName = "Registry",
                         Reason = $"Service '{svcName}' ImagePath points to known bypass/vulnerable driver: {imageVal}",
@@ -292,7 +292,7 @@ public sealed class BypassCleanerActionDetectionScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Windows Defender Tampered via Registry",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = $@"HKLM\{kvp.Key}\{valueName}",
                             FileName = "Registry",
                             Reason = $"Defender protection disabled: {valueName}={val} — bypass tool likely set this",
@@ -319,7 +319,7 @@ public sealed class BypassCleanerActionDetectionScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Cheat/Bypass Path in Defender Exclusions",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = @"HKLM\SOFTWARE\Microsoft\Windows Defender\Exclusions\Paths",
                             FileName = "Registry",
                             Reason = $"Defender exclusion for suspicious path: {valName}",
@@ -364,7 +364,7 @@ public sealed class BypassCleanerActionDetectionScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "Known Bypass/Vulnerable Driver Found",
-                                Risk = Risk.Critical,
+                                Risk = RiskLevel.Critical,
                                 Location = file,
                                 FileName = fileName,
                                 Reason = $"Known vulnerable/bypass driver '{driverName}' found on disk — used by kernel-level cheats",
@@ -400,7 +400,7 @@ public sealed class BypassCleanerActionDetectionScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = "Bypass Driver Registered as Windows Service",
-                                    Risk = Risk.Critical,
+                                    Risk = RiskLevel.Critical,
                                     Location = $@"HKLM\SYSTEM\CurrentControlSet\Services\{subKeyName}",
                                     FileName = "Registry",
                                     Reason = $"Service '{subKeyName}' uses known bypass driver: {driverName}",
@@ -444,7 +444,7 @@ public sealed class BypassCleanerActionDetectionScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "WMI Registry Entry with Bypass Keywords",
-                            Risk = Risk.High,
+                            Risk = RiskLevel.High,
                             Location = $@"HKLM\{path}\{valName}",
                             FileName = "Registry",
                             Reason = $"WMI registry value contains bypass-related content: {valName}",
@@ -476,7 +476,7 @@ public sealed class BypassCleanerActionDetectionScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "WMI MOF File with Bypass Keywords",
-                                Risk = Risk.High,
+                                Risk = RiskLevel.High,
                                 Location = file,
                                 FileName = Path.GetFileName(file),
                                 Reason = "WMI MOF file contains bypass-related content — possible persistence mechanism",
@@ -522,7 +522,7 @@ public sealed class BypassCleanerActionDetectionScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "Scheduled Task with Bypass/Cheat Keywords",
-                                Risk = Risk.High,
+                                Risk = RiskLevel.High,
                                 Location = file,
                                 FileName = taskName,
                                 Reason = $"Scheduled task '{taskName}' contains bypass/cheat-related commands",
@@ -560,7 +560,7 @@ public sealed class BypassCleanerActionDetectionScanModule : IScanModule
                 {
                     Module = Name,
                     Title = "Windows Event Log File Missing",
-                    Risk = Risk.High,
+                    Risk = RiskLevel.High,
                     Location = logPath,
                     FileName = Path.GetFileName(logPath),
                     Reason = $"Event log file absent — may have been wiped by cleaner/bypass: {logName}",
@@ -578,7 +578,7 @@ public sealed class BypassCleanerActionDetectionScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "Windows Event Log Suspiciously Small",
-                        Risk = Risk.Medium,
+                        Risk = RiskLevel.Medium,
                         Location = logPath,
                         FileName = Path.GetFileName(logPath),
                         Reason = $"Event log file is unusually small ({fi.Length} bytes) — may have been cleared by bypass tool",
@@ -627,7 +627,7 @@ public sealed class BypassCleanerActionDetectionScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "Volume Shadow Copy Deletion Command in History",
-                                Risk = Risk.Critical,
+                                Risk = RiskLevel.Critical,
                                 Location = fullPath,
                                 FileName = Path.GetFileName(fullPath),
                                 Reason = $"PowerShell/CMD history contains VSS deletion command matching pattern: '{pattern}'",
@@ -654,7 +654,7 @@ public sealed class BypassCleanerActionDetectionScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "Volume Shadow Copy Service Disabled",
-                        Risk = Risk.High,
+                        Risk = RiskLevel.High,
                         Location = @"HKLM\SYSTEM\CurrentControlSet\Services\VSS",
                         FileName = "Registry",
                         Reason = "VSS service disabled — prevents shadow copy backups, used by bypass/ransomware tools",
@@ -708,7 +708,7 @@ public sealed class BypassCleanerActionDetectionScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "Cleaner/Spoofer Tool Found",
-                                Risk = Risk.Critical,
+                                Risk = RiskLevel.Critical,
                                 Location = file,
                                 FileName = Path.GetFileName(file),
                                 Reason = $"File matches known cleaner/spoofer signature: '{sig}'",
@@ -741,7 +741,7 @@ public sealed class BypassCleanerActionDetectionScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Cleaner/Bypass Tool in Prefetch",
-                            Risk = Risk.High,
+                            Risk = RiskLevel.High,
                             Location = file,
                             FileName = Path.GetFileName(file),
                             Reason = $"Prefetch entry for cleaner/bypass tool: '{sig}'",
@@ -763,7 +763,7 @@ public sealed class BypassCleanerActionDetectionScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = "Anti-Cheat Process in Prefetch (Recent)",
-                                    Risk = Risk.Low,
+                                    Risk = RiskLevel.Low,
                                     Location = file,
                                     FileName = Path.GetFileName(file),
                                     Reason = $"AC process '{acProc}' ran recently (prefetch age ≤30 days) — confirms AC was active before bypass",
@@ -799,7 +799,7 @@ public sealed class BypassCleanerActionDetectionScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Cleaner/Bypass Tool in Recent Files",
-                            Risk = Risk.High,
+                            Risk = RiskLevel.High,
                             Location = lnk,
                             FileName = Path.GetFileName(lnk),
                             Reason = $"Recent file link references cleaner/bypass tool: '{sig}'",
@@ -840,7 +840,7 @@ public sealed class BypassCleanerActionDetectionScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "Cleaner/Bypass Program in MUI Cache",
-                                Risk = Risk.High,
+                                Risk = RiskLevel.High,
                                 Location = $@"HKCU\{muiPath}\{valName}",
                                 FileName = "Registry",
                                 Reason = $"MUI cache records execution of known cleaner/bypass tool: '{sig}'",
@@ -857,7 +857,7 @@ public sealed class BypassCleanerActionDetectionScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "Bypass Driver Tool in MUI Cache",
-                                Risk = Risk.Critical,
+                                Risk = RiskLevel.Critical,
                                 Location = $@"HKCU\{muiPath}\{valName}",
                                 FileName = "Registry",
                                 Reason = $"MUI cache records execution of bypass driver loader: '{driverName}'",
@@ -900,7 +900,7 @@ public sealed class BypassCleanerActionDetectionScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "Cleaner/Bypass Tool in UserAssist",
-                                Risk = Risk.High,
+                                Risk = RiskLevel.High,
                                 Location = $@"HKCU\{path}\{valName}",
                                 FileName = "Registry",
                                 Reason = $"UserAssist records execution of cleaner/bypass tool: '{sig}'",
@@ -918,7 +918,7 @@ public sealed class BypassCleanerActionDetectionScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "Bypass Driver Tool Executed (UserAssist)",
-                                Risk = Risk.Critical,
+                                Risk = RiskLevel.Critical,
                                 Location = $@"HKCU\{path}\{valName}",
                                 FileName = "Registry",
                                 Reason = $"UserAssist confirms execution of bypass driver tool: '{driverTool}'",
@@ -969,7 +969,7 @@ public sealed class BypassCleanerActionDetectionScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "Bypass Driver Found in Temp Directory",
-                                Risk = Risk.Critical,
+                                Risk = RiskLevel.Critical,
                                 Location = file,
                                 FileName = Path.GetFileName(file),
                                 Reason = $"Known bypass/vulnerable driver found in temp: '{driverName}'",
@@ -986,7 +986,7 @@ public sealed class BypassCleanerActionDetectionScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "Cleaner Tool Artifact in Temp Directory",
-                                Risk = Risk.High,
+                                Risk = RiskLevel.High,
                                 Location = file,
                                 FileName = Path.GetFileName(file),
                                 Reason = $"Cleaner/bypass tool artifact in temp directory: '{sig}'",
@@ -1034,7 +1034,7 @@ public sealed class BypassCleanerActionDetectionScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = "Cleaner/Bypass Tool in Startup Registry",
-                                    Risk = Risk.Critical,
+                                    Risk = RiskLevel.Critical,
                                     Location = $@"{(hive == Registry.LocalMachine ? "HKLM" : "HKCU")}\{keyPath}\{valName}",
                                     FileName = "Registry",
                                     Reason = $"Startup entry for cleaner/bypass tool: '{sig}'",
@@ -1052,7 +1052,7 @@ public sealed class BypassCleanerActionDetectionScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = "Bypass Driver Loader in Startup",
-                                    Risk = Risk.Critical,
+                                    Risk = RiskLevel.Critical,
                                     Location = $@"{(hive == Registry.LocalMachine ? "HKLM" : "HKCU")}\{keyPath}\{valName}",
                                     FileName = "Registry",
                                     Reason = $"Startup entry points to bypass driver loader: '{driverName}'",
@@ -1093,20 +1093,20 @@ public sealed class BypassCleanerActionDetectionScanModule : IScanModule
         return keywords.Any(k => Regex.IsMatch(lower, k));
     }
 
-    private static Risk DetermineRisk(string pattern)
+    private static RiskLevel DetermineRisk(string pattern)
     {
         var lower = pattern.ToLowerInvariant();
         if (lower.Contains("vssadmin") || lower.Contains("shadowcopy") || lower.Contains("bcdedit") ||
             lower.Contains("kdmapper") || lower.Contains("manualmapper") || lower.Contains("kernel"))
-            return Risk.Critical;
+            return RiskLevel.Critical;
         if (lower.Contains("sc stop") || lower.Contains("sc delete") || lower.Contains("net stop") ||
             lower.Contains("taskkill") || lower.Contains("defender") || lower.Contains("bypass") ||
             lower.Contains("inject") || lower.Contains("wevtutil"))
-            return Risk.High;
+            return RiskLevel.High;
         if (lower.Contains("reg delete") || lower.Contains("powershell") || lower.Contains("certutil") ||
             lower.Contains("bitsadmin") || lower.Contains("wmic"))
-            return Risk.Medium;
-        return Risk.Low;
+            return RiskLevel.Medium;
+        return RiskLevel.Low;
     }
 
     private static string Rot13Decode(string s)

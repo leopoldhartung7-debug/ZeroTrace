@@ -182,7 +182,7 @@ public sealed class FiveMServerLogCheatScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = "FiveM client log contains cheat artifact",
-                                    Risk = Risk.High,
+                                    Risk = RiskLevel.High,
                                     Location = Path.GetDirectoryName(logFile) ?? fivemDir,
                                     FileName = Path.GetFileName(logFile),
                                     Reason = $"Client log contains cheat pattern: '{pattern}'",
@@ -233,7 +233,7 @@ public sealed class FiveMServerLogCheatScanModule : IScanModule
                                     {
                                         Module = Name,
                                         Title = "FiveM crash dump references cheat",
-                                        Risk = Risk.Medium,
+                                        Risk = RiskLevel.Medium,
                                         Location = dumpDir,
                                         FileName = Path.GetFileName(dumpFile),
                                         Reason = $"Crash dump mentions cheat keyword: '{kw}'",
@@ -269,7 +269,7 @@ public sealed class FiveMServerLogCheatScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Suspicious FiveM resource folder",
-                            Risk = Risk.High,
+                            Risk = RiskLevel.High,
                             Location = resourceDir,
                             FileName = Path.GetFileName(dir),
                             Reason = $"FiveM resource folder has cheat-related name: '{Path.GetFileName(dir)}'",
@@ -313,7 +313,7 @@ public sealed class FiveMServerLogCheatScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Cheat DLL artifact in FiveM cache",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = Path.GetDirectoryName(file) ?? cacheDir,
                             FileName = fn,
                             Reason = "Cheat-named DLL found in FiveM cache directory",
@@ -350,7 +350,7 @@ public sealed class FiveMServerLogCheatScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "FiveM cheat offset/pattern file",
-                            Risk = Risk.High,
+                            Risk = RiskLevel.High,
                             Location = Path.GetDirectoryName(file) ?? dir,
                             FileName = fn,
                             Reason = "Offset or address file used by FiveM cheat tools found",
@@ -386,7 +386,7 @@ public sealed class FiveMServerLogCheatScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "FiveM cheat download artifact",
-                            Risk = Risk.High,
+                            Risk = RiskLevel.High,
                             Location = Path.GetDirectoryName(file) ?? dir,
                             FileName = fn,
                             Reason = "FiveM cheat package or installer found in downloads/desktop",
@@ -425,7 +425,7 @@ public sealed class FiveMServerLogCheatScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = "FiveM event spam/exploit log",
-                                    Risk = Risk.High,
+                                    Risk = RiskLevel.High,
                                     Location = Path.GetDirectoryName(logFile) ?? fivemDir,
                                     FileName = Path.GetFileName(logFile),
                                     Reason = $"Log references event exploit pattern: '{pattern}'",
@@ -482,7 +482,7 @@ public sealed class FiveMServerLogCheatScanModule : IScanModule
                                     {
                                         Module = Name,
                                         Title = "FiveM server log: cheat activity detected",
-                                        Risk = Risk.High,
+                                        Risk = RiskLevel.High,
                                         Location = logDir,
                                         FileName = Path.GetFileName(logFile),
                                         Reason = $"Server log records cheat detection or crash exploit: '{pattern}'",
@@ -525,7 +525,7 @@ public sealed class FiveMServerLogCheatScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = "FiveM citizen game log cheat pattern",
-                                    Risk = Risk.High,
+                                    Risk = RiskLevel.High,
                                     Location = Path.GetDirectoryName(file) ?? citizenDir,
                                     FileName = Path.GetFileName(file),
                                     Reason = $"Game log contains cheat/exploit pattern: '{pattern}'",
@@ -561,7 +561,7 @@ public sealed class FiveMServerLogCheatScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "ScriptHook DLL in FiveM directory",
-                            Risk = Risk.High,
+                            Risk = RiskLevel.High,
                             Location = Path.GetDirectoryName(file) ?? fivemDir,
                             FileName = fn,
                             Reason = "ScriptHookV or proxy DLL found inside FiveM directory — used for native script execution bypass",
@@ -603,7 +603,7 @@ public sealed class FiveMServerLogCheatScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "FiveM cheat execution (UserAssist)",
-                                Risk = Risk.High,
+                                Risk = RiskLevel.High,
                                 Location = $@"HKCU\{uaPath}\{guidName}\Count",
                                 FileName = decoded,
                                 Reason = "UserAssist records execution of FiveM cheat-related tool",
@@ -646,7 +646,7 @@ public sealed class FiveMServerLogCheatScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "FiveM cheat execution (MUICache)",
-                            Risk = Risk.High,
+                            Risk = RiskLevel.High,
                             Location = @"HKCU\" + muiPath,
                             FileName = Path.GetFileName(valName),
                             Reason = "MUICache records execution of FiveM cheat or bypass tool",
@@ -684,7 +684,7 @@ public sealed class FiveMServerLogCheatScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = "FiveM network log: exploit pattern",
-                                    Risk = Risk.High,
+                                    Risk = RiskLevel.High,
                                     Location = netLogDir,
                                     FileName = Path.GetFileName(logFile),
                                     Reason = $"Network log contains exploit pattern: '{pattern}'",
@@ -726,7 +726,7 @@ public sealed class FiveMServerLogCheatScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "FiveM cheat installer record",
-                                Risk = Risk.High,
+                                Risk = RiskLevel.High,
                                 Location = $@"HKCU\{uninstallPath}\{subKeyName}",
                                 FileName = displayName,
                                 Reason = "Uninstall record found for FiveM cheat software",
@@ -761,7 +761,7 @@ public sealed class FiveMServerLogCheatScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "FiveM cheat recent document",
-                        Risk = Risk.Medium,
+                        Risk = RiskLevel.Medium,
                         Location = recentDir,
                         FileName = Path.GetFileName(lnk),
                         Reason = "Windows Recent Documents contains link to FiveM cheat file",

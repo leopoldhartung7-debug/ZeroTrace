@@ -136,7 +136,7 @@ public sealed class PubgCheatScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "PUBG Cheat in Game Directory",
-                        Risk = Risk.Critical,
+                        Risk = RiskLevel.Critical,
                         Location = file,
                         FileName = fn,
                         Reason = $"Cheat tool '{fn}' found in PUBG game directory",
@@ -154,7 +154,7 @@ public sealed class PubgCheatScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "BattlEye Bypass DLL in PUBG",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = file,
                             FileName = fn,
                             Reason = $"BattlEye bypass DLL '{fn}' in PUBG BattlEye directory",
@@ -186,7 +186,7 @@ public sealed class PubgCheatScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "PUBG Cheat Process Running",
-                        Risk = Risk.Critical,
+                        Risk = RiskLevel.Critical,
                         Location = procPath,
                         FileName = pname,
                         Reason = $"Known PUBG cheat process '{pname}' is currently running",
@@ -240,7 +240,7 @@ public sealed class PubgCheatScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "PUBG Cheat Configuration File",
-                        Risk = Risk.Critical,
+                        Risk = RiskLevel.Critical,
                         Location = file,
                         FileName = Path.GetFileName(file),
                         Reason = $"Config file contains {hits.Count} PUBG cheat keywords",
@@ -253,7 +253,7 @@ public sealed class PubgCheatScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "PUBG Cheat Config Keyword",
-                        Risk = Risk.High,
+                        Risk = RiskLevel.High,
                         Location = file,
                         FileName = Path.GetFileName(file),
                         Reason = $"File contains PUBG cheat keyword: {hits[0]}",
@@ -310,7 +310,7 @@ public sealed class PubgCheatScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "PUBG Memory Offset File",
-                        Risk = Risk.High,
+                        Risk = RiskLevel.High,
                         Location = file,
                         FileName = fn,
                         Reason = $"File contains {hits.Count} PUBG UE4 memory offset identifiers",
@@ -340,7 +340,7 @@ public sealed class PubgCheatScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "BattlEye Service Disabled (PUBG)",
-                            Risk = Risk.High,
+                            Risk = RiskLevel.High,
                             Location = @"HKLM\SYSTEM\CurrentControlSet\Services\BEService",
                             FileName = "Registry",
                             Reason = "BattlEye service is disabled — PUBG anti-cheat bypass indicator",
@@ -383,7 +383,7 @@ public sealed class PubgCheatScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = "PUBG Cheat Software Installed",
-                                    Risk = Risk.Critical,
+                                    Risk = RiskLevel.Critical,
                                     Location = $@"HKLM\{uninst}\{sub}",
                                     FileName = "Registry",
                                     Reason = $"Installed software '{dispName}' matches PUBG cheat pattern",
@@ -421,7 +421,7 @@ public sealed class PubgCheatScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "Suspicious PUBG Registry Value",
-                                Risk = Risk.High,
+                                Risk = RiskLevel.High,
                                 Location = $@"HKLM\{pkey}",
                                 FileName = "Registry",
                                 Reason = $"Suspicious registry value '{valName}' under PUBG/KRAFTON key",
@@ -466,7 +466,7 @@ public sealed class PubgCheatScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "BattlEye Bypass Tool (PUBG)",
-                        Risk = Risk.Critical,
+                        Risk = RiskLevel.Critical,
                         Location = file,
                         FileName = fn,
                         Reason = $"BattlEye bypass tool '{fn}' targeting PUBG",
@@ -523,7 +523,7 @@ public sealed class PubgCheatScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "PUBG DMA/Radar Cheat Config",
-                        Risk = Risk.Critical,
+                        Risk = RiskLevel.Critical,
                         Location = file,
                         FileName = fn,
                         Reason = "JSON config contains PUBG DMA/radar cheat process identifiers",
@@ -556,7 +556,7 @@ public sealed class PubgCheatScanModule : IScanModule
                 {
                     Module = Name,
                     Title = "Executable in PUBG AppData Directory",
-                    Risk = Risk.High,
+                    Risk = RiskLevel.High,
                     Location = file,
                     FileName = fn,
                     Reason = $"Executable '{fn}' placed in PUBG saved data path — suspicious",

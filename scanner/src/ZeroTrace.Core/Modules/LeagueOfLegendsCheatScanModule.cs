@@ -128,7 +128,7 @@ public sealed class LeagueOfLegendsCheatScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "LoL Cheat Tool in Game Directory",
-                        Risk = Risk.Critical,
+                        Risk = RiskLevel.Critical,
                         Location = file,
                         FileName = fn,
                         Reason = $"Cheat tool '{fn}' found inside League of Legends installation",
@@ -148,7 +148,7 @@ public sealed class LeagueOfLegendsCheatScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "LoL Cheat Script DLL",
-                                Risk = Risk.High,
+                                Risk = RiskLevel.High,
                                 Location = file,
                                 FileName = fn,
                                 Reason = $"Scripting framework DLL in LoL path: {scriptPath}",
@@ -182,7 +182,7 @@ public sealed class LeagueOfLegendsCheatScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "LoL Cheat Process Running",
-                        Risk = Risk.Critical,
+                        Risk = RiskLevel.Critical,
                         Location = procPath,
                         FileName = pname,
                         Reason = $"Known LoL cheat process '{pname}' is currently running",
@@ -216,7 +216,7 @@ public sealed class LeagueOfLegendsCheatScanModule : IScanModule
                 {
                     Module = Name,
                     Title = "LoL Cheat Script Framework Directory",
-                    Risk = Risk.Critical,
+                    Risk = RiskLevel.Critical,
                     Location = dir,
                     FileName = Path.GetFileName(dir),
                     Reason = $"Known LoL cheat scripting framework directory found: {scriptName}",
@@ -241,7 +241,7 @@ public sealed class LeagueOfLegendsCheatScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "LoL Script Cheat Assembly",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = file,
                             FileName = fn,
                             Reason = $"Script cheat executable/DLL in {scriptName} framework directory",
@@ -296,7 +296,7 @@ public sealed class LeagueOfLegendsCheatScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "LoL Cheat Configuration",
-                        Risk = Risk.Critical,
+                        Risk = RiskLevel.Critical,
                         Location = file,
                         FileName = Path.GetFileName(file),
                         Reason = $"{hits.Count} LoL cheat config keywords detected",
@@ -309,7 +309,7 @@ public sealed class LeagueOfLegendsCheatScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "LoL Cheat Config Keyword",
-                        Risk = Risk.High,
+                        Risk = RiskLevel.High,
                         Location = file,
                         FileName = Path.GetFileName(file),
                         Reason = $"File contains LoL cheat keyword: {hits[0]}",
@@ -366,7 +366,7 @@ public sealed class LeagueOfLegendsCheatScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "League of Legends Memory Offset File",
-                        Risk = Risk.High,
+                        Risk = RiskLevel.High,
                         Location = file,
                         FileName = fn,
                         Reason = $"File contains {hits.Count} LoL memory offset identifiers",
@@ -408,7 +408,7 @@ public sealed class LeagueOfLegendsCheatScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "Suspicious Riot Games Registry Value",
-                                Risk = Risk.High,
+                                Risk = RiskLevel.High,
                                 Location = $@"HKLM\{riotKey}",
                                 FileName = "Registry",
                                 Reason = $"Suspicious registry value '{valName}' in Riot path",
@@ -452,7 +452,7 @@ public sealed class LeagueOfLegendsCheatScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = "LoL Cheat Software Installed",
-                                    Risk = Risk.Critical,
+                                    Risk = RiskLevel.Critical,
                                     Location = $@"HKLM\{uninst}\{sub}",
                                     FileName = "Registry",
                                     Reason = $"Installed software '{dispName}' matches LoL cheat pattern",
@@ -491,7 +491,7 @@ public sealed class LeagueOfLegendsCheatScanModule : IScanModule
                                     {
                                         Module = Name,
                                         Title = "LoL Cheat Tool Execution History",
-                                        Risk = Risk.High,
+                                        Risk = RiskLevel.High,
                                         Location = $@"HKCU\{userAssistPath}\{guidKey}\Count",
                                         FileName = "Registry",
                                         Reason = "UserAssist shows LoL cheat tool was executed",
@@ -542,7 +542,7 @@ public sealed class LeagueOfLegendsCheatScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "Suspicious DLL in Riot AppData",
-                        Risk = Risk.High,
+                        Risk = RiskLevel.High,
                         Location = file,
                         FileName = fn,
                         Reason = $"DLL '{fn}' with cheat-related name found in Riot Games AppData",
@@ -581,7 +581,7 @@ public sealed class LeagueOfLegendsCheatScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "Cheat/Bypass Keywords in LoL Logs",
-                        Risk = Risk.Medium,
+                        Risk = RiskLevel.Medium,
                         Location = logFile,
                         FileName = Path.GetFileName(logFile),
                         Reason = "Riot Games log file contains injection/bypass keywords",
@@ -612,7 +612,7 @@ public sealed class LeagueOfLegendsCheatScanModule : IScanModule
                         {
                             Module = Name,
                             Title = $"Vanguard Service '{svcName}' Disabled (LoL)",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = $@"HKLM\SYSTEM\CurrentControlSet\Services\{svcName}",
                             FileName = "Registry",
                             Reason = $"Vanguard anti-cheat service '{svcName}' is disabled — LoL/Valorant bypass indicator",
@@ -657,7 +657,7 @@ public sealed class LeagueOfLegendsCheatScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Vanguard Bypass Tool (LoL Context)",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = file,
                             FileName = fn,
                             Reason = $"Vanguard bypass tool '{fn}' targeting LoL/Riot anti-cheat",

@@ -136,7 +136,7 @@ public sealed class CheatCloudServiceScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = "Cloud-Based Cheat Client Executable Found",
-                                    Risk = Risk.Critical,
+                                    Risk = RiskLevel.Critical,
                                     Location = file,
                                     FileName = fn,
                                     Reason = "Known cloud/subscription-based cheat client executable detected",
@@ -194,7 +194,7 @@ public sealed class CheatCloudServiceScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = "Cloud Cheat Service Configuration Found",
-                                    Risk = Risk.Critical,
+                                    Risk = RiskLevel.Critical,
                                     Location = file,
                                     FileName = Path.GetFileName(file),
                                     Reason = $"Config contains {matchCount} cloud cheat service keywords (e.g. '{firstMatch}')",
@@ -230,7 +230,7 @@ public sealed class CheatCloudServiceScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "Known Radar/Cloud Cheat Port Listening",
-                                Risk = Risk.High,
+                                Risk = RiskLevel.High,
                                 Location = $"TCP listener on port {radarPort}",
                                 FileName = "network",
                                 Reason = $"Port {radarPort} is actively listening — known radar/cloud cheat service port",
@@ -253,7 +253,7 @@ public sealed class CheatCloudServiceScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "Known Radar/Cloud Cheat UDP Port Active",
-                                Risk = Risk.High,
+                                Risk = RiskLevel.High,
                                 Location = $"UDP listener on port {radarPort}",
                                 FileName = "network",
                                 Reason = $"UDP port {radarPort} is active — known radar/cheat stream port",
@@ -307,7 +307,7 @@ public sealed class CheatCloudServiceScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = "Radar/ESP WebSocket HTML Overlay Found",
-                                    Risk = Risk.Critical,
+                                    Risk = RiskLevel.Critical,
                                     Location = file,
                                     FileName = Path.GetFileName(file),
                                     Reason = $"HTML file contains WebSocket radar/ESP overlay code (pattern: '{firstWsMatch}')",
@@ -356,7 +356,7 @@ public sealed class CheatCloudServiceScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Cloud Cheat Service Registry Key Found",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = regKey,
                             FileName = "registry",
                             Reason = "Known cloud cheat service tool created this registry artifact",
@@ -413,7 +413,7 @@ public sealed class CheatCloudServiceScanModule : IScanModule
                                     {
                                         Module = Name,
                                         Title = "Cloud Cheat Authentication File Found",
-                                        Risk = Risk.Critical,
+                                        Risk = RiskLevel.Critical,
                                         Location = file,
                                         FileName = fn,
                                         Reason = $"Authentication/license file '{fn}' found in cheat directory",
@@ -453,7 +453,7 @@ public sealed class CheatCloudServiceScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "Loopback Connection on Known Radar/Cheat Port",
-                                Risk = Risk.Critical,
+                                Risk = RiskLevel.Critical,
                                 Location = $"TCP loopback {conn.LocalEndPoint} → {conn.RemoteEndPoint}",
                                 FileName = "network",
                                 Reason = $"Active loopback TCP connection on port {radarPort} — radar memory reader to overlay pattern",
@@ -500,7 +500,7 @@ public sealed class CheatCloudServiceScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = "Cloud Cheat Client in Windows Startup",
-                                    Risk = Risk.Critical,
+                                    Risk = RiskLevel.Critical,
                                     Location = runKey,
                                     FileName = "registry",
                                     Reason = $"Startup entry '{valName}' launches cloud cheat client",
@@ -548,7 +548,7 @@ public sealed class CheatCloudServiceScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = "Cloud Cheat Service Log File Found",
-                                    Risk = Risk.High,
+                                    Risk = RiskLevel.High,
                                     Location = file,
                                     FileName = fn,
                                     Reason = "Cloud cheat/radar service log file found — indicates previous usage",
@@ -586,7 +586,7 @@ public sealed class CheatCloudServiceScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "Cloud Cheat Client Execution Evidence in MUICache",
-                                Risk = Risk.Critical,
+                                Risk = RiskLevel.Critical,
                                 Location = @"HKCU\SOFTWARE\Classes\Local Settings\Software\Microsoft\Windows\Shell\MuiCache",
                                 FileName = "registry",
                                 Reason = "MUICache records previous execution of cloud cheat client",

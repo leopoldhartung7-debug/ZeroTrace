@@ -198,7 +198,7 @@ public sealed class AntivirusHistoryScanModule : IScanModule
                                     {
                                         Module = Name,
                                         Title = "Cheat/Hack Tool Detected in Defender Threat History",
-                                        Risk = Risk.Critical,
+                                        Risk = RiskLevel.Critical,
                                         Location = file,
                                         FileName = Path.GetFileName(file),
                                         Reason = $"Windows Defender threat history contains cheat keyword: '{keyword}'",
@@ -239,7 +239,7 @@ public sealed class AntivirusHistoryScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Cheat Tool Found in Windows Defender Quarantine",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = file,
                             FileName = Path.GetFileName(file),
                             Reason = $"Defender quarantine contains file matching cheat keyword: '{keyword}'",
@@ -260,7 +260,7 @@ public sealed class AntivirusHistoryScanModule : IScanModule
                 {
                     Module = Name,
                     Title = "Windows Defender Quarantine Has Files",
-                    Risk = Risk.Medium,
+                    Risk = RiskLevel.Medium,
                     Location = quarantinePath,
                     FileName = "Quarantine",
                     Reason = $"Windows Defender quarantine contains {dirCount} file(s) — review for cheat/hack tools",
@@ -302,7 +302,7 @@ public sealed class AntivirusHistoryScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "Cheat/Hack Tool Detected in Defender MP Log",
-                                Risk = Risk.Critical,
+                                Risk = RiskLevel.Critical,
                                 Location = file,
                                 FileName = Path.GetFileName(file),
                                 Reason = $"Defender MPLog contains cheat-related entry: '{keyword}'",
@@ -326,7 +326,7 @@ public sealed class AntivirusHistoryScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "Defender Tamper/Bypass Evidence in MP Log",
-                                Risk = Risk.High,
+                                Risk = RiskLevel.High,
                                 Location = file,
                                 FileName = Path.GetFileName(file),
                                 Reason = $"Defender MPLog records tampering/bypass event: '{bk}'",
@@ -383,7 +383,7 @@ public sealed class AntivirusHistoryScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Windows Defender Protection Disabled via Registry",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = $@"HKLM\{kvp.Key}\{valName}",
                             FileName = "Registry",
                             Reason = $"Defender protection feature disabled: {valName}=1 — indicative of bypass tool action",
@@ -409,7 +409,7 @@ public sealed class AntivirusHistoryScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "Windows Defender Tamper Protection Disabled",
-                        Risk = Risk.Critical,
+                        Risk = RiskLevel.Critical,
                         Location = @"HKLM\SOFTWARE\Microsoft\Windows Defender\Features\TamperProtection",
                         FileName = "Registry",
                         Reason = $"TamperProtection={tp} (expected 5=enabled) — bypass tool likely disabled tamper protection",
@@ -451,7 +451,7 @@ public sealed class AntivirusHistoryScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "Cheat/Hack Path in Defender Exclusions",
-                                Risk = Risk.Critical,
+                                Risk = RiskLevel.Critical,
                                 Location = $@"HKLM\{keyPath}\{valName}",
                                 FileName = "Registry",
                                 Reason = $"Defender exclusion for cheat-related path/process: '{keyword}'",
@@ -491,7 +491,7 @@ public sealed class AntivirusHistoryScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Windows Security Center AV Notifications Suppressed",
-                            Risk = Risk.High,
+                            Risk = RiskLevel.High,
                             Location = $@"HKLM\{path}\{valName}",
                             FileName = "Registry",
                             Reason = $"Security Center reporting suppressed: {valName}=1 — bypass tool may have done this",
@@ -517,7 +517,7 @@ public sealed class AntivirusHistoryScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "Windows Security Center Service Disabled",
-                        Risk = Risk.High,
+                        Risk = RiskLevel.High,
                         Location = @"HKLM\SYSTEM\CurrentControlSet\Services\wscsvc",
                         FileName = "Registry",
                         Reason = "Security Center service (wscsvc) disabled — bypass tools disable this to hide AV status",
@@ -564,7 +564,7 @@ public sealed class AntivirusHistoryScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = $"Cheat Tool Detected by {avName}",
-                                    Risk = Risk.Critical,
+                                    Risk = RiskLevel.Critical,
                                     Location = file,
                                     FileName = Path.GetFileName(file),
                                     Reason = $"{avName} log records cheat detection: '{keyword}'",
@@ -603,7 +603,7 @@ public sealed class AntivirusHistoryScanModule : IScanModule
                     {
                         Module = Name,
                         Title = $"Third-Party Antivirus Installed: {avName}",
-                        Risk = Risk.Low,
+                        Risk = RiskLevel.Low,
                         Location = $@"{hivePrefix}\{path}",
                         FileName = "Registry",
                         Reason = $"Third-party AV product found: {avName} — check its logs and quarantine for cheat detections",
@@ -624,7 +624,7 @@ public sealed class AntivirusHistoryScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = $"Third-Party AV Protection May Be Disabled: {avName}",
-                                    Risk = Risk.High,
+                                    Risk = RiskLevel.High,
                                     Location = $@"{hivePrefix}\{path}\{valName}",
                                     FileName = "Registry",
                                     Reason = $"{avName} registry suggests protection disabled: {valName}={val}",
@@ -663,7 +663,7 @@ public sealed class AntivirusHistoryScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Windows Defender Signatures Severely Outdated",
-                            Risk = Risk.High,
+                            Risk = RiskLevel.High,
                             Location = @"HKLM\SOFTWARE\Microsoft\Windows Defender\Signature Updates",
                             FileName = "Registry",
                             Reason = $"Defender signatures last updated {daysSince:F0} days ago — may miss known cheat tools",
@@ -676,7 +676,7 @@ public sealed class AntivirusHistoryScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Windows Defender Signatures Outdated",
-                            Risk = Risk.Medium,
+                            Risk = RiskLevel.Medium,
                             Location = @"HKLM\SOFTWARE\Microsoft\Windows Defender\Signature Updates",
                             FileName = "Registry",
                             Reason = $"Defender signatures {daysSince:F0} days old — update recommended",
@@ -693,7 +693,7 @@ public sealed class AntivirusHistoryScanModule : IScanModule
                 {
                     Module = Name,
                     Title = "Defender AV Signature Version Data Missing",
-                    Risk = Risk.Medium,
+                    Risk = RiskLevel.Medium,
                     Location = @"HKLM\SOFTWARE\Microsoft\Windows Defender\Signature Updates",
                     FileName = "Registry",
                     Reason = "AV signature version data absent from registry — Defender may have been reinstalled/tampered",
@@ -731,7 +731,7 @@ public sealed class AntivirusHistoryScanModule : IScanModule
                     {
                         Module = Name,
                         Title = $"Defender Service Key Missing: {svcName}",
-                        Risk = Risk.High,
+                        Risk = RiskLevel.High,
                         Location = $@"HKLM\SYSTEM\CurrentControlSet\Services\{svcName}",
                         FileName = "Registry",
                         Reason = $"Service key for '{svcDesc}' missing — may have been deleted by bypass tool",
@@ -743,7 +743,7 @@ public sealed class AntivirusHistoryScanModule : IScanModule
                 var start = key.GetValue("Start");
                 if (start is int s && (s == 4 || s == 3))
                 {
-                    var riskLevel = s == 4 ? Risk.Critical : Risk.High;
+                    var riskLevel = s == 4 ? RiskLevel.Critical : RiskLevel.High;
                     ctx.AddFinding(new Finding
                     {
                         Module = Name,
@@ -789,7 +789,7 @@ public sealed class AntivirusHistoryScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "Cheat Tool Found in Avast/AVG Quarantine",
-                                Risk = Risk.Critical,
+                                Risk = RiskLevel.Critical,
                                 Location = file,
                                 FileName = Path.GetFileName(file),
                                 Reason = $"Avast/AVG quarantine contains file matching cheat keyword: '{keyword}'",
@@ -816,7 +816,7 @@ public sealed class AntivirusHistoryScanModule : IScanModule
                                     {
                                         Module = Name,
                                         Title = "Cheat Detection Record in Avast/AVG Log",
-                                        Risk = Risk.Critical,
+                                        Risk = RiskLevel.Critical,
                                         Location = file,
                                         FileName = Path.GetFileName(file),
                                         Reason = $"Avast/AVG log records cheat detection: '{keyword}'",
@@ -870,7 +870,7 @@ public sealed class AntivirusHistoryScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = "Cheat Tool Detected by Malwarebytes",
-                                    Risk = Risk.Critical,
+                                    Risk = RiskLevel.Critical,
                                     Location = file,
                                     FileName = Path.GetFileName(file),
                                     Reason = $"Malwarebytes log records cheat/hack detection: '{keyword}'",
@@ -887,7 +887,7 @@ public sealed class AntivirusHistoryScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "Malwarebytes Quarantine Action Logged",
-                                Risk = Risk.Medium,
+                                Risk = RiskLevel.Medium,
                                 Location = file,
                                 FileName = Path.GetFileName(file),
                                 Reason = "Malwarebytes log records successful quarantine action — verify if cheat-related",
@@ -943,7 +943,7 @@ public sealed class AntivirusHistoryScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = $"Cheat Tool Detected by {kvp.Value}",
-                                    Risk = Risk.Critical,
+                                    Risk = RiskLevel.Critical,
                                     Location = file,
                                     FileName = Path.GetFileName(file),
                                     Reason = $"{kvp.Value} log records cheat/hack detection: '{keyword}'",
@@ -1004,7 +1004,7 @@ public sealed class AntivirusHistoryScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Cheat/Hack Tool Whitelisted in Defender Exclusions",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = $@"HKLM\{keyPath}\{valName}",
                             FileName = "Registry",
                             Reason = $"Cheat-related path/process excluded from Defender: '{matchedKeyword}'",
@@ -1017,7 +1017,7 @@ public sealed class AntivirusHistoryScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "FiveM/RageMP/AltV Excluded from Defender",
-                            Risk = Risk.Medium,
+                            Risk = RiskLevel.Medium,
                             Location = $@"HKLM\{keyPath}\{valName}",
                             FileName = "Registry",
                             Reason = $"Game platform path excluded from Defender scanning — could hide cheat files: {valName}",
@@ -1049,7 +1049,7 @@ public sealed class AntivirusHistoryScanModule : IScanModule
                 {
                     Module = Name,
                     Title = "Defender AV Disabled via Group Policy",
-                    Risk = Risk.Critical,
+                    Risk = RiskLevel.Critical,
                     Location = @"HKLM\SOFTWARE\Policies\Microsoft\Windows Defender\DisableAntiVirus",
                     FileName = "Registry",
                     Reason = "Defender AntiVirus disabled via policy registry key — bypass tool may have set this",
@@ -1063,7 +1063,7 @@ public sealed class AntivirusHistoryScanModule : IScanModule
                 {
                     Module = Name,
                     Title = "Defender AntiSpyware Disabled via Group Policy",
-                    Risk = Risk.Critical,
+                    Risk = RiskLevel.Critical,
                     Location = @"HKLM\SOFTWARE\Policies\Microsoft\Windows Defender\DisableAntiSpyware",
                     FileName = "Registry",
                     Reason = "Defender AntiSpyware disabled via policy — this is a common bypass technique",
@@ -1077,7 +1077,7 @@ public sealed class AntivirusHistoryScanModule : IScanModule
                 {
                     Module = Name,
                     Title = "Defender Real-Time Protection Disabled via Group Policy",
-                    Risk = Risk.Critical,
+                    Risk = RiskLevel.Critical,
                     Location = @"HKLM\SOFTWARE\Policies\Microsoft\Windows Defender\DisableRealtimeMonitoring",
                     FileName = "Registry",
                     Reason = "Defender real-time protection disabled via policy — bypass tool action detected",
@@ -1106,7 +1106,7 @@ public sealed class AntivirusHistoryScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = "Defender Feature Disabled via Policy Subkey",
-                                    Risk = Risk.High,
+                                    Risk = RiskLevel.High,
                                     Location = $@"HKLM\SOFTWARE\Policies\Microsoft\Windows Defender\{sub}\{valName}",
                                     FileName = "Registry",
                                     Reason = $"Defender policy subkey disables feature: {sub}\\{valName}=1",

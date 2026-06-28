@@ -155,7 +155,7 @@ public sealed class BattleEyeBypassScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = "BattleEye Bypass Executable Detected",
-                                    Risk = Risk.Critical,
+                                    Risk = RiskLevel.Critical,
                                     Location = file,
                                     FileName = fn,
                                     Reason = "Known BattleEye bypass/kill/patch tool found",
@@ -193,7 +193,7 @@ public sealed class BattleEyeBypassScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = "BattleEye Bypass DLL Detected",
-                                    Risk = Risk.Critical,
+                                    Risk = RiskLevel.Critical,
                                     Location = file,
                                     FileName = fn,
                                     Reason = "Known BattleEye hook/bypass DLL found in user directory",
@@ -232,7 +232,7 @@ public sealed class BattleEyeBypassScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = "BattleEye Bypass Directory Found",
-                                    Risk = Risk.High,
+                                    Risk = RiskLevel.High,
                                     Location = dir,
                                     FileName = dn,
                                     Reason = "Directory name matches known BattleEye bypass tool pattern",
@@ -268,7 +268,7 @@ public sealed class BattleEyeBypassScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "BattleEye Service Disabled in Registry",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = $@"HKLM\SYSTEM\CurrentControlSet\Services\{svcName}",
                             FileName = "registry",
                             Reason = $"Service '{svcName}' has Start=4 (disabled) — BattleEye bypass technique",
@@ -290,7 +290,7 @@ public sealed class BattleEyeBypassScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "BattleEye Service Binary Path Tampered",
-                                Risk = Risk.Critical,
+                                Risk = RiskLevel.Critical,
                                 Location = $@"HKLM\SYSTEM\CurrentControlSet\Services\{svcName}",
                                 FileName = "registry",
                                 Reason = $"BE service '{svcName}' ImagePath contains bypass keywords",
@@ -322,7 +322,7 @@ public sealed class BattleEyeBypassScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "BattleEye Bypass Registry Key Found",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = regKey,
                             FileName = "registry",
                             Reason = "Known BattleEye bypass tool created this registry key",
@@ -353,7 +353,7 @@ public sealed class BattleEyeBypassScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = "BattleEye Bypass Tool in Startup Registry",
-                                    Risk = Risk.Critical,
+                                    Risk = RiskLevel.Critical,
                                     Location = @"HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Run",
                                     FileName = "registry",
                                     Reason = $"Startup entry '{valName}' launches known BattleEye bypass tool",
@@ -399,7 +399,7 @@ public sealed class BattleEyeBypassScanModule : IScanModule
                                     {
                                         Module = Name,
                                         Title = "BattleEye Bypass Config Keyword Found",
-                                        Risk = Risk.High,
+                                        Risk = RiskLevel.High,
                                         Location = file,
                                         FileName = Path.GetFileName(file),
                                         Reason = $"Config file contains BattleEye bypass keyword: '{keyword}'",
@@ -445,7 +445,7 @@ public sealed class BattleEyeBypassScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = "BattleEye Client DLL Replaced with Small Stub",
-                                    Risk = Risk.Critical,
+                                    Risk = RiskLevel.Critical,
                                     Location = file,
                                     FileName = fn,
                                     Reason = "BEClient DLL found outside game dir with suspiciously small size",
@@ -498,7 +498,7 @@ public sealed class BattleEyeBypassScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = "BattleEye Log Contains Bypass/Detection Pattern",
-                                    Risk = Risk.High,
+                                    Risk = RiskLevel.High,
                                     Location = logFile,
                                     FileName = Path.GetFileName(logFile),
                                     Reason = $"BattleEye log contains suspicious keyword: '{pattern}'",
@@ -543,7 +543,7 @@ public sealed class BattleEyeBypassScanModule : IScanModule
                                     {
                                         Module = Name,
                                         Title = "BattleEye Bypass Tool Execution in UserAssist",
-                                        Risk = Risk.Critical,
+                                        Risk = RiskLevel.Critical,
                                         Location = @"HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\UserAssist",
                                         FileName = "registry",
                                         Reason = "BattleEye bypass tool was previously launched (UserAssist log)",
@@ -583,7 +583,7 @@ public sealed class BattleEyeBypassScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "BattleEye Bypass Tool Execution in MUICache",
-                                Risk = Risk.Critical,
+                                Risk = RiskLevel.Critical,
                                 Location = @"HKCU\SOFTWARE\Classes\Local Settings\Software\Microsoft\Windows\Shell\MuiCache",
                                 FileName = "registry",
                                 Reason = "MUICache records previous execution of BattleEye bypass tool",

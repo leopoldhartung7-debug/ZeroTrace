@@ -398,7 +398,7 @@ public sealed class MinecraftCheatScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = $"Known Minecraft Cheat Client JAR: {fn}",
-                                    Risk = Risk.Critical,
+                                    Risk = RiskLevel.Critical,
                                     Location = file,
                                     FileName = fn,
                                     Reason = $"JAR file '{fn}' matches the name of a known Minecraft hacked/cheat client. " +
@@ -426,7 +426,7 @@ public sealed class MinecraftCheatScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = $"Suspected Minecraft Cheat JAR: {fn}",
-                                    Risk = Risk.High,
+                                    Risk = RiskLevel.High,
                                     Location = file,
                                     FileName = fn,
                                     Reason = $"JAR file '{fn}' matches heuristic patterns for a Minecraft cheat client " +
@@ -468,7 +468,7 @@ public sealed class MinecraftCheatScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = $"Known Minecraft Cheat Client Executable: {fn}",
-                                    Risk = Risk.Critical,
+                                    Risk = RiskLevel.Critical,
                                     Location = file,
                                     FileName = fn,
                                     Reason = $"Executable '{fn}' matches a known Minecraft cheat client launcher. " +
@@ -511,7 +511,7 @@ public sealed class MinecraftCheatScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = $"Minecraft Auto-Clicker/Macro Tool: {fn}",
-                                    Risk = Risk.High,
+                                    Risk = RiskLevel.High,
                                     Location = file,
                                     FileName = fn,
                                     Reason = $"Auto-click/macro tool '{fn}' detected. These tools automatically click " +
@@ -542,7 +542,7 @@ public sealed class MinecraftCheatScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = $"Suspected Auto-Clicker Tool: {fn}",
-                                    Risk = Risk.Medium,
+                                    Risk = RiskLevel.Medium,
                                     Location = file,
                                     FileName = fn,
                                     Reason = $"File '{fn}' matches heuristic patterns for an auto-clicker or CPS booster tool " +
@@ -589,7 +589,7 @@ public sealed class MinecraftCheatScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = $"Known Cheat Client JAR in .minecraft/mods: {fn}",
-                                    Risk = Risk.Critical,
+                                    Risk = RiskLevel.Critical,
                                     Location = file,
                                     FileName = fn,
                                     Reason = $"Known cheat client JAR '{fn}' found in the Minecraft mods directory. " +
@@ -626,7 +626,7 @@ public sealed class MinecraftCheatScanModule : IScanModule
                                     {
                                         Module = Name,
                                         Title = $"Suspected Cheat Mod JAR in .minecraft/mods: {fn}",
-                                        Risk = Risk.High,
+                                        Risk = RiskLevel.High,
                                         Location = file,
                                         FileName = fn,
                                         Reason = $"JAR file '{fn}' in the Minecraft mods folder contains cheat-related keywords " +
@@ -698,7 +698,7 @@ public sealed class MinecraftCheatScanModule : IScanModule
                         {
                             Module = Name,
                             Title = $"Minecraft Log Contains Cheat Client Startup: {fn}",
-                            Risk = Risk.High,
+                            Risk = RiskLevel.High,
                             Location = logFile,
                             FileName = fn,
                             Reason = $"Minecraft log file '{fn}' contains {matchedSigs.Count} text signature(s) associated " +
@@ -786,7 +786,7 @@ public sealed class MinecraftCheatScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = $"Known Minecraft Cheat Client Config: {fn}",
-                                    Risk = matchedKw != null ? Risk.Critical : Risk.High,
+                                    Risk = matchedKw != null ? RiskLevel.Critical : RiskLevel.High,
                                     Location = file,
                                     FileName = fn,
                                     Reason = $"Config file '{fn}' matches a known Minecraft cheat client configuration file name. " +
@@ -831,7 +831,7 @@ public sealed class MinecraftCheatScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = $"Minecraft Cheat Client Config Keyword: {fn}",
-                                    Risk = Risk.High,
+                                    Risk = RiskLevel.High,
                                     Location = file,
                                     FileName = fn,
                                     Reason = $"Minecraft-related JSON config '{fn}' contains cheat keyword '{hit}'. " +
@@ -866,7 +866,7 @@ public sealed class MinecraftCheatScanModule : IScanModule
                         {
                             Module = Name,
                             Title = $"Minecraft Cheat Config in User Directory: {fn}",
-                            Risk = Risk.High,
+                            Risk = RiskLevel.High,
                             Location = file,
                             FileName = fn,
                             Reason = $"Known Minecraft cheat client config file '{fn}' found in user directory. " +
@@ -932,7 +932,7 @@ public sealed class MinecraftCheatScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = $"Suspicious DLL in Badlion/Lunar Launcher Directory: {fn}",
-                                Risk = Risk.High,
+                                Risk = RiskLevel.High,
                                 Location = file,
                                 FileName = fn,
                                 Reason = $"DLL '{fn}' with cheat-related keyword '{matchedPattern}' found in the " +
@@ -977,7 +977,7 @@ public sealed class MinecraftCheatScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = $"Minecraft Cheat Tool Execution in MUICache: {Path.GetFileName(valueName)}",
-                                Risk = Risk.High,
+                                Risk = RiskLevel.High,
                                 Location = $@"HKCU\{muiCacheKey}",
                                 FileName = Path.GetFileName(valueName),
                                 Reason = $"MUICache registry entry '{valueName}' matches known Minecraft cheat tool pattern '{frag}'. " +
@@ -1038,7 +1038,7 @@ public sealed class MinecraftCheatScanModule : IScanModule
                                         {
                                             Module = Name,
                                             Title = $"Minecraft Cheat Software in Installed Programs: {displayName}",
-                                            Risk = Risk.Critical,
+                                            Risk = RiskLevel.Critical,
                                             Location = $@"{hivePrefix}\{uninstallKey}\{subKeyName}",
                                             Reason = $"Installed software '{displayName}' matches a known Minecraft cheat client name '{frag}'. " +
                                                      "This indicates a Minecraft hacked client or cheat tool was formally installed on this system.",
@@ -1094,7 +1094,7 @@ public sealed class MinecraftCheatScanModule : IScanModule
                                     {
                                         Module = Name,
                                         Title = $"Minecraft Cheat Tool in UserAssist History: {Path.GetFileName(decoded)}",
-                                        Risk = Risk.High,
+                                        Risk = RiskLevel.High,
                                         Location = $@"HKCU\{userAssistBase}\{guidName}\Count",
                                         FileName = Path.GetFileName(decoded),
                                         Reason = $"UserAssist entry decodes (ROT13) to '{decoded}', matching Minecraft cheat pattern '{frag}'. " +
@@ -1166,7 +1166,7 @@ public sealed class MinecraftCheatScanModule : IScanModule
                                     {
                                         Module = Name,
                                         Title = $"Minecraft Cheat Tool in Run Key: {valueName}",
-                                        Risk = Risk.High,
+                                        Risk = RiskLevel.High,
                                         Location = $@"{hivePrefix}\{runKey}",
                                         Reason = $"Registry Run/RunOnce entry '{valueName}' matches Minecraft cheat pattern '{frag}'. " +
                                                  "This configures a Minecraft cheat tool or auto-clicker to auto-start with Windows.",
@@ -1219,7 +1219,7 @@ public sealed class MinecraftCheatScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = $"Suspected Cheat Client Version Directory: {Path.GetFileName(versionDir)}",
-                                Risk = Risk.High,
+                                Risk = RiskLevel.High,
                                 Location = versionDir,
                                 Reason = $"Minecraft versions directory contains a version folder named '{Path.GetFileName(versionDir)}' " +
                                          "which matches patterns for known Minecraft cheat clients. " +
@@ -1243,7 +1243,7 @@ public sealed class MinecraftCheatScanModule : IScanModule
                                     {
                                         Module = Name,
                                         Title = $"Known Cheat Client JAR in .minecraft/versions: {fn}",
-                                        Risk = Risk.Critical,
+                                        Risk = RiskLevel.Critical,
                                         Location = file,
                                         FileName = fn,
                                         Reason = $"Known Minecraft cheat client JAR '{fn}' found in the versions directory. " +

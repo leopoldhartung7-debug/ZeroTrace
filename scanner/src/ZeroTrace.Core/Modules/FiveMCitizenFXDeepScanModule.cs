@@ -149,7 +149,7 @@ public sealed class FiveMCitizenFXDeepScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "FiveM Resource Manifest — Cheat Resource",
-                                Risk = Risk.Critical,
+                                Risk = RiskLevel.Critical,
                                 Location = manifestFile,
                                 FileName = Path.GetFileName(manifestFile),
                                 Reason = $"FiveM resource manifest contains cheat-related name or keyword: '{cheatName}'",
@@ -202,7 +202,7 @@ public sealed class FiveMCitizenFXDeepScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "FiveM Lua Script — Cheat API Usage",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = luaFile,
                             FileName = Path.GetFileName(luaFile),
                             Reason = $"Lua script uses {matchCount} cheat-related native API calls (last: '{lastMatch}')",
@@ -219,7 +219,7 @@ public sealed class FiveMCitizenFXDeepScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = "FiveM Lua Script — Suspicious Content",
-                                    Risk = Risk.High,
+                                    Risk = RiskLevel.High,
                                     Location = luaFile,
                                     FileName = Path.GetFileName(luaFile),
                                     Reason = $"Lua script contains cheat-related pattern: '{cheatScKw}'",
@@ -275,7 +275,7 @@ public sealed class FiveMCitizenFXDeepScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "FiveM JavaScript Mod — Cheat Content",
-                                Risk = Risk.High,
+                                Risk = RiskLevel.High,
                                 Location = jsFile,
                                 FileName = Path.GetFileName(jsFile),
                                 Reason = $"JavaScript resource contains cheat keyword: '{jsKw}'",
@@ -328,7 +328,7 @@ public sealed class FiveMCitizenFXDeepScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "FiveM NUI HTML — Cheat Interface",
-                                Risk = Risk.High,
+                                Risk = RiskLevel.High,
                                 Location = htmlFile,
                                 FileName = Path.GetFileName(htmlFile),
                                 Reason = $"FiveM NUI HTML file contains cheat UI keyword: '{nuiKw}'",
@@ -370,7 +370,7 @@ public sealed class FiveMCitizenFXDeepScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "FiveM Plugin DLL — Cheat Library",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = dllFile,
                             FileName = Path.GetFileName(dllFile),
                             Reason = $"FiveM plugin DLL name matches cheat pattern: '{cheatName}'",
@@ -394,7 +394,7 @@ public sealed class FiveMCitizenFXDeepScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "FiveM Plugin DLL — CitizenFX Cheat Hook",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = dllFile,
                             FileName = Path.GetFileName(dllFile),
                             Reason = "DLL references CitizenFX alongside cheat-related strings",
@@ -441,7 +441,7 @@ public sealed class FiveMCitizenFXDeepScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "FiveM Cache — Cheat Resource Artifact",
-                                Risk = Risk.High,
+                                Risk = RiskLevel.High,
                                 Location = cacheFile,
                                 FileName = Path.GetFileName(cacheFile),
                                 Reason = $"FiveM cache file contains cheat resource reference: '{cheatName}'",
@@ -492,7 +492,7 @@ public sealed class FiveMCitizenFXDeepScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "FiveM Config — Cheat/Bypass Setting",
-                            Risk = Risk.High,
+                            Risk = RiskLevel.High,
                             Location = configPath,
                             FileName = Path.GetFileName(configPath),
                             Reason = $"FiveM configuration file contains suspicious setting: '{cfgKw}'",
@@ -534,7 +534,7 @@ public sealed class FiveMCitizenFXDeepScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "FiveM CitizenFX Log — Cheat Resource Loaded",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = logPath,
                             FileName = Path.GetFileName(logPath),
                             Reason = $"CitizenFX log shows cheat resource was loaded: '{cheatName}'",
@@ -552,7 +552,7 @@ public sealed class FiveMCitizenFXDeepScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "FiveM Log — Connected to Cheat Server",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = logPath,
                             FileName = Path.GetFileName(logPath),
                             Reason = $"CitizenFX log shows connection to known cheat provider: '{srvHost}'",
@@ -594,7 +594,7 @@ public sealed class FiveMCitizenFXDeepScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "FiveM Recent Servers — Cheat Server History",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = histPath,
                             FileName = Path.GetFileName(histPath),
                             Reason = $"FiveM recent servers list contains known cheat server: '{srvHost}'",
@@ -641,7 +641,7 @@ public sealed class FiveMCitizenFXDeepScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "GTA V ASI Loader — Cheat Plugin",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = asiFile,
                             FileName = Path.GetFileName(asiFile),
                             Reason = $"GTA V ASI file matches cheat plugin pattern: '{cheatAsi}'",
@@ -683,7 +683,7 @@ public sealed class FiveMCitizenFXDeepScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "ScriptHook / Trainer Artifact in GTA V",
-                        Risk = Risk.High,
+                        Risk = RiskLevel.High,
                         Location = fullPath,
                         FileName = hookFile,
                         Reason = $"GTA V directory contains script hook or trainer file: '{hookFile}'",
@@ -733,7 +733,7 @@ public sealed class FiveMCitizenFXDeepScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "FiveM Proxy DLL — Cheat Hook",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = proxyPath,
                             FileName = proxyDll,
                             Reason = $"Proxy DLL '{proxyDll}' in FiveM directory contains cheat-related strings",
@@ -787,7 +787,7 @@ public sealed class FiveMCitizenFXDeepScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "FiveM Anti-Cheat Bypass Artifact",
-                                Risk = Risk.Critical,
+                                Risk = RiskLevel.Critical,
                                 Location = file,
                                 FileName = Path.GetFileName(file),
                                 Reason = $"FiveM file contains anti-cheat bypass keyword: '{bpKw}'",
@@ -828,7 +828,7 @@ public sealed class FiveMCitizenFXDeepScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "Downloads — FiveM/GTA Cheat File",
-                        Risk = Risk.Critical,
+                        Risk = RiskLevel.Critical,
                         Location = file,
                         FileName = Path.GetFileName(file),
                         Reason = $"Downloaded file name matches FiveM cheat pattern: '{pattern}'",
@@ -870,7 +870,7 @@ public sealed class FiveMCitizenFXDeepScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "Registry — FiveM/GTA Cheat Artifact",
-                                Risk = Risk.High,
+                                Risk = RiskLevel.High,
                                 Location = $@"Registry\{regPath}\{valueName}",
                                 FileName = valueName,
                                 Reason = $"Registry value contains cheat-related name: '{cheatName}'",
@@ -915,7 +915,7 @@ public sealed class FiveMCitizenFXDeepScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "FiveM Network Log — Cheat Server Connection",
-                                Risk = Risk.Critical,
+                                Risk = RiskLevel.Critical,
                                 Location = logFile,
                                 FileName = Path.GetFileName(logFile),
                                 Reason = $"FiveM network log shows connection to cheat server: '{srvHost}'",
@@ -950,7 +950,7 @@ public sealed class FiveMCitizenFXDeepScanModule : IScanModule
                 {
                     Module = Name,
                     Title = "FiveM Crash Dump — Forensic Artifact",
-                    Risk = Risk.Medium,
+                    Risk = RiskLevel.Medium,
                     Location = dmpFile,
                     FileName = Path.GetFileName(dmpFile),
                     Reason = "FiveM crash dump found — may contain cheat module traces in process memory snapshot",
@@ -987,7 +987,7 @@ public sealed class FiveMCitizenFXDeepScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "FiveM Screenshot Bypass — Anti-Detection",
-                                Risk = Risk.Critical,
+                                Risk = RiskLevel.Critical,
                                 Location = file,
                                 FileName = Path.GetFileName(file),
                                 Reason = $"FiveM resource script contains screenshot bypass indicator: '{sbKw}'",

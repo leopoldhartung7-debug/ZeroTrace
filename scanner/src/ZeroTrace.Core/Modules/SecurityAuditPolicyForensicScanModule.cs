@@ -196,7 +196,7 @@ public sealed class SecurityAuditPolicyForensicScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "CrashOnAuditFail Configured (Locks System)",
-                        Risk = Risk.High,
+                        Risk = RiskLevel.High,
                         Location = @"HKLM\SYSTEM\CurrentControlSet\Control\Lsa\CrashOnAuditFail",
                         FileName = "Registry",
                         Reason = "CrashOnAuditFail=2 will lock the system if audit log is full — can be exploited by attackers to prevent logging",
@@ -212,7 +212,7 @@ public sealed class SecurityAuditPolicyForensicScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "Anonymous Access to LSA Not Restricted",
-                        Risk = Risk.Medium,
+                        Risk = RiskLevel.Medium,
                         Location = @"HKLM\SYSTEM\CurrentControlSet\Control\Lsa\RestrictAnonymous",
                         FileName = "Registry",
                         Reason = "RestrictAnonymous=0 allows null-session enumeration — weakened security posture",
@@ -227,7 +227,7 @@ public sealed class SecurityAuditPolicyForensicScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "LM Hash Storage Enabled in LSA",
-                        Risk = Risk.Medium,
+                        Risk = RiskLevel.Medium,
                         Location = @"HKLM\SYSTEM\CurrentControlSet\Control\Lsa\NoLMHash",
                         FileName = "Registry",
                         Reason = "NoLMHash=0 allows weak LM hash storage — credential theft risk",
@@ -261,7 +261,7 @@ public sealed class SecurityAuditPolicyForensicScanModule : IScanModule
                     {
                         Module = Name,
                         Title = $"Event Log Max Size Too Small: {keyPath.Split('\\').Last()}",
-                        Risk = Risk.Medium,
+                        Risk = RiskLevel.Medium,
                         Location = $@"HKLM\{keyPath}\MaxSize",
                         FileName = "Registry",
                         Reason = $"Event log max size is only {ms / 1024 / 1024}MB — may cause early overwrites hiding cheat/bypass activity",
@@ -276,7 +276,7 @@ public sealed class SecurityAuditPolicyForensicScanModule : IScanModule
                     {
                         Module = Name,
                         Title = $"Event Log Overwrite Oldest Enabled: {keyPath.Split('\\').Last()}",
-                        Risk = Risk.Low,
+                        Risk = RiskLevel.Low,
                         Location = $@"HKLM\{keyPath}\Retention",
                         FileName = "Registry",
                         Reason = "Retention=0 (overwrite as needed) — old forensic events may be overwritten by bypass activity",
@@ -291,7 +291,7 @@ public sealed class SecurityAuditPolicyForensicScanModule : IScanModule
                     {
                         Module = Name,
                         Title = $"Event Log Auto-Backup Enabled: {keyPath.Split('\\').Last()}",
-                        Risk = Risk.Low,
+                        Risk = RiskLevel.Low,
                         Location = $@"HKLM\{keyPath}\AutoBackupLogFiles",
                         FileName = "Registry",
                         Reason = "Event log auto-backup enabled — backup files may contain pre-wipe cheat activity records",
@@ -330,7 +330,7 @@ public sealed class SecurityAuditPolicyForensicScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Sysmon Not Installed (No Extended Event Logging)",
-                            Risk = Risk.Medium,
+                            Risk = RiskLevel.Medium,
                             Location = $@"HKLM\{kvp.Value}",
                             FileName = "Registry",
                             Reason = "Sysmon event channel absent — extended process/network/file monitoring not configured",
@@ -344,7 +344,7 @@ public sealed class SecurityAuditPolicyForensicScanModule : IScanModule
                 if (enabled is int e && e == 0)
                 {
                     var risk = kvp.Key.Contains("Defender") || kvp.Key.Contains("PowerShell")
-                        ? Risk.Critical : Risk.High;
+                        ? RiskLevel.Critical : RiskLevel.High;
 
                     ctx.AddFinding(new Finding
                     {
@@ -365,7 +365,7 @@ public sealed class SecurityAuditPolicyForensicScanModule : IScanModule
                     {
                         Module = Name,
                         Title = $"PowerShell Event Log Too Small: {kvp.Key}",
-                        Risk = Risk.Medium,
+                        Risk = RiskLevel.Medium,
                         Location = $@"HKLM\{kvp.Value}\MaxSize",
                         FileName = "Registry",
                         Reason = $"PowerShell event log max size only {ms / 1024}KB — bypass PS scripts may not be fully recorded",
@@ -401,7 +401,7 @@ public sealed class SecurityAuditPolicyForensicScanModule : IScanModule
             if (!File.Exists(fullPath))
             {
                 var risk = logFile.Contains("Security") || logFile.Contains("Defender") || logFile.Contains("PowerShell")
-                    ? Risk.High : Risk.Medium;
+                    ? RiskLevel.High : RiskLevel.Medium;
 
                 ctx.AddFinding(new Finding
                 {
@@ -425,7 +425,7 @@ public sealed class SecurityAuditPolicyForensicScanModule : IScanModule
                     {
                         Module = Name,
                         Title = $"Event Log File Suspiciously Small: {logFile}",
-                        Risk = Risk.High,
+                        Risk = RiskLevel.High,
                         Location = fullPath,
                         FileName = logFile,
                         Reason = $"Event log '{logFile}' is only {fi.Length / 1024}KB — may have been cleared by bypass tool (min expected: {minSize / 1024}KB)",
@@ -440,7 +440,7 @@ public sealed class SecurityAuditPolicyForensicScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "Security Event Log Not Written For 90+ Days",
-                        Risk = Risk.Medium,
+                        Risk = RiskLevel.Medium,
                         Location = fullPath,
                         FileName = logFile,
                         Reason = $"Security event log last written {age:F0} days ago — unusual unless system was offline or log disabled",
@@ -485,7 +485,7 @@ public sealed class SecurityAuditPolicyForensicScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "PowerShell Script Block Logging Disabled via Policy",
-                                Risk = Risk.High,
+                                Risk = RiskLevel.High,
                                 Location = $@"{hivePrefix}\{keyPath}\EnableScriptBlockLogging",
                                 FileName = "Registry",
                                 Reason = "Script block logging disabled — PowerShell bypass/download cradle commands won't be recorded",
@@ -500,7 +500,7 @@ public sealed class SecurityAuditPolicyForensicScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "PowerShell Script Block Invocation Logging Disabled",
-                                Risk = Risk.Medium,
+                                Risk = RiskLevel.Medium,
                                 Location = $@"{hivePrefix}\{keyPath}\EnableScriptBlockInvocationLogging",
                                 FileName = "Registry",
                                 Reason = "Script block invocation logging disabled — function call tracking not recorded",
@@ -518,7 +518,7 @@ public sealed class SecurityAuditPolicyForensicScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "PowerShell Module Logging Disabled via Policy",
-                                Risk = Risk.High,
+                                Risk = RiskLevel.High,
                                 Location = $@"{hivePrefix}\{keyPath}\EnableModuleLogging",
                                 FileName = "Registry",
                                 Reason = "Module logging disabled — PowerShell module activity not tracked in event log",
@@ -538,7 +538,7 @@ public sealed class SecurityAuditPolicyForensicScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "PowerShell Transcription Enabled (Check Transcripts)",
-                                Risk = Risk.Low,
+                                Risk = RiskLevel.Low,
                                 Location = $@"{hivePrefix}\{keyPath}",
                                 FileName = "Registry",
                                 Reason = $"PowerShell transcription enabled — transcript files may contain bypass command evidence",
@@ -566,7 +566,7 @@ public sealed class SecurityAuditPolicyForensicScanModule : IScanModule
                     {
                         Module = Name,
                         Title = $"PowerShell Execution Policy Set to {execPolicy} via Policy",
-                        Risk = Risk.High,
+                        Risk = RiskLevel.High,
                         Location = @"HKLM\SOFTWARE\Policies\Microsoft\Windows\PowerShell\ExecutionPolicy",
                         FileName = "Registry",
                         Reason = $"Execution policy permanently set to '{execPolicy}' via group policy — allows unsigned scripts to run, typical bypass tool action",
@@ -610,7 +610,7 @@ public sealed class SecurityAuditPolicyForensicScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "Audit Log Tampering Command in PowerShell History",
-                                Risk = Risk.Critical,
+                                Risk = RiskLevel.Critical,
                                 Location = fullPath,
                                 FileName = Path.GetFileName(fullPath),
                                 Reason = $"PowerShell history contains audit-tampering command: '{keyword}'",
@@ -630,7 +630,7 @@ public sealed class SecurityAuditPolicyForensicScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "PowerShell Bypass/AMSI Command in History",
-                                Risk = Risk.Critical,
+                                Risk = RiskLevel.Critical,
                                 Location = fullPath,
                                 FileName = Path.GetFileName(fullPath),
                                 Reason = $"PowerShell history contains bypass/AMSI command: '{bk}'",
@@ -647,7 +647,7 @@ public sealed class SecurityAuditPolicyForensicScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "Cheat-Related Command in PowerShell History",
-                                Risk = Risk.High,
+                                Risk = RiskLevel.High,
                                 Location = fullPath,
                                 FileName = Path.GetFileName(fullPath),
                                 Reason = $"PowerShell history references cheat tool: '{ck}'",
@@ -676,7 +676,7 @@ public sealed class SecurityAuditPolicyForensicScanModule : IScanModule
                 {
                     Module = Name,
                     Title = "AppLocker Not Configured",
-                    Risk = Risk.Low,
+                    Risk = RiskLevel.Low,
                     Location = @"HKLM\SOFTWARE\Policies\Microsoft\Windows\SrpV2",
                     FileName = "Registry",
                     Reason = "AppLocker application whitelisting not configured — allows execution of unsigned cheat tools",
@@ -709,7 +709,7 @@ public sealed class SecurityAuditPolicyForensicScanModule : IScanModule
                                         {
                                             Module = Name,
                                             Title = "AppLocker Deny Rule for Cheat Tool Found",
-                                            Risk = Risk.Medium,
+                                            Risk = RiskLevel.Medium,
                                             Location = $@"HKLM\{ruleType}\{ruleName}",
                                             FileName = "Registry",
                                             Reason = $"AppLocker deny rule references cheat tool: '{ck}' — confirms cheat was previously blocked",
@@ -747,7 +747,7 @@ public sealed class SecurityAuditPolicyForensicScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "HVCI (Hypervisor Protected Code Integrity) Disabled",
-                        Risk = Risk.Critical,
+                        Risk = RiskLevel.Critical,
                         Location = @"HKLM\SYSTEM\CurrentControlSet\Control\DeviceGuard\Scenarios\HypervisorEnforcedCodeIntegrity",
                         FileName = "Registry",
                         Reason = "HVCI disabled — kernel-level cheat drivers and BYOVD exploits can load without code signing enforcement",
@@ -772,7 +772,7 @@ public sealed class SecurityAuditPolicyForensicScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "Vulnerable Driver Blocklist Disabled",
-                        Risk = Risk.Critical,
+                        Risk = RiskLevel.Critical,
                         Location = @"HKLM\SYSTEM\CurrentControlSet\Control\CI\Config\VulnerableDriverBlocklistEnable",
                         FileName = "Registry",
                         Reason = "Microsoft vulnerable driver blocklist disabled — all known BYOVD (Bring Your Own Vulnerable Driver) exploits can load",
@@ -800,7 +800,7 @@ public sealed class SecurityAuditPolicyForensicScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "Virtualization Based Security Disabled via Policy",
-                        Risk = Risk.Critical,
+                        Risk = RiskLevel.Critical,
                         Location = @"HKLM\SOFTWARE\Policies\Microsoft\Windows\DeviceGuard\EnableVirtualizationBasedSecurity",
                         FileName = "Registry",
                         Reason = "VBS disabled via group policy — all VBS-dependent protections (HVCI, Credential Guard) are unavailable",
@@ -843,7 +843,7 @@ public sealed class SecurityAuditPolicyForensicScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "PowerShell Transcript Log Found",
-                        Risk = Risk.Low,
+                        Risk = RiskLevel.Low,
                         Location = file,
                         FileName = Path.GetFileName(file),
                         Reason = "PowerShell transcript file found — may contain bypass/cheat command evidence",
@@ -864,7 +864,7 @@ public sealed class SecurityAuditPolicyForensicScanModule : IScanModule
             {
                 Module = Name,
                 Title = "PowerShell Operational Event Log Missing",
-                Risk = Risk.Critical,
+                Risk = RiskLevel.Critical,
                 Location = psOpLog,
                 FileName = "Microsoft-Windows-PowerShell%4Operational.evtx",
                 Reason = "PowerShell operational event log (script block / module logging sink) is absent — may have been deleted to hide bypass commands",
@@ -891,7 +891,7 @@ public sealed class SecurityAuditPolicyForensicScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "PowerShell Module Logging Enabled But No Modules Listed",
-                            Risk = Risk.Low,
+                            Risk = RiskLevel.Low,
                             Location = @"HKLM\SOFTWARE\Policies\Microsoft\Windows\PowerShell\ModuleLogging",
                             FileName = "Registry",
                             Reason = "Module logging enabled but no module names specified — may not log all bypass modules",
@@ -917,7 +917,7 @@ public sealed class SecurityAuditPolicyForensicScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "PowerShell Constrained Language Mode Not Enforced via Environment",
-                        Risk = Risk.Low,
+                        Risk = RiskLevel.Low,
                         Location = @"HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Environment\__PSLockdownPolicy",
                         FileName = "Registry",
                         Reason = "PowerShell Constrained Language Mode not enforced system-wide — cheat scripts can call .NET methods freely",
@@ -930,7 +930,7 @@ public sealed class SecurityAuditPolicyForensicScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "PowerShell CLM Not Fully Enforced",
-                        Risk = Risk.Medium,
+                        Risk = RiskLevel.Medium,
                         Location = @"HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Environment\__PSLockdownPolicy",
                         FileName = "Registry",
                         Reason = $"__PSLockdownPolicy={clm} (expected 4 for full CLM) — partial enforcement may allow bypass scripts",
@@ -966,7 +966,7 @@ public sealed class SecurityAuditPolicyForensicScanModule : IScanModule
                     {
                         Module = Name,
                         Title = $"Critical Audit Service Key Missing: {svcName}",
-                        Risk = Risk.High,
+                        Risk = RiskLevel.High,
                         Location = $@"HKLM\SYSTEM\CurrentControlSet\Services\{svcName}",
                         FileName = "Registry",
                         Reason = $"Service key for '{svcDesc}' absent — may have been tampered with to disable audit/logging infrastructure",
@@ -982,7 +982,7 @@ public sealed class SecurityAuditPolicyForensicScanModule : IScanModule
                     {
                         Module = Name,
                         Title = $"Critical Audit/Infrastructure Service Disabled: {svcName}",
-                        Risk = Risk.Critical,
+                        Risk = RiskLevel.Critical,
                         Location = $@"HKLM\SYSTEM\CurrentControlSet\Services\{svcName}",
                         FileName = "Registry",
                         Reason = $"'{svcDesc}' disabled (Start=4) — disable forensic/audit infrastructure to avoid detection",
@@ -1016,7 +1016,7 @@ public sealed class SecurityAuditPolicyForensicScanModule : IScanModule
                 {
                     Module = Name,
                     Title = "Sysmon Installed (Extended Forensic Logging)",
-                    Risk = Risk.Low,
+                    Risk = RiskLevel.Low,
                     Location = path,
                     FileName = Path.GetFileName(path),
                     Reason = "Sysmon found on disk — provides process creation, network, file, registry event logs",
@@ -1036,7 +1036,7 @@ public sealed class SecurityAuditPolicyForensicScanModule : IScanModule
                 {
                     Module = Name,
                     Title = "Sysmon Service Registry Exists But Executable Missing",
-                    Risk = Risk.High,
+                    Risk = RiskLevel.High,
                     Location = @"HKLM\SYSTEM\CurrentControlSet\Services\Sysmon",
                     FileName = "Registry",
                     Reason = "Sysmon service registry key present but sysmon executable missing — may have been removed to disable forensic logging",
@@ -1055,7 +1055,7 @@ public sealed class SecurityAuditPolicyForensicScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "Sysmon64 Service Disabled",
-                        Risk = Risk.High,
+                        Risk = RiskLevel.High,
                         Location = @"HKLM\SYSTEM\CurrentControlSet\Services\Sysmon64",
                         FileName = "Registry",
                         Reason = "Sysmon64 service disabled — extended process/network forensic logging stopped, likely by bypass tool",
@@ -1093,7 +1093,7 @@ public sealed class SecurityAuditPolicyForensicScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "Audit Policy CSV Shows 'No Auditing' Categories",
-                        Risk = Risk.High,
+                        Risk = RiskLevel.High,
                         Location = path,
                         FileName = Path.GetFileName(path),
                         Reason = "Audit policy CSV file contains 'No Auditing' for one or more categories — reduces forensic visibility",
@@ -1114,7 +1114,7 @@ public sealed class SecurityAuditPolicyForensicScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Specific Audit Category Disabled in Policy CSV",
-                            Risk = Risk.Medium,
+                            Risk = RiskLevel.Medium,
                             Location = path,
                             FileName = Path.GetFileName(path),
                             Reason = $"Audit category with 'No Auditing': {line.Trim()[..Math.Min(120, line.Length)]}",
@@ -1149,7 +1149,7 @@ public sealed class SecurityAuditPolicyForensicScanModule : IScanModule
                 {
                     Module = Name,
                     Title = "Security Center AV Override Active",
-                    Risk = Risk.High,
+                    Risk = RiskLevel.High,
                     Location = @"HKLM\SOFTWARE\Microsoft\Security Center\Svc\AntiVirusOverride",
                     FileName = "Registry",
                     Reason = "AntiVirusOverride=1 suppresses Security Center AV status notifications — bypass tool may have set this",
@@ -1163,7 +1163,7 @@ public sealed class SecurityAuditPolicyForensicScanModule : IScanModule
                 {
                     Module = Name,
                     Title = "Security Center Firewall Override Active",
-                    Risk = Risk.High,
+                    Risk = RiskLevel.High,
                     Location = @"HKLM\SOFTWARE\Microsoft\Security Center\Svc\FirewallOverride",
                     FileName = "Registry",
                     Reason = "FirewallOverride=1 suppresses firewall status notifications",
@@ -1189,7 +1189,7 @@ public sealed class SecurityAuditPolicyForensicScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "WDAC Code Integrity Policy File Found",
-                        Risk = Risk.Low,
+                        Risk = RiskLevel.Low,
                         Location = path,
                         FileName = Path.GetFileName(path),
                         Reason = $"Windows Defender Application Control policy file present ({fi.Length / 1024}KB) — application whitelisting is active",
@@ -1214,7 +1214,7 @@ public sealed class SecurityAuditPolicyForensicScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "WDAC Policy File Suspiciously Small",
-                                Risk = Risk.High,
+                                Risk = RiskLevel.High,
                                 Location = policy,
                                 FileName = Path.GetFileName(policy),
                                 Reason = $"WDAC policy .cip file is only {fi.Length} bytes — may be stub/bypass policy allowing all unsigned code",
@@ -1249,7 +1249,7 @@ public sealed class SecurityAuditPolicyForensicScanModule : IScanModule
                 {
                     Module = Name,
                     Title = "Group Policy Security Template Disables Auditing",
-                    Risk = Risk.High,
+                    Risk = RiskLevel.High,
                     Location = gpSecPath,
                     FileName = Path.GetFileName(gpSecPath),
                     Reason = "Security template (GptTmpl.inf) disables critical audit categories — reduces forensic evidence collection",
@@ -1263,7 +1263,7 @@ public sealed class SecurityAuditPolicyForensicScanModule : IScanModule
                 {
                     Module = Name,
                     Title = "Guest Account Enabled via Group Policy Security Template",
-                    Risk = Risk.High,
+                    Risk = RiskLevel.High,
                     Location = gpSecPath,
                     FileName = Path.GetFileName(gpSecPath),
                     Reason = "Group policy enables guest account — security weakening often paired with bypass tools",
@@ -1277,7 +1277,7 @@ public sealed class SecurityAuditPolicyForensicScanModule : IScanModule
                 {
                     Module = Name,
                     Title = "Password Complexity Disabled via Group Policy",
-                    Risk = Risk.Medium,
+                    Risk = RiskLevel.Medium,
                     Location = gpSecPath,
                     FileName = Path.GetFileName(gpSecPath),
                     Reason = "Password complexity requirements disabled — reduces account security, often configured by cheat tools targeting multi-account systems",
@@ -1318,7 +1318,7 @@ public sealed class SecurityAuditPolicyForensicScanModule : IScanModule
                     {
                         Module = Name,
                         Title = $"ETW Autologger Session Disabled: {sessionName}",
-                        Risk = Risk.Critical,
+                        Risk = RiskLevel.Critical,
                         Location = $@"HKLM\{sessionPath}",
                         FileName = "Registry",
                         Reason = $"ETW auto-logger session '{sessionName}' disabled — kernel event tracing stopped, primary bypass technique to blind forensic tools",
@@ -1348,7 +1348,7 @@ public sealed class SecurityAuditPolicyForensicScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = $"ETW Provider Disabled in Kernel Logger: {subName}",
-                                Risk = Risk.High,
+                                Risk = RiskLevel.High,
                                 Location = $@"HKLM\SYSTEM\CurrentControlSet\Control\WMI\Autologger\CIRCULAR KERNEL CONTEXT LOGGER\{subName}",
                                 FileName = "Registry",
                                 Reason = $"ETW kernel logger provider '{subName}' disabled — reduces kernel-level monitoring",
@@ -1396,7 +1396,7 @@ public sealed class SecurityAuditPolicyForensicScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Cheat Keyword in Security Policy Log",
-                            Risk = Risk.High,
+                            Risk = RiskLevel.High,
                             Location = path,
                             FileName = Path.GetFileName(path),
                             Reason = $"Windows security policy log references cheat tool: '{ck}'",
@@ -1426,7 +1426,7 @@ public sealed class SecurityAuditPolicyForensicScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "Process Creation Command Line Audit Not Enabled",
-                        Risk = Risk.Medium,
+                        Risk = RiskLevel.Medium,
                         Location = @"HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System\Audit",
                         FileName = "Registry",
                         Reason = "Command line auditing for process creation (Event 4688) not enabled — cheat loader command lines not recorded in Security log",
@@ -1440,7 +1440,7 @@ public sealed class SecurityAuditPolicyForensicScanModule : IScanModule
                 {
                     Module = Name,
                     Title = "Process Creation Command Line Audit Policy Key Missing",
-                    Risk = Risk.Low,
+                    Risk = RiskLevel.Low,
                     Location = @"HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System\Audit",
                     FileName = "Registry",
                     Reason = "Process creation audit policy key not present — command line capture for security events may not be configured",

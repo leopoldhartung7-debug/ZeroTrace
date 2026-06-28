@@ -148,7 +148,7 @@ public sealed class GameSaveFileCheatForensicScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "GTA V Save File — Cheat Keyword",
-                                Risk = Risk.Critical,
+                                Risk = RiskLevel.Critical,
                                 Location = saveFile,
                                 FileName = Path.GetFileName(saveFile),
                                 Reason = $"GTA V save file contains cheat-related keyword: '{cheatKw}'",
@@ -166,7 +166,7 @@ public sealed class GameSaveFileCheatForensicScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "GTA V Save File — Max/Overflow Stat Values",
-                                Risk = Risk.High,
+                                Risk = RiskLevel.High,
                                 Location = saveFile,
                                 FileName = Path.GetFileName(saveFile),
                                 Reason = $"GTA V save contains suspicious maximum stat value: '{suspVal}'",
@@ -209,7 +209,7 @@ public sealed class GameSaveFileCheatForensicScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "RageMP Config — Cheat Artifact",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = file,
                             FileName = Path.GetFileName(file),
                             Reason = $"RageMP configuration/script file contains cheat keyword: '{cheatKw}'",
@@ -250,7 +250,7 @@ public sealed class GameSaveFileCheatForensicScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "alt:V Config — Cheat Artifact",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = file,
                             FileName = Path.GetFileName(file),
                             Reason = $"alt:V configuration file contains cheat keyword: '{cheatKw}'",
@@ -304,7 +304,7 @@ public sealed class GameSaveFileCheatForensicScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "Rust Config — Cheat Configuration",
-                                Risk = Risk.Critical,
+                                Risk = RiskLevel.Critical,
                                 Location = cfgFile,
                                 FileName = Path.GetFileName(cfgFile),
                                 Reason = $"Rust configuration file contains cheat keyword: '{rustKw}'",
@@ -352,7 +352,7 @@ public sealed class GameSaveFileCheatForensicScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Escape from Tarkov — Cheat Config",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = file,
                             FileName = Path.GetFileName(file),
                             Reason = $"EFT config file contains cheat keyword: '{tarKw}'",
@@ -391,7 +391,7 @@ public sealed class GameSaveFileCheatForensicScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "My Games Config — Cheat Setting",
-                            Risk = Risk.High,
+                            Risk = RiskLevel.High,
                             Location = file,
                             FileName = Path.GetFileName(file),
                             Reason = $"Game configuration file in My Games contains cheat keyword: '{cheatKw}'",
@@ -434,7 +434,7 @@ public sealed class GameSaveFileCheatForensicScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "Steam UserData VDF — Cheat Reference",
-                                Risk = Risk.High,
+                                Risk = RiskLevel.High,
                                 Location = vdfFile,
                                 FileName = Path.GetFileName(vdfFile),
                                 Reason = $"Steam userdata VDF file contains cheat keyword: '{cheatKw}'",
@@ -477,7 +477,7 @@ public sealed class GameSaveFileCheatForensicScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "Cloud Storage — Cheat Save File Sync",
-                                Risk = Risk.High,
+                                Risk = RiskLevel.High,
                                 Location = file,
                                 FileName = Path.GetFileName(file),
                                 Reason = $"Cloud storage contains game save/config with cheat keyword: '{cheatKw}'",
@@ -519,7 +519,7 @@ public sealed class GameSaveFileCheatForensicScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Stat Editor / Recovery Tool Found",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = file,
                             FileName = Path.GetFileName(file),
                             Reason = $"Game stat editor or account recovery tool found: '{toolName}'",
@@ -565,7 +565,7 @@ public sealed class GameSaveFileCheatForensicScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "Game Save Backup — Cheat Data Preserved",
-                                Risk = Risk.High,
+                                Risk = RiskLevel.High,
                                 Location = backupFile,
                                 FileName = Path.GetFileName(backupFile),
                                 Reason = $"Game save backup file contains cheat keyword: '{cheatKw}'",
@@ -616,7 +616,7 @@ public sealed class GameSaveFileCheatForensicScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Minecraft — Cheat Client Config",
-                            Risk = Risk.High,
+                            Risk = RiskLevel.High,
                             Location = file,
                             FileName = Path.GetFileName(file),
                             Reason = $"Minecraft config file contains cheat client keyword: '{mcKw}'",
@@ -646,7 +646,7 @@ public sealed class GameSaveFileCheatForensicScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Minecraft — Known Cheat Client JAR",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = modFile,
                             FileName = Path.GetFileName(modFile),
                             Reason = $"Known Minecraft cheat client mod found: '{cheatClient}'",
@@ -691,7 +691,7 @@ public sealed class GameSaveFileCheatForensicScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Fortnite Config — Cheat Setting Detected",
-                            Risk = Risk.High,
+                            Risk = RiskLevel.High,
                             Location = iniFile,
                             FileName = Path.GetFileName(iniFile),
                             Reason = $"Fortnite configuration contains cheat/visibility keyword: '{fnKw}'",
@@ -737,7 +737,7 @@ public sealed class GameSaveFileCheatForensicScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "Call of Duty / Warzone Config — Cheat Artifact",
-                                Risk = Risk.High,
+                                Risk = RiskLevel.High,
                                 Location = configFile,
                                 FileName = Path.GetFileName(configFile),
                                 Reason = $"CoD/Warzone config contains cheat keyword: '{cheatKw}'",
@@ -777,7 +777,7 @@ public sealed class GameSaveFileCheatForensicScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Apex Legends Profile — Cheat Setting",
-                            Risk = Risk.High,
+                            Risk = RiskLevel.High,
                             Location = file,
                             FileName = Path.GetFileName(file),
                             Reason = $"Apex Legends profile data contains cheat keyword: '{cheatKw}'",
@@ -817,7 +817,7 @@ public sealed class GameSaveFileCheatForensicScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Game Save File — Timestamp Anomaly",
-                            Risk = Risk.Medium,
+                            Risk = RiskLevel.Medium,
                             Location = saveFile,
                             FileName = Path.GetFileName(saveFile),
                             Reason = $"Save file timestamp anomaly: Created={info.CreationTime:s}, Modified={info.LastWriteTime:s}",
@@ -859,7 +859,7 @@ public sealed class GameSaveFileCheatForensicScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "Registry — Stat Editor Tool Installation",
-                                Risk = Risk.Critical,
+                                Risk = RiskLevel.Critical,
                                 Location = $@"HKLM\{regPath}\{subKeyName}",
                                 FileName = subKeyName,
                                 Reason = $"Stat editor or save modification tool found in uninstall registry: '{editorName}'",
@@ -890,7 +890,7 @@ public sealed class GameSaveFileCheatForensicScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "MUICache — Stat Editor Execution",
-                                Risk = Risk.Critical,
+                                Risk = RiskLevel.Critical,
                                 Location = $@"HKCU\SOFTWARE\Classes\Local Settings\Software\Microsoft\Windows\Shell\MuiCache\{valueName}",
                                 FileName = valueName,
                                 Reason = $"MUICache shows execution of stat editor tool: '{editorName}'",
@@ -937,7 +937,7 @@ public sealed class GameSaveFileCheatForensicScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "Rockstar Profile Data — Suspicious Values",
-                                Risk = Risk.High,
+                                Risk = RiskLevel.High,
                                 Location = file,
                                 FileName = Path.GetFileName(file),
                                 Reason = $"Profile data file contains suspicious max-value pattern: '{suspVal}'",
@@ -980,7 +980,7 @@ public sealed class GameSaveFileCheatForensicScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "Downloads — Game Save Cheat Tool",
-                        Risk = Risk.Critical,
+                        Risk = RiskLevel.Critical,
                         Location = file,
                         FileName = Path.GetFileName(file),
                         Reason = $"Downloaded file is a game save editor or cheat tool: '{pattern}'",

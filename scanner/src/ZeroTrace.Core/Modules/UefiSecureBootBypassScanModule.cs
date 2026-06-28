@@ -99,7 +99,7 @@ public sealed class UefiSecureBootBypassScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "UEFI Bootkit File Detected",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = file,
                             FileName = fn,
                             Reason = $"Known UEFI bootkit EFI file '{fn}' found in boot partition",
@@ -120,7 +120,7 @@ public sealed class UefiSecureBootBypassScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Unexpected EFI File in Boot Partition",
-                            Risk = Risk.High,
+                            Risk = RiskLevel.High,
                             Location = file,
                             FileName = fn,
                             Reason = $"Unexpected EFI file '{fn}' in Windows boot directory",
@@ -146,7 +146,7 @@ public sealed class UefiSecureBootBypassScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "bootmgfw.efi Size Anomaly",
-                        Risk = Risk.High,
+                        Risk = RiskLevel.High,
                         Location = bootmgrPath,
                         FileName = "bootmgfw.efi",
                         Reason = $"bootmgfw.efi has unexpected size: {info.Length / 1024} KB",
@@ -194,7 +194,7 @@ public sealed class UefiSecureBootBypassScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "UEFI/Secure Boot Bypass Tool",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = file,
                             FileName = fn,
                             Reason = $"UEFI/Secure Boot bypass tool '{fn}' found",
@@ -226,7 +226,7 @@ public sealed class UefiSecureBootBypassScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Code Integrity Protection Disabled",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = @"HKLM\SYSTEM\CurrentControlSet\Control\CI\Protected",
                             FileName = "Registry",
                             Reason = "CI\\Protected=0 — Windows code integrity protection disabled",
@@ -252,7 +252,7 @@ public sealed class UefiSecureBootBypassScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Driver Verification Disabled",
-                            Risk = Risk.High,
+                            Risk = RiskLevel.High,
                             Location = @"HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management",
                             FileName = "Registry",
                             Reason = "VerifyDriverLevel=0 — kernel driver verification disabled",
@@ -277,7 +277,7 @@ public sealed class UefiSecureBootBypassScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Smart App Control Disabled",
-                            Risk = Risk.Medium,
+                            Risk = RiskLevel.Medium,
                             Location = @"HKLM\SYSTEM\CurrentControlSet\Control\CI\Policy",
                             FileName = "Registry",
                             Reason = "Windows Smart App Control (WDAC) disabled",
@@ -308,7 +308,7 @@ public sealed class UefiSecureBootBypassScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "VBS (HVCI) Disabled",
-                            Risk = Risk.High,
+                            Risk = RiskLevel.High,
                             Location = @"HKLM\SYSTEM\CurrentControlSet\Control\DeviceGuard",
                             FileName = "Registry",
                             Reason = "Virtualization Based Security disabled — HVCI kernel protection off",
@@ -323,7 +323,7 @@ public sealed class UefiSecureBootBypassScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "HVCI Disabled",
-                            Risk = Risk.High,
+                            Risk = RiskLevel.High,
                             Location = @"HKLM\SYSTEM\CurrentControlSet\Control\DeviceGuard",
                             FileName = "Registry",
                             Reason = "Hypervisor-Protected Code Integrity disabled",
@@ -348,7 +348,7 @@ public sealed class UefiSecureBootBypassScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Credential Guard Disabled",
-                            Risk = Risk.Medium,
+                            Risk = RiskLevel.Medium,
                             Location = @"HKLM\SYSTEM\CurrentControlSet\Control\Lsa",
                             FileName = "Registry",
                             Reason = "Credential Guard disabled (LsaCfgFlags=0)",
@@ -373,7 +373,7 @@ public sealed class UefiSecureBootBypassScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Device Guard VBS Policy Disabled",
-                            Risk = Risk.High,
+                            Risk = RiskLevel.High,
                             Location = @"HKLM\SOFTWARE\Policies\Microsoft\Windows\DeviceGuard",
                             FileName = "Registry",
                             Reason = "Device Guard Virtualization Based Security policy disabled",
@@ -404,7 +404,7 @@ public sealed class UefiSecureBootBypassScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "UEFI Secure Boot Disabled",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = @"HKLM\SYSTEM\CurrentControlSet\Control\SecureBoot\State",
                             FileName = "Registry",
                             Reason = "UEFI Secure Boot is disabled (UEFISecureBootEnabled=0)",
@@ -429,7 +429,7 @@ public sealed class UefiSecureBootBypassScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Secure Boot Policy Mode Anomaly",
-                            Risk = Risk.High,
+                            Risk = RiskLevel.High,
                             Location = @"HKLM\SYSTEM\CurrentControlSet\Control\SecureBoot",
                             FileName = "Registry",
                             Reason = $"Secure Boot PolicyMode={pm} (expected 1=Audit, should be enforcement mode)",
@@ -467,7 +467,7 @@ public sealed class UefiSecureBootBypassScanModule : IScanModule
                     {
                         Module = Name,
                         Title = $"Windows Boot File Size Anomaly: {Path.GetFileName(path)}",
-                        Risk = Risk.High,
+                        Risk = RiskLevel.High,
                         Location = path,
                         FileName = Path.GetFileName(path),
                         Reason = $"{Path.GetFileName(path)} has unexpected size: {info.Length / 1024} KB (expected {min / 1024}–{max / 1024} KB)",
@@ -520,7 +520,7 @@ public sealed class UefiSecureBootBypassScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "BitLocker/TPM Bypass Tool",
-                        Risk = Risk.Critical,
+                        Risk = RiskLevel.Critical,
                         Location = file,
                         FileName = fn,
                         Reason = $"BitLocker/TPM bypass or key extraction tool '{fn}' found",
@@ -562,7 +562,7 @@ public sealed class UefiSecureBootBypassScanModule : IScanModule
                 {
                     Module = Name,
                     Title = "Bootkit Driver in System32",
-                    Risk = Risk.Critical,
+                    Risk = RiskLevel.Critical,
                     Location = sysFile,
                     FileName = fn,
                     Reason = $"Known bootkit-related driver '{fn}' found in System32\\drivers",

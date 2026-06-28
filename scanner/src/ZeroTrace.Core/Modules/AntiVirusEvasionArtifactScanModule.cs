@@ -136,7 +136,7 @@ public sealed class AntiVirusEvasionArtifactScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = "Suspicious Windows Defender Exclusion",
-                                    Risk = Risk.High,
+                                    Risk = RiskLevel.High,
                                     Location = $@"{hiveName}\{keyPath}",
                                     FileName = "Registry",
                                     Reason = reason,
@@ -181,7 +181,7 @@ public sealed class AntiVirusEvasionArtifactScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Windows Defender Disabled",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = $@"HKLM\{keyPath}",
                             FileName = "Registry",
                             Reason = description,
@@ -206,7 +206,7 @@ public sealed class AntiVirusEvasionArtifactScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Windows Defender Service Disabled",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = @"HKLM\SYSTEM\CurrentControlSet\Services\WinDefend",
                             FileName = "Registry",
                             Reason = "WinDefend service Start=4 (Disabled) — Defender engine not running",
@@ -231,7 +231,7 @@ public sealed class AntiVirusEvasionArtifactScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Microsoft Defender for Endpoint (Sense) Service Disabled",
-                            Risk = Risk.High,
+                            Risk = RiskLevel.High,
                             Location = @"HKLM\SYSTEM\CurrentControlSet\Services\Sense",
                             FileName = "Registry",
                             Reason = "MDE Sense service disabled — enterprise EDR detection bypassed",
@@ -296,7 +296,7 @@ public sealed class AntiVirusEvasionArtifactScanModule : IScanModule
                                     {
                                         Module = Name,
                                         Title = "Third-Party AV Exclusion for Suspicious Path",
-                                        Risk = Risk.High,
+                                        Risk = RiskLevel.High,
                                         Location = $@"HKLM\{avKey}\{subName}",
                                         FileName = "Registry",
                                         Reason = $"AV exclusion with suspicious keyword: {valName}",
@@ -345,7 +345,7 @@ public sealed class AntiVirusEvasionArtifactScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "AV/EDR Evasion Tool Detected",
-                        Risk = Risk.Critical,
+                        Risk = RiskLevel.Critical,
                         Location = file,
                         FileName = fn,
                         Reason = $"Known AV/EDR evasion tool '{fn}' found",
@@ -381,7 +381,7 @@ public sealed class AntiVirusEvasionArtifactScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "LSASS Service Start Value Modified",
-                            Risk = Risk.High,
+                            Risk = RiskLevel.High,
                             Location = $@"HKLM\{pplKey}",
                             FileName = "Registry",
                             Reason = $"LSASS service Start={p} — unexpected value may indicate manipulation",
@@ -416,7 +416,7 @@ public sealed class AntiVirusEvasionArtifactScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = "Security ETW Autologger Disabled",
-                                    Risk = Risk.High,
+                                    Risk = RiskLevel.High,
                                     Location = $@"HKLM\SYSTEM\CurrentControlSet\Control\WMI\Autologger\{session}",
                                     FileName = "Registry",
                                     Reason = $"Security ETW autologger session '{session}' disabled (Start=0)",
@@ -467,7 +467,7 @@ public sealed class AntiVirusEvasionArtifactScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "Suspicious Payload Blob",
-                        Risk = Risk.Critical,
+                        Risk = RiskLevel.Critical,
                         Location = file,
                         FileName = fn,
                         Reason = $"Suspicious payload file '{fn}' found in temp/AppData directory",
@@ -489,7 +489,7 @@ public sealed class AntiVirusEvasionArtifactScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "Large Binary Blob in Temp Directory",
-                                Risk = Risk.Medium,
+                                Risk = RiskLevel.Medium,
                                 Location = file,
                                 FileName = fn,
                                 Reason = $"Large binary file ({info.Length / 1024 / 1024} MB) in temp — possible cheat payload",
@@ -550,7 +550,7 @@ public sealed class AntiVirusEvasionArtifactScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Possible Base64-Encoded Loader in AppData",
-                            Risk = Risk.High,
+                            Risk = RiskLevel.High,
                             Location = file,
                             FileName = Path.GetFileName(file),
                             Reason = $"Large text file ({info.Length / 1024} KB) appears to be Base64-encoded — possible cheat payload",
@@ -583,7 +583,7 @@ public sealed class AntiVirusEvasionArtifactScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "amsi.dll Size Anomaly",
-                        Risk = Risk.Critical,
+                        Risk = RiskLevel.Critical,
                         Location = amsiPath,
                         FileName = "amsi.dll",
                         Reason = $"amsi.dll has unexpected size: {info.Length / 1024} KB (expected 40–300 KB)",
@@ -636,7 +636,7 @@ public sealed class AntiVirusEvasionArtifactScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "AMSI Bypass PowerShell Script",
-                        Risk = Risk.Critical,
+                        Risk = RiskLevel.Critical,
                         Location = psFile,
                         FileName = Path.GetFileName(psFile),
                         Reason = "PowerShell script contains AMSI bypass code",

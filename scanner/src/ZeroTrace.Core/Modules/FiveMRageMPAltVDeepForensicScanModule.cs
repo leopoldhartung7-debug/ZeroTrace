@@ -171,7 +171,7 @@ public sealed class FiveMRageMPAltVDeepForensicScanModule : IScanModule
                                 ctx.AddFinding(new Finding
                                 {
                                     Module = Name, Title = "FiveM Cache: Cheat Binary Artifact",
-                                    Risk = Risk.Critical, Location = file,
+                                    Risk = RiskLevel.Critical, Location = file,
                                     FileName = Path.GetFileName(file),
                                     Reason = $"Known cheat binary name '{sig}' in FiveM cache",
                                     Detail = $"Path: {file}"
@@ -195,7 +195,7 @@ public sealed class FiveMRageMPAltVDeepForensicScanModule : IScanModule
                                     ctx.AddFinding(new Finding
                                     {
                                         Module = Name, Title = "FiveM Cache Log: Cheat Keyword",
-                                        Risk = Risk.High, Location = file,
+                                        Risk = RiskLevel.High, Location = file,
                                         FileName = Path.GetFileName(file),
                                         Reason = $"Cheat keyword '{kw}' in FiveM cache file",
                                         Detail = content.Length > 300 ? content[..300] : content
@@ -238,7 +238,7 @@ public sealed class FiveMRageMPAltVDeepForensicScanModule : IScanModule
                             ctx.AddFinding(new Finding
                             {
                                 Module = Name, Title = "FiveM Plugin: Cheat DLL",
-                                Risk = Risk.Critical, Location = file,
+                                Risk = RiskLevel.Critical, Location = file,
                                 FileName = Path.GetFileName(file),
                                 Reason = $"Cheat DLL '{sig}' in FiveM plugins directory",
                                 Detail = $"Plugin path: {file}"
@@ -255,7 +255,7 @@ public sealed class FiveMRageMPAltVDeepForensicScanModule : IScanModule
                     ctx.AddFinding(new Finding
                     {
                         Module = Name, Title = "FiveM Plugin: ASI File Detected",
-                        Risk = Risk.High, Location = file,
+                        Risk = RiskLevel.High, Location = file,
                         FileName = Path.GetFileName(file),
                         Reason = "ASI plugin files can be used to load cheat modules in FiveM",
                         Detail = $"ASI path: {file}"
@@ -299,7 +299,7 @@ public sealed class FiveMRageMPAltVDeepForensicScanModule : IScanModule
                                 ctx.AddFinding(new Finding
                                 {
                                     Module = Name, Title = "FiveM Log: Cheat Activity Pattern",
-                                    Risk = Risk.High, Location = file,
+                                    Risk = RiskLevel.High, Location = file,
                                     FileName = Path.GetFileName(file),
                                     Reason = $"Cheat activity pattern '{pattern}' in FiveM log",
                                     Detail = content.Length > 500 ? content[..500] : content
@@ -345,7 +345,7 @@ public sealed class FiveMRageMPAltVDeepForensicScanModule : IScanModule
                                 ctx.AddFinding(new Finding
                                 {
                                     Module = Name, Title = "FiveM Crash Dump: Cheat Module Referenced",
-                                    Risk = Risk.Critical, Location = file,
+                                    Risk = RiskLevel.Critical, Location = file,
                                     FileName = Path.GetFileName(file),
                                     Reason = $"Cheat module '{kw}' referenced in FiveM crash dump",
                                     Detail = content.Length > 400 ? content[..400] : content
@@ -390,7 +390,7 @@ public sealed class FiveMRageMPAltVDeepForensicScanModule : IScanModule
                         ctx.AddFinding(new Finding
                         {
                             Module = Name, Title = "FiveM Config: Cheat Server in History",
-                            Risk = Risk.High, Location = cfg,
+                            Risk = RiskLevel.High, Location = cfg,
                             FileName = Path.GetFileName(cfg),
                             Reason = $"Cheat-related server keyword '{kw}' in FiveM config/history",
                             Detail = content.Length > 600 ? content[..600] : content
@@ -405,7 +405,7 @@ public sealed class FiveMRageMPAltVDeepForensicScanModule : IScanModule
                         ctx.AddFinding(new Finding
                         {
                             Module = Name, Title = "FiveM Config: Cheat Keyword",
-                            Risk = Risk.High, Location = cfg,
+                            Risk = RiskLevel.High, Location = cfg,
                             FileName = Path.GetFileName(cfg),
                             Reason = $"Cheat keyword '{kw}' in FiveM configuration",
                             Detail = content.Length > 600 ? content[..600] : content
@@ -440,7 +440,7 @@ public sealed class FiveMRageMPAltVDeepForensicScanModule : IScanModule
                             ctx.AddFinding(new Finding
                             {
                                 Module = Name, Title = "FiveM Registry: Cheat Artifact",
-                                Risk = Risk.High,
+                                Risk = RiskLevel.High,
                                 Location = $@"HKCU\{regPath}\{valueName}",
                                 FileName = valueName,
                                 Reason = $"Cheat keyword '{kw}' in FiveM registry path",
@@ -490,7 +490,7 @@ public sealed class FiveMRageMPAltVDeepForensicScanModule : IScanModule
                                 ctx.AddFinding(new Finding
                                 {
                                     Module = Name, Title = "RageMP: Cheat Module Artifact",
-                                    Risk = Risk.Critical, Location = file,
+                                    Risk = RiskLevel.Critical, Location = file,
                                     FileName = Path.GetFileName(file),
                                     Reason = $"Known RageMP cheat '{sig}' artifact found",
                                     Detail = $"Path: {file}"
@@ -514,7 +514,7 @@ public sealed class FiveMRageMPAltVDeepForensicScanModule : IScanModule
                                     ctx.AddFinding(new Finding
                                     {
                                         Module = Name, Title = "RageMP Config/Log: Cheat Keyword",
-                                        Risk = Risk.High, Location = file,
+                                        Risk = RiskLevel.High, Location = file,
                                         FileName = Path.GetFileName(file),
                                         Reason = $"Cheat keyword '{kw}' in RageMP file",
                                         Detail = content.Length > 400 ? content[..400] : content
@@ -563,7 +563,7 @@ public sealed class FiveMRageMPAltVDeepForensicScanModule : IScanModule
                                 ctx.AddFinding(new Finding
                                 {
                                     Module = Name, Title = "RageMP Client Resource: Cheat DLL",
-                                    Risk = Risk.Critical, Location = file,
+                                    Risk = RiskLevel.Critical, Location = file,
                                     FileName = Path.GetFileName(file),
                                     Reason = $"Cheat DLL '{sig}' in RageMP client resources",
                                     Detail = $"Path: {file}"
@@ -588,7 +588,7 @@ public sealed class FiveMRageMPAltVDeepForensicScanModule : IScanModule
                                     ctx.AddFinding(new Finding
                                     {
                                         Module = Name, Title = "RageMP Script: Cheat Code Detected",
-                                        Risk = Risk.Critical, Location = file,
+                                        Risk = RiskLevel.Critical, Location = file,
                                         FileName = Path.GetFileName(file),
                                         Reason = $"Cheat keyword '{kw}' in RageMP script file",
                                         Detail = content.Length > 400 ? content[..400] : content
@@ -639,7 +639,7 @@ public sealed class FiveMRageMPAltVDeepForensicScanModule : IScanModule
                                 ctx.AddFinding(new Finding
                                 {
                                     Module = Name, Title = "alt:V: Cheat Module Artifact",
-                                    Risk = Risk.Critical, Location = file,
+                                    Risk = RiskLevel.Critical, Location = file,
                                     FileName = Path.GetFileName(file),
                                     Reason = $"Known alt:V cheat module '{sig}' detected",
                                     Detail = $"Path: {file}"
@@ -664,7 +664,7 @@ public sealed class FiveMRageMPAltVDeepForensicScanModule : IScanModule
                                     ctx.AddFinding(new Finding
                                     {
                                         Module = Name, Title = "alt:V Resource: Cheat Script Detected",
-                                        Risk = Risk.Critical, Location = file,
+                                        Risk = RiskLevel.Critical, Location = file,
                                         FileName = Path.GetFileName(file),
                                         Reason = $"Cheat keyword '{kw}' in alt:V resource script",
                                         Detail = content.Length > 400 ? content[..400] : content
@@ -709,7 +709,7 @@ public sealed class FiveMRageMPAltVDeepForensicScanModule : IScanModule
                         ctx.AddFinding(new Finding
                         {
                             Module = Name, Title = "alt:V Config: Cheat Server Reference",
-                            Risk = Risk.High, Location = cfg,
+                            Risk = RiskLevel.High, Location = cfg,
                             FileName = Path.GetFileName(cfg),
                             Reason = $"Cheat keyword '{kw}' in alt:V config/server list",
                             Detail = content.Length > 600 ? content[..600] : content
@@ -750,7 +750,7 @@ public sealed class FiveMRageMPAltVDeepForensicScanModule : IScanModule
                         ctx.AddFinding(new Finding
                         {
                             Module = Name, Title = "GTA V Directory: Suspicious Proxy DLL",
-                            Risk = Risk.Critical, Location = dll,
+                            Risk = RiskLevel.Critical, Location = dll,
                             FileName = Path.GetFileName(dll),
                             Reason = $"Proxy DLL '{dllName}' in GTA V game root — common cheat injection vector",
                             Detail = $"Legitimate game installations do not contain '{dllName}' in the root directory"
@@ -764,7 +764,7 @@ public sealed class FiveMRageMPAltVDeepForensicScanModule : IScanModule
                             ctx.AddFinding(new Finding
                             {
                                 Module = Name, Title = "GTA V Directory: Cheat DLL Artifact",
-                                Risk = Risk.Critical, Location = dll,
+                                Risk = RiskLevel.Critical, Location = dll,
                                 FileName = Path.GetFileName(dll),
                                 Reason = $"Cheat DLL name '{sig}' found in GTA V game directory",
                                 Detail = $"Path: {dll}"
@@ -781,7 +781,7 @@ public sealed class FiveMRageMPAltVDeepForensicScanModule : IScanModule
                     ctx.AddFinding(new Finding
                     {
                         Module = Name, Title = "GTA V Directory: ASI Plugin Present",
-                        Risk = Risk.High, Location = asi,
+                        Risk = RiskLevel.High, Location = asi,
                         FileName = Path.GetFileName(asi),
                         Reason = "ASI files in GTA V root can load arbitrary code (cheat menus, trainers)",
                         Detail = $"ASI: {asi}"
@@ -825,7 +825,7 @@ public sealed class FiveMRageMPAltVDeepForensicScanModule : IScanModule
                                 ctx.AddFinding(new Finding
                                 {
                                     Module = Name, Title = "Download/Desktop: Cheat Tool File",
-                                    Risk = Risk.Critical, Location = file,
+                                    Risk = RiskLevel.Critical, Location = file,
                                     FileName = Path.GetFileName(file),
                                     Reason = $"Cheat tool artifact '{sig}' found in user downloads/desktop",
                                     Detail = $"Path: {file}"
@@ -877,7 +877,7 @@ public sealed class FiveMRageMPAltVDeepForensicScanModule : IScanModule
                         ctx.AddFinding(new Finding
                         {
                             Module = Name, Title = "Cheat Purchase Artifact: License/Key File",
-                            Risk = Risk.Critical, Location = file,
+                            Risk = RiskLevel.Critical, Location = file,
                             FileName = Path.GetFileName(file),
                             Reason = "File name matches cheat tool purchase artifact (license/key/receipt)",
                             Detail = $"Path: {file}"
@@ -900,7 +900,7 @@ public sealed class FiveMRageMPAltVDeepForensicScanModule : IScanModule
                                         ctx.AddFinding(new Finding
                                         {
                                             Module = Name, Title = "Cheat Purchase Artifact: License Data in File",
-                                            Risk = Risk.Critical, Location = file,
+                                            Risk = RiskLevel.Critical, Location = file,
                                             FileName = Path.GetFileName(file),
                                             Reason = $"Cheat purchase data ('{pk}') found in cheat-related file",
                                             Detail = content.Length > 400 ? content[..400] : content
@@ -943,7 +943,7 @@ public sealed class FiveMRageMPAltVDeepForensicScanModule : IScanModule
                             ctx.AddFinding(new Finding
                             {
                                 Module = Name, Title = "FiveM Bypass: Cheat DLL in Private Cache",
-                                Risk = Risk.Critical, Location = file,
+                                Risk = RiskLevel.Critical, Location = file,
                                 FileName = Path.GetFileName(file),
                                 Reason = $"Cheat DLL '{sig}' in FiveM private cache — potential active bypass",
                                 Detail = $"Path: {file}"
@@ -984,7 +984,7 @@ public sealed class FiveMRageMPAltVDeepForensicScanModule : IScanModule
                         ctx.AddFinding(new Finding
                         {
                             Module = Name, Title = "FiveM Server History: Known Cheat Server",
-                            Risk = Risk.High, Location = histFile,
+                            Risk = RiskLevel.High, Location = histFile,
                             FileName = Path.GetFileName(histFile),
                             Reason = $"Known cheat server URL pattern '{serverKw}' in FiveM server history",
                             Detail = content.Length > 600 ? content[..600] : content
@@ -1010,7 +1010,7 @@ public sealed class FiveMRageMPAltVDeepForensicScanModule : IScanModule
             ctx.AddFinding(new Finding
             {
                 Module = Name, Title = "GTA V: Menyoo Trainer Artifacts",
-                Risk = Risk.High, Location = menyooRoot,
+                Risk = RiskLevel.High, Location = menyooRoot,
                 FileName = "Menyoo Stuff",
                 Reason = "Menyoo PC trainer artifact directory found — used as cheat menu base in FiveM/Story",
                 Detail = $"Directory: {menyooRoot}"
@@ -1039,7 +1039,7 @@ public sealed class FiveMRageMPAltVDeepForensicScanModule : IScanModule
                             ctx.AddFinding(new Finding
                             {
                                 Module = Name, Title = "GTA V Scripts: Cheat Script DLL",
-                                Risk = Risk.High, Location = file,
+                                Risk = RiskLevel.High, Location = file,
                                 FileName = Path.GetFileName(file),
                                 Reason = $"Cheat script DLL '{sig}' in GTA V scripts folder",
                                 Detail = $"Path: {file}"
@@ -1066,7 +1066,7 @@ public sealed class FiveMRageMPAltVDeepForensicScanModule : IScanModule
                                 ctx.AddFinding(new Finding
                                 {
                                     Module = Name, Title = "GTA V Scripts: Cheat Script Source Code",
-                                    Risk = Risk.Critical, Location = file,
+                                    Risk = RiskLevel.Critical, Location = file,
                                     FileName = Path.GetFileName(file),
                                     Reason = $"Cheat keyword '{kw}' in GTA V script source",
                                     Detail = content.Length > 400 ? content[..400] : content
@@ -1103,7 +1103,7 @@ public sealed class FiveMRageMPAltVDeepForensicScanModule : IScanModule
                         ctx.AddFinding(new Finding
                         {
                             Module = Name, Title = "FiveM Data: Suspicious Sub-Directory",
-                            Risk = Risk.High, Location = subDir,
+                            Risk = RiskLevel.High, Location = subDir,
                             FileName = dirName,
                             Reason = $"Suspicious directory name '{dirName}' in FiveM data path",
                             Detail = $"Directory: {subDir}"
@@ -1131,7 +1131,7 @@ public sealed class FiveMRageMPAltVDeepForensicScanModule : IScanModule
                                 ctx.AddFinding(new Finding
                                 {
                                     Module = Name, Title = "FiveM Game Storage: Cheat Data",
-                                    Risk = Risk.High, Location = file,
+                                    Risk = RiskLevel.High, Location = file,
                                     FileName = Path.GetFileName(file),
                                     Reason = $"Cheat keyword '{kw}' in FiveM game storage JSON",
                                     Detail = content.Length > 300 ? content[..300] : content
@@ -1177,7 +1177,7 @@ public sealed class FiveMRageMPAltVDeepForensicScanModule : IScanModule
                             ctx.AddFinding(new Finding
                             {
                                 Module = Name, Title = "GTA V Mods: Cheat Mod File",
-                                Risk = Risk.High, Location = file,
+                                Risk = RiskLevel.High, Location = file,
                                 FileName = Path.GetFileName(file),
                                 Reason = $"Cheat mod '{sig}' in GTA V mods directory",
                                 Detail = $"Path: {file}"

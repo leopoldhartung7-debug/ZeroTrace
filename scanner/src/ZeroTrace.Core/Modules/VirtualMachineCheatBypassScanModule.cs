@@ -113,7 +113,7 @@ public sealed class VirtualMachineCheatBypassScanModule : IScanModule
             {
                 Module = Name,
                 Title = "Virtualization Software Installed",
-                Risk = Risk.Medium,
+                Risk = RiskLevel.Medium,
                 Location = vmPath,
                 FileName = Path.GetFileName(vmPath),
                 Reason = $"Virtualization software at '{vmPath}' — may be used for VM-based cheat bypass",
@@ -155,7 +155,7 @@ public sealed class VirtualMachineCheatBypassScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "VM-Based Cheat Tool",
-                        Risk = Risk.Critical,
+                        Risk = RiskLevel.Critical,
                         Location = file,
                         FileName = fn,
                         Reason = $"VM-based cheat bypass tool '{fn}' found",
@@ -210,7 +210,7 @@ public sealed class VirtualMachineCheatBypassScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "VM Cheat Bypass Configuration",
-                        Risk = Risk.Critical,
+                        Risk = RiskLevel.Critical,
                         Location = file,
                         FileName = Path.GetFileName(file),
                         Reason = $"Config file contains {hits.Count} VM cheat bypass keywords",
@@ -229,7 +229,7 @@ public sealed class VirtualMachineCheatBypassScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "VM Config with Anti-Detection Settings",
-                            Risk = Risk.High,
+                            Risk = RiskLevel.High,
                             Location = file,
                             FileName = Path.GetFileName(file),
                             Reason = "VM configuration file has CPUID/hypervisor spoofing settings",
@@ -258,7 +258,7 @@ public sealed class VirtualMachineCheatBypassScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "Virtual Machine Guest Detected",
-                        Risk = Risk.High,
+                        Risk = RiskLevel.High,
                         Location = $@"HKLM\{vmPath}",
                         FileName = "Registry",
                         Reason = $"VM guest components detected at {vmPath} — system may be running inside a VM",
@@ -280,7 +280,7 @@ public sealed class VirtualMachineCheatBypassScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "IVSHMEM Shared Memory Driver",
-                        Risk = Risk.Critical,
+                        Risk = RiskLevel.Critical,
                         Location = @"HKLM\SYSTEM\CurrentControlSet\Services\ivshmem",
                         FileName = "Registry",
                         Reason = "IVSHMEM (Inter-VM Shared Memory) driver installed — used by VM-based cheats for host-VM data transfer",
@@ -301,7 +301,7 @@ public sealed class VirtualMachineCheatBypassScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "Looking Glass KVMFR Driver",
-                        Risk = Risk.High,
+                        Risk = RiskLevel.High,
                         Location = @"HKLM\SYSTEM\CurrentControlSet\Services\kvmfr",
                         FileName = "Registry",
                         Reason = "Looking Glass KVMFR framebuffer driver installed — used for VM gaming with GPU passthrough",
@@ -322,7 +322,7 @@ public sealed class VirtualMachineCheatBypassScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "VFIO GPU Passthrough Driver",
-                        Risk = Risk.Medium,
+                        Risk = RiskLevel.Medium,
                         Location = @"HKLM\SYSTEM\CurrentControlSet\Services\vfio-pci",
                         FileName = "Registry",
                         Reason = "VFIO PCI passthrough driver installed — enables GPU passthrough for VM gaming",
@@ -353,7 +353,7 @@ public sealed class VirtualMachineCheatBypassScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "Virtualization Software Running",
-                        Risk = Risk.Medium,
+                        Risk = RiskLevel.Medium,
                         Location = procPath,
                         FileName = pname,
                         Reason = $"Virtualization software '{pname}' is running during game session",
@@ -369,7 +369,7 @@ public sealed class VirtualMachineCheatBypassScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "VM Cheat Tool Running",
-                        Risk = Risk.Critical,
+                        Risk = RiskLevel.Critical,
                         Location = procPath,
                         FileName = pname,
                         Reason = $"VM-based cheat tool '{pname}' is currently running",
@@ -399,7 +399,7 @@ public sealed class VirtualMachineCheatBypassScanModule : IScanModule
             {
                 Module = Name,
                 Title = "Looking Glass VM Display Software",
-                Risk = Risk.High,
+                Risk = RiskLevel.High,
                 Location = lgPath,
                 FileName = Path.GetFileName(lgPath),
                 Reason = "Looking Glass VM-to-host display streaming software found",
@@ -416,7 +416,7 @@ public sealed class VirtualMachineCheatBypassScanModule : IScanModule
             {
                 Module = Name,
                 Title = "Looking Glass Configuration Found",
-                Risk = Risk.High,
+                Risk = RiskLevel.High,
                 Location = lgConfig,
                 FileName = "looking-glass-client.ini",
                 Reason = "Looking Glass configuration file present",
@@ -463,7 +463,7 @@ public sealed class VirtualMachineCheatBypassScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "GPU Passthrough Configuration",
-                        Risk = Risk.High,
+                        Risk = RiskLevel.High,
                         Location = file,
                         FileName = fn,
                         Reason = $"GPU passthrough config '{fn}' found — indicates VM gaming setup",
@@ -510,7 +510,7 @@ public sealed class VirtualMachineCheatBypassScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = "VM Shared Folder with Cheat Path",
-                                    Risk = Risk.Critical,
+                                    Risk = RiskLevel.Critical,
                                     Location = $@"HKLM\{sfKey}\{shareName}",
                                     FileName = "Registry",
                                     Reason = $"VM shared folder '{shareName}' points to path with cheat keyword: {path}",

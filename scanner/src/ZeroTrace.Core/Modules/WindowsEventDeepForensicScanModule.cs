@@ -119,7 +119,7 @@ public sealed class WindowsEventDeepForensicScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "Event Log File Suspiciously Small",
-                        Risk = Risk.High,
+                        Risk = RiskLevel.High,
                         Location = evtxPath,
                         FileName = Path.GetFileName(evtxPath),
                         Reason = $"Event log file size is only {info.Length} bytes — may indicate log clearing",
@@ -133,7 +133,7 @@ public sealed class WindowsEventDeepForensicScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "Event Log File Suspicious Size After Long Run",
-                        Risk = Risk.Medium,
+                        Risk = RiskLevel.Medium,
                         Location = evtxPath,
                         FileName = Path.GetFileName(evtxPath),
                         Reason = $"Event log file is small ({info.Length} bytes) despite being {(int)(DateTime.Now - info.CreationTime).TotalDays} days old",
@@ -169,7 +169,7 @@ public sealed class WindowsEventDeepForensicScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "Security Audit Log Cleared (Event 1102)",
-                        Risk = Risk.Critical,
+                        Risk = RiskLevel.Critical,
                         Location = evtxPath,
                         FileName = Path.GetFileName(evtxPath),
                         Reason = "Security event log contains Event ID 1102 — audit log cleared",
@@ -185,7 +185,7 @@ public sealed class WindowsEventDeepForensicScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "System Log Cleared (Event 104)",
-                        Risk = Risk.Critical,
+                        Risk = RiskLevel.Critical,
                         Location = evtxPath,
                         FileName = Path.GetFileName(evtxPath),
                         Reason = "System event log contains Event ID 104 — system log cleared",
@@ -223,7 +223,7 @@ public sealed class WindowsEventDeepForensicScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "WER Crash Report — Cheat Process Crash",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = werFolder,
                             FileName = folderName,
                             Reason = $"Windows Error Reporting contains crash report for cheat-related process: '{cheatName}'",
@@ -264,7 +264,7 @@ public sealed class WindowsEventDeepForensicScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Reliability History — Cheat Process Entry",
-                            Risk = Risk.High,
+                            Risk = RiskLevel.High,
                             Location = reliPath,
                             FileName = Path.GetFileName(reliPath),
                             Reason = $"Reliability or SRUM database contains cheat process name: '{cheatName}'",
@@ -296,7 +296,7 @@ public sealed class WindowsEventDeepForensicScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "Prefetch — Cheat Process Execution",
-                        Risk = Risk.Critical,
+                        Risk = RiskLevel.Critical,
                         Location = pfFile,
                         FileName = Path.GetFileName(pfFile),
                         Reason = $"Windows Prefetch contains execution record for cheat process: '{cheatName}'",
@@ -328,7 +328,7 @@ public sealed class WindowsEventDeepForensicScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "System Event Log — Suspicious Service",
-                        Risk = Risk.High,
+                        Risk = RiskLevel.High,
                         Location = systemEvtx,
                         FileName = "System.evtx",
                         Reason = $"System event log contains suspicious service name: '{svcName}'",
@@ -345,7 +345,7 @@ public sealed class WindowsEventDeepForensicScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "System Event Log — Suspicious Driver Loaded",
-                        Risk = Risk.Critical,
+                        Risk = RiskLevel.Critical,
                         Location = systemEvtx,
                         FileName = "System.evtx",
                         Reason = $"System event log references known BYOVD/cheat driver: '{drvName}'",
@@ -377,7 +377,7 @@ public sealed class WindowsEventDeepForensicScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "Security Event Log — Cheat Process Creation",
-                        Risk = Risk.Critical,
+                        Risk = RiskLevel.Critical,
                         Location = securityEvtx,
                         FileName = "Security.evtx",
                         Reason = $"Security event log contains cheat process name (Event 4688): '{cheatProc}'",
@@ -394,7 +394,7 @@ public sealed class WindowsEventDeepForensicScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "Security Event Log — Suspicious Command Line",
-                        Risk = Risk.High,
+                        Risk = RiskLevel.High,
                         Location = securityEvtx,
                         FileName = "Security.evtx",
                         Reason = $"Security event log contains suspicious command line keyword: '{cmdKw}'",
@@ -437,7 +437,7 @@ public sealed class WindowsEventDeepForensicScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "PowerShell Event Log — Cheat/Evasion Command",
-                        Risk = Risk.Critical,
+                        Risk = RiskLevel.Critical,
                         Location = psEvtx,
                         FileName = "Microsoft-Windows-PowerShell_Operational.evtx",
                         Reason = $"PowerShell operational log contains suspicious keyword: '{psKw}'",
@@ -469,7 +469,7 @@ public sealed class WindowsEventDeepForensicScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "Code Integrity Log — Unsigned Cheat Driver",
-                        Risk = Risk.Critical,
+                        Risk = RiskLevel.Critical,
                         Location = ciEvtx,
                         FileName = "Microsoft-Windows-CodeIntegrity_Operational.evtx",
                         Reason = $"Code Integrity events reference suspicious driver: '{drvName}'",
@@ -485,7 +485,7 @@ public sealed class WindowsEventDeepForensicScanModule : IScanModule
                 {
                     Module = Name,
                     Title = "Code Integrity — Driver Signature Bypass Events",
-                    Risk = Risk.High,
+                    Risk = RiskLevel.High,
                     Location = ciEvtx,
                     FileName = "Microsoft-Windows-CodeIntegrity_Operational.evtx",
                     Reason = "Code Integrity log shows driver signature verification failures (Event 3001/3004)",
@@ -516,7 +516,7 @@ public sealed class WindowsEventDeepForensicScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "Task Scheduler Events — Cheat Task Execution",
-                        Risk = Risk.High,
+                        Risk = RiskLevel.High,
                         Location = tsEvtx,
                         FileName = "Microsoft-Windows-TaskScheduler_Operational.evtx",
                         Reason = $"Task Scheduler events reference cheat process: '{cheatName}'",
@@ -550,7 +550,7 @@ public sealed class WindowsEventDeepForensicScanModule : IScanModule
                 {
                     Module = Name,
                     Title = "Vulnerable/BYOVD Driver Present",
-                    Risk = Risk.Critical,
+                    Risk = RiskLevel.Critical,
                     Location = drvPath,
                     FileName = drvName,
                     Reason = $"Known vulnerable driver found on disk: '{drvName}'",
@@ -582,7 +582,7 @@ public sealed class WindowsEventDeepForensicScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Event 7045 — Cheat Service Installation",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = systemEvtx,
                             FileName = "System.evtx",
                             Reason = $"Service install event (7045) found for cheat-related service: '{svcName}'",
@@ -615,7 +615,7 @@ public sealed class WindowsEventDeepForensicScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "Application Event Log — Cheat Process Error/Crash",
-                        Risk = Risk.High,
+                        Risk = RiskLevel.High,
                         Location = appEvtx,
                         FileName = "Application.evtx",
                         Reason = $"Application event log contains cheat process reference: '{cheatName}'",
@@ -654,7 +654,7 @@ public sealed class WindowsEventDeepForensicScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "WMI Event Log — Cheat Process via WMI",
-                        Risk = Risk.High,
+                        Risk = RiskLevel.High,
                         Location = wmiEvtx,
                         FileName = "Microsoft-Windows-WMI-Activity_Operational.evtx",
                         Reason = $"WMI activity log references process creation with cheat keyword: '{wmiKw}'",
@@ -691,7 +691,7 @@ public sealed class WindowsEventDeepForensicScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "Event Log Max Size Reduced",
-                        Risk = Risk.High,
+                        Risk = RiskLevel.High,
                         Location = $@"HKLM\{regPath}\MaxSize",
                         FileName = "MaxSize",
                         Reason = $"Event log MaxSize reduced to {maxSizeInt} bytes — may hide cheat activity by overwriting old events",
@@ -706,7 +706,7 @@ public sealed class WindowsEventDeepForensicScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "Event Log Retention Disabled",
-                        Risk = Risk.Medium,
+                        Risk = RiskLevel.Medium,
                         Location = $@"HKLM\{regPath}\Retention",
                         FileName = "Retention",
                         Reason = "Event log retention set to 0 — overwrite enabled, reducing forensic retention",
@@ -732,7 +732,7 @@ public sealed class WindowsEventDeepForensicScanModule : IScanModule
             {
                 Module = Name,
                 Title = "Archived Event Log File Found",
-                Risk = Risk.Low,
+                Risk = RiskLevel.Low,
                 Location = archivedEvtx,
                 FileName = fileName,
                 Reason = $"Archived event log file found: '{fileName}' — may contain evidence of past cheat activity",
@@ -761,7 +761,7 @@ public sealed class WindowsEventDeepForensicScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "Sysmon Event Log — Cheat Process Activity",
-                        Risk = Risk.Critical,
+                        Risk = RiskLevel.Critical,
                         Location = sysmonEvtx,
                         FileName = "Microsoft-Windows-Sysmon_Operational.evtx",
                         Reason = $"Sysmon operational log contains cheat process: '{cheatName}'",
@@ -778,7 +778,7 @@ public sealed class WindowsEventDeepForensicScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "Sysmon Event Log — Cheat Driver Load",
-                        Risk = Risk.Critical,
+                        Risk = RiskLevel.Critical,
                         Location = sysmonEvtx,
                         FileName = "Microsoft-Windows-Sysmon_Operational.evtx",
                         Reason = $"Sysmon log records driver load for cheat-related driver: '{drvName}'",
@@ -813,7 +813,7 @@ public sealed class WindowsEventDeepForensicScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "Windows Error Reporting Disabled",
-                        Risk = Risk.Medium,
+                        Risk = RiskLevel.Medium,
                         Location = $@"HKLM\{werPath}\Disabled",
                         FileName = "Disabled",
                         Reason = "WER is disabled via registry — prevents crash dump creation for cheat processes",
@@ -828,7 +828,7 @@ public sealed class WindowsEventDeepForensicScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "Custom WER Dump Folder Configured",
-                        Risk = Risk.Low,
+                        Risk = RiskLevel.Low,
                         Location = $@"HKLM\{werPath}\DumpFolder",
                         FileName = "DumpFolder",
                         Reason = $"WER configured to write dumps to custom location: '{dumpFolder}'",
@@ -856,7 +856,7 @@ public sealed class WindowsEventDeepForensicScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "WER Exclusion — Cheat Process Excluded",
-                                Risk = Risk.High,
+                                Risk = RiskLevel.High,
                                 Location = $@"HKLM\SOFTWARE\Microsoft\Windows\Windows Error Reporting\ExcludedApplications\{valueName}",
                                 FileName = valueName,
                                 Reason = $"Cheat process excluded from WER crash reporting: '{valueName}'",

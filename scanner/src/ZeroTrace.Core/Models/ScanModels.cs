@@ -1163,7 +1163,6 @@ public sealed class ScanOptions
     /// <summary>Scan running processes, AppData, and common install directories for crypto miners
     /// (XMRig, PhoenixMiner, T-Rex, lolMiner) bundled with cheat software, plus miner persistence
     /// entries, pool config files, and disguised miner EXEs dropped by cheat installers.</summary>
-    public bool ScanCryptoMiner { get; set; } = true;
     /// <summary>Scan FiveM-specific exploit injection techniques: CitizenFX NUI exploit scripts,
     /// Lua injection via resource manifests, socket proxy DLLs hooking the CitizenFX network stack,
     /// modified FiveM.exe/FiveM_GTAProcess.exe, ESX/QBCore exploit scripts, known FiveM cheat menu
@@ -1305,7 +1304,6 @@ public sealed class ScanOptions
     public bool ScanWarzoneCheatDeep { get; set; } = true;
     public bool ScanCounterStrike2Cheat { get; set; } = true;
     public bool ScanApexLegendsCheat { get; set; } = true;
-    public bool ScanValorantCheat { get; set; } = true;
     public bool ScanDota2Cheat { get; set; } = true;
     public bool ScanLeagueOfLegendsCheat { get; set; } = true;
     public bool ScanPubgCheat { get; set; } = true;
@@ -1324,13 +1322,10 @@ public sealed class ScanOptions
     public bool ScanNetworkPacketManipulation { get; set; } = true;
     public bool ScanGameTrainerCheatEngine { get; set; } = true;
     public bool ScanVirtualMachineCheatBypass { get; set; } = true;
-    public bool ScanEasyAntiCheatBypass { get; set; } = true;
     public bool ScanBattleEyeBypass { get; set; } = true;
-    public bool ScanVanguardBypass { get; set; } = true;
     public bool ScanFiveMNativeSpoof { get; set; } = true;
     public bool ScanAltVResourceInjection { get; set; } = true;
     public bool ScanRageMpPacketSpoof { get; set; } = true;
-    public bool ScanAntiDebugEvasion { get; set; } = true;
     public bool ScanProcessInjectionArtifact { get; set; } = true;
     public bool ScanKernelCallbackHijack { get; set; } = true;
     public bool ScanMemoryPatchingDetection { get; set; } = true;
@@ -1340,8 +1335,6 @@ public sealed class ScanOptions
     public bool ScanGameExploitKit { get; set; } = true;
     public bool ScanRootKitUserModeArtifact { get; set; } = true;
     public bool ScanGTA5OnlineCheat { get; set; } = true;
-    public bool ScanRustApexCheat { get; set; } = true;
-    public bool ScanFortniteWarzoneCheat { get; set; } = true;
     public bool ScanFortniteCheatDetection { get; set; } = true;
     public bool ScanFiveMKernelExploit { get; set; } = true;
     public bool ScanRustCheatDetection { get; set; } = true;
@@ -1458,7 +1451,6 @@ public sealed class ScanOptions
     public bool ScanGTAVDeep { get; set; } = true;
     public bool ScanGamingVPNBanEvasion { get; set; } = true;
     public bool ScanCheatCommunityPlatform { get; set; } = true;
-    public bool ScanFiveMNativeHook { get; set; } = true;
     public bool ScanWindowsDefenderTamperDeep { get; set; } = true;
     public bool ScanFiveMModMenuDeep { get; set; } = true;
     public bool ScanESXQBCoreExploitDeep { get; set; } = true;
@@ -1724,7 +1716,6 @@ public sealed class ScanOptions
     /// AutoHotKey script files for no-recoil / triggerbot macro patterns. Macro-based
     /// cheats operate at HID level, invisible to in-game AC. Ocean / detect.ac scan
     /// macro profiles as a standard forensic source.</summary>
-    public bool ScanMacroSoftware { get; set; } = true;
 
     /// <summary>Scan Steam localconfig.vdf for suspicious launch parameters (-insecure,
     /// +sv_cheats), cheat-keyword app names in Steam library manifests, and

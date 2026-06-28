@@ -124,7 +124,7 @@ public sealed class AltVDeepForensicScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "alt:V Resource Manifest — Cheat Resource",
-                                Risk = Risk.Critical,
+                                Risk = RiskLevel.Critical,
                                 Location = manifestFile,
                                 FileName = Path.GetFileName(manifestFile),
                                 Reason = $"alt:V resource manifest contains cheat keyword: '{cheatName}'",
@@ -173,7 +173,7 @@ public sealed class AltVDeepForensicScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "alt:V Client JS — Cheat Script",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = jsFile,
                             FileName = Path.GetFileName(jsFile),
                             Reason = $"alt:V JS resource uses {matchCount} cheat API patterns (last: '{lastKw}')",
@@ -187,7 +187,7 @@ public sealed class AltVDeepForensicScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "alt:V Client JS — Suspicious Cheat Pattern",
-                            Risk = Risk.High,
+                            Risk = RiskLevel.High,
                             Location = jsFile,
                             FileName = Path.GetFileName(jsFile),
                             Reason = $"alt:V JS combines native API with cheat keywords (last: '{lastKw}')",
@@ -222,7 +222,7 @@ public sealed class AltVDeepForensicScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "alt:V C# Resource DLL — Cheat Name",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = dllFile,
                             FileName = Path.GetFileName(dllFile),
                             Reason = $"alt:V C# resource DLL matches cheat pattern: '{cheatName}'",
@@ -246,7 +246,7 @@ public sealed class AltVDeepForensicScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "alt:V C# DLL — Cheat API Patterns",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = dllFile,
                             FileName = Path.GetFileName(dllFile),
                             Reason = $"alt:V C# DLL contains {matches} cheat-related API patterns",
@@ -288,7 +288,7 @@ public sealed class AltVDeepForensicScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "alt:V Server History — Cheat Server",
-                                Risk = Risk.Critical,
+                                Risk = RiskLevel.Critical,
                                 Location = histFile,
                                 FileName = Path.GetFileName(histFile),
                                 Reason = $"alt:V history contains cheat server: '{cheatHost}'",
@@ -329,7 +329,7 @@ public sealed class AltVDeepForensicScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "alt:V Log — Cheat Resource Reference",
-                                Risk = Risk.High,
+                                Risk = RiskLevel.High,
                                 Location = logFile,
                                 FileName = Path.GetFileName(logFile),
                                 Reason = $"alt:V log file references cheat keyword: '{cheatKw}'",
@@ -366,7 +366,7 @@ public sealed class AltVDeepForensicScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "alt:V Plugin DLL — Cheat Library",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = dllFile,
                             FileName = Path.GetFileName(dllFile),
                             Reason = $"alt:V plugin DLL matches cheat pattern: '{cheatName}'",
@@ -389,7 +389,7 @@ public sealed class AltVDeepForensicScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "alt:V Plugin DLL — Cheat API Usage",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = dllFile,
                             FileName = Path.GetFileName(dllFile),
                             Reason = "alt:V plugin DLL binary contains multiple cheat API patterns",
@@ -437,7 +437,7 @@ public sealed class AltVDeepForensicScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "alt:V Config — Cheat/Bypass Setting",
-                                Risk = Risk.High,
+                                Risk = RiskLevel.High,
                                 Location = configFile,
                                 FileName = Path.GetFileName(configFile),
                                 Reason = $"alt:V config contains suspicious setting: '{cfgKw}'",
@@ -480,7 +480,7 @@ public sealed class AltVDeepForensicScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "alt:V CEF Cache — Cheat UI Artifact",
-                                Risk = Risk.High,
+                                Risk = RiskLevel.High,
                                 Location = cacheFile,
                                 FileName = Path.GetFileName(cacheFile),
                                 Reason = $"alt:V CEF cache contains cheat keyword: '{cheatKw}'",
@@ -510,7 +510,7 @@ public sealed class AltVDeepForensicScanModule : IScanModule
                 {
                     Module = Name,
                     Title = "alt:V Crash Dump — Forensic Artifact",
-                    Risk = Risk.Medium,
+                    Risk = RiskLevel.Medium,
                     Location = dmpFile,
                     FileName = Path.GetFileName(dmpFile),
                     Reason = "alt:V crash dump found — may contain injected cheat module evidence",
@@ -545,7 +545,7 @@ public sealed class AltVDeepForensicScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "alt:V NPM Package — Cheat Dependency",
-                                Risk = Risk.High,
+                                Risk = RiskLevel.High,
                                 Location = pkgJson,
                                 FileName = Path.GetFileName(pkgJson),
                                 Reason = $"alt:V package.json references cheat keyword: '{cheatKw}'",
@@ -583,7 +583,7 @@ public sealed class AltVDeepForensicScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "Downloaded alt:V Cheat File",
-                        Risk = Risk.Critical,
+                        Risk = RiskLevel.Critical,
                         Location = file,
                         FileName = Path.GetFileName(file),
                         Reason = $"Downloaded file matches alt:V cheat pattern: '{fileName}'",
@@ -621,7 +621,7 @@ public sealed class AltVDeepForensicScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "Registry — alt:V Cheat Artifact",
-                                Risk = Risk.High,
+                                Risk = RiskLevel.High,
                                 Location = $@"Registry\{regPath}\{valueName}",
                                 FileName = valueName,
                                 Reason = $"alt:V registry entry contains cheat keyword: '{cheatKw}'",
@@ -661,7 +661,7 @@ public sealed class AltVDeepForensicScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "alt:V — Screenshot Bypass Artifact",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = file,
                             FileName = Path.GetFileName(file),
                             Reason = "alt:V script contains screenshot bypass logic",
@@ -707,7 +707,7 @@ public sealed class AltVDeepForensicScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "alt:V — Anti-Cheat Bypass Artifact",
-                                Risk = Risk.Critical,
+                                Risk = RiskLevel.Critical,
                                 Location = file,
                                 FileName = Path.GetFileName(file),
                                 Reason = $"alt:V file contains anti-cheat bypass keyword: '{bpKw}'",
@@ -751,7 +751,7 @@ public sealed class AltVDeepForensicScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "alt:V Root — Proxy DLL with Cheat Strings",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = dllPath,
                             FileName = proxyDll,
                             Reason = $"Proxy DLL '{proxyDll}' in alt:V root contains cheat strings",
@@ -788,7 +788,7 @@ public sealed class AltVDeepForensicScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "alt:V Voice System — Bypass Artifact",
-                            Risk = Risk.High,
+                            Risk = RiskLevel.High,
                             Location = file,
                             FileName = Path.GetFileName(file),
                             Reason = "alt:V script references voice system alongside bypass/exploit",
@@ -824,7 +824,7 @@ public sealed class AltVDeepForensicScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "alt:V Directory — Unexpected Executable",
-                        Risk = Risk.High,
+                        Risk = RiskLevel.High,
                         Location = exeFile,
                         FileName = exeName,
                         Reason = $"Unexpected executable in alt:V root: '{exeName}'",
@@ -859,7 +859,7 @@ public sealed class AltVDeepForensicScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "alt:V Update Log — Cheat Reference",
-                                Risk = Risk.High,
+                                Risk = RiskLevel.High,
                                 Location = logFile,
                                 FileName = Path.GetFileName(logFile),
                                 Reason = $"alt:V update log references cheat: '{cheatKw}'",

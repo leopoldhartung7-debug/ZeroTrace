@@ -146,7 +146,7 @@ public sealed class WindowsEventLogCheatForensicScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "Process creation event for cheat tool",
-                                Risk = Risk.High,
+                                Risk = RiskLevel.High,
                                 Location = "Windows Security Event Log (Event ID 4688)",
                                 FileName = name,
                                 Reason = $"Security audit log recorded creation of process matching cheat name: '{name}'",
@@ -186,7 +186,7 @@ public sealed class WindowsEventLogCheatForensicScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "Cheat service installation event",
-                                Risk = Risk.Critical,
+                                Risk = RiskLevel.Critical,
                                 Location = "Windows System Event Log (Event ID 7045/7040/7036)",
                                 FileName = svcName,
                                 Reason = $"System log recorded installation or state change of cheat service: '{svcName}'",
@@ -206,7 +206,7 @@ public sealed class WindowsEventLogCheatForensicScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = "Cheat kernel driver service installation",
-                                    Risk = Risk.Critical,
+                                    Risk = RiskLevel.Critical,
                                     Location = "Windows System Event Log (Event ID 7045)",
                                     FileName = driverKw,
                                     Reason = $"System log recorded kernel driver service installation with cheat keyword: '{driverKw}'",
@@ -247,7 +247,7 @@ public sealed class WindowsEventLogCheatForensicScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "Cheat tool application crash event",
-                                Risk = Risk.Medium,
+                                Risk = RiskLevel.Medium,
                                 Location = "Windows Application Event Log (Event ID 1000/1001/1002)",
                                 FileName = name,
                                 Reason = $"Application event log records crash or error from cheat process: '{name}'",
@@ -281,7 +281,7 @@ public sealed class WindowsEventLogCheatForensicScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Cheat executable prefetch record",
-                            Risk = Risk.High,
+                            Risk = RiskLevel.High,
                             Location = prefetchDir,
                             FileName = Path.GetFileName(pf),
                             Reason = $"Windows Prefetch records execution of cheat executable: {fn}",
@@ -304,7 +304,7 @@ public sealed class WindowsEventLogCheatForensicScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "Suspicious prefetch entry (cheat keyword)",
-                                Risk = Risk.High,
+                                Risk = RiskLevel.High,
                                 Location = prefetchDir,
                                 FileName = Path.GetFileName(pf),
                                 Reason = $"Prefetch record contains cheat-related keyword: {fn}",
@@ -343,7 +343,7 @@ public sealed class WindowsEventLogCheatForensicScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = "Cheat-related scheduled task",
-                                    Risk = Risk.High,
+                                    Risk = RiskLevel.High,
                                     Location = Path.GetDirectoryName(taskFile) ?? taskDir,
                                     FileName = Path.GetFileName(taskFile),
                                     Reason = $"Scheduled task XML references cheat keyword: '{kw}'",
@@ -379,7 +379,7 @@ public sealed class WindowsEventLogCheatForensicScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "AppCompat shim for cheat process",
-                            Risk = Risk.High,
+                            Risk = RiskLevel.High,
                             Location = @"HKCU\" + shimsPath,
                             FileName = Path.GetFileName(valName),
                             Reason = "Application compatibility shim (Layers) registered for process with cheat name",
@@ -406,7 +406,7 @@ public sealed class WindowsEventLogCheatForensicScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "AppCompat shim for cheat process (HKLM)",
-                            Risk = Risk.High,
+                            Risk = RiskLevel.High,
                             Location = @"HKLM\" + shimsPath,
                             FileName = Path.GetFileName(valName),
                             Reason = "System-level AppCompat shim registered for process with cheat name",
@@ -440,7 +440,7 @@ public sealed class WindowsEventLogCheatForensicScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "Firewall log: known cheat cloud port",
-                        Risk = Risk.Medium,
+                        Risk = RiskLevel.Medium,
                         Location = firewallLogPath,
                         FileName = "pfirewall.log",
                         Reason = $"Windows Firewall log shows traffic on known cheat cloud service port: {port}",
@@ -480,7 +480,7 @@ public sealed class WindowsEventLogCheatForensicScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "PowerShell event log: cheat-related command",
-                            Risk = Risk.High,
+                            Risk = RiskLevel.High,
                             Location = "Microsoft-Windows-PowerShell/Operational Event Log",
                             FileName = string.Empty,
                             Reason = "PowerShell script block or command execution log references cheat tool or bypass technique",
@@ -522,7 +522,7 @@ public sealed class WindowsEventLogCheatForensicScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Windows Defender detected cheat-related threat",
-                            Risk = Risk.High,
+                            Risk = RiskLevel.High,
                             Location = "Microsoft-Windows-Windows Defender/Operational Event Log",
                             FileName = string.Empty,
                             Reason = "Windows Defender event log records detection or quarantine of cheat-related threat",
@@ -566,7 +566,7 @@ public sealed class WindowsEventLogCheatForensicScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "Bypass/cheat driver load event",
-                                Risk = Risk.Critical,
+                                Risk = RiskLevel.Critical,
                                 Location = "Windows System Event Log (Event ID 219 - Driver Load Failed/Blocked)",
                                 FileName = drv,
                                 Reason = $"System event log records loading (or blocked load) of bypass/cheat driver: '{drv}'",
@@ -607,7 +607,7 @@ public sealed class WindowsEventLogCheatForensicScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "SRUM database cheat app reference",
-                            Risk = Risk.Medium,
+                            Risk = RiskLevel.Medium,
                             Location = @"HKLM\" + srumPath2,
                             FileName = valName,
                             Reason = "System Resource Usage Monitor (SRUM) contains reference to cheat application",
@@ -636,7 +636,7 @@ public sealed class WindowsEventLogCheatForensicScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "Security event log was cleared",
-                        Risk = Risk.High,
+                        Risk = RiskLevel.High,
                         Location = "Windows Security Event Log (Event ID 1102)",
                         FileName = string.Empty,
                         Reason = "Security audit log was cleared — common technique to hide cheat tool activity",
@@ -663,7 +663,7 @@ public sealed class WindowsEventLogCheatForensicScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "System event log was cleared",
-                        Risk = Risk.Medium,
+                        Risk = RiskLevel.Medium,
                         Location = "Windows System Event Log (Event ID 104)",
                         FileName = string.Empty,
                         Reason = "System event log was cleared — may indicate attempt to hide cheat driver installation",
@@ -701,7 +701,7 @@ public sealed class WindowsEventLogCheatForensicScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "Cheat tool execution (UserAssist)",
-                                Risk = Risk.High,
+                                Risk = RiskLevel.High,
                                 Location = $@"HKCU\{uaPath}\{guidName}\Count",
                                 FileName = decoded,
                                 Reason = "UserAssist registry records execution of cheat/bypass tool",
@@ -740,7 +740,7 @@ public sealed class WindowsEventLogCheatForensicScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Cheat tool execution (MUICache)",
-                            Risk = Risk.High,
+                            Risk = RiskLevel.High,
                             Location = @"HKCU\" + muiPath,
                             FileName = Path.GetFileName(valName),
                             Reason = "MUICache records execution of cheat/bypass tool",

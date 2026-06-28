@@ -121,7 +121,7 @@ public sealed class KernelBypassRootkitForensicScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "BYOVD Driver File Found",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = drvPath,
                             FileName = drvName + ext,
                             Reason = $"Known vulnerable/BYOVD driver found: '{drvName}{ext}'",
@@ -160,7 +160,7 @@ public sealed class KernelBypassRootkitForensicScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "BYOVD Driver Service Registration",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = $@"HKLM\SYSTEM\CurrentControlSet\Services\{serviceName}",
                             FileName = serviceName,
                             Reason = $"Kernel service matching BYOVD driver name registered: '{serviceName}'",
@@ -202,7 +202,7 @@ public sealed class KernelBypassRootkitForensicScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Kernel Exploit Tool Found",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = file,
                             FileName = Path.GetFileName(file),
                             Reason = $"Kernel exploit or BYOVD tool found: '{exploitName}'",
@@ -231,7 +231,7 @@ public sealed class KernelBypassRootkitForensicScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "Vulnerable Driver Blocklist Disabled",
-                        Risk = Risk.Critical,
+                        Risk = RiskLevel.Critical,
                         Location = @"HKLM\SYSTEM\CurrentControlSet\Control\CI\Config\VulnerableDriverBlocklistEnable",
                         FileName = "VulnerableDriverBlocklistEnable",
                         Reason = "Microsoft vulnerable driver blocklist is disabled — BYOVD attacks fully enabled",
@@ -255,7 +255,7 @@ public sealed class KernelBypassRootkitForensicScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "Driver Verification Disabled",
-                        Risk = Risk.High,
+                        Risk = RiskLevel.High,
                         Location = @"HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management\VerifyDrivers",
                         FileName = "VerifyDrivers",
                         Reason = "Kernel driver verification disabled via registry",
@@ -279,7 +279,7 @@ public sealed class KernelBypassRootkitForensicScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "Secure Boot Disabled",
-                        Risk = Risk.High,
+                        Risk = RiskLevel.High,
                         Location = @"HKLM\SYSTEM\CurrentControlSet\Control\SecureBoot\State\UEFISecureBootEnabled",
                         FileName = "UEFISecureBootEnabled",
                         Reason = "UEFI Secure Boot is disabled — allows unsigned bootloaders and kernel drivers",
@@ -333,7 +333,7 @@ public sealed class KernelBypassRootkitForensicScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "DSE Bypass Artifact Found",
-                                Risk = Risk.Critical,
+                                Risk = RiskLevel.Critical,
                                 Location = file,
                                 FileName = Path.GetFileName(file),
                                 Reason = $"File contains Driver Signature Enforcement bypass keyword: '{dseKw}'",
@@ -370,7 +370,7 @@ public sealed class KernelBypassRootkitForensicScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "PowerShell History — ETW Patch Command",
-                        Risk = Risk.Critical,
+                        Risk = RiskLevel.Critical,
                         Location = psHistory,
                         FileName = Path.GetFileName(psHistory),
                         Reason = $"PowerShell history contains ETW patching keyword: '{etwKw}'",
@@ -414,7 +414,7 @@ public sealed class KernelBypassRootkitForensicScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "SSDT Hook Artifact Found",
-                                Risk = Risk.Critical,
+                                Risk = RiskLevel.Critical,
                                 Location = file,
                                 FileName = Path.GetFileName(file),
                                 Reason = $"File contains SSDT hook-related keyword: '{ssdtKw}'",
@@ -473,7 +473,7 @@ public sealed class KernelBypassRootkitForensicScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "Kernel Shellcode Artifact Found",
-                                Risk = Risk.Critical,
+                                Risk = RiskLevel.Critical,
                                 Location = file,
                                 FileName = Path.GetFileName(file),
                                 Reason = $"File contains kernel-mode shellcode keyword: '{scKw}'",
@@ -502,7 +502,7 @@ public sealed class KernelBypassRootkitForensicScanModule : IScanModule
                 {
                     Module = Name,
                     Title = "UEFI Secure Boot Disabled",
-                    Risk = Risk.High,
+                    Risk = RiskLevel.High,
                     Location = @"HKLM\SYSTEM\CurrentControlSet\Control\SecureBoot\State\UEFISecureBootEnabled",
                     FileName = "UEFISecureBootEnabled",
                     Reason = "Secure Boot is disabled — prerequisite for unsigned kernel cheat drivers",
@@ -545,7 +545,7 @@ public sealed class KernelBypassRootkitForensicScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Hypervisor-Based Cheat Tool",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = file,
                             FileName = Path.GetFileName(file),
                             Reason = $"Hypervisor-based cheat tool found: '{hvTool}'",
@@ -571,7 +571,7 @@ public sealed class KernelBypassRootkitForensicScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "HVCI (Hypervisor-Protected Code Integrity) Disabled",
-                        Risk = Risk.High,
+                        Risk = RiskLevel.High,
                         Location = @"HKLM\SYSTEM\CurrentControlSet\Control\DeviceGuard\Scenarios\HypervisorEnforcedCodeIntegrity",
                         FileName = "Enabled",
                         Reason = "HVCI is disabled — allows non-WHQL drivers and kernel memory manipulation",
@@ -626,7 +626,7 @@ public sealed class KernelBypassRootkitForensicScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "Process Hollowing Artifact",
-                                Risk = Risk.Critical,
+                                Risk = RiskLevel.Critical,
                                 Location = file,
                                 FileName = Path.GetFileName(file),
                                 Reason = $"File contains process hollowing keyword: '{phKw}'",
@@ -671,7 +671,7 @@ public sealed class KernelBypassRootkitForensicScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "PowerShell History — Kernel Callback Manipulation",
-                        Risk = Risk.Critical,
+                        Risk = RiskLevel.Critical,
                         Location = psHistory,
                         FileName = Path.GetFileName(psHistory),
                         Reason = $"PowerShell history contains kernel callback keyword: '{cbKw}'",
@@ -704,7 +704,7 @@ public sealed class KernelBypassRootkitForensicScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "Prefetch — Kernel Exploit Tool Execution",
-                        Risk = Risk.Critical,
+                        Risk = RiskLevel.Critical,
                         Location = pfFile,
                         FileName = Path.GetFileName(pfFile),
                         Reason = $"Prefetch proves kernel exploit tool was executed: '{exploitTool}'",
@@ -723,7 +723,7 @@ public sealed class KernelBypassRootkitForensicScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "Prefetch — BYOVD Driver Tool Execution",
-                        Risk = Risk.Critical,
+                        Risk = RiskLevel.Critical,
                         Location = pfFile,
                         FileName = Path.GetFileName(pfFile),
                         Reason = $"Prefetch proves BYOVD driver mapper was executed: '{byovdName}'",
@@ -751,7 +751,7 @@ public sealed class KernelBypassRootkitForensicScanModule : IScanModule
                 {
                     Module = Name,
                     Title = "Page File Cleared at Shutdown",
-                    Risk = Risk.Medium,
+                    Risk = RiskLevel.Medium,
                     Location = @"HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management\ClearPageFileAtShutdown",
                     FileName = "ClearPageFileAtShutdown",
                     Reason = "Page file cleared at shutdown — destroys kernel memory forensic evidence",
@@ -775,7 +775,7 @@ public sealed class KernelBypassRootkitForensicScanModule : IScanModule
                 {
                     Module = Name,
                     Title = "Code Integrity Policy Weakened",
-                    Risk = Risk.Critical,
+                    Risk = RiskLevel.Critical,
                     Location = @"HKLM\SYSTEM\CurrentControlSet\Control\CI\Config\Options",
                     FileName = "Options",
                     Reason = $"Code integrity options modified: {optInt:X8}",
@@ -802,7 +802,7 @@ public sealed class KernelBypassRootkitForensicScanModule : IScanModule
                 {
                     Module = Name,
                     Title = "Boot Execute — Suspicious Entry",
-                    Risk = Risk.Critical,
+                    Risk = RiskLevel.Critical,
                     Location = @"HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\BootExecute",
                     FileName = "BootExecute",
                     Reason = $"Non-standard Boot Execute entry: '{entry}'",
@@ -841,7 +841,7 @@ public sealed class KernelBypassRootkitForensicScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "Code Integrity Disabled via Registry",
-                                Risk = Risk.Critical,
+                                Risk = RiskLevel.Critical,
                                 Location = $@"HKLM\{regPath}\{valueName}",
                                 FileName = valueName,
                                 Reason = $"Code integrity disabled via registry key: '{valueName}=0'",
@@ -892,7 +892,7 @@ public sealed class KernelBypassRootkitForensicScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = "Kernel Rootkit/Hook Service",
-                                    Risk = Risk.Critical,
+                                    Risk = RiskLevel.Critical,
                                     Location = $@"HKLM\SYSTEM\CurrentControlSet\Services\{serviceName}",
                                     FileName = serviceName,
                                     Reason = $"Kernel-mode service with rootkit-related name: '{serviceName}'",
@@ -925,7 +925,7 @@ public sealed class KernelBypassRootkitForensicScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "Kernel Debug Output Enabled at Max Level",
-                        Risk = Risk.Medium,
+                        Risk = RiskLevel.Medium,
                         Location = @"HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Debug Print Filter\Default",
                         FileName = "Default",
                         Reason = "Kernel debug print filter set to maximum — may indicate kernel debugging for cheat development",
@@ -949,7 +949,7 @@ public sealed class KernelBypassRootkitForensicScanModule : IScanModule
                 {
                     Module = Name,
                     Title = "LSA Protected Process Disabled",
-                    Risk = Risk.High,
+                    Risk = RiskLevel.High,
                     Location = @"HKLM\SYSTEM\CurrentControlSet\Control\Lsa\RunAsPPL",
                     FileName = "RunAsPPL",
                     Reason = "LSA protected process light disabled — allows credential dumping via kernel access",

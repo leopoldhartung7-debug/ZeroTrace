@@ -160,7 +160,7 @@ public sealed class FiveMResourceManifestTamperScanModule : IScanModule
                                     {
                                         Module = Name,
                                         Title = "Cheat Keyword in FiveM Resource Manifest",
-                                        Risk = Risk.Critical,
+                                        Risk = RiskLevel.Critical,
                                         Location = manifestFile,
                                         FileName = Path.GetFileName(manifestFile),
                                         Reason = $"fxmanifest.lua contains cheat/exploit keyword: '{kw}'",
@@ -192,7 +192,7 @@ public sealed class FiveMResourceManifestTamperScanModule : IScanModule
                                     {
                                         Module = Name,
                                         Title = "Cheat Keyword in FiveM Legacy Resource Manifest",
-                                        Risk = Risk.Critical,
+                                        Risk = RiskLevel.Critical,
                                         Location = manifestFile,
                                         FileName = Path.GetFileName(manifestFile),
                                         Reason = $"__resource.lua contains cheat keyword: '{kw}'",
@@ -251,7 +251,7 @@ public sealed class FiveMResourceManifestTamperScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = "Suspicious Lua Script with Multiple Cheat Patterns",
-                                    Risk = suspiciousCount >= 4 ? Risk.Critical : Risk.High,
+                                    Risk = suspiciousCount >= 4 ? RiskLevel.Critical : RiskLevel.High,
                                     Location = luaFile,
                                     FileName = fn,
                                     Reason = $"Lua script contains {suspiciousCount} cheat/native-abuse patterns",
@@ -269,7 +269,7 @@ public sealed class FiveMResourceManifestTamperScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = "Lua Script with Cheat Indicator",
-                                    Risk = Risk.High,
+                                    Risk = RiskLevel.High,
                                     Location = luaFile,
                                     FileName = fn,
                                     Reason = "Lua script contains cheat functionality identifier",
@@ -322,7 +322,7 @@ public sealed class FiveMResourceManifestTamperScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = "Suspicious JavaScript Resource with Cheat Patterns",
-                                    Risk = suspiciousCount >= 4 ? Risk.Critical : Risk.High,
+                                    Risk = suspiciousCount >= 4 ? RiskLevel.Critical : RiskLevel.High,
                                     Location = jsFile,
                                     FileName = Path.GetFileName(jsFile),
                                     Reason = $"JS resource contains {suspiciousCount} cheat/native-abuse patterns",
@@ -361,7 +361,7 @@ public sealed class FiveMResourceManifestTamperScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = "Known Cheat Resource Directory in FiveM Data",
-                                    Risk = Risk.Critical,
+                                    Risk = RiskLevel.Critical,
                                     Location = dir,
                                     FileName = dn,
                                     Reason = $"Directory name '{dn}' matches known FiveM cheat resource",
@@ -403,7 +403,7 @@ public sealed class FiveMResourceManifestTamperScanModule : IScanModule
                                     {
                                         Module = Name,
                                         Title = "FiveM Log Contains Bypass/Cheat Detection Pattern",
-                                        Risk = Risk.High,
+                                        Risk = RiskLevel.High,
                                         Location = logFile,
                                         FileName = Path.GetFileName(logFile),
                                         Reason = $"CitizenFX.log contains suspicious pattern: '{pattern}'",
@@ -442,7 +442,7 @@ public sealed class FiveMResourceManifestTamperScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Executable File in FiveM Cache Directory",
-                            Risk = Risk.High,
+                            Risk = RiskLevel.High,
                             Location = file,
                             FileName = Path.GetFileName(file),
                             Reason = "Executable found in FiveM cache — not a legitimate cache file",
@@ -468,7 +468,7 @@ public sealed class FiveMResourceManifestTamperScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = "Cheat Resource Cached in FiveM Cache",
-                                    Risk = Risk.Critical,
+                                    Risk = RiskLevel.Critical,
                                     Location = dir,
                                     FileName = dn,
                                     Reason = $"FiveM cached a cheat resource named '{dn}'",
@@ -515,7 +515,7 @@ public sealed class FiveMResourceManifestTamperScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "FiveM Core Executable Suspiciously Small",
-                                Risk = Risk.High,
+                                Risk = RiskLevel.High,
                                 Location = fullPath,
                                 FileName = coreFile,
                                 Reason = "FiveM core executable is much smaller than expected — possible replacement",
@@ -557,7 +557,7 @@ public sealed class FiveMResourceManifestTamperScanModule : IScanModule
                                     {
                                         Module = Name,
                                         Title = "Cheat Keyword in FiveM Config File",
-                                        Risk = Risk.High,
+                                        Risk = RiskLevel.High,
                                         Location = cfgFile,
                                         FileName = Path.GetFileName(cfgFile),
                                         Reason = $"FiveM .cfg file contains cheat keyword: '{kw}'",
@@ -597,7 +597,7 @@ public sealed class FiveMResourceManifestTamperScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = "DLL Found in FiveM Stream Directory",
-                                    Risk = Risk.Critical,
+                                    Risk = RiskLevel.Critical,
                                     Location = file,
                                     FileName = Path.GetFileName(file),
                                     Reason = "DLL file in stream/ directory — not a valid streaming asset, possible injection payload",
@@ -613,7 +613,7 @@ public sealed class FiveMResourceManifestTamperScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = "EXE Found in FiveM Stream Directory",
-                                    Risk = Risk.Critical,
+                                    Risk = RiskLevel.Critical,
                                     Location = file,
                                     FileName = Path.GetFileName(file),
                                     Reason = "Executable in stream/ directory — not a valid streaming asset, possible payload",
@@ -658,7 +658,7 @@ public sealed class FiveMResourceManifestTamperScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "FiveM Cheat Tool Execution Evidence in MUICache",
-                                Risk = Risk.Critical,
+                                Risk = RiskLevel.Critical,
                                 Location = @"HKCU\SOFTWARE\Classes\Local Settings\Software\Microsoft\Windows\Shell\MuiCache",
                                 FileName = "registry",
                                 Reason = $"MUICache records previous execution of FiveM cheat tool: '{cheatTool}'",

@@ -114,7 +114,7 @@ public sealed class RageMPDeepForensicScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "RageMP Package — Cheat Package Installed",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = packageDir,
                             FileName = packageName,
                             Reason = $"RageMP package directory matches cheat pattern: '{cheatName}'",
@@ -148,7 +148,7 @@ public sealed class RageMPDeepForensicScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "RageMP Package Script — Cheat Logic",
-                                Risk = Risk.Critical,
+                                Risk = RiskLevel.Critical,
                                 Location = scriptFile,
                                 FileName = Path.GetFileName(scriptFile),
                                 Reason = $"Package script contains {matchCount} cheat-related API patterns (last: '{lastKw}')",
@@ -186,7 +186,7 @@ public sealed class RageMPDeepForensicScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "RageMP Client Script — Cheat Code",
-                                Risk = Risk.Critical,
+                                Risk = RiskLevel.Critical,
                                 Location = jsFile,
                                 FileName = Path.GetFileName(jsFile),
                                 Reason = $"RageMP client script contains cheat keyword: '{kw}'",
@@ -225,7 +225,7 @@ public sealed class RageMPDeepForensicScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "RageMP Bridge Script — Cheat Modification",
-                                Risk = Risk.Critical,
+                                Risk = RiskLevel.Critical,
                                 Location = jsFile,
                                 FileName = Path.GetFileName(jsFile),
                                 Reason = $"RageMP bridge script modified with cheat keyword: '{kw}'",
@@ -271,7 +271,7 @@ public sealed class RageMPDeepForensicScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "RageMP Config — Cheat/Bypass Setting",
-                                Risk = Risk.High,
+                                Risk = RiskLevel.High,
                                 Location = configFile,
                                 FileName = Path.GetFileName(configFile),
                                 Reason = $"RageMP config contains suspicious setting: '{cfgKw}'",
@@ -310,7 +310,7 @@ public sealed class RageMPDeepForensicScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "RageMP Log — Cheat Server Connection",
-                                Risk = Risk.Critical,
+                                Risk = RiskLevel.Critical,
                                 Location = logFile,
                                 FileName = Path.GetFileName(logFile),
                                 Reason = $"RageMP log shows connection to cheat server: '{cheatHost}'",
@@ -327,7 +327,7 @@ public sealed class RageMPDeepForensicScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "RageMP Log — Cheat Package Reference",
-                                Risk = Risk.High,
+                                Risk = RiskLevel.High,
                                 Location = logFile,
                                 FileName = Path.GetFileName(logFile),
                                 Reason = $"RageMP log references cheat package: '{cheatKw}'",
@@ -369,7 +369,7 @@ public sealed class RageMPDeepForensicScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "RageMP CEF Cache — Cheat UI Artifact",
-                                Risk = Risk.High,
+                                Risk = RiskLevel.High,
                                 Location = cacheFile,
                                 FileName = Path.GetFileName(cacheFile),
                                 Reason = $"RageMP CEF cache contains cheat keyword: '{cheatKw}'",
@@ -404,7 +404,7 @@ public sealed class RageMPDeepForensicScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "RageMP Plugin DLL — Cheat Library",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = dllFile,
                             FileName = Path.GetFileName(dllFile),
                             Reason = $"RageMP plugin DLL matches cheat pattern: '{cheatName}'",
@@ -427,7 +427,7 @@ public sealed class RageMPDeepForensicScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "RageMP Plugin DLL — Cheat Native Calls",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = dllFile,
                             FileName = Path.GetFileName(dllFile),
                             Reason = "RageMP plugin DLL references RAGE API alongside cheat-related patterns",
@@ -468,7 +468,7 @@ public sealed class RageMPDeepForensicScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "RageMP Server History — Cheat Server",
-                                Risk = Risk.Critical,
+                                Risk = RiskLevel.Critical,
                                 Location = histFile,
                                 FileName = Path.GetFileName(histFile),
                                 Reason = $"RageMP server history contains cheat server: '{cheatHost}'",
@@ -498,7 +498,7 @@ public sealed class RageMPDeepForensicScanModule : IScanModule
                 {
                     Module = Name,
                     Title = "RageMP Crash Dump — Forensic Artifact",
-                    Risk = Risk.Medium,
+                    Risk = RiskLevel.Medium,
                     Location = dmpFile,
                     FileName = Path.GetFileName(dmpFile),
                     Reason = "RageMP crash dump found — may contain cheat module evidence in process memory",
@@ -532,7 +532,7 @@ public sealed class RageMPDeepForensicScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "RageMP Script — Raw Native Hash Calls",
-                                Risk = Risk.High,
+                                Risk = RiskLevel.High,
                                 Location = jsFile,
                                 FileName = Path.GetFileName(jsFile),
                                 Reason = $"Script uses raw native hash: '{hashPattern}'",
@@ -570,7 +570,7 @@ public sealed class RageMPDeepForensicScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "RageMP Launcher — Cheat Executable",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = exeFile,
                             FileName = Path.GetFileName(exeFile),
                             Reason = $"Cheat executable in RageMP launcher directory: '{cheatName}'",
@@ -606,7 +606,7 @@ public sealed class RageMPDeepForensicScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "Downloaded RageMP Cheat File",
-                        Risk = Risk.Critical,
+                        Risk = RiskLevel.Critical,
                         Location = file,
                         FileName = Path.GetFileName(file),
                         Reason = $"Downloaded file matches RageMP cheat pattern: '{fileName}'",
@@ -644,7 +644,7 @@ public sealed class RageMPDeepForensicScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "Registry — RageMP Cheat Artifact",
-                                Risk = Risk.High,
+                                Risk = RiskLevel.High,
                                 Location = $@"Registry\{regPath}\{valueName}",
                                 FileName = valueName,
                                 Reason = $"RageMP registry entry contains cheat keyword: '{cheatKw}'",
@@ -683,7 +683,7 @@ public sealed class RageMPDeepForensicScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "RageMP Updater Log — Cheat Update",
-                                Risk = Risk.High,
+                                Risk = RiskLevel.High,
                                 Location = logFile,
                                 FileName = Path.GetFileName(logFile),
                                 Reason = $"RageMP updater log references cheat: '{cheatKw}'",
@@ -727,7 +727,7 @@ public sealed class RageMPDeepForensicScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "RageMP Root — Proxy DLL with Cheat Strings",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = dllPath,
                             FileName = proxyDll,
                             Reason = $"Proxy DLL '{proxyDll}' in RageMP root contains cheat strings",
@@ -771,7 +771,7 @@ public sealed class RageMPDeepForensicScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "RageMP — Anti-Cheat Bypass Script",
-                                Risk = Risk.Critical,
+                                Risk = RiskLevel.Critical,
                                 Location = file,
                                 FileName = Path.GetFileName(file),
                                 Reason = $"RageMP script contains anti-cheat bypass keyword: '{bpKw}'",
@@ -810,7 +810,7 @@ public sealed class RageMPDeepForensicScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "RageMP — Screenshot Bypass Artifact",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = jsFile,
                             FileName = Path.GetFileName(jsFile),
                             Reason = "RageMP script contains screenshot bypass logic",
@@ -846,7 +846,7 @@ public sealed class RageMPDeepForensicScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "RageMP Directory — Unexpected Executable",
-                        Risk = Risk.High,
+                        Risk = RiskLevel.High,
                         Location = exeFile,
                         FileName = exeName,
                         Reason = $"Unexpected executable in RageMP root: '{exeName}'",

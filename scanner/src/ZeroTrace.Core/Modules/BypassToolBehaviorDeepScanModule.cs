@@ -181,7 +181,7 @@ public sealed class BypassToolBehaviorDeepScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Bypass/Cheat Tool in Windows Installer Log",
-                            Risk = Risk.High,
+                            Risk = RiskLevel.High,
                             Location = logPath,
                             FileName = Path.GetFileName(logPath),
                             Reason = $"Windows Installer log references cheat/bypass keyword: '{keyword}'",
@@ -199,7 +199,7 @@ public sealed class BypassToolBehaviorDeepScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Known Bypass Tool Name in Installer Log",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = logPath,
                             FileName = Path.GetFileName(logPath),
                             Reason = $"Installer log references known bypass tool: '{tn}'",
@@ -236,7 +236,7 @@ public sealed class BypassToolBehaviorDeepScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "Test Signing Mode Reference in CBS/DISM Log",
-                        Risk = Risk.High,
+                        Risk = RiskLevel.High,
                         Location = logPath,
                         FileName = Path.GetFileName(logPath),
                         Reason = "CBS/DISM log references test signing mode — bypass tools enable this to load unsigned kernel drivers",
@@ -252,7 +252,7 @@ public sealed class BypassToolBehaviorDeepScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "Code Integrity/Driver Signing Issue in CBS/DISM Log",
-                        Risk = Risk.High,
+                        Risk = RiskLevel.High,
                         Location = logPath,
                         FileName = Path.GetFileName(logPath),
                         Reason = "CBS/DISM log references unsigned driver or CI bypass activity",
@@ -268,7 +268,7 @@ public sealed class BypassToolBehaviorDeepScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Cheat Keyword in CBS/DISM Log",
-                            Risk = Risk.High,
+                            Risk = RiskLevel.High,
                             Location = logPath,
                             FileName = Path.GetFileName(logPath),
                             Reason = $"System log references cheat/bypass keyword: '{ck}'",
@@ -313,7 +313,7 @@ public sealed class BypassToolBehaviorDeepScanModule : IScanModule
                         {
                             Module = Name,
                             Title = $"Bypass/Vulnerable Driver in Setup Log: {tn}",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = logPath,
                             FileName = Path.GetFileName(logPath),
                             Reason = $"SetupAPI log records installation of known bypass/vulnerable driver: '{tn}'",
@@ -338,7 +338,7 @@ public sealed class BypassToolBehaviorDeepScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "Bypass Driver Install Failure in SetupAPI Log",
-                                Risk = Risk.High,
+                                Risk = RiskLevel.High,
                                 Location = logPath,
                                 FileName = Path.GetFileName(logPath),
                                 Reason = "SetupAPI log shows failed bypass/vulnerable driver installation attempt",
@@ -356,7 +356,7 @@ public sealed class BypassToolBehaviorDeepScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Cheat Keyword in SetupAPI Driver Log",
-                            Risk = Risk.High,
+                            Risk = RiskLevel.High,
                             Location = logPath,
                             FileName = Path.GetFileName(logPath),
                             Reason = $"SetupAPI log references cheat/bypass tool: '{ck}'",
@@ -418,7 +418,7 @@ public sealed class BypassToolBehaviorDeepScanModule : IScanModule
                                         {
                                             Module = Name,
                                             Title = "Cheat/Bypass Tool in MSI Install History",
-                                            Risk = Risk.Critical,
+                                            Risk = RiskLevel.Critical,
                                             Location = $@"HKLM\{keyPath}\{sidName}\Products\{productGuid}",
                                             FileName = "Registry",
                                             Reason = $"MSI install history references cheat/bypass tool: '{ck}'",
@@ -437,7 +437,7 @@ public sealed class BypassToolBehaviorDeepScanModule : IScanModule
                                         {
                                             Module = Name,
                                             Title = "Suspicious Installer in MSI History",
-                                            Risk = Risk.High,
+                                            Risk = RiskLevel.High,
                                             Location = $@"HKLM\{keyPath}\{sidName}\Products\{productGuid}",
                                             FileName = "Registry",
                                             Reason = $"MSI install history has suspicious installer name: '{tn}'",
@@ -500,7 +500,7 @@ public sealed class BypassToolBehaviorDeepScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "Cheat/Bypass Process in WER Crash Report",
-                                Risk = Risk.High,
+                                Risk = RiskLevel.High,
                                 Location = dir,
                                 FileName = Path.GetFileName(dir),
                                 Reason = $"Windows Error Reporting crash directory references cheat tool: '{ck}'",
@@ -518,7 +518,7 @@ public sealed class BypassToolBehaviorDeepScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "Known Bypass Tool Crash Dump in WER",
-                                Risk = Risk.Critical,
+                                Risk = RiskLevel.Critical,
                                 Location = dir,
                                 FileName = Path.GetFileName(dir),
                                 Reason = $"WER crash report for known bypass tool: '{tn}'",
@@ -549,7 +549,7 @@ public sealed class BypassToolBehaviorDeepScanModule : IScanModule
                                             {
                                                 Module = Name,
                                                 Title = "Cheat Tool Referenced in WER Report File",
-                                                Risk = Risk.High,
+                                                Risk = RiskLevel.High,
                                                 Location = file,
                                                 FileName = Path.GetFileName(file),
                                                 Reason = $"WER report file references cheat tool: '{ck}'",
@@ -595,7 +595,7 @@ public sealed class BypassToolBehaviorDeepScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "Recent Full Memory Dump Found",
-                        Risk = Risk.Medium,
+                        Risk = RiskLevel.Medium,
                         Location = localDumps,
                         FileName = "MEMORY.DMP",
                         Reason = $"Full kernel memory dump created within the last {(DateTime.UtcNow - fi.LastWriteTimeUtc).TotalDays:F0} days — may indicate system crash caused by bypass driver",
@@ -623,7 +623,7 @@ public sealed class BypassToolBehaviorDeepScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "Cheat Tool in WER LocalDumps Configuration",
-                                Risk = Risk.High,
+                                Risk = RiskLevel.High,
                                 Location = $@"HKLM\SOFTWARE\Microsoft\Windows\Windows Error Reporting\LocalDumps\{subKeyName}",
                                 FileName = "Registry",
                                 Reason = $"WER local dumps configured for cheat process: '{subKeyName}' — may be set to capture AC process memory",
@@ -651,7 +651,7 @@ public sealed class BypassToolBehaviorDeepScanModule : IScanModule
                                     {
                                         Module = Name,
                                         Title = "Cheat Process Crash Dump Found",
-                                        Risk = Risk.High,
+                                        Risk = RiskLevel.High,
                                         Location = dmpFile,
                                         FileName = Path.GetFileName(dmpFile),
                                         Reason = $"Crash dump for cheat-related process: '{ck}'",
@@ -682,7 +682,7 @@ public sealed class BypassToolBehaviorDeepScanModule : IScanModule
             {
                 Module = Name,
                 Title = "Application Event Log Missing",
-                Risk = Risk.High,
+                Risk = RiskLevel.High,
                 Location = appLogPath,
                 FileName = "Application.evtx",
                 Reason = "Application event log file absent — may have been deleted by cleaner/bypass to hide application crash/install events",
@@ -700,7 +700,7 @@ public sealed class BypassToolBehaviorDeepScanModule : IScanModule
                 {
                     Module = Name,
                     Title = "Application Event Log Suspiciously Small",
-                    Risk = Risk.Medium,
+                    Risk = RiskLevel.Medium,
                     Location = appLogPath,
                     FileName = "Application.evtx",
                     Reason = $"Application event log is only {fi.Length / 1024}KB — may have been cleared to remove bypass/install evidence",
@@ -743,7 +743,7 @@ public sealed class BypassToolBehaviorDeepScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = $"Known Bypass Tool Service Found: {svcName}",
-                                Risk = Risk.Critical,
+                                Risk = RiskLevel.Critical,
                                 Location = $@"HKLM\SYSTEM\CurrentControlSet\Services\{svcName}",
                                 FileName = "Registry",
                                 Reason = $"Windows service matches known bypass tool name: '{tn}'",
@@ -759,7 +759,7 @@ public sealed class BypassToolBehaviorDeepScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Kernel Driver Service Running from Temp Directory",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = $@"HKLM\SYSTEM\CurrentControlSet\Services\{svcName}",
                             FileName = "Registry",
                             Reason = $"Kernel driver service '{svcName}' has ImagePath in Temp directory — BYOVD/bypass tool pattern",
@@ -777,7 +777,7 @@ public sealed class BypassToolBehaviorDeepScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = $"Cheat-Related Driver Service: {svcName}",
-                                    Risk = Risk.Critical,
+                                    Risk = RiskLevel.Critical,
                                     Location = $@"HKLM\SYSTEM\CurrentControlSet\Services\{svcName}",
                                     FileName = "Registry",
                                     Reason = $"Driver service with cheat keyword in name/path/description: '{ck}'",
@@ -834,7 +834,7 @@ public sealed class BypassToolBehaviorDeepScanModule : IScanModule
                 {
                     Module = Name,
                     Title = $"Known BYOVD/Bypass Driver Service Registered: {svc.Key}",
-                    Risk = Risk.Critical,
+                    Risk = RiskLevel.Critical,
                     Location = $@"HKLM\SYSTEM\CurrentControlSet\Services\{svc.Key}",
                     FileName = "Registry",
                     Reason = $"Known vulnerable/bypass driver service present: '{svc.Key}' — {svc.Value}",
@@ -871,7 +871,7 @@ public sealed class BypassToolBehaviorDeepScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "Registry Transaction Log Unusually Small",
-                        Risk = Risk.Medium,
+                        Risk = RiskLevel.Medium,
                         Location = logPath,
                         FileName = Path.GetFileName(logPath),
                         Reason = $"Registry transaction log is only {fi.Length} bytes — normal transaction logs are larger, may indicate log wiping",
@@ -898,7 +898,7 @@ public sealed class BypassToolBehaviorDeepScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "SECURITY Registry Hive Unusually Small",
-                        Risk = Risk.High,
+                        Risk = RiskLevel.High,
                         Location = secHive,
                         FileName = "SECURITY",
                         Reason = $"SECURITY hive is only {fi.Length} bytes — unusually small, may indicate corruption or tampering",
@@ -938,7 +938,7 @@ public sealed class BypassToolBehaviorDeepScanModule : IScanModule
                     {
                         Module = Name,
                         Title = $"Windows Log Directory Empty: {Path.GetFileName(logDir)}",
-                        Risk = Risk.Medium,
+                        Risk = RiskLevel.Medium,
                         Location = logDir,
                         FileName = Path.GetFileName(logDir),
                         Reason = $"Windows log directory '{Path.GetFileName(logDir)}' is empty — logs may have been wiped by cleaner/bypass tool",
@@ -996,7 +996,7 @@ public sealed class BypassToolBehaviorDeepScanModule : IScanModule
                                         {
                                             Module = Name,
                                             Title = "Cheat/Bypass Tool Deleted to Recycle Bin",
-                                            Risk = Risk.High,
+                                            Risk = RiskLevel.High,
                                             Location = file,
                                             FileName = Path.GetFileName(file),
                                             Reason = $"Recycle bin contains deleted cheat/bypass file: '{ck}'",
@@ -1014,7 +1014,7 @@ public sealed class BypassToolBehaviorDeepScanModule : IScanModule
                                         {
                                             Module = Name,
                                             Title = "Known Bypass Tool Deleted to Recycle Bin",
-                                            Risk = Risk.Critical,
+                                            Risk = RiskLevel.Critical,
                                             Location = file,
                                             FileName = Path.GetFileName(file),
                                             Reason = $"Recycle bin contains deleted known bypass tool: '{tn}'",
@@ -1059,7 +1059,7 @@ public sealed class BypassToolBehaviorDeepScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "Test Signing Mode Active in Boot Options",
-                        Risk = Risk.Critical,
+                        Risk = RiskLevel.Critical,
                         Location = @"HKLM\SYSTEM\CurrentControlSet\Control\SystemStartOptions",
                         FileName = "Registry",
                         Reason = "Test signing mode detected in system start options — allows loading of unsigned bypass/cheat kernel drivers",
@@ -1073,7 +1073,7 @@ public sealed class BypassToolBehaviorDeepScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "Code Integrity Checks Disabled in Boot Options",
-                        Risk = Risk.Critical,
+                        Risk = RiskLevel.Critical,
                         Location = @"HKLM\SYSTEM\CurrentControlSet\Control\SystemStartOptions",
                         FileName = "Registry",
                         Reason = "NOINTEGRITYCHECKS in boot options — kernel code integrity checks bypassed, all unsigned drivers load",
@@ -1087,7 +1087,7 @@ public sealed class BypassToolBehaviorDeepScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "Kernel Debug Mode Active",
-                        Risk = Risk.High,
+                        Risk = RiskLevel.High,
                         Location = @"HKLM\SYSTEM\CurrentControlSet\Control\SystemStartOptions",
                         FileName = "Registry",
                         Reason = "Kernel debug mode detected in boot options — enables kernel manipulation by bypass tools",
@@ -1131,7 +1131,7 @@ public sealed class BypassToolBehaviorDeepScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = $"Known Bypass Driver File in Drivers Directory: {Path.GetFileName(file)}",
-                                Risk = Risk.Critical,
+                                Risk = RiskLevel.Critical,
                                 Location = file,
                                 FileName = Path.GetFileName(file),
                                 Reason = $"Known BYOVD/bypass driver found: '{tn}'",
@@ -1149,7 +1149,7 @@ public sealed class BypassToolBehaviorDeepScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = $"Cheat-Keyword Driver in System32: {Path.GetFileName(file)}",
-                                Risk = Risk.Critical,
+                                Risk = RiskLevel.Critical,
                                 Location = file,
                                 FileName = Path.GetFileName(file),
                                 Reason = $"Kernel driver with cheat keyword in name: '{ck}'",
@@ -1194,7 +1194,7 @@ public sealed class BypassToolBehaviorDeepScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Driver Blocking Event in Windows Update Log",
-                            Risk = Risk.High,
+                            Risk = RiskLevel.High,
                             Location = wuPath,
                             FileName = Path.GetFileName(wuPath),
                             Reason = "Windows Update log shows blocked/unsigned driver activity — may relate to BYOVD bypass driver",
@@ -1244,7 +1244,7 @@ public sealed class BypassToolBehaviorDeepScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = $"Known Bypass Tool Downloaded: {Path.GetFileName(file)}",
-                                Risk = Risk.Critical,
+                                Risk = RiskLevel.Critical,
                                 Location = file,
                                 FileName = Path.GetFileName(file),
                                 Reason = $"Known bypass tool file found in download/temp location: '{tn}'",
@@ -1262,7 +1262,7 @@ public sealed class BypassToolBehaviorDeepScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "Suspicious Installer Downloaded",
-                                Risk = Risk.High,
+                                Risk = RiskLevel.High,
                                 Location = file,
                                 FileName = Path.GetFileName(file),
                                 Reason = $"Suspicious installer matching cheat/bypass pattern: '{si}'",
@@ -1351,7 +1351,7 @@ public sealed class BypassToolBehaviorDeepScanModule : IScanModule
                 {
                     Module = Name,
                     Title = "Suspicious Certificate File Found",
-                    Risk = Risk.High,
+                    Risk = RiskLevel.High,
                     Location = certFile,
                     FileName = Path.GetFileName(certFile),
                     Reason = "Certificate file with cheat/bypass-related name found — may be fake code signing cert for bypass tool",
@@ -1376,7 +1376,7 @@ public sealed class BypassToolBehaviorDeepScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "BCD Store Unusually Small",
-                        Risk = Risk.Medium,
+                        Risk = RiskLevel.Medium,
                         Location = bcdPath,
                         FileName = "BCD",
                         Reason = $"Boot Configuration Data store is only {fi.Length} bytes — unusually small, may indicate tampering",
@@ -1400,7 +1400,7 @@ public sealed class BypassToolBehaviorDeepScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "Page File Cleared at Shutdown (Anti-Forensic)",
-                        Risk = Risk.High,
+                        Risk = RiskLevel.High,
                         Location = @"HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management\ClearPageFileAtShutdown",
                         FileName = "Registry",
                         Reason = "Page file cleared at shutdown (ClearPageFileAtShutdown=1) — deliberately destroys memory forensic evidence including cheat process artifacts",
@@ -1428,7 +1428,7 @@ public sealed class BypassToolBehaviorDeepScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Hibernate Disabled and Hibernate File Missing",
-                            Risk = Risk.Medium,
+                            Risk = RiskLevel.Medium,
                             Location = @"HKLM\SYSTEM\CurrentControlSet\Control\Power\HibernateEnabled",
                             FileName = "Registry",
                             Reason = "Hibernate disabled and hiberfil.sys absent — eliminates hibernation memory dump forensic evidence",

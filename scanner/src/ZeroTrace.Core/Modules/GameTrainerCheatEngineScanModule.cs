@@ -127,7 +127,7 @@ public sealed class GameTrainerCheatEngineScanModule : IScanModule
                     {
                         Module = Name,
                         Title = isCe ? "Cheat Engine Found" : "Game Trainer Tool Found",
-                        Risk = Risk.Critical,
+                        Risk = RiskLevel.Critical,
                         Location = file,
                         FileName = fn,
                         Reason = $"Game trainer/memory editor '{fn}' found",
@@ -173,7 +173,7 @@ public sealed class GameTrainerCheatEngineScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "Cheat Engine Table Found",
-                        Risk = Risk.Critical,
+                        Risk = RiskLevel.Critical,
                         Location = file,
                         FileName = fn,
                         Reason = $"Cheat Engine table file '{fn}' found",
@@ -202,7 +202,7 @@ public sealed class GameTrainerCheatEngineScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Game Trainer Configuration",
-                            Risk = Risk.High,
+                            Risk = RiskLevel.High,
                             Location = file,
                             FileName = fn,
                             Reason = $"File contains {hits.Count} trainer/cheat engine keywords",
@@ -233,7 +233,7 @@ public sealed class GameTrainerCheatEngineScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "Trainer/Memory Editor Running",
-                        Risk = Risk.Critical,
+                        Risk = RiskLevel.Critical,
                         Location = procPath,
                         FileName = pname,
                         Reason = $"Game trainer or memory editor '{pname}' is currently running",
@@ -271,7 +271,7 @@ public sealed class GameTrainerCheatEngineScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "Cheat Engine Installation Detected",
-                        Risk = Risk.Critical,
+                        Risk = RiskLevel.Critical,
                         Location = string.IsNullOrEmpty(installPath) ? ceKey : installPath,
                         FileName = "Registry",
                         Reason = "Cheat Engine is installed on this system",
@@ -302,7 +302,7 @@ public sealed class GameTrainerCheatEngineScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "WeMod Trainer Platform Installed",
-                        Risk = Risk.High,
+                        Risk = RiskLevel.High,
                         Location = wmKey,
                         FileName = "Registry",
                         Reason = "WeMod trainer platform is installed — provides trainers for hundreds of games",
@@ -342,7 +342,7 @@ public sealed class GameTrainerCheatEngineScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = "Game Trainer Software Installed",
-                                    Risk = Risk.High,
+                                    Risk = RiskLevel.High,
                                     Location = $@"HKLM\{uninst}\{sub}",
                                     FileName = "Registry",
                                     Reason = $"Game trainer tool '{dispName}' is installed",
@@ -375,7 +375,7 @@ public sealed class GameTrainerCheatEngineScanModule : IScanModule
             {
                 Module = Name,
                 Title = "WeMod Trainer Platform Data Directory",
-                Risk = Risk.High,
+                Risk = RiskLevel.High,
                 Location = wemodDir,
                 FileName = Path.GetFileName(wemodDir),
                 Reason = "WeMod trainer data directory found — enables game cheating via trainer platform",
@@ -400,7 +400,7 @@ public sealed class GameTrainerCheatEngineScanModule : IScanModule
                 {
                     Module = Name,
                     Title = "WeMod Trainer Games List",
-                    Risk = Risk.High,
+                    Risk = RiskLevel.High,
                     Location = gamesFile,
                     FileName = "games.json",
                     Reason = "WeMod games.json found — contains list of games with active trainers",
@@ -419,7 +419,7 @@ public sealed class GameTrainerCheatEngineScanModule : IScanModule
             {
                 Module = Name,
                 Title = "Cheat Engine Documents Directory",
-                Risk = Risk.Critical,
+                Risk = RiskLevel.Critical,
                 Location = ceDocPath,
                 FileName = "Cheat Engine",
                 Reason = "Cheat Engine user directory found in Documents",
@@ -438,7 +438,7 @@ public sealed class GameTrainerCheatEngineScanModule : IScanModule
                 {
                     Module = Name,
                     Title = "Cheat Engine Table in CE Documents",
-                    Risk = Risk.Critical,
+                    Risk = RiskLevel.Critical,
                     Location = ctFile,
                     FileName = Path.GetFileName(ctFile),
                     Reason = $"Cheat Engine table '{Path.GetFileName(ctFile)}' found in CE directory",
@@ -455,7 +455,7 @@ public sealed class GameTrainerCheatEngineScanModule : IScanModule
             {
                 Module = Name,
                 Title = "FLiNG Trainer Directory Found",
-                Risk = Risk.High,
+                Risk = RiskLevel.High,
                 Location = flingPath,
                 FileName = "FLiNG Trainer",
                 Reason = "FLiNG game trainer directory found — provides game trainers with multiple cheat features",
@@ -490,7 +490,7 @@ public sealed class GameTrainerCheatEngineScanModule : IScanModule
             {
                 Module = Name,
                 Title = "Cheat Engine Installation Directory",
-                Risk = Risk.Critical,
+                Risk = RiskLevel.Critical,
                 Location = cePath,
                 FileName = Path.GetFileName(cePath),
                 Reason = $"Cheat Engine installation found at '{cePath}'",
@@ -515,7 +515,7 @@ public sealed class GameTrainerCheatEngineScanModule : IScanModule
             {
                 Module = Name,
                 Title = "ReClass.NET Memory Analysis Tool",
-                Risk = Risk.High,
+                Risk = RiskLevel.High,
                 Location = rcPath,
                 FileName = "ReClass.NET",
                 Reason = "ReClass.NET memory reverse engineering tool found",
@@ -573,7 +573,7 @@ public sealed class GameTrainerCheatEngineScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Debugger Session with Game Target",
-                            Risk = Risk.High,
+                            Risk = RiskLevel.High,
                             Location = file,
                             FileName = fn,
                             Reason = $"Debugger session file '{fn}' references game process — indicates game reverse engineering",

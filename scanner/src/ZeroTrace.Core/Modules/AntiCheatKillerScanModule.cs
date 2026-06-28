@@ -158,7 +158,7 @@ public sealed class AntiCheatKillerScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = "Anti-Cheat Killer Executable Found",
-                                    Risk = Risk.Critical,
+                                    Risk = RiskLevel.Critical,
                                     Location = file,
                                     FileName = fn,
                                     Reason = "Known anti-cheat killer/terminator/disabler tool detected",
@@ -196,7 +196,7 @@ public sealed class AntiCheatKillerScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = "Anti-Cheat Killer DLL Found",
-                                    Risk = Risk.Critical,
+                                    Risk = RiskLevel.Critical,
                                     Location = file,
                                     FileName = fn,
                                     Reason = "Known anti-cheat killer DLL detected in user directory",
@@ -244,7 +244,7 @@ public sealed class AntiCheatKillerScanModule : IScanModule
                                     {
                                         Module = Name,
                                         Title = "Anti-Cheat Killer Config/Script Keyword Found",
-                                        Risk = Risk.Critical,
+                                        Risk = RiskLevel.Critical,
                                         Location = file,
                                         FileName = Path.GetFileName(file),
                                         Reason = $"File contains anti-cheat kill/disable keyword: '{kw}'",
@@ -289,7 +289,7 @@ public sealed class AntiCheatKillerScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "Anti-Cheat Process Hijacked via IFEO",
-                                Risk = Risk.Critical,
+                                Risk = RiskLevel.Critical,
                                 Location = $@"HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\{acProcess}",
                                 FileName = acProcess,
                                 Reason = $"IFEO Debugger set for '{acProcess}' — prevents anti-cheat from launching",
@@ -305,7 +305,7 @@ public sealed class AntiCheatKillerScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "Anti-Cheat Process GlobalFlag Set via IFEO",
-                                Risk = Risk.High,
+                                Risk = RiskLevel.High,
                                 Location = $@"HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\{acProcess}",
                                 FileName = acProcess,
                                 Reason = $"IFEO GlobalFlag set for '{acProcess}' — crash/behavior manipulation",
@@ -348,7 +348,7 @@ public sealed class AntiCheatKillerScanModule : IScanModule
                         {
                             Module = Name,
                             Title = $"Anti-Cheat Service '{svcName}' Disabled",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = $@"HKLM\SYSTEM\CurrentControlSet\Services\{svcName}",
                             FileName = "registry",
                             Reason = $"Service '{svcName}' has Start=4 (disabled) — anti-cheat killer technique",
@@ -391,7 +391,7 @@ public sealed class AntiCheatKillerScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = "Anti-Cheat Killer Scheduled Task Found",
-                                    Risk = Risk.Critical,
+                                    Risk = RiskLevel.Critical,
                                     Location = taskFile,
                                     FileName = Path.GetFileName(taskFile),
                                     Reason = $"Scheduled task XML contains AC killer keyword: '{kw}'",
@@ -443,7 +443,7 @@ public sealed class AntiCheatKillerScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Anti-Cheat Server Blocked in Hosts File",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = hostsFile,
                             FileName = "hosts",
                             Reason = $"hosts file blocks anti-cheat server: '{acHost}' — prevents AC reporting",
@@ -490,7 +490,7 @@ public sealed class AntiCheatKillerScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "Anti-Cheat Application Blocked by Firewall Rule",
-                                Risk = Risk.Critical,
+                                Risk = RiskLevel.Critical,
                                 Location = @"HKLM\SYSTEM\CurrentControlSet\Services\SharedAccess\Parameters\FirewallPolicy\FirewallRules",
                                 FileName = "registry",
                                 Reason = $"Firewall rule blocks anti-cheat '{acApp}' from network access",
@@ -537,7 +537,7 @@ public sealed class AntiCheatKillerScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Anti-Cheat Killer Registry Artifact Found",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = regKey,
                             FileName = "registry",
                             Reason = "Known anti-cheat killer tool left a registry artifact",
@@ -572,7 +572,7 @@ public sealed class AntiCheatKillerScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "Anti-Cheat Killer Tool Execution Evidence in MUICache",
-                                Risk = Risk.Critical,
+                                Risk = RiskLevel.Critical,
                                 Location = @"HKCU\SOFTWARE\Classes\Local Settings\Software\Microsoft\Windows\Shell\MuiCache",
                                 FileName = "registry",
                                 Reason = "MUICache records previous execution of anti-cheat killer tool",

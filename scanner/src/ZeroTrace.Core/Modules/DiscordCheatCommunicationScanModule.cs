@@ -139,7 +139,7 @@ public sealed class DiscordCheatCommunicationScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "Discord LevelDB Cheat Reference",
-                                Risk = Risk.High,
+                                Risk = RiskLevel.High,
                                 Location = ldbFile,
                                 FileName = Path.GetFileName(ldbFile),
                                 Reason = $"Discord local storage contains cheat-related keyword: '{keyword}'",
@@ -160,7 +160,7 @@ public sealed class DiscordCheatCommunicationScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "Discord Cheat Purchase Evidence",
-                                Risk = Risk.Critical,
+                                Risk = RiskLevel.Critical,
                                 Location = ldbFile,
                                 FileName = Path.GetFileName(ldbFile),
                                 Reason = $"Discord storage contains cheat purchase keyword: '{keyword}'",
@@ -205,7 +205,7 @@ public sealed class DiscordCheatCommunicationScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "Discord Cache — Known Cheat Server Reference",
-                                Risk = Risk.High,
+                                Risk = RiskLevel.High,
                                 Location = cacheFile,
                                 FileName = Path.GetFileName(cacheFile),
                                 Reason = $"Discord cache file references known cheat provider: '{kw}'",
@@ -248,7 +248,7 @@ public sealed class DiscordCheatCommunicationScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = "Discord Log — Cheat Guild Activity",
-                                    Risk = Risk.Medium,
+                                    Risk = RiskLevel.Medium,
                                     Location = logFile,
                                     FileName = Path.GetFileName(logFile),
                                     Reason = $"Discord log file references cheat-related activity: '{kw}'",
@@ -292,7 +292,7 @@ public sealed class DiscordCheatCommunicationScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Discord DevTools Enabled",
-                            Risk = Risk.Medium,
+                            Risk = RiskLevel.Medium,
                             Location = settingsJson,
                             FileName = "settings.json",
                             Reason = "Discord developer tools forcefully enabled — used for token extraction",
@@ -325,7 +325,7 @@ public sealed class DiscordCheatCommunicationScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "Discord Client Mod Injection Artifact",
-                        Risk = Risk.Medium,
+                        Risk = RiskLevel.Medium,
                         Location = dir,
                         FileName = Path.GetFileName(dir),
                         Reason = $"Discord modules directory contains client mod: '{injectorKeyword}'",
@@ -351,7 +351,7 @@ public sealed class DiscordCheatCommunicationScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Discord ASAR Modification Detected",
-                            Risk = Risk.High,
+                            Risk = RiskLevel.High,
                             Location = appAsarPath,
                             FileName = "app.asar",
                             Reason = "Discord app.asar contains injection or modification markers",
@@ -398,7 +398,7 @@ public sealed class DiscordCheatCommunicationScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "Discord Webhook Script Artifact",
-                                Risk = Risk.High,
+                                Risk = RiskLevel.High,
                                 Location = scriptFile,
                                 FileName = Path.GetFileName(scriptFile),
                                 Reason = "Script file contains Discord webhook URL — used by cheat software for status reporting",
@@ -438,7 +438,7 @@ public sealed class DiscordCheatCommunicationScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Discord Token Grabber Artifact",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = file,
                             FileName = Path.GetFileName(file),
                             Reason = $"Temp file contains Discord token grabber indicator: '{kw}'",
@@ -486,7 +486,7 @@ public sealed class DiscordCheatCommunicationScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Suspicious Discord Autostart Entry",
-                            Risk = Risk.Medium,
+                            Risk = RiskLevel.Medium,
                             Location = $@"HKCU\{runKey}\{valueName}",
                             FileName = valueName,
                             Reason = $"Non-standard Discord autostart entry: '{val}'",
@@ -538,7 +538,7 @@ public sealed class DiscordCheatCommunicationScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = "Browser History — Discord Cheat Invite",
-                                    Risk = Risk.High,
+                                    Risk = RiskLevel.High,
                                     Location = histFile,
                                     FileName = Path.GetFileName(histFile),
                                     Reason = $"Browser history shows Discord invite with cheat keyword: '{kw}'",
@@ -586,7 +586,7 @@ public sealed class DiscordCheatCommunicationScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Cheat File Downloaded via Discord",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = file,
                             FileName = Path.GetFileName(file),
                             Reason = $"Downloaded file name matches cheat pattern: '{pattern}'",
@@ -620,7 +620,7 @@ public sealed class DiscordCheatCommunicationScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Discord Storage — Cheat Reference",
-                            Risk = Risk.Medium,
+                            Risk = RiskLevel.Medium,
                             Location = file,
                             FileName = Path.GetFileName(file),
                             Reason = $"Discord storage JSON contains cheat keyword: '{kw}'",
@@ -663,7 +663,7 @@ public sealed class DiscordCheatCommunicationScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Browser History — Known Cheat Discord Server",
-                            Risk = Risk.High,
+                            Risk = RiskLevel.High,
                             Location = histFile,
                             FileName = Path.GetFileName(histFile),
                             Reason = $"Browser history references known cheat Discord community: '{kw}'",
@@ -698,7 +698,7 @@ public sealed class DiscordCheatCommunicationScanModule : IScanModule
                 {
                     Module = Name,
                     Title = "Discord Backup File Found",
-                    Risk = Risk.Low,
+                    Risk = RiskLevel.Low,
                     Location = file,
                     FileName = Path.GetFileName(file),
                     Reason = "Discord backup file may preserve cheat communication evidence",
@@ -731,7 +731,7 @@ public sealed class DiscordCheatCommunicationScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "BetterDiscord Plugin — Cheat Reference",
-                            Risk = Risk.High,
+                            Risk = RiskLevel.High,
                             Location = pluginFile,
                             FileName = Path.GetFileName(pluginFile),
                             Reason = $"BetterDiscord plugin references cheat keyword: '{kw}'",
@@ -763,7 +763,7 @@ public sealed class DiscordCheatCommunicationScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Discord Registry — Cheat Reference",
-                            Risk = Risk.Medium,
+                            Risk = RiskLevel.Medium,
                             Location = $@"HKCU\SOFTWARE\Discord\{valueName}",
                             FileName = valueName,
                             Reason = $"Discord registry value contains cheat keyword: '{kw}'",
@@ -804,7 +804,7 @@ public sealed class DiscordCheatCommunicationScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Discord Friend List — Cheat Contact",
-                            Risk = Risk.Medium,
+                            Risk = RiskLevel.Medium,
                             Location = ldbFile,
                             FileName = Path.GetFileName(ldbFile),
                             Reason = "Discord LevelDB contains friend/relationship data alongside cheat keywords",
@@ -847,7 +847,7 @@ public sealed class DiscordCheatCommunicationScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "Discord Updater Log — Injection Artifact",
-                                Risk = Risk.High,
+                                Risk = RiskLevel.High,
                                 Location = updateLog,
                                 FileName = Path.GetFileName(updateLog),
                                 Reason = $"Discord update log references injection keyword: '{kw}'",
@@ -893,7 +893,7 @@ public sealed class DiscordCheatCommunicationScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "Discord Crash Report — Cheat Reference",
-                                Risk = Risk.Medium,
+                                Risk = RiskLevel.Medium,
                                 Location = crashFile,
                                 FileName = Path.GetFileName(crashFile),
                                 Reason = $"Discord crash report contains cheat-related keyword: '{kw}'",

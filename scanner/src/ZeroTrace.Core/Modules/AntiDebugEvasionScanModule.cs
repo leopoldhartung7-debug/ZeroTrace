@@ -369,7 +369,7 @@ public sealed class AntiDebugEvasionScanModule : IScanModule
                 {
                     await ScanDirectoryForNamesAsync(ctx, ct, dir, AntiDebugToolExeNames,
                         "Anti-Debug Tool Executable Detected",
-                        Risk.Critical,
+                        RiskLevel.Critical,
                         "Known anti-debug or anti-analysis tool binary found in user directory. These tools are used to bypass the debugger detection checks performed by anti-cheat software, allowing cheats to operate while being debugged.");
                 }
                 catch (UnauthorizedAccessException) { }
@@ -390,7 +390,7 @@ public sealed class AntiDebugEvasionScanModule : IScanModule
                 {
                     await ScanDirectoryForNamesAsync(ctx, ct, dir, AntiDebugDllNames,
                         "Anti-Debug Bypass DLL Detected",
-                        Risk.Critical,
+                        RiskLevel.Critical,
                         "DLL that bypasses debugger-detection APIs (IsDebuggerPresent, CheckRemoteDebuggerPresent, NtQueryInformationProcess) found. These bypass the API calls used by anti-cheat software to detect attached debuggers.");
                 }
                 catch (UnauthorizedAccessException) { }
@@ -450,7 +450,7 @@ public sealed class AntiDebugEvasionScanModule : IScanModule
                         {
                             Module = Name,
                             Title = $"Anti-Debug Debugger Plugin Detected: {fileName}",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = file,
                             FileName = fileName,
                             Reason = $"Anti-debug plugin '{fileName}' (matched keyword: '{matched}') found in debugger plugin directory. Plugins such as ScyllaHide comprehensively hide debugger presence from anti-cheat software by intercepting all standard debugger-detection APIs.",
@@ -478,7 +478,7 @@ public sealed class AntiDebugEvasionScanModule : IScanModule
                 {
                     await ScanDirectoryForNamesAsync(ctx, ct, dir, AntiDebugConfigFileNames,
                         "Anti-Debug Configuration File Detected",
-                        Risk.High,
+                        RiskLevel.High,
                         "Configuration file for an anti-debug evasion tool found. These files configure tools that bypass the debugger-detection checks used by anti-cheat software.");
                 }
                 catch (UnauthorizedAccessException) { }
@@ -535,7 +535,7 @@ public sealed class AntiDebugEvasionScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = $"IFEO Debugger Hijack on Game Executable: {subName}",
-                                Risk = isGameExe ? Risk.Critical : Risk.High,
+                                Risk = isGameExe ? RiskLevel.Critical : RiskLevel.High,
                                 Location = $@"HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\{subName}",
                                 FileName = subName,
                                 Reason = isGameExe
@@ -587,7 +587,7 @@ public sealed class AntiDebugEvasionScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "NtGlobalFlag Registry Value Is Non-Zero",
-                            Risk = hasDebugHeapFlags ? Risk.High : Risk.Medium,
+                            Risk = hasDebugHeapFlags ? RiskLevel.High : RiskLevel.Medium,
                             Location = @"HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\NtGlobalFlag",
                             Reason = hasDebugHeapFlags
                                 ? $"NtGlobalFlag is set to 0x{ntGlobalFlag:X8} which includes debug heap validation flags (bits 0x70). Anti-cheat software reads this value from the PEB to detect if a process was started under a debugger. A non-zero value with debug heap bits is a strong debugger-presence indicator that evasion tools may attempt to clear or manipulate."
@@ -610,7 +610,7 @@ public sealed class AntiDebugEvasionScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Session Manager GlobalFlag Set to Non-Zero Value",
-                            Risk = Risk.Medium,
+                            Risk = RiskLevel.Medium,
                             Location = @"HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\GlobalFlag",
                             Reason = $"Session Manager GlobalFlag is non-zero (0x{globalFlag:X8}). Cheat evasion tools sometimes manipulate system global flags to disable debug heap checks that anti-cheat software uses as debugger-presence indicators.",
                             Detail = $"GlobalFlag = 0x{globalFlag:X8}"
@@ -636,7 +636,7 @@ public sealed class AntiDebugEvasionScanModule : IScanModule
                 {
                     await ScanDirectoryForNamesAsync(ctx, ct, dir, ProcessHollowingToolNames,
                         "Process Hollowing Tool Detected",
-                        Risk.Critical,
+                        RiskLevel.Critical,
                         "Process hollowing or RunPE tool found. These tools are used by cheats to execute malicious code inside legitimate host processes, bypassing anti-cheat process enumeration and signature scanning.");
                 }
                 catch (UnauthorizedAccessException) { }
@@ -657,7 +657,7 @@ public sealed class AntiDebugEvasionScanModule : IScanModule
                 {
                     await ScanDirectoryForNamesAsync(ctx, ct, dir, ApiHookBypassToolNames,
                         "API Hook Bypass/Unhook Tool Detected",
-                        Risk.Critical,
+                        RiskLevel.Critical,
                         "API unhooking or inline-hook bypass tool found. These tools restore anti-cheat monitoring hooks in ntdll.dll and other system DLLs, disabling API-level telemetry collection that anti-cheat software relies on to detect suspicious behavior.");
                 }
                 catch (UnauthorizedAccessException) { }
@@ -678,7 +678,7 @@ public sealed class AntiDebugEvasionScanModule : IScanModule
                 {
                     await ScanDirectoryForNamesAsync(ctx, ct, dir, TimingBypassToolNames,
                         "Timing-Based Anti-Debug Bypass Tool Detected",
-                        Risk.High,
+                        RiskLevel.High,
                         "Tool that bypasses RDTSC or high-resolution timer anti-debug checks found. Anti-cheat software measures instruction timing to detect debugger-induced delays; these tools spoof the RDTSC instruction or QueryPerformanceCounter to defeat those measurements.");
                 }
                 catch (UnauthorizedAccessException) { }
@@ -699,7 +699,7 @@ public sealed class AntiDebugEvasionScanModule : IScanModule
                 {
                     await ScanDirectoryForNamesAsync(ctx, ct, dir, AntiMemoryScanToolNames,
                         "Anti-Memory Scan Cloaking Tool Detected",
-                        Risk.Critical,
+                        RiskLevel.Critical,
                         "Memory cloaking or guard-page bypass tool found. These tools hide cheat code from anti-cheat memory scans by using guard pages, working set manipulation, or VirtualProtect tricks to temporarily conceal executable memory regions during scan windows.");
                 }
                 catch (UnauthorizedAccessException) { }
@@ -720,7 +720,7 @@ public sealed class AntiDebugEvasionScanModule : IScanModule
                 {
                     await ScanDirectoryForNamesAsync(ctx, ct, dir, KernelPatchToolNames,
                         "Kernel Patch / DSE Bypass Tool Detected",
-                        Risk.Critical,
+                        RiskLevel.Critical,
                         "Kernel patching tool (ntoskrnl.exe patching, DSE/PatchGuard bypass) found. These tools modify the Windows kernel in memory to disable code-signing enforcement and remove anti-cheat kernel callbacks, enabling unsigned driver loading for deep evasion.");
                 }
                 catch (UnauthorizedAccessException) { }
@@ -741,7 +741,7 @@ public sealed class AntiDebugEvasionScanModule : IScanModule
                 {
                     await ScanDirectoryForNamesAsync(ctx, ct, dir, VmDetectBypassToolNames,
                         "VM / Sandbox Detection Bypass Tool Detected",
-                        Risk.High,
+                        RiskLevel.High,
                         "Tool that bypasses virtual machine or sandbox detection found (CPUID spoofing, RDMSR bypass, hypervisor artifact cleanup). These tools mask virtualization artifacts to circumvent anti-cheat checks that refuse to run inside virtual machines.");
                 }
                 catch (UnauthorizedAccessException) { }
@@ -773,7 +773,7 @@ public sealed class AntiDebugEvasionScanModule : IScanModule
                         {
                             Module = Name,
                             Title = $"Anti-Debug Tool Registry Key Present: {toolName}",
-                            Risk = Risk.High,
+                            Risk = RiskLevel.High,
                             Location = $@"{hiveName}\{keyPath}",
                             Reason = $"Registry key '{hiveName}\\{keyPath}' associated with the anti-debug/analysis tool '{toolName}' was found. This key is created on installation or first run, confirming that the tool has been used on this system.",
                             Detail = $"Hive: {hiveName}, Key path: {keyPath}"
@@ -844,7 +844,7 @@ public sealed class AntiDebugEvasionScanModule : IScanModule
                     {
                         Module = Name,
                         Title = $"Anti-Debug Config File in AppData: {fileName}",
-                        Risk = Risk.High,
+                        Risk = RiskLevel.High,
                         Location = file,
                         FileName = fileName,
                         Reason = $"Configuration file '{fileName}' matching anti-debug evasion keyword pattern found in AppData/Temp." +
@@ -892,7 +892,7 @@ public sealed class AntiDebugEvasionScanModule : IScanModule
                 {
                     Module = Name,
                     Title = $"Debugger/Anti-Debug Tool Prefetch Entry: {Path.GetFileName(pfFile)}",
-                    Risk = Risk.High,
+                    Risk = RiskLevel.High,
                     Location = pfFile,
                     FileName = Path.GetFileName(pfFile),
                     Reason = $"Windows Prefetch file '{Path.GetFileName(pfFile)}' matches known debugger or anti-debug tool name pattern '{matched}'. Prefetch entries are created when a program is executed and persist as forensic evidence even after the tool has been deleted. This indicates the tool was run on this system.",
@@ -938,7 +938,7 @@ public sealed class AntiDebugEvasionScanModule : IScanModule
                     {
                         Module = Name,
                         Title = $"Debug Heap / NtGlobalFlag Artifact File: {fileName}",
-                        Risk = Risk.Medium,
+                        Risk = RiskLevel.Medium,
                         Location = file,
                         FileName = fileName,
                         Reason = $"Artifact file '{fileName}' associated with debug-heap or NtGlobalFlag manipulation found. These files are produced by tools that inspect or modify the Windows debug heap flags (used by anti-cheat to detect debuggers) or log the results of heap flag cleanup operations.",
@@ -963,7 +963,7 @@ public sealed class AntiDebugEvasionScanModule : IScanModule
                 {
                     await ScanDirectoryForNamesAsync(ctx, ct, dir, SyscallBypassToolNames,
                         "Direct Syscall / Syscall Bypass Tool Detected",
-                        Risk.Critical,
+                        RiskLevel.Critical,
                         "Tool implementing direct syscalls (SysWhispers, Hell's Gate, Halo's Gate, Tartarus Gate) or syscall bypass found. These tools invoke Windows syscalls directly without going through ntdll.dll, bypassing any API-level hooks placed by anti-cheat software on ntdll exports.");
                 }
                 catch (UnauthorizedAccessException) { }
@@ -984,7 +984,7 @@ public sealed class AntiDebugEvasionScanModule : IScanModule
                 {
                     await ScanDirectoryForNamesAsync(ctx, ct, dir, ExceptionBypassToolNames,
                         "Exception-Based Anti-Debug Bypass Tool Detected",
-                        Risk.High,
+                        RiskLevel.High,
                         "Tool that bypasses exception-based debugger detection (VEH/SEH bypass, INT3 breakpoint bypass, hardware breakpoint DR register bypass) found. Anti-cheat software uses structured exception handling and vectored exception handlers to detect debugger presence; these tools subvert those checks.");
                 }
                 catch (UnauthorizedAccessException) { }

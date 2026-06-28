@@ -161,7 +161,7 @@ public sealed class BrowserCheatShoppingForensicScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Browser History — Known Cheat Provider Site",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = histPath,
                             FileName = Path.GetFileName(histPath),
                             Reason = $"Browser history shows visit to known cheat provider: '{domain}'",
@@ -179,7 +179,7 @@ public sealed class BrowserCheatShoppingForensicScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Browser History — Cheat Site Keyword",
-                            Risk = Risk.High,
+                            Risk = RiskLevel.High,
                             Location = histPath,
                             FileName = Path.GetFileName(histPath),
                             Reason = $"Browser history contains cheat-related keyword: '{keyword}'",
@@ -216,7 +216,7 @@ public sealed class BrowserCheatShoppingForensicScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Browser History — Cheat Payment Evidence",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = histPath,
                             FileName = Path.GetFileName(histPath),
                             Reason = $"Browser history shows cheat payment activity: '{payKw}'",
@@ -253,7 +253,7 @@ public sealed class BrowserCheatShoppingForensicScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Browser Download History — Cheat File",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = histPath,
                             FileName = Path.GetFileName(histPath),
                             Reason = $"Browser download history contains cheat file reference: '{dlKw}'",
@@ -289,7 +289,7 @@ public sealed class BrowserCheatShoppingForensicScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Browser Bookmarks — Cheat Site Saved",
-                            Risk = Risk.High,
+                            Risk = RiskLevel.High,
                             Location = bkmkPath,
                             FileName = Path.GetFileName(bkmkPath),
                             Reason = $"Browser bookmarks contain cheat provider: '{domain}'",
@@ -307,7 +307,7 @@ public sealed class BrowserCheatShoppingForensicScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Browser Bookmarks — Cheat Keyword",
-                            Risk = Risk.Medium,
+                            Risk = RiskLevel.Medium,
                             Location = bkmkPath,
                             FileName = Path.GetFileName(bkmkPath),
                             Reason = $"Browser bookmarks contain cheat-related keyword: '{cheatKw}'",
@@ -355,7 +355,7 @@ public sealed class BrowserCheatShoppingForensicScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "Browser Extension — Cheat/Malicious Keyword",
-                                Risk = Risk.High,
+                                Risk = RiskLevel.High,
                                 Location = manifestFile,
                                 FileName = Path.GetFileName(manifestFile),
                                 Reason = $"Browser extension manifest contains cheat keyword: '{extKw}'",
@@ -407,7 +407,7 @@ public sealed class BrowserCheatShoppingForensicScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "Browser Local Storage — Cheat Site Data",
-                                Risk = Risk.High,
+                                Risk = RiskLevel.High,
                                 Location = ldbFile,
                                 FileName = Path.GetFileName(ldbFile),
                                 Reason = $"Browser local storage contains data from cheat site: '{domain}'",
@@ -447,7 +447,7 @@ public sealed class BrowserCheatShoppingForensicScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Firefox History — Cheat Provider Visit",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = placesFile,
                             FileName = Path.GetFileName(placesFile),
                             Reason = $"Firefox places.sqlite contains cheat provider: '{domain}'",
@@ -465,7 +465,7 @@ public sealed class BrowserCheatShoppingForensicScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Firefox History — Cheat Site Keyword",
-                            Risk = Risk.High,
+                            Risk = RiskLevel.High,
                             Location = placesFile,
                             FileName = Path.GetFileName(placesFile),
                             Reason = $"Firefox history contains cheat-related keyword: '{cheatKw}'",
@@ -505,7 +505,7 @@ public sealed class BrowserCheatShoppingForensicScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Firefox Bookmarks — Cheat Site Saved",
-                            Risk = Risk.High,
+                            Risk = RiskLevel.High,
                             Location = bkmkFile,
                             FileName = Path.GetFileName(bkmkFile),
                             Reason = $"Firefox bookmarks contain cheat provider: '{domain}'",
@@ -547,7 +547,7 @@ public sealed class BrowserCheatShoppingForensicScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "Downloads — Cheat Tool File",
-                        Risk = Risk.Critical,
+                        Risk = RiskLevel.Critical,
                         Location = file,
                         FileName = Path.GetFileName(file),
                         Reason = $"Downloaded file matches cheat tool pattern: '{pattern}'",
@@ -591,7 +591,7 @@ public sealed class BrowserCheatShoppingForensicScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Browser Cookies — Cheat Site Session",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = cookiePath,
                             FileName = Path.GetFileName(cookiePath),
                             Reason = $"Browser cookies contain session data for cheat provider: '{domain}'",
@@ -640,7 +640,7 @@ public sealed class BrowserCheatShoppingForensicScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "Browser Cache — Cheat Site Asset",
-                                Risk = Risk.High,
+                                Risk = RiskLevel.High,
                                 Location = cacheFile,
                                 FileName = Path.GetFileName(cacheFile),
                                 Reason = $"Browser cache contains asset from cheat provider: '{domain}'",
@@ -688,7 +688,7 @@ public sealed class BrowserCheatShoppingForensicScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Browser Search — Cheat Purchase Query",
-                            Risk = Risk.High,
+                            Risk = RiskLevel.High,
                             Location = histPath,
                             FileName = Path.GetFileName(histPath),
                             Reason = $"Browser history contains cheat purchase search query: '{searchKw}'",
@@ -732,7 +732,7 @@ public sealed class BrowserCheatShoppingForensicScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Browser Login Data — Cheat Site Credentials Saved",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = loginPath,
                             FileName = Path.GetFileName(loginPath),
                             Reason = $"Browser saved credentials for cheat provider: '{domain}'",
@@ -764,7 +764,7 @@ public sealed class BrowserCheatShoppingForensicScanModule : IScanModule
                 {
                     Module = Name,
                     Title = "Browser Sync Data Found",
-                    Risk = Risk.Low,
+                    Risk = RiskLevel.Low,
                     Location = syncPath,
                     FileName = "Sync Data",
                     Reason = "Browser sync data directory exists — cheat site history/bookmarks may be synced across devices",
@@ -803,7 +803,7 @@ public sealed class BrowserCheatShoppingForensicScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Browser Web Data — Cheat Site Autofill",
-                            Risk = Risk.High,
+                            Risk = RiskLevel.High,
                             Location = webDataPath,
                             FileName = Path.GetFileName(webDataPath),
                             Reason = $"Browser web data (autofill/forms) contains cheat site: '{domain}'",
@@ -838,7 +838,7 @@ public sealed class BrowserCheatShoppingForensicScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "Opera GX History — Cheat Provider Visit",
-                        Risk = Risk.Critical,
+                        Risk = RiskLevel.Critical,
                         Location = operaGXPath,
                         FileName = Path.GetFileName(operaGXPath),
                         Reason = $"Opera GX history shows visit to cheat provider: '{domain}'",
@@ -856,7 +856,7 @@ public sealed class BrowserCheatShoppingForensicScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "Opera GX History — Cheat Keyword",
-                        Risk = Risk.High,
+                        Risk = RiskLevel.High,
                         Location = operaGXPath,
                         FileName = Path.GetFileName(operaGXPath),
                         Reason = $"Opera GX history contains cheat keyword: '{cheatKw}'",
@@ -895,7 +895,7 @@ public sealed class BrowserCheatShoppingForensicScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Desktop/Start Menu — Cheat Site Shortcut",
-                            Risk = Risk.High,
+                            Risk = RiskLevel.High,
                             Location = lnkFile,
                             FileName = Path.GetFileName(lnkFile),
                             Reason = $"Shortcut name matches cheat site pattern: '{cheatKw}'",
@@ -944,7 +944,7 @@ public sealed class BrowserCheatShoppingForensicScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "Browser IndexedDB — Cheat Site App Data",
-                                Risk = Risk.High,
+                                Risk = RiskLevel.High,
                                 Location = ldbFile,
                                 FileName = Path.GetFileName(ldbFile),
                                 Reason = $"Browser IndexedDB contains data from cheat site: '{domain}'",

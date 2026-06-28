@@ -159,7 +159,7 @@ public sealed class MemoryPatchingDetectionScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = "Memory Patching Tool Executable Found",
-                                    Risk = Risk.Critical,
+                                    Risk = RiskLevel.Critical,
                                     Location = file,
                                     FileName = fn,
                                     Reason = "Known memory patching/editing tool detected",
@@ -197,7 +197,7 @@ public sealed class MemoryPatchingDetectionScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = "Memory Patching DLL Found",
-                                    Risk = Risk.Critical,
+                                    Risk = RiskLevel.Critical,
                                     Location = file,
                                     FileName = fn,
                                     Reason = "Known memory patch/hook DLL found in user directory",
@@ -236,7 +236,7 @@ public sealed class MemoryPatchingDetectionScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = "Memory Patching Tool Directory Found",
-                                    Risk = Risk.High,
+                                    Risk = RiskLevel.High,
                                     Location = dir,
                                     FileName = dn,
                                     Reason = "Directory name matches known memory patching tool pattern",
@@ -283,7 +283,7 @@ public sealed class MemoryPatchingDetectionScanModule : IScanModule
                                     {
                                         Module = Name,
                                         Title = "Memory Patching Config Keyword Found",
-                                        Risk = Risk.High,
+                                        Risk = RiskLevel.High,
                                         Location = file,
                                         FileName = Path.GetFileName(file),
                                         Reason = $"Config contains memory patching keyword: '{kw}'",
@@ -334,7 +334,7 @@ public sealed class MemoryPatchingDetectionScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = "Game Cheat Offset File Found",
-                                    Risk = Risk.High,
+                                    Risk = RiskLevel.High,
                                     Location = file,
                                     FileName = Path.GetFileName(file),
                                     Reason = "Offset file with game memory addresses found — used by memory patching cheats",
@@ -373,7 +373,7 @@ public sealed class MemoryPatchingDetectionScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = "Memory Patching Log File Found",
-                                    Risk = Risk.High,
+                                    Risk = RiskLevel.High,
                                     Location = file,
                                     FileName = fn,
                                     Reason = "Memory patch tool log file found — indicates previous patching activity",
@@ -421,7 +421,7 @@ public sealed class MemoryPatchingDetectionScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Memory Patching Tool Registry Key Found",
-                            Risk = Risk.High,
+                            Risk = RiskLevel.High,
                             Location = regKey,
                             FileName = "registry",
                             Reason = "Known memory patching tool left a registry artifact",
@@ -450,7 +450,7 @@ public sealed class MemoryPatchingDetectionScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = "Memory Patcher Execution Evidence in MUICache",
-                                    Risk = Risk.High,
+                                    Risk = RiskLevel.High,
                                     Location = @"HKCU\SOFTWARE\Classes\Local Settings\Software\Microsoft\Windows\Shell\MuiCache",
                                     FileName = "registry",
                                     Reason = "MUICache records previous execution of memory patching tool",
@@ -501,7 +501,7 @@ public sealed class MemoryPatchingDetectionScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = "ntdll/Kernel DLL Backup/Patch Artifact Found",
-                                    Risk = Risk.Critical,
+                                    Risk = RiskLevel.Critical,
                                     Location = file,
                                     FileName = fn,
                                     Reason = "Backup or patched copy of system DLL found — ntdll patching cheat technique",
@@ -549,7 +549,7 @@ public sealed class MemoryPatchingDetectionScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "Shellcode Payload File in Temp Directory",
-                                Risk = Risk.Critical,
+                                Risk = RiskLevel.Critical,
                                 Location = file,
                                 FileName = Path.GetFileName(file),
                                 Reason = "Potential shellcode payload file found in %TEMP% — memory injection staging",
@@ -597,7 +597,7 @@ public sealed class MemoryPatchingDetectionScanModule : IScanModule
                                 {
                                     Module = Name,
                                     Title = "Memory Patch DLL Found in Game Directory",
-                                    Risk = Risk.Critical,
+                                    Risk = RiskLevel.Critical,
                                     Location = file,
                                     FileName = fn,
                                     Reason = $"Memory patching DLL found inside game directory: {Path.GetFileName(gameDir)}",

@@ -132,7 +132,7 @@ public sealed class NetworkPacketManipulationScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Network Manipulation Tool",
-                            Risk = isCritical ? Risk.Critical : Risk.High,
+                            Risk = isCritical ? RiskLevel.Critical : RiskLevel.High,
                             Location = file,
                             FileName = fn,
                             Reason = $"Network manipulation tool '{fn}' found",
@@ -188,7 +188,7 @@ public sealed class NetworkPacketManipulationScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "Lag Switch Tool",
-                        Risk = Risk.Critical,
+                        Risk = RiskLevel.Critical,
                         Location = file,
                         FileName = fn,
                         Reason = $"Lag switch tool '{fn}' detected",
@@ -243,7 +243,7 @@ public sealed class NetworkPacketManipulationScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "Lag Switch Configuration File",
-                        Risk = Risk.Critical,
+                        Risk = RiskLevel.Critical,
                         Location = file,
                         FileName = Path.GetFileName(file),
                         Reason = $"Config file contains {lagHits.Count} lag switch keywords",
@@ -258,7 +258,7 @@ public sealed class NetworkPacketManipulationScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "Packet Injection Cheat Config",
-                        Risk = Risk.Critical,
+                        Risk = RiskLevel.Critical,
                         Location = file,
                         FileName = Path.GetFileName(file),
                         Reason = $"Config file contains {packetHits.Count} packet injection keywords",
@@ -304,7 +304,7 @@ public sealed class NetworkPacketManipulationScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "Winsock Hook DLL in Game Directory",
-                        Risk = Risk.Critical,
+                        Risk = RiskLevel.Critical,
                         Location = dll,
                         FileName = fn,
                         Reason = $"System network DLL '{fn}' placed in game directory — likely Winsock hook for packet manipulation",
@@ -359,7 +359,7 @@ public sealed class NetworkPacketManipulationScanModule : IScanModule
                     {
                         Module = Name,
                         Title = $"Packet Capture Driver Installed: {svc}",
-                        Risk = Risk.Medium,
+                        Risk = RiskLevel.Medium,
                         Location = $@"HKLM\SYSTEM\CurrentControlSet\Services\{svc}",
                         FileName = "Registry",
                         Reason = $"Packet capture driver '{svc}' is installed — used by network sniffers and potential lag switch tools",
@@ -389,7 +389,7 @@ public sealed class NetworkPacketManipulationScanModule : IScanModule
                             {
                                 Module = Name,
                                 Title = "Suspicious Firewall Rule (Lag Switch)",
-                                Risk = Risk.High,
+                                Risk = RiskLevel.High,
                                 Location = @"HKLM\SYSTEM\CurrentControlSet\Services\SharedAccess\Parameters\FirewallPolicy\FirewallRules",
                                 FileName = "Registry",
                                 Reason = $"Firewall rule with lag/cheat keyword: {valName}",
@@ -415,7 +415,7 @@ public sealed class NetworkPacketManipulationScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Raw Sockets Enabled in TCP/IP Stack",
-                            Risk = Risk.Medium,
+                            Risk = RiskLevel.Medium,
                             Location = @"HKLM\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters",
                             FileName = "Registry",
                             Reason = "Raw socket access enabled — allows packet crafting and injection tools",
@@ -469,7 +469,7 @@ public sealed class NetworkPacketManipulationScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "Packet Capture DLL in User Directory",
-                        Risk = Risk.High,
+                        Risk = RiskLevel.High,
                         Location = file,
                         FileName = fn,
                         Reason = $"Packet capture DLL '{fn}' found outside system directory",
@@ -518,7 +518,7 @@ public sealed class NetworkPacketManipulationScanModule : IScanModule
                     {
                         Module = Name,
                         Title = "Game Traffic Proxy/MITM Tool",
-                        Risk = Risk.High,
+                        Risk = RiskLevel.High,
                         Location = file,
                         FileName = Path.GetFileName(file),
                         Reason = $"MITM/proxy tool '{Path.GetFileName(file)}' used for game traffic interception",
@@ -551,7 +551,7 @@ public sealed class NetworkPacketManipulationScanModule : IScanModule
                         {
                             Module = Name,
                             Title = "Network Manipulation Tool Running",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = procPath,
                             FileName = pname,
                             Reason = $"Network manipulation tool '{pname}' is currently running",

@@ -165,7 +165,7 @@ public sealed class HWIDSpoofingForensicScanModule : IScanModule
                             ctx.AddFinding(new Finding
                             {
                                 Module = Name, Title = "HWID Spoofer: Tool File Artifact",
-                                Risk = Risk.Critical, Location = file,
+                                Risk = RiskLevel.Critical, Location = file,
                                 FileName = Path.GetFileName(file),
                                 Reason = $"Known HWID spoofer tool '{spooferName}' found — used to evade hardware bans",
                                 Detail = $"Path: {file}"
@@ -209,7 +209,7 @@ public sealed class HWIDSpoofingForensicScanModule : IScanModule
                     ctx.AddFinding(new Finding
                     {
                         Module = Name, Title = "HWID Spoofer Registry: Tool Registry Artifact",
-                        Risk = Risk.Critical,
+                        Risk = RiskLevel.Critical,
                         Location = $@"HKCU\{regPath}",
                         FileName = regPath.Split('\\').Last(),
                         Reason = $"HWID spoofer registry key '{regPath}' found — spoofer was installed or run",
@@ -238,7 +238,7 @@ public sealed class HWIDSpoofingForensicScanModule : IScanModule
                 ctx.AddFinding(new Finding
                 {
                     Module = Name, Title = "MachineGuid: Missing — Possible Spoof",
-                    Risk = Risk.High,
+                    Risk = RiskLevel.High,
                     Location = $@"HKLM\{machineGuidPath}",
                     FileName = "MachineGuid",
                     Reason = "Windows MachineGuid is missing — may have been deleted by HWID spoofer",
@@ -254,7 +254,7 @@ public sealed class HWIDSpoofingForensicScanModule : IScanModule
                         ctx.AddFinding(new Finding
                         {
                             Module = Name, Title = "MachineGuid: Known Spoofed Value",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = $@"HKLM\{machineGuidPath}",
                             FileName = "MachineGuid",
                             Reason = $"MachineGuid has known spoofed value '{machineGuid}' — HWID spoofer set a fake GUID",
@@ -271,7 +271,7 @@ public sealed class HWIDSpoofingForensicScanModule : IScanModule
                         ctx.AddFinding(new Finding
                         {
                             Module = Name, Title = "MachineGuid: Spoofing Indicator Pattern",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = $@"HKLM\{machineGuidPath}",
                             FileName = "MachineGuid",
                             Reason = $"MachineGuid contains spoofing indicator pattern '{indicator}'",
@@ -299,7 +299,7 @@ public sealed class HWIDSpoofingForensicScanModule : IScanModule
                 ctx.AddFinding(new Finding
                 {
                     Module = Name, Title = "Windows Installation: Missing Install Date",
-                    Risk = Risk.High,
+                    Risk = RiskLevel.High,
                     Location = $@"HKLM\{installationIdPath}",
                     FileName = "InstallDate",
                     Reason = "Windows installation date is missing — may have been wiped by HWID spoofer",
@@ -336,7 +336,7 @@ public sealed class HWIDSpoofingForensicScanModule : IScanModule
                             ctx.AddFinding(new Finding
                             {
                                 Module = Name, Title = "HWID Spoofer Driver: Spoofer Service Installed",
-                                Risk = Risk.Critical,
+                                Risk = RiskLevel.Critical,
                                 Location = $@"HKLM\{servicesPath}\{svcName}",
                                 FileName = svcName,
                                 Reason = $"Known HWID spoofer driver service '{svcName}' in registry — kernel-level hardware ID spoofing",
@@ -375,7 +375,7 @@ public sealed class HWIDSpoofingForensicScanModule : IScanModule
                             ctx.AddFinding(new Finding
                             {
                                 Module = Name, Title = "HWID Spoofer Driver: Driver File in System Drivers",
-                                Risk = Risk.Critical, Location = sysFile,
+                                Risk = RiskLevel.Critical, Location = sysFile,
                                 FileName = Path.GetFileName(sysFile),
                                 Reason = $"HWID spoofer driver file '{sysName}.sys' in System32/drivers — active hardware ID spoofing",
                                 Detail = $"Path: {sysFile}"
@@ -409,7 +409,7 @@ public sealed class HWIDSpoofingForensicScanModule : IScanModule
                         ctx.AddFinding(new Finding
                         {
                             Module = Name, Title = "Prefetch: HWID Spoofer Execution Confirmed",
-                            Risk = Risk.Critical, Location = pf,
+                            Risk = RiskLevel.Critical, Location = pf,
                             FileName = Path.GetFileName(pf),
                             Reason = $"HWID spoofer '{spooferName}' prefetch entry — confirms spoofer was executed on this system",
                             Detail = $"Prefetch: {pf}"
@@ -453,7 +453,7 @@ public sealed class HWIDSpoofingForensicScanModule : IScanModule
                         ctx.AddFinding(new Finding
                         {
                             Module = Name, Title = "SMBIOS: Spoofing Indicator in System Info",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = $@"HKLM\{smbiosPath}",
                             FileName = "SMBIOS",
                             Reason = $"SMBIOS data contains spoofing indicator '{indicator}' — hardware BIOS data was spoofed",
@@ -469,7 +469,7 @@ public sealed class HWIDSpoofingForensicScanModule : IScanModule
                     ctx.AddFinding(new Finding
                     {
                         Module = Name, Title = "SMBIOS: Missing or Placeholder Serial Number",
-                        Risk = Risk.Medium,
+                        Risk = RiskLevel.Medium,
                         Location = $@"HKLM\{smbiosPath}",
                         FileName = "SystemSerialNumber",
                         Reason = $"System serial number is missing/placeholder ('{serialNumber}') — possible SMBIOS spoof",
@@ -516,7 +516,7 @@ public sealed class HWIDSpoofingForensicScanModule : IScanModule
                                     ctx.AddFinding(new Finding
                                     {
                                         Module = Name, Title = "Disk Serial: Suspicious Serial Number in Enum",
-                                        Risk = Risk.High,
+                                        Risk = RiskLevel.High,
                                         Location = $@"HKLM\{diskPath}\{controllerName}\{instanceId}",
                                         FileName = controllerName,
                                         Reason = $"Disk device with suspicious serial pattern '{suspectedSerial}' — possible disk serial spoof",
@@ -563,7 +563,7 @@ public sealed class HWIDSpoofingForensicScanModule : IScanModule
                         ctx.AddFinding(new Finding
                         {
                             Module = Name, Title = "MAC Address Spoof: NetworkAddress Differs from Permanent",
-                            Risk = Risk.High,
+                            Risk = RiskLevel.High,
                             Location = $@"HKLM\{networkAdaptersPath}\{adapterNum}",
                             FileName = adapterDesc,
                             Reason = "NetworkAddress (spoofed) differs from PermanentAddress (real) — MAC address is being spoofed",
@@ -579,7 +579,7 @@ public sealed class HWIDSpoofingForensicScanModule : IScanModule
                             ctx.AddFinding(new Finding
                             {
                                 Module = Name, Title = "MAC Address: Known Spoofed Pattern",
-                                Risk = Risk.Critical,
+                                Risk = RiskLevel.Critical,
                                 Location = $@"HKLM\{networkAdaptersPath}\{adapterNum}",
                                 FileName = adapterDesc,
                                 Reason = $"MAC address contains spoofing pattern '{indicator}' — fake MAC address set",
@@ -613,7 +613,7 @@ public sealed class HWIDSpoofingForensicScanModule : IScanModule
                     ctx.AddFinding(new Finding
                     {
                         Module = Name, Title = "TPM Service: Disabled",
-                        Risk = Risk.High,
+                        Risk = RiskLevel.High,
                         Location = $@"HKLM\{tpmRegPath}",
                         FileName = "TPM",
                         Reason = "TPM service is disabled — may be part of HWID/TPM spoofing to bypass hardware fingerprinting",
@@ -638,7 +638,7 @@ public sealed class HWIDSpoofingForensicScanModule : IScanModule
                 ctx.AddFinding(new Finding
                 {
                     Module = Name, Title = "TPM Status: Inconsistent State (Spoof Indicator)",
-                    Risk = Risk.High,
+                    Risk = RiskLevel.High,
                     Location = $@"HKLM\{tpmStatusPath}",
                     FileName = "TPM",
                     Reason = "TPM reports as present=0 but enabled=1 — inconsistent state may indicate TPM spoofing",
@@ -673,7 +673,7 @@ public sealed class HWIDSpoofingForensicScanModule : IScanModule
                         ctx.AddFinding(new Finding
                         {
                             Module = Name, Title = "Volume GUID: Spoofing Indicator Pattern",
-                            Risk = Risk.High,
+                            Risk = RiskLevel.High,
                             Location = $@"HKLM\{mountedDevicesPath}",
                             FileName = guidVal,
                             Reason = $"Volume GUID contains spoofing indicator '{indicator}' — volume ID may have been changed",
@@ -707,7 +707,7 @@ public sealed class HWIDSpoofingForensicScanModule : IScanModule
                         ctx.AddFinding(new Finding
                         {
                             Module = Name, Title = "DiagTrack: Windows Telemetry Service Disabled",
-                            Risk = Risk.Medium,
+                            Risk = RiskLevel.Medium,
                             Location = $@"HKLM\{telemetryPath}",
                             FileName = "DiagTrack",
                             Reason = "Windows telemetry/diagnostic tracking service disabled — prevents AC telemetry reporting",
@@ -724,7 +724,7 @@ public sealed class HWIDSpoofingForensicScanModule : IScanModule
                         ctx.AddFinding(new Finding
                         {
                             Module = Name, Title = "Data Collection Policy: Telemetry Blocked via Policy",
-                            Risk = Risk.Medium,
+                            Risk = RiskLevel.Medium,
                             Location = $@"HKLM\{telemetryPath}",
                             FileName = "AllowTelemetry",
                             Reason = "Windows telemetry blocked via Group Policy — may prevent AC from reporting hardware fingerprints",
@@ -769,7 +769,7 @@ public sealed class HWIDSpoofingForensicScanModule : IScanModule
                                 ctx.AddFinding(new Finding
                                 {
                                     Module = Name, Title = "Download: HWID Spoofer Package",
-                                    Risk = Risk.Critical, Location = file,
+                                    Risk = RiskLevel.Critical, Location = file,
                                     FileName = Path.GetFileName(file),
                                     Reason = $"HWID spoofer package '{spooferName}' in downloads/desktop",
                                     Detail = $"Path: {file}"
@@ -794,7 +794,7 @@ public sealed class HWIDSpoofingForensicScanModule : IScanModule
                                 ctx.AddFinding(new Finding
                                 {
                                     Module = Name, Title = "File: HWID Spoofer Configuration/License",
-                                    Risk = Risk.Critical, Location = file,
+                                    Risk = RiskLevel.Critical, Location = file,
                                     FileName = Path.GetFileName(file),
                                     Reason = "File contains HWID spoofer configuration or license data",
                                     Detail = content.Length > 400 ? content[..400] : content
@@ -842,7 +842,7 @@ public sealed class HWIDSpoofingForensicScanModule : IScanModule
                                 ctx.AddFinding(new Finding
                                 {
                                     Module = Name, Title = "Uninstall Registry: HWID Spoofer Was Installed",
-                                    Risk = Risk.Critical,
+                                    Risk = RiskLevel.Critical,
                                     Location = $@"HKLM\{uninstallPath}\{subKeyName}",
                                     FileName = displayName,
                                     Reason = $"HWID spoofer '{displayName}' found in Add/Remove Programs — was installed on this system",
@@ -891,7 +891,7 @@ public sealed class HWIDSpoofingForensicScanModule : IScanModule
                                 ctx.AddFinding(new Finding
                                 {
                                     Module = Name, Title = "MAC Address: Suspicious OUI Prefix",
-                                    Risk = Risk.High,
+                                    Risk = RiskLevel.High,
                                     Location = $@"HKLM\{adapterPath}\{adapterNum}",
                                     FileName = driverDesc,
                                     Reason = $"Network adapter MAC prefix '{prefix}' is a known spoofing OUI pattern",
@@ -926,7 +926,7 @@ public sealed class HWIDSpoofingForensicScanModule : IScanModule
                     ctx.AddFinding(new Finding
                     {
                         Module = Name, Title = "UEFI Secure Boot: Disabled",
-                        Risk = Risk.High,
+                        Risk = RiskLevel.High,
                         Location = $@"HKLM\{uefiBootPath}",
                         FileName = "UEFISecureBootEnabled",
                         Reason = "UEFI Secure Boot is disabled — required for some HWID spoofer and driver bypass techniques",
@@ -950,7 +950,7 @@ public sealed class HWIDSpoofingForensicScanModule : IScanModule
                 ctx.AddFinding(new Finding
                 {
                     Module = Name, Title = "CI Policy: Custom Code Integrity Policy Set",
-                    Risk = Risk.High,
+                    Risk = RiskLevel.High,
                     Location = $@"HKLM\{testSigningPath}",
                     FileName = "PolicyOptions",
                     Reason = "Custom CI policy active — may enable unsigned/spoofed drivers for HWID manipulation",
@@ -984,7 +984,7 @@ public sealed class HWIDSpoofingForensicScanModule : IScanModule
                         ctx.AddFinding(new Finding
                         {
                             Module = Name, Title = "MUICache: HWID Spoofer Execution History",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = $@"HKCU\{muiCachePath}",
                             FileName = Path.GetFileName(valueName.Split('.')[0]),
                             Reason = $"HWID spoofer '{spooferName}' in MUICache — confirms spoofer was executed",
@@ -1028,7 +1028,7 @@ public sealed class HWIDSpoofingForensicScanModule : IScanModule
                         ctx.AddFinding(new Finding
                         {
                             Module = Name, Title = "HWID Spoofer Service: Persistent Spoof Service",
-                            Risk = Risk.Critical,
+                            Risk = RiskLevel.Critical,
                             Location = $@"HKLM\{servicesPath}\{svcName}",
                             FileName = svcName,
                             Reason = $"HWID spoofer service '{svcName}' registered — persistent hardware ID spoofing service",
@@ -1083,7 +1083,7 @@ public sealed class HWIDSpoofingForensicScanModule : IScanModule
                                 ctx.AddFinding(new Finding
                                 {
                                     Module = Name, Title = "HWID Spoofer Log: Spoofing Operation Logged",
-                                    Risk = Risk.Critical, Location = file,
+                                    Risk = RiskLevel.Critical, Location = file,
                                     FileName = Path.GetFileName(file),
                                     Reason = $"HWID spoofer log keyword '{kw}' — confirms hardware ID spoofing was performed",
                                     Detail = content.Length > 500 ? content[..500] : content
