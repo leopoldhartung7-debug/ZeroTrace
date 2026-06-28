@@ -661,7 +661,7 @@ public sealed class NetworkCheatForensicScanModule : IScanModule
             "hwid spoofer", "hwid reset", "cheat shop", "cheat buy",
             "buy cheat", "fivem cheat", "ragemp cheat", "altv cheat",
             "gta hack", "gta cheat",
-        ];
+        };
 
         foreach (var histPath in browserHistoryPaths)
         {

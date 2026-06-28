@@ -129,10 +129,10 @@ public sealed class WindowsEventLogCheatForensicScanModule : IScanModule
             using var reader = new EventLogReader(new EventLogQuery("Security", PathType.LogName,
                 "*[System[(EventID=4688)]]"));
             EventRecord record;
-            int checked = 0;
-            while ((record = reader.ReadEvent()) != null && checked < 5000 && !ct.IsCancellationRequested)
+            int evtCount = 0;
+            while ((record = reader.ReadEvent()) != null && evtCount < 5000 && !ct.IsCancellationRequested)
             {
-                checked++;
+                evtCount++;
                 try
                 {
                     var desc = record.FormatDescription() ?? string.Empty;
@@ -169,10 +169,10 @@ public sealed class WindowsEventLogCheatForensicScanModule : IScanModule
             using var reader = new EventLogReader(new EventLogQuery("System", PathType.LogName,
                 "*[System[(EventID=7045 or EventID=7040 or EventID=7036)]]"));
             EventRecord record;
-            int checked = 0;
-            while ((record = reader.ReadEvent()) != null && checked < 3000 && !ct.IsCancellationRequested)
+            int evtCount = 0;
+            while ((record = reader.ReadEvent()) != null && evtCount < 3000 && !ct.IsCancellationRequested)
             {
-                checked++;
+                evtCount++;
                 try
                 {
                     var desc = record.FormatDescription() ?? string.Empty;
@@ -230,10 +230,10 @@ public sealed class WindowsEventLogCheatForensicScanModule : IScanModule
             using var reader = new EventLogReader(new EventLogQuery("Application", PathType.LogName,
                 "*[System[(EventID=1000 or EventID=1001 or EventID=1002)]]"));
             EventRecord record;
-            int checked = 0;
-            while ((record = reader.ReadEvent()) != null && checked < 3000 && !ct.IsCancellationRequested)
+            int evtCount = 0;
+            while ((record = reader.ReadEvent()) != null && evtCount < 3000 && !ct.IsCancellationRequested)
             {
-                checked++;
+                evtCount++;
                 try
                 {
                     var desc = record.FormatDescription() ?? string.Empty;
@@ -459,10 +459,10 @@ public sealed class WindowsEventLogCheatForensicScanModule : IScanModule
             using var reader = new EventLogReader(new EventLogQuery("Microsoft-Windows-PowerShell/Operational",
                 PathType.LogName, "*[System[(EventID=4103 or EventID=4104)]]"));
             EventRecord record;
-            int checked = 0;
-            while ((record = reader.ReadEvent()) != null && checked < 2000 && !ct.IsCancellationRequested)
+            int evtCount = 0;
+            while ((record = reader.ReadEvent()) != null && evtCount < 2000 && !ct.IsCancellationRequested)
             {
-                checked++;
+                evtCount++;
                 try
                 {
                     var desc = record.FormatDescription() ?? string.Empty;
@@ -501,10 +501,10 @@ public sealed class WindowsEventLogCheatForensicScanModule : IScanModule
             using var reader = new EventLogReader(new EventLogQuery("Microsoft-Windows-Windows Defender/Operational",
                 PathType.LogName, "*[System[(EventID=1116 or EventID=1117 or EventID=1006 or EventID=1007)]]"));
             EventRecord record;
-            int checked = 0;
-            while ((record = reader.ReadEvent()) != null && checked < 2000 && !ct.IsCancellationRequested)
+            int evtCount = 0;
+            while ((record = reader.ReadEvent()) != null && evtCount < 2000 && !ct.IsCancellationRequested)
             {
-                checked++;
+                evtCount++;
                 try
                 {
                     var desc = record.FormatDescription() ?? string.Empty;
@@ -543,10 +543,10 @@ public sealed class WindowsEventLogCheatForensicScanModule : IScanModule
             using var reader = new EventLogReader(new EventLogQuery("System", PathType.LogName,
                 "*[System[(EventID=219)]]"));
             EventRecord record;
-            int checked = 0;
-            while ((record = reader.ReadEvent()) != null && checked < 2000 && !ct.IsCancellationRequested)
+            int evtCount = 0;
+            while ((record = reader.ReadEvent()) != null && evtCount < 2000 && !ct.IsCancellationRequested)
             {
-                checked++;
+                evtCount++;
                 try
                 {
                     var desc = record.FormatDescription() ?? string.Empty;
