@@ -216,23 +216,23 @@ public sealed class FiveMDeepCheatScanModule : IScanModule
         foreach (var proc in procs)
         {
             ct.ThrowIfCancellationRequested();
-            var pname = (proc.Name + ".exe").ToLowerInvariant();
+            var pname = (proc.ProcessName + ".exe").ToLowerInvariant();
             if (Array.IndexOf(FiveMCheatExeNames, pname) >= 0)
             {
                 ctx.AddFinding(new Finding
                 {
                     Module = "FiveMDeepCheat",
-                    Title = $"FiveM Cheat-Prozess laeuft: {proc.Name}",
+                    Title = $"FiveM Cheat-Prozess laeuft: {proc.ProcessName}",
                     Risk = RiskLevel.Critical,
-                    Location = proc.MainModule ?? proc.Name,
-                    FileName = proc.Name,
-                    Reason = $"Aktiver FiveM-Cheat-Prozess '{proc.Name}' erkannt.",
-                    Detail = $"PID={proc.Id} Name={proc.Name}"
+                    Location = proc.MainModule?.FileName ?? proc.ProcessName,
+                    FileName = proc.ProcessName,
+                    Reason = $"Aktiver FiveM-Cheat-Prozess '{proc.ProcessName}' erkannt.",
+                    Detail = $"PID={proc.Id} Name={proc.ProcessName}"
                 });
             }
 
             // Also check path for FiveM cheat directories
-            var path = (proc.MainModule ?? string.Empty).ToLowerInvariant();
+            var path = (proc.MainModule?.FileName ?? string.Empty).ToLowerInvariant();
             if (path.Contains("eulen") || path.Contains("lynx") || path.Contains("hamster") ||
                 path.Contains("impulse") || path.Contains("desudo") || path.Contains("baddie") ||
                 path.Contains("fivem-cheat") || path.Contains("cfx-bypass"))
@@ -240,12 +240,12 @@ public sealed class FiveMDeepCheatScanModule : IScanModule
                 ctx.AddFinding(new Finding
                 {
                     Module = "FiveMDeepCheat",
-                    Title = $"Prozess aus FiveM-Cheat-Verzeichnis laeuft: {proc.Name}",
+                    Title = $"Prozess aus FiveM-Cheat-Verzeichnis laeuft: {proc.ProcessName}",
                     Risk = RiskLevel.Critical,
-                    Location = proc.MainModule ?? proc.Name,
-                    FileName = proc.Name,
-                    Reason = $"Prozess '{proc.Name}' laeuft aus einem FiveM-Cheat-Verzeichnis.",
-                    Detail = $"PID={proc.Id} Path={proc.MainModule}"
+                    Location = proc.MainModule?.FileName ?? proc.ProcessName,
+                    FileName = proc.ProcessName,
+                    Reason = $"Prozess '{proc.ProcessName}' laeuft aus einem FiveM-Cheat-Verzeichnis.",
+                    Detail = $"PID={proc.Id} Path={proc.MainModule?.FileName}"
                 });
             }
         }

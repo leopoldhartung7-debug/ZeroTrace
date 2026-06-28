@@ -253,8 +253,8 @@ public sealed class InlineHookDetectionScanModule : IScanModule
             {
                 try
                 {
-                    uint nameRvaOff = addrOfNames + i * 4;
-                    if (nameRvaOff + 4 > expRead) continue;
+                    uint nameRvaOff = addrOfNames + i * 4U;
+                    if (nameRvaOff + 4U > (uint)expRead) continue;
                     uint nameRva = BitConverter.ToUInt32(expBuf, (int)nameRvaOff) - exportRva;
                     if (nameRva >= expRead) continue;
 
@@ -268,11 +268,11 @@ public sealed class InlineHookDetectionScanModule : IScanModule
                     if (!HighValueExports.Contains(funcName)) continue;
 
                     // Get ordinal → function RVA
-                    uint ordOff = addrOfOrds + i * 2;
-                    if (ordOff + 2 > expRead) continue;
+                    uint ordOff = addrOfOrds + i * 2U;
+                    if (ordOff + 2U > (uint)expRead) continue;
                     ushort ord = BitConverter.ToUInt16(expBuf, (int)ordOff);
-                    uint funcRvaOff = addrOfFuncs + ord * 4;
-                    if (funcRvaOff + 4 > expRead) continue;
+                    uint funcRvaOff = addrOfFuncs + (uint)ord * 4U;
+                    if (funcRvaOff + 4U > (uint)expRead) continue;
                     uint funcRva = BitConverter.ToUInt32(expBuf, (int)funcRvaOff);
                     if (funcRva == 0) continue;
 

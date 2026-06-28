@@ -325,7 +325,7 @@ public sealed class EtwTamperScanModule : IScanModule
                     int propSize = Marshal.SizeOf<EVENT_TRACE_PROPERTIES>() + 512;
                     var props = new EVENT_TRACE_PROPERTIES { Wnode_BufferSize = propSize };
 
-                    int result = QueryTrace(0, sessionName, ref props);
+                    int result = QueryTrace(0UL, sessionName, ref props);
                     // ERROR_SUCCESS = 0, ERROR_WMI_INSTANCE_NOT_FOUND = 4201 (session stopped)
                     if (result == 4201 || result == 0x1069)
                     {

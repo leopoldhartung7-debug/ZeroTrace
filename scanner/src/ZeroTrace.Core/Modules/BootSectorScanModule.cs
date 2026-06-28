@@ -124,7 +124,7 @@ public sealed class BootSectorScanModule : IScanModule
         {
             // Read sector 0 (MBR / GPT Protective MBR)
             var mbrSector = new byte[512];
-            if (!ReadFile(hDrive, mbrSector, 512, out var read) || read < 512)
+            if (!ReadFile(hDrive, mbrSector, 512, out var read, IntPtr.Zero) || read < 512)
                 return 0;
 
             // Check boot signature (should be 0x55 0xAA at bytes 510-511)

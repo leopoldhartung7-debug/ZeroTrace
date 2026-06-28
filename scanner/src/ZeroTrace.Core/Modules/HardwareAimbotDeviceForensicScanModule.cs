@@ -2323,8 +2323,8 @@ public sealed class HardwareAimbotDeviceForensicScanModule : IScanModule
                             try
                             {
                                 using var fs = new FileStream(f, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-                                using var sr = new StreamReader(fs, detectEncodingFromByteOrderMarks: false,
-                                    fallbackEncoding: System.Text.Encoding.Latin1);
+                                using var sr = new StreamReader(fs, encoding: System.Text.Encoding.Latin1,
+                                    detectEncodingFromByteOrderMarks: false);
                                 string content = await sr.ReadToEndAsync(ct);
 
                                 var hit = DiscordHardwareKeywords.FirstOrDefault(k =>

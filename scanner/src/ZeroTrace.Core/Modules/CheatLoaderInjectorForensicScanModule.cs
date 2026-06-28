@@ -261,7 +261,7 @@ public sealed class CheatLoaderInjectorForensicScanModule : IScanModule
         try
         {
             using var servicesKey = hklm.OpenSubKey(servicesPath);
-            if (servicesKey == null) return;
+            if (servicesKey == null) return Task.CompletedTask;
 
             foreach (var svcName in servicesKey.GetSubKeyNames())
             {

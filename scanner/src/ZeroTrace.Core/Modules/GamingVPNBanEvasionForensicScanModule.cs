@@ -491,7 +491,7 @@ public sealed class GamingVPNBanEvasionForensicScanModule : IScanModule
         {
             Path.Combine(roamingAppData, "tor"),
             Path.Combine(localAppData, "tor"),
-            Path.Combine(programData: Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "tor")
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "tor")
         };
 
         foreach (string torrcDir in torrcSearchPaths)

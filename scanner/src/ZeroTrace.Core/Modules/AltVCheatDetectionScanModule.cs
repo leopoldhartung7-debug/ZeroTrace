@@ -188,34 +188,34 @@ public sealed class AltVCheatDetectionScanModule : IScanModule
         foreach (var proc in procs)
         {
             ct.ThrowIfCancellationRequested();
-            var pname = (proc.Name + ".exe").ToLowerInvariant();
+            var pname = (proc.ProcessName + ".exe").ToLowerInvariant();
             if (Array.IndexOf(AltVCheatExeNames, pname) >= 0)
             {
                 ctx.AddFinding(new Finding
                 {
                     Module = "AltVCheatDetection",
-                    Title = $"alt:V Cheat-Prozess aktiv: {proc.Name}",
+                    Title = $"alt:V Cheat-Prozess aktiv: {proc.ProcessName}",
                     Risk = RiskLevel.Critical,
-                    Location = proc.MainModule ?? proc.Name,
-                    FileName = proc.Name,
-                    Reason = $"Aktiver alt:V-Cheat-Prozess '{proc.Name}' erkannt.",
+                    Location = proc.MainModule?.FileName ?? proc.ProcessName,
+                    FileName = proc.ProcessName,
+                    Reason = $"Aktiver alt:V-Cheat-Prozess '{proc.ProcessName}' erkannt.",
                     Detail = $"PID={proc.Id}"
                 });
             }
 
-            var path = (proc.MainModule ?? string.Empty).ToLowerInvariant();
+            var path = (proc.MainModule?.FileName ?? string.Empty).ToLowerInvariant();
             if (path.Contains("altv-cheat") || path.Contains("altvcheat") ||
                 path.Contains("altv-bypass") || path.Contains("altv-hack"))
             {
                 ctx.AddFinding(new Finding
                 {
                     Module = "AltVCheatDetection",
-                    Title = $"Prozess aus alt:V-Cheat-Pfad: {proc.Name}",
+                    Title = $"Prozess aus alt:V-Cheat-Pfad: {proc.ProcessName}",
                     Risk = RiskLevel.Critical,
-                    Location = proc.MainModule ?? proc.Name,
-                    FileName = proc.Name,
-                    Reason = $"'{proc.Name}' laeuft aus einem alt:V-Cheat-Verzeichnis.",
-                    Detail = $"PID={proc.Id} Path={proc.MainModule}"
+                    Location = proc.MainModule?.FileName ?? proc.ProcessName,
+                    FileName = proc.ProcessName,
+                    Reason = $"'{proc.ProcessName}' laeuft aus einem alt:V-Cheat-Verzeichnis.",
+                    Detail = $"PID={proc.Id} Path={proc.MainModule?.FileName}"
                 });
             }
         }

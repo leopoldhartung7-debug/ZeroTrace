@@ -151,6 +151,7 @@ public sealed class Dota2CheatScanModule : IScanModule
             @"SOFTWARE\Valve\Steam",
             @"SOFTWARE\WOW6432Node\Valve\Steam"
         };
+        var results = new List<string>();
         foreach (var keyPath in regKeys)
         {
             try
@@ -159,10 +160,11 @@ public sealed class Dota2CheatScanModule : IScanModule
                 if (key is null) continue;
                 var installPath = key.GetValue("InstallPath")?.ToString();
                 if (!string.IsNullOrEmpty(installPath))
-                    yield return installPath;
+                    results.Add(installPath);
             }
             catch { }
         }
+        return results;
     }
 
     // ---------------------------------------------------------------------------

@@ -193,7 +193,7 @@ public sealed class GameReplayManipulationScanModule : IScanModule
         foreach (var proc in procs)
         {
             ct.ThrowIfCancellationRequested();
-            var pname = (proc.Name + ".exe").ToLowerInvariant();
+            var pname = (proc.ProcessName + ".exe").ToLowerInvariant();
             if (Array.IndexOf(DemoBlockerExeNames, pname) >= 0)
             {
                 ctx.AddFinding(new Finding
@@ -201,10 +201,10 @@ public sealed class GameReplayManipulationScanModule : IScanModule
                     Module = "GameReplayManipulation",
                     Title = "Demo-Blocking-Tool laeuft aktiv",
                     Risk = RiskLevel.Critical,
-                    Location = proc.MainModule ?? proc.Name,
-                    FileName = proc.Name,
+                    Location = proc.MainModule?.FileName ?? proc.ProcessName,
+                    FileName = proc.ProcessName,
                     Reason = "Aktiver Demo-Blocking-Prozess verhindert Spielbeweisaufzeichnung.",
-                    Detail = $"PID={proc.Id} Name={proc.Name}"
+                    Detail = $"PID={proc.Id} Name={proc.ProcessName}"
                 });
             }
         }

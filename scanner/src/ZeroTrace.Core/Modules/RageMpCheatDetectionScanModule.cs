@@ -188,22 +188,22 @@ public sealed class RageMpCheatDetectionScanModule : IScanModule
         foreach (var proc in procs)
         {
             ct.ThrowIfCancellationRequested();
-            var pname = (proc.Name + ".exe").ToLowerInvariant();
+            var pname = (proc.ProcessName + ".exe").ToLowerInvariant();
             if (Array.IndexOf(RageMpCheatExeNames, pname) >= 0)
             {
                 ctx.AddFinding(new Finding
                 {
                     Module = "RageMpCheatDetection",
-                    Title = $"RageMP Cheat-Prozess aktiv: {proc.Name}",
+                    Title = $"RageMP Cheat-Prozess aktiv: {proc.ProcessName}",
                     Risk = RiskLevel.Critical,
-                    Location = proc.MainModule ?? proc.Name,
-                    FileName = proc.Name,
-                    Reason = $"Aktiver RageMP-Cheat-Prozess '{proc.Name}' erkannt.",
+                    Location = proc.MainModule?.FileName ?? proc.ProcessName,
+                    FileName = proc.ProcessName,
+                    Reason = $"Aktiver RageMP-Cheat-Prozess '{proc.ProcessName}' erkannt.",
                     Detail = $"PID={proc.Id}"
                 });
             }
 
-            var path = (proc.MainModule ?? string.Empty).ToLowerInvariant();
+            var path = (proc.MainModule?.FileName ?? string.Empty).ToLowerInvariant();
             foreach (var cheatDir in RageMpCheatDirNames)
             {
                 if (path.Contains(cheatDir.ToLowerInvariant()))
@@ -211,12 +211,12 @@ public sealed class RageMpCheatDetectionScanModule : IScanModule
                     ctx.AddFinding(new Finding
                     {
                         Module = "RageMpCheatDetection",
-                        Title = $"Prozess aus RageMP-Cheat-Verzeichnis: {proc.Name}",
+                        Title = $"Prozess aus RageMP-Cheat-Verzeichnis: {proc.ProcessName}",
                         Risk = RiskLevel.Critical,
-                        Location = proc.MainModule ?? proc.Name,
-                        FileName = proc.Name,
-                        Reason = $"'{proc.Name}' laeuft aus RageMP-Cheat-Verzeichnis '{cheatDir}'.",
-                        Detail = $"PID={proc.Id} Path={proc.MainModule}"
+                        Location = proc.MainModule?.FileName ?? proc.ProcessName,
+                        FileName = proc.ProcessName,
+                        Reason = $"'{proc.ProcessName}' laeuft aus RageMP-Cheat-Verzeichnis '{cheatDir}'.",
+                        Detail = $"PID={proc.Id} Path={proc.MainModule?.FileName}"
                     });
                     break;
                 }

@@ -80,7 +80,7 @@ public sealed class RemoteAccessToolScanModule : IScanModule
 
         new("Reverse Shell Tools",
             new[] { "nc.exe", "ncat.exe", "netcat.exe", "socat.exe", "plink.exe" },
-            new[] { },
+            Array.Empty<string>(),
             RiskLevel.Critical),
     };
 

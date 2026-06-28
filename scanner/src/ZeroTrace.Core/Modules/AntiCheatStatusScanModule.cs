@@ -107,14 +107,14 @@ public sealed class AntiCheatStatusScanModule : IScanModule
             new[] { "npgamemon", "GameMon" },
             new[] { "GameMon.des", "npggNT.des", "GGinit.dll" },
             new[] { "npgamemon.sys", "gamemon.sys" },
-            new[] { },
+            Array.Empty<string>(),
             new[] { @"SYSTEM\CurrentControlSet\Services\npgamemon" }),
 
         new("XignCode3",
             new[] { "xhunter1", "xigncode" },
             new[] { "xm.exe", "x3.exe" },
             new[] { "xhunter1.sys" },
-            new[] { },
+            Array.Empty<string>(),
             new[] { @"SYSTEM\CurrentControlSet\Services\xhunter1" }),
     };
 

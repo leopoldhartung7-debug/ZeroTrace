@@ -1,4 +1,5 @@
 using Microsoft.Win32;
+using ZeroTrace.Core.Detection;
 using ZeroTrace.Core.Engine;
 using ZeroTrace.Core.Models;
 
@@ -216,7 +217,7 @@ public sealed class GameDirectoryInjectionScanModule : IScanModule
                 if (isKnownAllowed && cheatKw is null) continue;
 
                 string? sha256 = null;
-                try { sha256 = Util.HashUtil.ComputeSha256(file); } catch { }
+                try { sha256 = HashUtil.TryComputeSha256(file, ctx.Options.MaxHashFileSizeBytes); } catch { }
 
                 hits++;
                 ctx.AddFinding(new Finding

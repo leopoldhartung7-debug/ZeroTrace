@@ -159,7 +159,7 @@ public sealed class SuspiciousImportedFunctionsScanModule : IScanModule
             foreach (var proc in gameProcesses)
             {
                 ct.ThrowIfCancellationRequested();
-                try { ScanProcess(proc, ctx); }
+                try { ScanProcess(proc, ctx, ct); }
                 catch { /* skip unreadable */ }
                 finally { proc.Dispose(); }
                 ctx.IncrementProcesses();
@@ -167,7 +167,7 @@ public sealed class SuspiciousImportedFunctionsScanModule : IScanModule
         }, ct);
     }
 
-    private void ScanProcess(Process proc, ScanContext ctx)
+    private void ScanProcess(Process proc, ScanContext ctx, CancellationToken ct)
     {
         nint hProc = OpenProcess(PROCESS_VM_READ | PROCESS_QUERY_INFORMATION, false, proc.Id);
         if (hProc == nint.Zero) return;

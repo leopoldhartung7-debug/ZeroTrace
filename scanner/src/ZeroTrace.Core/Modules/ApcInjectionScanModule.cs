@@ -171,40 +171,40 @@ public sealed class ApcInjectionScanModule : IScanModule
             {
                 // System-wide thread snapshot
                 IntPtr snap = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
-                if (snap == new IntPtr(-1)) goto done;
-
-                try
+                if (snap != new IntPtr(-1))
                 {
-                    var entry = new THREADENTRY32
+                    try
                     {
-                        dwSize = (uint)Marshal.SizeOf<THREADENTRY32>()
-                    };
-
-                    if (Thread32First(snap, ref entry))
-                    {
-                        do
+                        var entry = new THREADENTRY32
                         {
-                            if (ct.IsCancellationRequested) break;
+                            dwSize = (uint)Marshal.SizeOf<THREADENTRY32>()
+                        };
 
-                            int ownerPid = (int)entry.th32OwnerProcessID;
-                            if (!targetPids.TryGetValue(ownerPid, out string? procExe)) continue;
-                            if (!processHandles.TryGetValue(ownerPid, out IntPtr hProcess)) continue;
+                        if (Thread32First(snap, ref entry))
+                        {
+                            do
+                            {
+                                if (ct.IsCancellationRequested) break;
 
-                            ctx.IncrementProcesses();
-                            hits += InspectThread(entry.th32ThreadID, ownerPid,
-                                procExe, hProcess, ctx);
+                                int ownerPid = (int)entry.th32OwnerProcessID;
+                                if (!targetPids.TryGetValue(ownerPid, out string? procExe)) continue;
+                                if (!processHandles.TryGetValue(ownerPid, out IntPtr hProcess)) continue;
+
+                                ctx.IncrementProcesses();
+                                hits += InspectThread(entry.th32ThreadID, ownerPid,
+                                    procExe, hProcess, ctx);
+                            }
+                            while (Thread32Next(snap, ref entry));
                         }
-                        while (Thread32Next(snap, ref entry));
                     }
-                }
-                finally
-                {
-                    CloseHandle(snap);
+                    finally
+                    {
+                        CloseHandle(snap);
+                    }
                 }
             }
             finally
             {
-                done:
                 foreach (var h in processHandles.Values)
                     CloseHandle(h);
             }

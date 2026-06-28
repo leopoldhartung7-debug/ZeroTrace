@@ -30,7 +30,7 @@ public sealed class GameMemoryReadAccessScanModule : IScanModule
     private static extern nint OpenProcess(uint dwDesiredAccess, bool bInheritHandle, int dwProcessId);
 
     [DllImport("kernel32.dll", SetLastError = true)]
-    private static extern nint DuplicateHandle(
+    private static extern bool DuplicateHandle(
         nint hSourceProcessHandle, nint hSourceHandle,
         nint hTargetProcessHandle, out nint lpTargetHandle,
         uint dwDesiredAccess, bool bInheritHandle, uint dwOptions);
