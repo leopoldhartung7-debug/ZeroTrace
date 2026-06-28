@@ -705,6 +705,8 @@ public sealed class ScanEngine
         if (o.ScanCheatCommunityPlatform) modules.Add(new CheatCommunityPlatformForensicScanModule());
         if (o.ScanFiveMNativeHook) modules.Add(new FiveMNativeHookForensicScanModule());
         if (o.ScanWindowsDefenderTamperDeep) modules.Add(new WindowsDefenderTamperDeepForensicScanModule());
+        if (o.ScanFiveMModMenuDeep) modules.Add(new FiveMModMenuDeepForensicScanModule());
+        if (o.ScanESXQBCoreExploitDeep) modules.Add(new ESXQBCoreExploitDeepForensicScanModule());
 
         // ── Group 5: forensic / trace artefacts ──────────────────────────────
         if (o.ScanForensicTraces) modules.Add(new ForensicTraceScanModule());
