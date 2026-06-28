@@ -720,6 +720,8 @@ public sealed class ScanEngine
         if (o.ScanFiveMTxAdminAbuseDeep) modules.Add(new FiveMTxAdminAbuseDeepForensicScanModule());
         if (o.ScanAIAimbotDeep) modules.Add(new AIAimbotDeepForensicScanModule());
         if (o.ScanRobloxExecutorDeep) modules.Add(new RobloxExecutorDeepForensicScanModule());
+        if (o.ScanHardwareAimbotDevice) modules.Add(new HardwareAimbotDeviceForensicScanModule());
+        if (o.ScanFiveMResourceExploitDeep) modules.Add(new FiveMResourceExploitDeepForensicScanModule());
 
         // ── Group 5: forensic / trace artefacts ──────────────────────────────
         if (o.ScanForensicTraces) modules.Add(new ForensicTraceScanModule());
