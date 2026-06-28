@@ -700,6 +700,11 @@ public sealed class ScanEngine
         if (o.ScanRageMPServerExploit) modules.Add(new RageMPServerExploitForensicScanModule());
         if (o.ScanAltVServerExploit) modules.Add(new AltVServerExploitForensicScanModule());
         if (o.ScanCheatSourceCodeRepo) modules.Add(new CheatSourceCodeRepoScanModule());
+        if (o.ScanGTAVDeep) modules.Add(new GTAVDeepForensicScanModule());
+        if (o.ScanGamingVPNBanEvasion) modules.Add(new GamingVPNBanEvasionForensicScanModule());
+        if (o.ScanCheatCommunityPlatform) modules.Add(new CheatCommunityPlatformForensicScanModule());
+        if (o.ScanFiveMNativeHook) modules.Add(new FiveMNativeHookForensicScanModule());
+        if (o.ScanWindowsDefenderTamperDeep) modules.Add(new WindowsDefenderTamperDeepForensicScanModule());
 
         // ── Group 5: forensic / trace artefacts ──────────────────────────────
         if (o.ScanForensicTraces) modules.Add(new ForensicTraceScanModule());

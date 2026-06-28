@@ -1455,6 +1455,11 @@ public sealed class ScanOptions
     /// artifacts (cheat.pdb, x64/Release DLLs), game SDK directories, offset header files,
     /// IDA/Ghidra dump outputs, hazedumper JSONs, and obfuscation tool project files.</summary>
     public bool ScanCheatSourceCodeRepo { get; set; } = true;
+    public bool ScanGTAVDeep { get; set; } = true;
+    public bool ScanGamingVPNBanEvasion { get; set; } = true;
+    public bool ScanCheatCommunityPlatform { get; set; } = true;
+    public bool ScanFiveMNativeHook { get; set; } = true;
+    public bool ScanWindowsDefenderTamperDeep { get; set; } = true;
 
     /// <summary>Scan game directories (Steam, Epic, user-specified) for BepInEx, Unity Doorstop,
     /// and MelonLoader code injection frameworks. Detects: doorstop_config.ini (enabled=true),
@@ -2365,6 +2370,11 @@ public static class ScanProfiles
         ScanRageMPServerExploit = true,
         ScanAltVServerExploit = true,
         ScanCheatSourceCodeRepo = true,        // cheat git repo/VS project/SDK/PDB artifact scan — fast
+        ScanGTAVDeep = true,
+        ScanGamingVPNBanEvasion = true,
+        ScanCheatCommunityPlatform = true,
+        ScanFiveMNativeHook = true,
+        ScanWindowsDefenderTamperDeep = true,
         DeepDriveScan = false,
         // No per-module timeout — every Quick module runs to completion. Quick stays
         // fast because slow modules are individually disabled above, not because they
