@@ -795,9 +795,9 @@ public sealed class SeaOfThievesCheatScanModule : IScanModule
                             Location = mPath,
                             FileName = Path.GetFileName(mPath),
                             Reason   = $"Sea of Thieves UWP AppxManifest.xml contains suspicious capability " +
-                                       "declarations: {string.Join(", ", hits)}. Modified manifests can " +
-                                       "grant elevated privileges, full file system access, or disable " +
-                                       "UWP sandboxing to allow cheat injection into the SoT process.",
+                                       $"declarations: {string.Join(", ", hits)}. Modified manifests can " +
+                                       $"grant elevated privileges, full file system access, or disable " +
+                                       $"UWP sandboxing to allow cheat injection into the SoT process.",
                             Detail   = "Suspicious declarations: " + string.Join(", ", hits)
                         });
                     }

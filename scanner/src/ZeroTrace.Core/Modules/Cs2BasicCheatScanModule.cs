@@ -6,7 +6,7 @@ using ZeroTrace.Core.Engine;
 
 namespace ZeroTrace.Core.Modules;
 
-public sealed class Cs2CheatScanModule : IScanModule
+public sealed class Cs2BasicCheatScanModule : IScanModule
 {
     public string Name => "CS2-Cheat";
     public double Weight => 0.7;

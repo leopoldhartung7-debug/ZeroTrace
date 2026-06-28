@@ -531,7 +531,7 @@ public sealed class ScanEngine
         if (o.ScanValorantCheat) modules.Add(new ValorantCheatScanModule());
         if (o.ScanNetworkC2Cheat) modules.Add(new NetworkC2CheatScanModule());
         if (o.ScanMemoryCheatSignature) modules.Add(new MemoryCheatSignatureScanModule());
-        if (o.ScanCs2Cheat) modules.Add(new Cs2CheatScanModule());
+        if (o.ScanCs2Cheat) modules.Add(new Cs2BasicCheatScanModule());
         if (o.ScanRustApexCheat) modules.Add(new RustApexCheatScanModule());
         if (o.ScanScreenCaptureCheat) modules.Add(new ScreenCaptureCheatScanModule());
         if (o.ScanCheatDebugAnalysis) modules.Add(new CheatDebugAnalysisToolScanModule());

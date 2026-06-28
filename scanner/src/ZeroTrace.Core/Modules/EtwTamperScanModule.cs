@@ -244,7 +244,7 @@ public sealed class EtwTamperScanModule : IScanModule
                 if (ordOff < 0 || ordOff + 2 > diskBytes.Length) continue;
                 ushort ord = BitConverter.ToUInt16(diskBytes, ordOff);
 
-                int funcRvaOff = RvaToOff(diskBytes, secStart, numSec, addrOfFuncs + ord * 4);
+                int funcRvaOff = RvaToOff(diskBytes, secStart, numSec, addrOfFuncs + (uint)(ord * 4));
                 if (funcRvaOff < 0 || funcRvaOff + 4 > diskBytes.Length) continue;
                 uint funcRva = BitConverter.ToUInt32(diskBytes, funcRvaOff);
                 if (funcRva == 0) continue;

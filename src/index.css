@@ -337,22 +337,6 @@ a:active,
 .zt-float { animation: zt-float 6s ease-in-out infinite; }
 .zt-float-slow { animation: zt-float 8s ease-in-out infinite; }
 
-@keyframes zt-scan-line {
-  0%   { top: -2px; opacity: 0; }
-  5%   { opacity: 1; }
-  90%  { opacity: 0.6; }
-  100% { top: 100%; opacity: 0; }
-}
-.zt-scan-line-el {
-  position: absolute;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(14,165,233,0.25), rgba(14,165,233,0.7), rgba(14,165,233,0.25), transparent);
-  animation: zt-scan-line 6s ease-in-out infinite;
-  pointer-events: none;
-}
-
 @keyframes zt-dash-flow {
   from { stroke-dashoffset: 20; }
   to   { stroke-dashoffset: 0; }

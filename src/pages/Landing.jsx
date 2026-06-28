@@ -637,8 +637,6 @@ export default function Landing() {
         <div className="zt-grid-overlay pointer-events-none absolute inset-0" />
         {/* Animated particles */}
         <ParticleField />
-        {/* Scan line sweep */}
-        <div className="zt-scan-line-el" />
 
         <div className="relative mx-auto grid max-w-6xl items-center gap-12 px-6 py-20 md:px-12 md:py-28 lg:grid-cols-[1.1fr_0.9fr]">
           <div>
