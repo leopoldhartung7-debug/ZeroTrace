@@ -715,13 +715,11 @@ export default function Landing() {
 
       {/* ── Header (shrinks into a floating rounded pill on scroll) ── */}
       <header
-        className={`fixed inset-x-0 top-0 z-50 transition-all duration-300 ease-out ${
-          scrolled ? 'px-4 md:px-6' : 'px-0'
-        }`}
+        className="fixed inset-x-0 top-0 z-50 px-3 transition-all duration-300 ease-out md:px-6"
         style={{
           paddingTop: scrolled
-            ? 'calc(env(safe-area-inset-top, 0px) + 16px)'
-            : 'env(safe-area-inset-top, 0px)',
+            ? 'calc(env(safe-area-inset-top, 0px) + 14px)'
+            : 'calc(env(safe-area-inset-top, 0px) + 10px)',
           transform: 'translateZ(0)',
           WebkitTransform: 'translateZ(0)',
         }}
@@ -729,8 +727,8 @@ export default function Landing() {
         <div
           className={`mx-auto flex items-center justify-between transition-all duration-300 ease-out ${
             scrolled
-              ? 'max-w-5xl rounded-full border border-white/15 bg-[#0a0a12]/90 px-4 py-2 shadow-[0_18px_48px_-12px_rgba(0,0,0,0.65)] backdrop-blur-xl md:px-6'
-              : 'max-w-full border-b border-white/10 bg-[#0a0a12]/85 px-6 py-4 backdrop-blur-xl md:px-12'
+              ? 'max-w-3xl rounded-full border border-white/15 bg-[#0a0a12]/90 px-3 py-1.5 shadow-[0_18px_48px_-12px_rgba(0,0,0,0.65)] backdrop-blur-xl md:px-5'
+              : 'max-w-4xl rounded-2xl border border-white/10 bg-[#0a0a12]/85 px-4 py-2.5 shadow-[0_10px_32px_-16px_rgba(0,0,0,0.55)] backdrop-blur-xl md:px-6'
           }`}
         >
         <button onClick={() => nav('/')} className="flex shrink-0 items-center gap-3 transition-opacity duration-200 hover:opacity-80">
