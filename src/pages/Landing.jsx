@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Play, Globe, ChevronDown, Check, ArrowRight, Link2, MoreVertical, FileText,
@@ -12,18 +12,121 @@ import Logo from '../components/Logo.jsx'
 
 const NAV = ['Features', 'Pricing', 'Docs', 'Branding', 'FAQ', 'Download', 'Discord']
 
-/* Steel accent in rgba form for glow effects (matches --accent #9aa4c6). */
 const GLOW = 'rgba(154,164,198,'
 
-/* ---- hero verdict graphic (ZeroTrace's own scan-result motif) ---- */
+/* ── Deterministic pseudo-random for particle positions ── */
+function makePRNG(seed) {
+  let s = seed >>> 0
+  return () => {
+    s ^= s << 13; s ^= s >> 17; s ^= s << 5
+    return (s >>> 0) / 0x100000000
+  }
+}
+const _rng = makePRNG(0x9e3779b9)
+const PARTICLES = Array.from({ length: 32 }, () => ({
+  x: _rng() * 96 + 2,
+  y: _rng() * 96 + 2,
+  size: _rng() * 2.8 + 1,
+  duration: _rng() * 14 + 8,
+  delay: _rng() * 12,
+  opacity: _rng() * 0.22 + 0.05,
+}))
+
+/* ── Scroll-reveal hook — fires once when element enters viewport ── */
+function useScrollReveal(threshold = 0.12) {
+  const ref = useRef(null)
+  const [visible, setVisible] = useState(false)
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const obs = new IntersectionObserver(
+      ([e]) => { if (e.isIntersecting) { setVisible(true); obs.disconnect() } },
+      { threshold },
+    )
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [threshold])
+  return [ref, visible]
+}
+
+/* ── Count-up hook ── */
+function useCountUp(target, duration, active) {
+  const [val, setVal] = useState(0)
+  useEffect(() => {
+    if (!active || !target) return
+    let start = null
+    const tick = (ts) => {
+      if (!start) start = ts
+      const p = Math.min((ts - start) / duration, 1)
+      setVal(Math.round((1 - Math.pow(1 - p, 3)) * target))
+      if (p < 1) requestAnimationFrame(tick)
+    }
+    requestAnimationFrame(tick)
+  }, [active, target, duration])
+  return val
+}
+
+/* ── Floating particle field ── */
+function ParticleField() {
+  return (
+    <div className="pointer-events-none absolute inset-0 overflow-hidden">
+      {PARTICLES.map((p, i) => (
+        <div
+          key={i}
+          className="absolute rounded-full"
+          style={{
+            left: `${p.x}%`,
+            top: `${p.y}%`,
+            width: `${p.size}px`,
+            height: `${p.size}px`,
+            opacity: p.opacity,
+            background: i % 3 === 0 ? 'rgba(14,165,233,0.8)' : i % 3 === 1 ? 'rgba(154,164,198,0.8)' : 'rgba(167,139,250,0.8)',
+            animation: `zt-float ${p.duration}s ease-in-out ${p.delay}s infinite`,
+          }}
+        />
+      ))}
+    </div>
+  )
+}
+
+/* ── Hero verdict graphic with animated ring + count-up score ── */
 function VerdictGraphic() {
   const score = 78
   const r = 46
   const circ = 2 * Math.PI * r
+  const [progress, setProgress] = useState(0)
+  const ref = useRef(null)
+  const [seen, setSeen] = useState(false)
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const obs = new IntersectionObserver(
+      ([e]) => { if (e.isIntersecting) { setSeen(true); obs.disconnect() } },
+      { threshold: 0.2 },
+    )
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [])
+
+  useEffect(() => {
+    if (!seen) return
+    let start = null
+    const tick = (ts) => {
+      if (!start) start = ts
+      const p = Math.min((ts - start) / 1300, 1)
+      setProgress(Math.round((1 - Math.pow(1 - p, 3)) * score))
+      if (p < 1) requestAnimationFrame(tick)
+    }
+    requestAnimationFrame(tick)
+  }, [seen])
+
+  const arc = (circ * progress) / 100
+
   return (
-    <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.02] p-6">
+    <div ref={ref} className="zt-float-slow relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.02] p-6">
       <div
-        className="pointer-events-none absolute inset-0"
+        className="pointer-events-none absolute inset-0 zt-orb-pulse"
         style={{ background: `radial-gradient(50% 50% at 50% 35%, ${GLOW}0.16), transparent 70%)` }}
       />
       <div className="relative flex items-center justify-between text-sm">
@@ -37,23 +140,27 @@ function VerdictGraphic() {
             <circle cx="64" cy="64" r={r} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="9" />
             <circle
               cx="64" cy="64" r={r} fill="none" stroke="#9aa4c6" strokeWidth="9" strokeLinecap="round"
-              strokeDasharray={`${(circ * score) / 100} ${circ}`}
-              style={{ filter: `drop-shadow(0 0 6px ${GLOW}0.8))` }}
+              strokeDasharray={`${arc} ${circ}`}
+              className="zt-ring-glow"
             />
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-3xl font-extrabold text-white">{score}</span>
+            <span className="text-3xl font-extrabold text-white">{progress}</span>
             <span className="text-[10px] uppercase tracking-[0.15em] text-neutral-500">Risk</span>
           </div>
         </div>
-        <span className="mt-4 flex items-center gap-2 rounded-full border border-sky-500/40 bg-sky-500/10 px-4 py-1.5 text-sm font-semibold text-sky-200">
+        <span className="zt-verdict-badge mt-4 flex items-center gap-2 rounded-full border border-sky-500/40 bg-sky-500/10 px-4 py-1.5 text-sm font-semibold text-sky-200">
           <AlertTriangle size={14} /> Cheating · detected
         </span>
       </div>
 
       <div className="relative mt-5 grid grid-cols-3 gap-2.5">
-        {['Memory', 'Modules', 'Registry'].map((t) => (
-          <div key={t} className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-center">
+        {['Memory', 'Modules', 'Registry'].map((t, i) => (
+          <div
+            key={t}
+            className="zt-flagged-tile rounded-lg border px-3 py-2 text-center"
+            style={{ animationDelay: `${i * 0.4}s` }}
+          >
             <p className="text-[11px] text-neutral-500">{t}</p>
             <p className="text-xs font-semibold text-sky-300">flagged</p>
           </div>
@@ -63,12 +170,12 @@ function VerdictGraphic() {
   )
 }
 
-/* ---- hero floating stat card ---- */
+/* ── Hero stat card with entrance ── */
 function StatCard({ icon: Icon, label, value }) {
   return (
-    <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-5 py-4 backdrop-blur">
+    <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-5 py-4 backdrop-blur transition-all duration-300 hover:-translate-y-1 hover:border-white/20 hover:shadow-[0_0_24px_rgba(14,165,233,0.15)]">
       <span
-        className="flex h-11 w-11 items-center justify-center rounded-xl bg-sky-500/15 text-sky-300"
+        className="flex h-11 w-11 items-center justify-center rounded-xl bg-sky-500/15 text-sky-300 transition-transform duration-300 hover:scale-110"
         style={{ boxShadow: `0 0 22px ${GLOW}0.25)` }}
       >
         <Icon size={20} />
@@ -81,18 +188,22 @@ function StatCard({ icon: Icon, label, value }) {
   )
 }
 
-/* ---- bento "see why" mocks (original ZeroTrace, restyled steel) ---- */
+/* ── Bento mocks ── */
 function FlowMock() {
   return (
     <div className="relative h-full min-h-[210px] w-full">
-      <div className="absolute left-3 top-3 rounded-lg border border-white/10 bg-white/[0.04] px-4 py-2">
+      <div className="absolute left-3 top-3 rounded-lg border border-white/10 bg-white/[0.04] px-4 py-2 transition-all duration-300 hover:border-sky-500/30">
         <p className="text-sm font-medium">Scanning</p>
         <p className="text-xs text-neutral-500">User PC</p>
       </div>
       <svg className="absolute inset-0 h-full w-full" viewBox="0 0 300 200" fill="none" preserveAspectRatio="none">
-        <path d="M70 50 C 70 130, 220 80, 220 160" stroke="#9aa4c6" strokeWidth="2" strokeDasharray="5 5" />
+        <path
+          d="M70 50 C 70 130, 220 80, 220 160"
+          stroke="#9aa4c6" strokeWidth="2" strokeDasharray="5 5"
+          style={{ animation: 'zt-dash-flow 1.4s linear infinite' }}
+        />
       </svg>
-      <span className="absolute left-1/2 top-1/2 flex h-8 w-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-sky-500/50 bg-sky-500/15 text-sky-300">
+      <span className="absolute left-1/2 top-1/2 flex h-8 w-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-sky-500/50 bg-sky-500/15 text-sky-300 zt-neon-pulse">
         <Clock size={14} />
       </span>
       <div className="absolute bottom-3 right-3 rounded-lg border border-sky-500/30 bg-white/[0.04] px-4 py-2">
@@ -102,6 +213,7 @@ function FlowMock() {
     </div>
   )
 }
+
 function ResultsMock() {
   const rows = [
     { c: 'bg-green-500', t: 'Clean' },
@@ -113,10 +225,11 @@ function ResultsMock() {
       {rows.map((r, i) => (
         <div
           key={r.t}
-          className={`flex items-center justify-between rounded-lg border border-white/10 bg-white/[0.03] px-4 py-3 ${i === 2 ? 'ring-1 ring-sky-500/20' : ''}`}
+          className={`flex items-center justify-between rounded-lg border border-white/10 bg-white/[0.03] px-4 py-3 transition-all duration-300 hover:-translate-x-1 hover:border-white/20 ${i === 2 ? 'ring-1 ring-sky-500/20' : ''}`}
+          style={{ animationDelay: `${i * 0.1}s` }}
         >
           <div className="flex items-center gap-3">
-            <span className={`h-4 w-4 rounded-full ${r.c}`} />
+            <span className={`h-4 w-4 rounded-full ${r.c} transition-transform duration-300 hover:scale-125`} />
             <div>
               <p className="text-sm font-medium">{r.t}</p>
               <p className="text-xs text-neutral-500">Verdict tier</p>
@@ -128,10 +241,11 @@ function ResultsMock() {
     </div>
   )
 }
+
 function WebhookMock() {
   return (
     <div className="relative h-full min-h-[210px] w-full">
-      <div className="absolute left-3 top-3 flex items-center gap-3 rounded-lg border border-white/10 bg-white/[0.04] px-4 py-2">
+      <div className="absolute left-3 top-3 flex items-center gap-3 rounded-lg border border-white/10 bg-white/[0.04] px-4 py-2 transition-all duration-300 hover:border-sky-500/30">
         <ScanFace size={18} className="text-sky-300" />
         <div>
           <p className="text-sm font-medium">Scan finished</p>
@@ -139,12 +253,16 @@ function WebhookMock() {
         </div>
       </div>
       <svg className="absolute inset-0 h-full w-full" viewBox="0 0 300 200" fill="none" preserveAspectRatio="none">
-        <path d="M80 50 C 150 50, 180 110, 230 150" stroke="#9aa4c6" strokeWidth="2" strokeDasharray="4 4" />
+        <path
+          d="M80 50 C 150 50, 180 110, 230 150"
+          stroke="#9aa4c6" strokeWidth="2" strokeDasharray="4 4"
+          style={{ animation: 'zt-dash-flow 1.1s linear infinite' }}
+        />
       </svg>
-      <span className="absolute left-1/2 top-1/2 flex h-8 w-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-sky-500/50 bg-sky-500/15 text-sky-300">
+      <span className="absolute left-1/2 top-1/2 flex h-8 w-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-sky-500/50 bg-sky-500/15 text-sky-300 zt-neon-pulse">
         <Webhook size={14} />
       </span>
-      <div className="absolute bottom-3 right-3 w-52 rounded-lg border border-sky-500/30 bg-white/[0.04] p-3">
+      <div className="absolute bottom-3 right-3 w-52 rounded-lg border border-sky-500/30 bg-white/[0.04] p-3 transition-all duration-300 hover:border-sky-500/60">
         <div className="flex items-center gap-2 text-sky-300">
           <BellRing size={14} />
           <span className="text-xs font-semibold">Cheating · risk 78</span>
@@ -161,12 +279,21 @@ const BENTO = [
   { icon: BellRing, title: 'Pushed straight\nto your team', text: 'The moment a scan finishes, the full verdict, risk score and flagged servers land in your Discord webhook — no polling, no waiting.', mock: <WebhookMock />, wide: true },
 ]
 
-/* ---- glow feature grid (ZeroTrace's own features, reworded) ---- */
-function GlowCard({ icon: Icon, title, text }) {
+/* ── Feature card with scroll-reveal + stagger ── */
+function GlowCard({ icon: Icon, title, text, delay = 0 }) {
+  const [ref, visible] = useScrollReveal(0.1)
   return (
-    <div className="group rounded-3xl border border-white/10 bg-white/[0.02] p-7 transition-all duration-300 hover:-translate-y-1 hover:border-white/20">
+    <div
+      ref={ref}
+      className="group rounded-3xl border border-white/10 bg-white/[0.02] p-7 transition-all duration-300 hover:-translate-y-2 hover:border-sky-500/30 hover:bg-white/[0.04] hover:shadow-[0_0_40px_rgba(14,165,233,0.12)]"
+      style={{
+        opacity: visible ? 1 : 0,
+        transform: visible ? 'translateY(0)' : 'translateY(28px)',
+        transition: `opacity 0.55s ${delay}s ease, transform 0.55s ${delay}s ease, border-color 0.3s, background 0.3s, box-shadow 0.3s`,
+      }}
+    >
       <span
-        className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-sky-500/15 text-sky-300 transition-transform duration-300 group-hover:scale-110"
+        className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-sky-500/15 text-sky-300 transition-all duration-300 group-hover:scale-110 group-hover:bg-sky-500/25 group-hover:shadow-[0_0_20px_rgba(14,165,233,0.4)]"
         style={{ boxShadow: `0 0 26px ${GLOW}0.3)` }}
       >
         <Icon size={24} />
@@ -186,13 +313,31 @@ const FEATURES = [
   { icon: Lock, title: 'Private by design', text: 'Artifacts are gathered with consent and kept encrypted — nothing is sold, shared or quietly stored.' },
 ]
 
+/* ── Metric card with scroll-reveal ── */
+function MetricCard({ value, label, delay = 0 }) {
+  const [ref, visible] = useScrollReveal(0.15)
+  return (
+    <div
+      ref={ref}
+      className="rounded-3xl border border-white/10 bg-white/[0.02] p-8 text-center transition-all duration-300 hover:border-sky-500/30 hover:shadow-[0_0_30px_rgba(14,165,233,0.1)]"
+      style={{
+        opacity: visible ? 1 : 0,
+        transform: visible ? 'translateY(0) scale(1)' : 'translateY(20px) scale(0.97)',
+        transition: `opacity 0.5s ${delay}s ease, transform 0.5s ${delay}s ease`,
+      }}
+    >
+      <p className="text-4xl font-extrabold tracking-tight text-sky-300">{value}</p>
+      <p className="mt-1 text-sm text-neutral-400">{label}</p>
+    </div>
+  )
+}
+
 const METRICS = [
   { value: '~58s', label: 'Typical scan time' },
   { value: '<0.1%', label: 'False-positive rate' },
   { value: '500+', label: 'Active servers' },
 ]
 
-/* ---- "where it fits" comparison (reworded, ZeroTrace voice) ---- */
 const COMPARE = [
   { feature: 'Approach', live: 'Watches the game in real time', zt: 'Investigates the PC after the fact' },
   { feature: 'Timing', live: 'Always running in the background', zt: 'One deep scan, around a minute' },
@@ -200,16 +345,16 @@ const COMPARE = [
   { feature: 'Performance', live: 'Constant CPU overhead', zt: 'No impact on game performance' },
 ]
 
-/* ---- "How ZeroTrace works" step mocks ---- */
+/* ── How-it-works step mocks ── */
 function DownloadMock() {
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 transition-all duration-300 hover:border-white/20">
       <p className="text-sm font-medium">Download</p>
       <div className="mt-4 space-y-3">
         {[1, 0.6, 0.35].map((o, i) => (
           <div
             key={i}
-            className={`flex items-center gap-3 rounded-lg border border-white/10 px-4 py-3 ${i === 0 ? 'bg-white/[0.05]' : 'bg-white/[0.02]'}`}
+            className={`flex items-center gap-3 rounded-lg border border-white/10 px-4 py-3 transition-all duration-200 hover:bg-white/[0.04] ${i === 0 ? 'bg-white/[0.05]' : 'bg-white/[0.02]'}`}
             style={{ opacity: o }}
           >
             <FileText size={18} className={i === 0 ? 'text-sky-400' : 'text-neutral-500'} />
@@ -223,9 +368,40 @@ function DownloadMock() {
     </div>
   )
 }
+
 function ScanningMock() {
+  const [pct, setPct] = useState(0)
+  const [done, setDone] = useState(false)
+  const ref = useRef(null)
+  const [seen, setSeen] = useState(false)
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const obs = new IntersectionObserver(
+      ([e]) => { if (e.isIntersecting) { setSeen(true); obs.disconnect() } },
+      { threshold: 0.2 },
+    )
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [])
+
+  useEffect(() => {
+    if (!seen) return
+    const DURATION = 2800
+    let start = null
+    const tick = (ts) => {
+      if (!start) start = ts
+      const p = Math.min((ts - start) / DURATION, 1)
+      setPct(Math.round(p * 100))
+      if (p < 1) requestAnimationFrame(tick)
+      else setDone(true)
+    }
+    requestAnimationFrame(tick)
+  }, [seen])
+
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+    <div ref={ref} className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 transition-all duration-300 hover:border-white/20">
       <div className="flex justify-end gap-2 text-neutral-600">
         <span>—</span>
         <span>×</span>
@@ -234,22 +410,33 @@ function ScanningMock() {
   Var1 => String::Keyauth::Nocase;
   Var2 => String::Keyauth::Wide;`}</pre>
       <div className="mt-6 flex justify-center"><Logo size="md" /></div>
-      <p className="mt-3 text-center text-sm text-neutral-500">Scanning...</p>
+      <p className="mt-3 text-center text-sm text-neutral-500 transition-colors duration-500">
+        {done ? 'Scan complete' : 'Scanning...'}
+      </p>
       <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
-        <div className="h-full w-3/4 rounded-full bg-sky-500" />
+        <div
+          className="h-full rounded-full transition-all duration-75"
+          style={{
+            width: `${pct}%`,
+            background: done ? 'linear-gradient(90deg, #22c55e, #4ade80)' : 'linear-gradient(90deg, #0ea5e9, #38bdf8)',
+            boxShadow: pct > 0 ? `0 0 ${done ? 10 : 8}px ${done ? 'rgba(34,197,94,0.7)' : 'rgba(14,165,233,0.6)'}` : 'none',
+          }}
+        />
       </div>
+      <p className="mt-1 text-right font-mono text-xs text-neutral-500">{pct}%</p>
     </div>
   )
 }
+
 function ReviewMock() {
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 transition-all duration-300 hover:border-white/20">
       <div className="flex items-center justify-between text-sm">
         <span className="text-neutral-300">Results <span className="text-neutral-600">›</span> 238FS64</span>
         <span className="flex items-center gap-2 text-neutral-600"><Link2 size={14} /> <MoreVertical size={14} /></span>
       </div>
-      <div className="mt-4 flex items-center justify-center rounded-xl border border-red-600/30 bg-red-600/[0.06] py-10">
-        <span className="relative rounded-md border border-red-500 px-4 py-1.5 text-lg font-semibold text-white">
+      <div className="mt-4 flex items-center justify-center rounded-xl border border-red-600/30 bg-red-600/[0.06] py-10 transition-all duration-300 hover:bg-red-600/[0.1]">
+        <span className="relative rounded-md border border-red-500 px-4 py-1.5 text-lg font-semibold text-white" style={{ boxShadow: '0 0 20px rgba(239,68,68,0.3)' }}>
           Cheating
           <span className="absolute -right-3 -top-3 rounded bg-red-600 px-1.5 py-0.5 text-[10px] font-bold text-white">
             Detected
@@ -258,7 +445,7 @@ function ReviewMock() {
       </div>
       <div className="mt-4 grid grid-cols-2 gap-3">
         {[0, 1].map((i) => (
-          <div key={i} className="rounded-lg border border-white/10 bg-white/[0.02] p-4">
+          <div key={i} className="rounded-lg border border-white/10 bg-white/[0.02] p-4 transition-all duration-200 hover:bg-white/[0.05]">
             <div className="flex items-center gap-2">
               <span className="h-2 w-2 rounded-full bg-neutral-600" />
               <span className="h-1.5 w-20 rounded bg-white/10" />
@@ -283,15 +470,88 @@ const QA = [
   { q: 'What payment methods do you accept?', a: 'Payments are handled by our Merchant of Record (card and common online methods). See the Pricing page for plans.' },
 ]
 
+/* ── FAQ with smooth height transition ── */
 function FaqRow({ q, a }) {
   const [open, setOpen] = useState(false)
+  const contentRef = useRef(null)
   return (
     <div className="border-b border-white/10">
-      <button onClick={() => setOpen((o) => !o)} className="flex w-full items-center justify-between py-6 text-left">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="flex w-full items-center justify-between py-6 text-left transition-colors duration-200 hover:text-sky-200"
+      >
         <span className="text-lg text-white">{q}</span>
-        <ChevronDown size={20} className={`text-neutral-500 transition-transform ${open ? 'rotate-180' : ''}`} />
+        <ChevronDown
+          size={20}
+          className="shrink-0 text-neutral-500 transition-all duration-300"
+          style={{ transform: open ? 'rotate(180deg)' : 'rotate(0deg)', color: open ? '#7dd3fc' : undefined }}
+        />
       </button>
-      {open && <p className="-mt-2 pb-6 pr-8 text-neutral-400">{a}</p>}
+      <div
+        ref={contentRef}
+        style={{
+          maxHeight: open ? (contentRef.current?.scrollHeight ?? 300) + 'px' : '0px',
+          overflow: 'hidden',
+          transition: 'max-height 0.38s cubic-bezier(0.16,1,0.3,1)',
+        }}
+      >
+        <p className="pb-6 pr-8 leading-relaxed text-neutral-400">{a}</p>
+      </div>
+    </div>
+  )
+}
+
+/* ── Step row with scroll-reveal ── */
+function StepRow({ s, idx }) {
+  const [ref, visible] = useScrollReveal(0.12)
+  return (
+    <div
+      ref={ref}
+      className="grid items-center gap-10 md:grid-cols-2"
+      style={{
+        opacity: visible ? 1 : 0,
+        transform: visible ? 'translateY(0)' : 'translateY(32px)',
+        transition: 'opacity 0.6s ease, transform 0.6s ease',
+      }}
+    >
+      <div className={s.reverse ? 'md:order-2' : ''}>
+        <p className="text-lg text-neutral-500">{s.n}</p>
+        <h3 className="mt-4 text-4xl font-extrabold tracking-tight text-sky-300 md:text-5xl">{s.title}</h3>
+        <p className="mt-6 max-w-md text-lg leading-relaxed text-neutral-400">{s.text}</p>
+      </div>
+      <div className={s.reverse ? 'md:order-1' : ''}>{s.mock}</div>
+    </div>
+  )
+}
+
+/* ── Bento card with scroll-reveal ── */
+function BentoCard({ p, delay = 0 }) {
+  const [ref, visible] = useScrollReveal(0.1)
+  return (
+    <div
+      ref={ref}
+      className={`rounded-3xl border border-white/10 bg-white/[0.02] p-7 transition-all duration-300 hover:border-white/15 hover:bg-white/[0.03] ${p.wide ? 'lg:col-span-2' : ''}`}
+      style={{
+        opacity: visible ? 1 : 0,
+        transform: visible ? 'translateY(0)' : 'translateY(24px)',
+        transition: `opacity 0.55s ${delay}s ease, transform 0.55s ${delay}s ease`,
+      }}
+    >
+      <div className={`grid items-start gap-6 ${p.wide ? 'md:grid-cols-2' : ''}`}>
+        <div className={p.reverse ? 'md:order-2' : ''}>
+          <span
+            className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-sky-500/15 text-sky-300 transition-transform duration-300 hover:scale-110"
+            style={{ boxShadow: `0 0 24px ${GLOW}0.3)` }}
+          >
+            <p.icon size={22} />
+          </span>
+          <h3 className="mt-8 whitespace-pre-line text-2xl font-bold md:text-3xl">{p.title}</h3>
+          <p className="mt-4 max-w-md leading-relaxed text-neutral-400">{p.text}</p>
+        </div>
+        <div className={`rounded-2xl border border-white/10 bg-white/[0.03] p-5 ${p.reverse ? 'md:order-1' : ''}`}>
+          {p.mock}
+        </div>
+      </div>
     </div>
   )
 }
@@ -322,14 +582,19 @@ export default function Landing() {
 
   return (
     <div className="landing-font force-dark app-bg min-h-screen overflow-x-hidden text-white">
+
       {/* ── Header ── */}
       <header className="sticky top-0 z-30 flex items-center justify-between border-b border-white/5 bg-black/50 px-6 py-4 backdrop-blur md:px-12">
-        <button onClick={() => nav('/')} className="flex shrink-0 items-center gap-3">
+        <button onClick={() => nav('/')} className="flex shrink-0 items-center gap-3 transition-opacity duration-200 hover:opacity-80">
           <Logo size="md" />
         </button>
         <nav className="hidden items-center gap-4 lg:flex">
           {NAV.map((n) => (
-            <button key={n} onClick={() => onNav(n)} className="text-sm text-neutral-400 transition-colors hover:text-white">
+            <button
+              key={n}
+              onClick={() => onNav(n)}
+              className="relative text-sm text-neutral-400 transition-colors hover:text-white after:absolute after:-bottom-1 after:left-0 after:h-px after:w-0 after:bg-sky-400 after:transition-all after:duration-300 hover:after:w-full"
+            >
               {n}
             </button>
           ))}
@@ -339,22 +604,19 @@ export default function Landing() {
           {state.auth ? (
             <button onClick={() => nav('/dashboard')} className="flex items-center gap-3">
               <span className="text-sm text-neutral-300 hover:text-white">Dashboard</span>
-              <span className="flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-white/[0.05] text-sm font-semibold">
-                H
-              </span>
+              <span className="flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-white/[0.05] text-sm font-semibold">H</span>
             </button>
           ) : (
             <>
               <button
                 onClick={() => nav('/login')}
-                className="rounded-full border border-sky-500/50 px-5 py-2 text-sm font-semibold text-sky-300 transition-colors hover:bg-sky-500/10"
+                className="rounded-full border border-sky-500/50 px-5 py-2 text-sm font-semibold text-sky-300 transition-all hover:bg-sky-500/10 hover:border-sky-400 hover:shadow-[0_0_16px_rgba(14,165,233,0.2)]"
               >
                 Login
               </button>
               <button
                 onClick={() => nav('/login?register=1')}
-                className="rounded-full bg-sky-500 px-5 py-2 text-sm font-semibold text-[#0b0c0e] transition-all hover:bg-sky-400"
-                style={{ boxShadow: `0 0 24px ${GLOW}0.4)` }}
+                className="zt-cta-pulse rounded-full bg-sky-500 px-5 py-2 text-sm font-semibold text-[#0b0c0e] transition-all hover:bg-sky-400"
               >
                 Sign Up
               </button>
@@ -365,44 +627,48 @@ export default function Landing() {
 
       {/* ── Hero ── */}
       <section className="relative overflow-hidden">
+        {/* Background effects */}
         <div
           className="pointer-events-none absolute inset-0"
           style={{ background: `radial-gradient(58% 55% at 72% 8%, ${GLOW}0.20), transparent 60%), radial-gradient(42% 50% at 2% 65%, ${GLOW}0.09), transparent 70%)` }}
         />
+        {/* Animated particles */}
+        <ParticleField />
+        {/* Scan line sweep */}
+        <div className="zt-scan-line-el" />
+
         <div className="relative mx-auto grid max-w-6xl items-center gap-12 px-6 py-20 md:px-12 md:py-28 lg:grid-cols-[1.1fr_0.9fr]">
           <div>
-            <span className="inline-block rounded-full border border-sky-500/40 bg-sky-500/10 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.18em] text-sky-300">
+            <span className="zt-hero-line-1 zt-badge-pulse inline-block rounded-full border border-sky-500/40 bg-sky-500/10 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.18em] text-sky-300">
               Forensic Screenshare
             </span>
             <h1 className="mt-7 text-5xl font-extrabold leading-[1.02] tracking-tight md:text-7xl">
-              <span className="bg-gradient-to-br from-white via-white to-[#9aa4c6] bg-clip-text text-transparent">
+              <span className="zt-hero-line-2 zt-shimmer-text block">
                 Cheaters leave traces.
               </span>
-              <br />
-              <span className="text-sky-300">We find them.</span>
+              <span className="zt-hero-line-3 block text-sky-300">We find them.</span>
             </h1>
-            <p className="mt-7 max-w-xl text-lg leading-relaxed text-neutral-400">
+            <p className="zt-hero-line-4 mt-7 max-w-xl text-lg leading-relaxed text-neutral-400">
               ZeroTrace runs a deep, consent-based forensic scan that surfaces what live anti-cheats
               overlook — then hands you a clear verdict in about a minute.
             </p>
-            <div className="mt-9 flex flex-wrap items-center gap-4">
+            <div className="zt-hero-line-4 mt-9 flex flex-wrap items-center gap-4">
               <button
                 onClick={enter}
-                className="flex items-center gap-2 rounded-full bg-sky-500 px-7 py-3.5 text-base font-bold text-[#0b0c0e] transition-all hover:bg-sky-400"
-                style={{ boxShadow: `0 0 34px ${GLOW}0.5)` }}
+                className="zt-cta-pulse flex items-center gap-2 rounded-full bg-sky-500 px-7 py-3.5 text-base font-bold text-[#0b0c0e] transition-all hover:bg-sky-400 hover:scale-105 active:scale-100"
               >
                 Get Started <ArrowRight size={18} />
               </button>
               <button
                 onClick={() => onNav('Docs')}
-                className="flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.04] px-7 py-3.5 text-base font-semibold text-white backdrop-blur transition-colors hover:bg-white/[0.08]"
+                className="flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.04] px-7 py-3.5 text-base font-semibold text-white backdrop-blur transition-all hover:bg-white/[0.08] hover:border-white/30 hover:scale-105 active:scale-100"
               >
                 <Play size={15} className="fill-white" /> See how it works
               </button>
             </div>
           </div>
 
-          <div className="space-y-5">
+          <div className="zt-hero-graphic space-y-5">
             <VerdictGraphic />
             <div className="grid grid-cols-2 gap-4">
               <StatCard icon={Users} label="Servers" value="500+" />
@@ -412,31 +678,15 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ── See why (bento, original ZeroTrace) ── */}
+      {/* ── See why ── */}
       <section className="mx-auto max-w-6xl px-6 py-16 md:px-12">
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <h2 className="text-4xl font-extrabold tracking-tight md:text-6xl">See why teams switch</h2>
           <p className="text-lg text-neutral-400">What makes ZeroTrace different</p>
         </div>
         <div className="mt-12 grid gap-6 lg:grid-cols-2">
-          {BENTO.map((p) => (
-            <div key={p.title} className={`rounded-3xl border border-white/10 bg-white/[0.02] p-7 ${p.wide ? 'lg:col-span-2' : ''}`}>
-              <div className={`grid items-start gap-6 ${p.wide ? 'md:grid-cols-2' : ''}`}>
-                <div className={p.reverse ? 'md:order-2' : ''}>
-                  <span
-                    className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-sky-500/15 text-sky-300"
-                    style={{ boxShadow: `0 0 24px ${GLOW}0.3)` }}
-                  >
-                    <p.icon size={22} />
-                  </span>
-                  <h3 className="mt-8 whitespace-pre-line text-2xl font-bold md:text-3xl">{p.title}</h3>
-                  <p className="mt-4 max-w-md leading-relaxed text-neutral-400">{p.text}</p>
-                </div>
-                <div className={`rounded-2xl border border-white/10 bg-white/[0.03] p-5 ${p.reverse ? 'md:order-1' : ''}`}>
-                  {p.mock}
-                </div>
-              </div>
-            </div>
+          {BENTO.map((p, i) => (
+            <BentoCard key={p.title} p={p} delay={i * 0.1} />
           ))}
         </div>
       </section>
@@ -452,26 +702,23 @@ export default function Landing() {
           </p>
         </div>
         <div className="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {FEATURES.map((f) => (
-            <GlowCard key={f.title} {...f} />
+          {FEATURES.map((f, i) => (
+            <GlowCard key={f.title} {...f} delay={i * 0.07} />
           ))}
         </div>
         <div className="mt-6 grid gap-6 sm:grid-cols-3">
-          {METRICS.map((m) => (
-            <div key={m.label} className="rounded-3xl border border-white/10 bg-white/[0.02] p-8 text-center">
-              <p className="text-4xl font-extrabold tracking-tight text-sky-300">{m.value}</p>
-              <p className="mt-1 text-sm text-neutral-400">{m.label}</p>
-            </div>
+          {METRICS.map((m, i) => (
+            <MetricCard key={m.label} {...m} delay={i * 0.1} />
           ))}
         </div>
       </section>
 
-      {/* ── Where ZeroTrace fits (comparison) ── */}
+      {/* ── Comparison ── */}
       <section className="mx-auto max-w-5xl px-6 py-20 md:px-12">
         <div className="text-center">
           <h2 className="inline-block text-4xl font-extrabold tracking-tight md:text-5xl">
             Where ZeroTrace fits
-            <span className="mx-auto mt-3 block h-1 w-28 rounded-full bg-sky-500" />
+            <span className="mx-auto mt-3 block h-1 w-28 rounded-full bg-sky-500" style={{ boxShadow: '0 0 12px rgba(14,165,233,0.6)' }} />
           </h2>
           <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-neutral-400">
             Live anti-cheats are great at stopping "loud" cheats as they run. ZeroTrace takes over where
@@ -490,7 +737,10 @@ export default function Landing() {
             </thead>
             <tbody>
               {COMPARE.map((row, i) => (
-                <tr key={row.feature} className={i < COMPARE.length - 1 ? 'border-b border-white/10' : ''}>
+                <tr
+                  key={row.feature}
+                  className={`transition-colors duration-150 hover:bg-white/[0.02] ${i < COMPARE.length - 1 ? 'border-b border-white/10' : ''}`}
+                >
                   <td className="px-5 py-4 font-semibold text-white">{row.feature}</td>
                   <td className="px-5 py-4 text-neutral-400">{row.live}</td>
                   <td className="px-5 py-4 font-medium text-sky-300">{row.zt}</td>
@@ -513,17 +763,8 @@ export default function Landing() {
           </p>
         </div>
         <div className="mt-16 space-y-20">
-          {STEPS.map((s) => (
-            <div key={s.title} className="grid items-center gap-10 md:grid-cols-2">
-              <div className={s.reverse ? 'md:order-2' : ''}>
-                <p className="text-lg text-neutral-500">{s.n}</p>
-                <h3 className="mt-4 text-4xl font-extrabold tracking-tight text-sky-300 md:text-5xl">
-                  {s.title}
-                </h3>
-                <p className="mt-6 max-w-md text-lg leading-relaxed text-neutral-400">{s.text}</p>
-              </div>
-              <div className={s.reverse ? 'md:order-1' : ''}>{s.mock}</div>
-            </div>
+          {STEPS.map((s, i) => (
+            <StepRow key={s.title} s={s} idx={i} />
           ))}
         </div>
       </section>
@@ -550,21 +791,34 @@ export default function Landing() {
       {/* ── Final CTA ── */}
       <section className="relative overflow-hidden">
         <div
-          className="pointer-events-none absolute inset-0"
+          className="pointer-events-none absolute inset-0 zt-orb-pulse"
           style={{ background: `radial-gradient(60% 80% at 50% 100%, ${GLOW}0.18), transparent 70%)` }}
         />
+        {/* Mini particles in CTA section */}
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          {PARTICLES.slice(0, 12).map((p, i) => (
+            <div
+              key={i}
+              className="absolute rounded-full bg-sky-400/40"
+              style={{
+                left: `${p.x}%`, top: `${p.y}%`,
+                width: `${p.size * 0.7}px`, height: `${p.size * 0.7}px`,
+                animation: `zt-float ${p.duration * 1.3}s ease-in-out ${p.delay * 1.5}s infinite`,
+              }}
+            />
+          ))}
+        </div>
         <div className="relative mx-auto max-w-6xl px-6 py-28 md:px-12">
           <div className="flex flex-col gap-10 lg:flex-row lg:items-center lg:justify-between">
             <h2 className="text-5xl font-extrabold leading-[1.05] tracking-tight md:text-7xl">
               Two clicks
               <br />
-              to certainty
+              <span className="text-sky-300">to certainty</span>
             </h2>
             <div className="flex items-center gap-6">
               <button
                 onClick={enter}
-                className="rounded-full bg-sky-500 px-10 py-5 text-lg font-bold text-[#0b0c0e] transition-all hover:bg-sky-400"
-                style={{ boxShadow: `0 0 40px ${GLOW}0.5)` }}
+                className="zt-cta-pulse rounded-full bg-sky-500 px-10 py-5 text-lg font-bold text-[#0b0c0e] transition-all hover:bg-sky-400 hover:scale-105 active:scale-100"
               >
                 Get Started
               </button>
@@ -576,10 +830,10 @@ export default function Landing() {
             </div>
           </div>
           <div className="mt-10 flex flex-wrap gap-8">
-            <span className="flex items-center gap-2 text-neutral-300">
+            <span className="flex items-center gap-2 text-neutral-300 transition-colors duration-200 hover:text-white">
               <Check size={18} className="text-sky-300" /> Download ZeroTrace
             </span>
-            <span className="flex items-center gap-2 text-neutral-300">
+            <span className="flex items-center gap-2 text-neutral-300 transition-colors duration-200 hover:text-white">
               <Check size={18} className="text-sky-300" /> Join our Community
             </span>
           </div>
@@ -611,7 +865,7 @@ export default function Landing() {
                   <li key={it}>
                     <button
                       onClick={() => onNav(it === 'Contact Us' ? 'Discord' : it)}
-                      className="text-sm text-neutral-500 hover:text-white"
+                      className="text-sm text-neutral-500 transition-colors duration-150 hover:text-sky-300"
                     >
                       {it}
                     </button>
