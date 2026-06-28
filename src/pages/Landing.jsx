@@ -416,37 +416,23 @@ export default function Landing() {
         </div>
       </header>
 
-      {/* ── Hero (AURA-style: massive purple arc + giant centered headline) ── */}
+      {/* ── Hero (AURA-style: giant centered headline + floating rocks) ── */}
       <section className="relative overflow-hidden">
-        {/* Giant purple ring/arc at the top of the section */}
-        <div
-          className="pointer-events-none absolute left-1/2 -top-[78vw] h-[155vw] w-[155vw] -translate-x-1/2 rounded-full"
-          style={{
-            background:
-              'radial-gradient(circle, transparent 47%, #8b6ef5 49%, #6d28d9 53%, #4c1d95 56%, transparent 64%)',
-            filter: 'blur(1.5px)',
-          }}
-        />
-        {/* Soft halo wash beneath the arc */}
-        <div
-          className="pointer-events-none absolute left-1/2 top-0 h-[70vh] w-[140vw] -translate-x-1/2"
-          style={{ background: 'radial-gradient(60% 50% at 50% 0%, rgba(139,110,245,0.32), transparent 70%)' }}
-        />
         {/* Faint dot grid for texture */}
         <div className="zt-grid-overlay pointer-events-none absolute inset-0" />
         {/* Floating asteroid-style rocks left and right */}
         <FloatingRocks />
 
-        <div className="relative mx-auto max-w-7xl px-6 pb-24 pt-[44vw] text-center md:px-12 md:pt-[36vw] lg:pt-[30vw]">
-          {/* Massive headline — one word, thin uppercase, shimmer gradient */}
+        <div className="relative mx-auto max-w-7xl px-6 pb-24 pt-32 text-center md:px-12 md:pt-40">
+          {/* Massive headline — wordmark, thin uppercase, shimmer gradient */}
           <h1
             className="zt-fade-up mx-auto leading-[0.95] tracking-[0.04em]"
             style={{
-              fontSize: 'clamp(4.5rem, 17vw, 16rem)',
+              fontSize: 'clamp(4rem, 14vw, 13rem)',
               fontWeight: 200,
             }}
           >
-            <span className="zt-shimmer uppercase">Cheaters</span>
+            <span className="zt-shimmer uppercase">ZeroTrace</span>
           </h1>
 
           {/* Subtitle */}
