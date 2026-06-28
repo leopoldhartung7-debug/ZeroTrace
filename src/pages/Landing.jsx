@@ -734,7 +734,7 @@ export default function Landing() {
           }`}
         >
         <button onClick={() => nav('/')} className="flex shrink-0 items-center gap-3 transition-opacity duration-200 hover:opacity-80">
-          <Logo size="md" />
+          <Logo size="md" iconOnly={scrolled} />
         </button>
         <nav className="hidden items-center gap-4 lg:flex">
           {NAV.map((n) => (

@@ -9,10 +9,10 @@ const SIZES = {
 
 const ASPECT = 341 / 263 // intrinsic logo aspect ratio (w/h)
 
-export default function Logo({ size = 'md', sub = false }) {
+export default function Logo({ size = 'md', sub = false, iconOnly = false }) {
   const s = SIZES[size] || SIZES.md
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: s.gap }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: iconOnly ? 0 : s.gap }}>
       <img
         src={ztLogo}
         alt="ZeroTrace"
@@ -26,7 +26,18 @@ export default function Logo({ size = 'md', sub = false }) {
         }}
       />
 
-      <span style={{ display: 'flex', flexDirection: 'column', gap: 2, lineHeight: 1 }}>
+      <span
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 2,
+          lineHeight: 1,
+          overflow: 'hidden',
+          maxWidth: iconOnly ? 0 : 240,
+          opacity: iconOnly ? 0 : 1,
+          transition: 'max-width 0.3s ease, opacity 0.25s ease',
+        }}
+      >
         <span
           style={{
             fontFamily: "'Inter', system-ui, sans-serif",
@@ -34,6 +45,7 @@ export default function Logo({ size = 'md', sub = false }) {
             fontSize: s.brand,
             letterSpacing: '-0.015em',
             color: 'var(--text)',
+            whiteSpace: 'nowrap',
           }}
         >
           Zero<span style={{ color: 'var(--muted)' }}>Trace</span>
@@ -48,6 +60,7 @@ export default function Logo({ size = 'md', sub = false }) {
               color: 'var(--muted)',
               textTransform: 'uppercase',
               opacity: 0.65,
+              whiteSpace: 'nowrap',
             }}
           >
             Anticheat Scanner
