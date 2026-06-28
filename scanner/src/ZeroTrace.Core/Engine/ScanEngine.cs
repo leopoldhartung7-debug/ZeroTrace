@@ -709,6 +709,7 @@ public sealed class ScanEngine
         if (o.ScanESXQBCoreExploitDeep) modules.Add(new ESXQBCoreExploitDeepForensicScanModule());
         if (o.ScanRageMPModMenuDeep) modules.Add(new RageMPModMenuDeepForensicScanModule());
         if (o.ScanFiveMBanEvasionDeep) modules.Add(new FiveMBanEvasionDeepForensicScanModule());
+        if (o.ScanAltVModMenuDeep) modules.Add(new AltVModMenuDeepForensicScanModule());
 
         // ── Group 5: forensic / trace artefacts ──────────────────────────────
         if (o.ScanForensicTraces) modules.Add(new ForensicTraceScanModule());

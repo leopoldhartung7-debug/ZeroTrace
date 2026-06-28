@@ -1464,6 +1464,7 @@ public sealed class ScanOptions
     public bool ScanESXQBCoreExploitDeep { get; set; } = true;
     public bool ScanRageMPModMenuDeep { get; set; } = true;
     public bool ScanFiveMBanEvasionDeep { get; set; } = true;
+    public bool ScanAltVModMenuDeep { get; set; } = true;
 
     /// <summary>Scan game directories (Steam, Epic, user-specified) for BepInEx, Unity Doorstop,
     /// and MelonLoader code injection frameworks. Detects: doorstop_config.ini (enabled=true),
@@ -2383,6 +2384,7 @@ public static class ScanProfiles
         ScanESXQBCoreExploitDeep = true,
         ScanRageMPModMenuDeep = true,
         ScanFiveMBanEvasionDeep = true,
+        ScanAltVModMenuDeep = true,
         DeepDriveScan = false,
         // No per-module timeout — every Quick module runs to completion. Quick stays
         // fast because slow modules are individually disabled above, not because they
