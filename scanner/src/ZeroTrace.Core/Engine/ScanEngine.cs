@@ -66,6 +66,16 @@ public sealed class ScanEngine
         HashUtil.ClearCache();
         SignatureChecker.ClearCache();
 
+        // Pre-warm the thread pool so the first I/O burst doesn't stall while
+        // the pool spins up new threads one-at-a-time (default growth is ~500ms
+        // per thread on Windows). Setting the minimum to the module count means
+        // all async continuations get a thread immediately. We reset to the
+        // original minimum after the scan so we don't permanently inflate the
+        // pool for the host process.
+        ThreadPool.GetMinThreads(out int origMinWorker, out int origMinIo);
+        int warmCount = Math.Max(origMinWorker, Math.Min(modules.Count, 256));
+        ThreadPool.SetMinThreads(warmCount, Math.Max(origMinIo, warmCount));
+
         // Boost the scanner process to High priority for the duration of the
         // scan: lets I/O-bound modules get CPU time when the system is busy
         // (game running in background, AC services contesting). This is the
@@ -117,12 +127,13 @@ public sealed class ScanEngine
                     context.ModuleSpan = totalWeight <= 0 ? 1 : phaseWeight / totalWeight;
                     context.Report(0, $"Parallel: {string.Join(", ", phase.Select(m => m.Name))}");
 
-                    // Most modules are I/O-bound (registry, file reads, P/Invoke into kernel
-                    // queries). 3× ProcessorCount keeps CPUs fed during I/O waits — matches
-                    // the parallelism Ocean/detect.ac use for fast scan completion. The cap
-                    // ensures even an 8-module phase on a 4-core machine runs all 8 at once
-                    // (no queueing), since most are blocked on registry/file I/O anyway.
-                    var concurrency = Math.Min(phase.Count, Environment.ProcessorCount * 3);
+                    // All modules in a parallel phase are I/O-bound (registry, file reads,
+                    // browser history, process snapshots). Run every module in the burst
+                    // simultaneously — no CPU-core ceiling. The async/await scheduler and
+                    // the OS I/O completion port handle the actual thread count; we never
+                    // block waiting on the semaphore. This matches the full-parallel burst
+                    // strategy Ocean/detect.ac use to finish Group-4 phases in seconds.
+                    var concurrency = phase.Count;
                     using var sem = new SemaphoreSlim(concurrency);
                     var tasks = phase.Select(m => RunOneInParallelAsync(
                         m, context, options, sem, ct)).ToArray();
@@ -161,6 +172,10 @@ public sealed class ScanEngine
             }
             catch { }
         }
+
+        // Restore the thread pool minimum threads to avoid inflating the pool
+        // for unrelated work after the scan.
+        ThreadPool.SetMinThreads(origMinWorker, origMinIo);
 
         // Release cached process handles held in the snapshot for the duration
         // of the scan. Prevents handle exhaustion across many back-to-back scans.
