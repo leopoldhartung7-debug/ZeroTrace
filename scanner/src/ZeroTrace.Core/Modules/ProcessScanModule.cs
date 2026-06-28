@@ -297,7 +297,7 @@ public sealed class ProcessScanModule : IScanModule
 
     private static ulong ToULong(object? o)
     {
-        try {( return o is null ? 0UL : Convert.ToUInt64(o); )}
+        try { return o is null ? 0UL : Convert.ToUInt64(o); }
         catch { return 0UL; }
     }
 }
