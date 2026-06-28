@@ -546,3 +546,222 @@ a:active,
     transition: none !important;
   }
 }
+
+/* ============================================================
+   DESIGN UPLIFT — utilities used by the new Landing sections
+   (glassmorphism, gradient borders, noise, marquee, ticker,
+   typewriter caret, magnetic CTA, 3D tilt, before/after slider,
+   scroll progress, section index, mouse glow, loading skeleton)
+   ============================================================ */
+
+/* 11 — Glassmorphism card */
+.zt-glass {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.04) 0%,
+    rgba(255, 255, 255, 0.015) 100%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.03) inset,
+    0 30px 80px -30px rgba(0, 0, 0, 0.7);
+}
+
+/* 12 — Verdict palette tokens */
+:root {
+  --verdict-clean: #22c55e;
+  --verdict-susp:  #f59e0b;
+  --verdict-cheat: #ef4444;
+}
+.zt-verdict-clean { color: var(--verdict-clean); }
+.zt-verdict-susp  { color: var(--verdict-susp); }
+.zt-verdict-cheat { color: var(--verdict-cheat); }
+.zt-verdict-dot-clean { background: var(--verdict-clean); box-shadow: 0 0 10px var(--verdict-clean); }
+.zt-verdict-dot-susp  { background: var(--verdict-susp);  box-shadow: 0 0 10px var(--verdict-susp); }
+.zt-verdict-dot-cheat { background: var(--verdict-cheat); box-shadow: 0 0 10px var(--verdict-cheat); }
+
+/* 13 — Animated gradient border (apply to card; sits OVER it) */
+@keyframes zt-border-rotate {
+  to { --zt-angle: 360deg; }
+}
+@property --zt-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+.zt-gradient-border {
+  position: relative;
+  isolation: isolate;
+  border-radius: 1.5rem;
+}
+.zt-gradient-border::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: conic-gradient(
+    from var(--zt-angle, 0deg),
+    rgba(239, 68, 68, 0.45),
+    rgba(245, 158, 11, 0.35),
+    rgba(139, 110, 245, 0.55),
+    rgba(14, 165, 233, 0.45),
+    rgba(239, 68, 68, 0.45)
+  );
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+          mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  animation: zt-border-rotate 8s linear infinite;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.zt-gradient-border:hover::before,
+.zt-gradient-border.is-always-on::before {
+  opacity: 1;
+}
+
+/* 14 — Subtle noise texture overlay (place as fixed full-page layer) */
+.zt-noise {
+  pointer-events: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.55 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  opacity: 0.05;
+  mix-blend-mode: overlay;
+}
+
+/* 5/6 — Horizontal marquee for ticker and trust-by logos */
+@keyframes zt-marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.zt-marquee {
+  display: flex;
+  width: max-content;
+  animation: zt-marquee 40s linear infinite;
+}
+.zt-marquee-fast {
+  animation-duration: 22s;
+}
+.zt-marquee-mask {
+  mask-image: linear-gradient(90deg, transparent, black 8%, black 92%, transparent);
+  -webkit-mask-image: linear-gradient(90deg, transparent, black 8%, black 92%, transparent);
+}
+
+/* 4 — Typewriter caret */
+@keyframes zt-caret-blink {
+  50% { opacity: 0; }
+}
+.zt-caret {
+  display: inline-block;
+  width: 0.45ch;
+  margin-left: 2px;
+  background: currentColor;
+  vertical-align: -2px;
+  height: 1em;
+  animation: zt-caret-blink 1s steps(1) infinite;
+}
+
+/* 17 — Scroll progress bar (fed by JS reading scroll fraction) */
+.zt-scroll-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 3px;
+  width: 0%;
+  z-index: 60;
+  background: linear-gradient(90deg, #ef4444, #f59e0b, #8b6ef5, #0ea5e9);
+  box-shadow: 0 0 12px rgba(139, 110, 245, 0.6);
+  transition: width 80ms linear;
+  pointer-events: none;
+}
+
+/* 18 — Big radial cursor glow behind everything */
+.zt-cursor-glow {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  background: radial-gradient(
+    600px circle at var(--cgx, 50%) var(--cgy, 50%),
+    rgba(139, 110, 245, 0.12),
+    transparent 60%
+  );
+  transition: opacity 0.3s ease;
+}
+
+/* 16 — Section index dots (right side, vertical) */
+.zt-section-dot {
+  display: block;
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.18);
+  transition: all 0.25s ease;
+}
+.zt-section-dot.is-active {
+  height: 22px;
+  background: linear-gradient(180deg, #8b6ef5, #6d28d9);
+  box-shadow: 0 0 12px rgba(139, 110, 245, 0.7);
+}
+
+/* 19 — Loading skeleton shimmer */
+@keyframes zt-skeleton {
+  from { background-position: -180% 0; }
+  to   { background-position:  180% 0; }
+}
+.zt-skeleton {
+  background: linear-gradient(
+    100deg,
+    rgba(255, 255, 255, 0.04) 0%,
+    rgba(255, 255, 255, 0.10) 50%,
+    rgba(255, 255, 255, 0.04) 100%
+  );
+  background-size: 200% 100%;
+  animation: zt-skeleton 1.4s linear infinite;
+  border-radius: 12px;
+}
+
+/* 2 — Before/After slider container */
+.zt-ba-handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: rgba(255, 255, 255, 0.85);
+  box-shadow: 0 0 14px rgba(139, 110, 245, 0.6);
+  cursor: ew-resize;
+  z-index: 4;
+}
+.zt-ba-handle::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 36px;
+  height: 36px;
+  border-radius: 9999px;
+  background: rgba(10, 10, 18, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 0 24px rgba(139, 110, 245, 0.45);
+}
+.zt-ba-handle::before {
+  content: '⟷';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #fff;
+  font-size: 14px;
+  z-index: 5;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .zt-marquee, .zt-caret, .zt-skeleton, .zt-gradient-border::before {
+    animation: none !important;
+  }
+}
