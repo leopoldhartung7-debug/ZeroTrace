@@ -96,6 +96,49 @@ function useCountUp(target, duration, active) {
   return val
 }
 
+/* ── Floating asteroid-style rocks for the hero (decorative) ── */
+const ROCKS = [
+  { x: 3,  y: 55, size: 150, dur: 9,  delay: 0,   rot: -15 },
+  { x: 14, y: 78, size: 95,  dur: 11, delay: 2.2, rot: 12 },
+  { x: 24, y: 64, size: 60,  dur: 13, delay: 4,   rot: -25 },
+  { x: 82, y: 50, size: 160, dur: 10, delay: 1,   rot: 8 },
+  { x: 74, y: 78, size: 90,  dur: 12, delay: 3,   rot: -8 },
+  { x: 65, y: 92, size: 55,  dur: 14, delay: 2,   rot: 20 },
+  { x: 50, y: 95, size: 70,  dur: 11, delay: 0.5, rot: 35 },
+]
+
+function FloatingRocks() {
+  return (
+    <div className="pointer-events-none absolute inset-0 overflow-hidden">
+      {ROCKS.map((r, i) => (
+        <div
+          key={i}
+          className="absolute"
+          style={{
+            left: `${r.x}%`,
+            top: `${r.y}%`,
+            width: `${r.size}px`,
+            height: `${r.size * 0.86}px`,
+            animation: `zt-float ${r.dur}s ease-in-out ${r.delay}s infinite`,
+          }}
+        >
+          <div
+            className="h-full w-full"
+            style={{
+              transform: `rotate(${r.rot}deg)`,
+              background:
+                'radial-gradient(circle at 30% 25%, #5a5a64 0%, #2a2a34 55%, #0e0e16 100%)',
+              borderRadius: '60% 40% 55% 45% / 50% 60% 40% 50%',
+              boxShadow:
+                'inset -12px -18px 32px rgba(0,0,0,0.7), 0 24px 48px rgba(0,0,0,0.55), 0 0 36px rgba(139,110,245,0.08)',
+            }}
+          />
+        </div>
+      ))}
+    </div>
+  )
+}
+
 /* ── Floating particle field ── */
 function ParticleField() {
   return (
@@ -690,70 +733,108 @@ export default function Landing() {
         </div>
       </header>
 
-      {/* ── Hero ── */}
+      {/* ── Hero (AURA-style: massive purple arc + giant headline + pill CTA) ── */}
       <section className="relative overflow-hidden">
-        {/* Background effects */}
+        {/* Giant purple ring/arc at the top of the section */}
         <div
-          className="pointer-events-none absolute inset-0"
-          style={{ background: `radial-gradient(58% 55% at 72% 8%, ${GLOW}0.20), transparent 60%), radial-gradient(42% 50% at 2% 65%, ${GLOW}0.09), transparent 70%)` }}
+          className="pointer-events-none absolute left-1/2 -top-[78vw] h-[155vw] w-[155vw] -translate-x-1/2 rounded-full"
+          style={{
+            background:
+              'radial-gradient(circle, transparent 47%, #8b6ef5 49%, #6d28d9 53%, #4c1d95 56%, transparent 64%)',
+            filter: 'blur(1.5px)',
+          }}
         />
-        {/* Wandernde Aurora-Verläufe + feines Punktgitter */}
-        <div className="zt-aurora pointer-events-none absolute inset-0" />
+        {/* Soft halo wash beneath the arc */}
+        <div
+          className="pointer-events-none absolute left-1/2 top-0 h-[70vh] w-[140vw] -translate-x-1/2"
+          style={{ background: 'radial-gradient(60% 50% at 50% 0%, rgba(139,110,245,0.32), transparent 70%)' }}
+        />
+        {/* Faint dot grid for texture */}
         <div className="zt-grid-overlay pointer-events-none absolute inset-0" />
-        {/* Animated particles */}
-        <ParticleField />
+        {/* Floating asteroid-style rocks left and right */}
+        <FloatingRocks />
 
-        <div className="relative mx-auto grid max-w-6xl items-center gap-12 px-6 py-20 md:px-12 md:py-28 lg:grid-cols-[1.1fr_0.9fr]">
+        <div className="relative mx-auto max-w-7xl px-6 pb-24 pt-[44vw] text-center md:px-12 md:pt-[36vw] lg:pt-[30vw]">
+          {/* Massive headline — one word, thin uppercase, shimmer gradient */}
+          <h1
+            className="zt-hero-line-1 mx-auto leading-[0.95] tracking-[0.04em]"
+            style={{
+              fontSize: 'clamp(4.5rem, 17vw, 16rem)',
+              fontWeight: 200,
+            }}
+          >
+            <span className="zt-shimmer-text uppercase">Cheaters</span>
+          </h1>
+
+          {/* Subtitle */}
+          <p className="zt-hero-line-3 mx-auto mt-6 max-w-2xl text-base leading-relaxed text-neutral-300 md:text-lg">
+            ZeroTrace runs a deep, consent-based forensic scan that surfaces what live anti-cheats
+            overlook — then hands you a clear verdict in about a minute.
+          </p>
+
+          {/* Pill CTA with circle arrow */}
+          <div className="zt-hero-line-4 mt-8 flex justify-center">
+            <button
+              onClick={enter}
+              className="zt-sweep group inline-flex items-center gap-3 rounded-full border border-white/15 bg-white/[0.06] py-2.5 pl-6 pr-2.5 text-sm font-medium text-white backdrop-blur transition-all duration-200 hover:border-white/30 hover:bg-white/[0.1]"
+            >
+              <span className="relative z-10">Start Scanning Today</span>
+              <span className="relative z-10 grid h-8 w-8 place-items-center rounded-full bg-white/15 transition-all duration-300 group-hover:translate-x-1 group-hover:bg-white/25">
+                <ArrowRight size={14} />
+              </span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Sample verdict (moved out of the hero, keeps all original info) ── */}
+      <section className="relative mx-auto max-w-6xl px-6 py-16 md:px-12 md:py-20">
+        <div className="grid items-start gap-10 lg:grid-cols-[1fr_1fr]">
           <div>
-            <span className="zt-hero-line-1 zt-badge-pulse inline-flex items-center gap-2 rounded-full border border-sky-500/40 bg-sky-500/10 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.18em] text-sky-300">
-              <span className="relative flex h-1.5 w-1.5">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-sky-400 opacity-75" />
-                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-sky-300" />
-              </span>
-              Forensic Screenshare
-            </span>
-            <h1 className="mt-7 text-5xl font-extrabold leading-[1.02] tracking-tight md:text-7xl">
-              <span className="zt-hero-line-2 zt-shimmer-text block">
-                Cheaters leave traces.
-              </span>
-              <span className="zt-hero-line-3 block text-sky-300">We find them.</span>
-            </h1>
-            <p className="zt-hero-line-4 mt-7 max-w-xl text-lg leading-relaxed text-neutral-400">
-              ZeroTrace runs a deep, consent-based forensic scan that surfaces what live anti-cheats
-              overlook — then hands you a clear verdict in about a minute.
-            </p>
-            <div className="zt-hero-line-4 mt-9 flex flex-wrap items-center gap-4">
-              <button
-                onClick={enter}
-                className="zt-sweep group flex items-center gap-2 rounded-full bg-sky-500 px-7 py-3.5 text-base font-bold text-[#0b0c0e] shadow-[0_0_24px_rgba(14,165,233,0.35)] transition-all duration-200 hover:bg-sky-400 hover:scale-105 hover:shadow-[0_0_36px_rgba(14,165,233,0.55)] active:scale-100"
-              >
-                <span className="relative z-10 flex items-center gap-2">
-                  Get Started
-                  <ArrowRight size={18} className="transition-transform duration-300 group-hover:translate-x-1" />
+            <Reveal dir="right">
+              <span className="inline-flex items-center gap-2 rounded-full border border-sky-500/40 bg-sky-500/10 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.18em] text-sky-300">
+                <span className="relative flex h-1.5 w-1.5">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-sky-400 opacity-75" />
+                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-sky-300" />
                 </span>
-              </button>
-              <button
-                onClick={() => onNav('Docs')}
-                className="zt-sweep group flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.04] px-7 py-3.5 text-base font-semibold text-white backdrop-blur transition-all hover:bg-white/[0.08] hover:border-white/30 hover:scale-105 active:scale-100"
-              >
-                <span className="relative z-10 flex items-center gap-2">
-                  <Play size={15} className="fill-white transition-transform duration-300 group-hover:scale-110" /> See how it works
-                </span>
-              </button>
-            </div>
+                Forensic Screenshare
+              </span>
+            </Reveal>
+            <Reveal dir="right" delay={0.1}>
+              <h2 className="mt-5 text-3xl font-extrabold tracking-tight md:text-4xl">
+                <span className="zt-shimmer-text">A scan you can act on.</span>
+              </h2>
+              <p className="mt-4 max-w-md leading-relaxed text-neutral-400">
+                One clear number, one decision — with the artifacts attached. We surface what live
+                anti-cheats overlook and hand you a verdict in about a minute.
+              </p>
+            </Reveal>
+            <Reveal dir="up" delay={0.2}>
+              <div className="mt-6 flex flex-wrap items-center gap-3">
+                <button
+                  onClick={() => onNav('Docs')}
+                  className="zt-sweep group flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.04] px-5 py-2.5 text-sm font-semibold text-white backdrop-blur transition-all hover:border-white/30 hover:bg-white/[0.08]"
+                >
+                  <span className="relative z-10 flex items-center gap-2">
+                    <Play size={14} className="fill-white" /> See how it works
+                  </span>
+                </button>
+              </div>
+            </Reveal>
+            <Reveal dir="up" delay={0.3}>
+              <div className="mt-8 grid max-w-md grid-cols-2 gap-4">
+                <div className="zt-hover-glow rounded-2xl">
+                  <StatCard icon={Users} label="Servers" value="500+" />
+                </div>
+                <div className="zt-hover-glow rounded-2xl">
+                  <StatCard icon={CheckCircle2} label="Accuracy" value="99.9%" />
+                </div>
+              </div>
+            </Reveal>
           </div>
-
-          <div className="zt-hero-graphic space-y-5">
+          <Reveal dir="left" delay={0.15}>
             <VerdictGraphic />
-            <div className="grid grid-cols-2 gap-4">
-              <div className="zt-hover-glow rounded-2xl">
-                <StatCard icon={Users} label="Servers" value="500+" />
-              </div>
-              <div className="zt-hover-glow rounded-2xl">
-                <StatCard icon={CheckCircle2} label="Accuracy" value="99.9%" />
-              </div>
-            </div>
-          </div>
+          </Reveal>
         </div>
       </section>
 
