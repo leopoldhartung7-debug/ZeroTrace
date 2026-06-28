@@ -39,6 +39,7 @@ public partial class MainWindow : Window
     private ScanProfile _selectedProfile = ScanProfile.Deep;
     private DispatcherTimer? _closeTimer;
     private int _closeSecs;
+    private string? _introTempPath;
 
     public MainWindow(IndicatorStore indicators, ScanStore scans, SettingsStore settings, HashWhitelistStore? whitelist = null)
     {
@@ -50,7 +51,55 @@ public partial class MainWindow : Window
 
         _boxes = new[] { P0, P1, P2, P3, P4, P5 };
         TryLoadEmbeddedPin();
-        // GameView is visible by default in XAML; no intro timer needed.
+        PlayIntroVideo();
+    }
+
+    // WPF MediaElement cannot play pack:// URIs — the media pipeline needs a
+    // real file path. Extract the embedded resource to a temp file and play
+    // from disk. If anything fails, jump straight to GameView.
+    private void PlayIntroVideo()
+    {
+        try
+        {
+            var sri = Application.GetResourceStream(
+                new Uri("pack://application:,,,/Resources/intro.mp4"));
+            if (sri is null) { ShowStep(GameView); return; }
+
+            _introTempPath = Path.Combine(Path.GetTempPath(), "zt_intro_" + Path.GetRandomFileName() + ".mp4");
+            using (var dst = File.Create(_introTempPath))
+                sri.Stream.CopyTo(dst);
+
+            IntroVideo.Source = new Uri(_introTempPath, UriKind.Absolute);
+            IntroVideo.Play();
+
+            // Safety net: if video never ends (codec missing, render issue)
+            // advance after 6 seconds so the user is never stuck.
+            var fallback = new DispatcherTimer { Interval = TimeSpan.FromSeconds(6) };
+            fallback.Tick += (_, _) =>
+            {
+                fallback.Stop();
+                if (IntroView.Visibility == Visibility.Visible)
+                    AdvanceFromIntro();
+            };
+            fallback.Start();
+        }
+        catch
+        {
+            ShowStep(GameView);
+        }
+    }
+
+    private void AdvanceFromIntro()
+    {
+        ShowStep(GameView);
+        try
+        {
+            IntroVideo.Stop();
+            IntroVideo.Source = null;
+            if (_introTempPath is not null && File.Exists(_introTempPath))
+                File.Delete(_introTempPath);
+        }
+        catch { /* cleanup is best-effort */ }
     }
 
     // ===== Step navigation =====
@@ -60,16 +109,9 @@ public partial class MainWindow : Window
             s.Visibility = s == step ? Visibility.Visible : Visibility.Collapsed;
     }
 
-    private void IntroVideo_MediaEnded(object sender, RoutedEventArgs e)
-    {
-        ShowStep(GameView);
-    }
+    private void IntroVideo_MediaEnded(object sender, RoutedEventArgs e) => AdvanceFromIntro();
 
-    // Codec not installed or file unreadable → skip intro, go straight to game select.
-    private void IntroVideo_MediaFailed(object sender, ExceptionRoutedEventArgs e)
-    {
-        ShowStep(GameView);
-    }
+    private void IntroVideo_MediaFailed(object sender, ExceptionRoutedEventArgs e) => AdvanceFromIntro();
 
     // ===== Window chrome =====
     // The whole window is draggable: this bubbling handler only fires for clicks

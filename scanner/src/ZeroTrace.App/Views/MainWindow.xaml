@@ -201,11 +201,10 @@
 
                     <!-- RIGHT: step flow -->
                     <Grid Grid.Column="1" Margin="34,16">
-                        <!-- INTRO: animation (hidden by default; shown only if codec available) -->
-                        <Grid x:Name="IntroView" Visibility="Collapsed" VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
+                        <!-- INTRO: animation -->
+                        <Grid x:Name="IntroView" VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
                             <MediaElement x:Name="IntroVideo"
-                                          Source="pack://application:,,,/Resources/intro.mp4"
-                                          LoadedBehavior="Play"
+                                          LoadedBehavior="Manual"
                                           UnloadedBehavior="Stop"
                                           Stretch="UniformToFill"
                                           MediaEnded="IntroVideo_MediaEnded"
@@ -213,7 +212,7 @@
                         </Grid>
 
                         <!-- 0) GAME SELECT -->
-                        <StackPanel x:Name="GameView" Visibility="Visible" VerticalAlignment="Center">
+                        <StackPanel x:Name="GameView" Visibility="Collapsed" VerticalAlignment="Center">
                             <TextBlock Text="Spiel auswählen" Foreground="#8A9AAA" FontSize="13"
                                        FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,0,0,14" />
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
