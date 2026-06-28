@@ -49,6 +49,36 @@ function useScrollReveal(threshold = 0.12) {
   return [ref, visible]
 }
 
+/* ── Generic fly-in wrapper for any element on scroll ── */
+function Reveal({ children, dir = 'up', delay = 0, distance = 32, className = '', as: As = 'div' }) {
+  const [ref, visible] = useScrollReveal(0.1)
+  const offMap = {
+    up:    `translate3d(0, ${distance}px, 0)`,
+    down:  `translate3d(0, -${distance}px, 0)`,
+    left:  `translate3d(${distance}px, 0, 0)`,   // enters FROM the right
+    right: `translate3d(-${distance}px, 0, 0)`,  // enters FROM the left
+    pop:   'scale(0.92)',
+    blur:  'translate3d(0, 12px, 0)',
+  }
+  const off = offMap[dir] || offMap.up
+  const extraFilter = dir === 'blur' ? (visible ? 'blur(0)' : 'blur(6px)') : 'none'
+  return (
+    <As
+      ref={ref}
+      className={className}
+      style={{
+        opacity: visible ? 1 : 0,
+        transform: visible ? 'translate3d(0,0,0) scale(1)' : off,
+        filter: extraFilter,
+        transition: `opacity 0.7s ${delay}s cubic-bezier(0.22,1,0.36,1), transform 0.7s ${delay}s cubic-bezier(0.22,1,0.36,1), filter 0.7s ${delay}s ease`,
+        willChange: 'opacity, transform',
+      }}
+    >
+      {children}
+    </As>
+  )
+}
+
 /* ── Count-up hook ── */
 function useCountUp(target, duration, active) {
   const [val, setVal] = useState(0)
@@ -695,8 +725,12 @@ export default function Landing() {
       {/* ── See why ── */}
       <section className="mx-auto max-w-6xl px-6 py-16 md:px-12">
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-          <h2 className="text-4xl font-extrabold tracking-tight md:text-6xl">See why teams switch</h2>
-          <p className="text-lg text-neutral-400">What makes ZeroTrace different</p>
+          <Reveal dir="right">
+            <h2 className="text-4xl font-extrabold tracking-tight md:text-6xl">See why teams switch</h2>
+          </Reveal>
+          <Reveal dir="left" delay={0.1}>
+            <p className="text-lg text-neutral-400">What makes ZeroTrace different</p>
+          </Reveal>
         </div>
         <div className="mt-12 grid gap-6 lg:grid-cols-2">
           {BENTO.map((p, i) => (
@@ -708,12 +742,16 @@ export default function Landing() {
       {/* ── Feature grid + metrics ── */}
       <section id="features" className="mx-auto max-w-6xl px-6 py-16 md:px-12">
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-          <h2 className="max-w-2xl text-4xl font-extrabold leading-[1.05] tracking-tight md:text-6xl">
-            Everything you need to ban with confidence
-          </h2>
-          <p className="max-w-sm text-lg text-neutral-400">
-            The core features and options that ship with every ZeroTrace plan.
-          </p>
+          <Reveal dir="right">
+            <h2 className="max-w-2xl text-4xl font-extrabold leading-[1.05] tracking-tight md:text-6xl">
+              Everything you need to ban with confidence
+            </h2>
+          </Reveal>
+          <Reveal dir="left" delay={0.15}>
+            <p className="max-w-sm text-lg text-neutral-400">
+              The core features and options that ship with every ZeroTrace plan.
+            </p>
+          </Reveal>
         </div>
         <div className="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {FEATURES.map((f, i) => (
@@ -730,17 +768,21 @@ export default function Landing() {
       {/* ── Comparison ── */}
       <section className="mx-auto max-w-5xl px-6 py-20 md:px-12">
         <div className="text-center">
-          <h2 className="inline-block text-4xl font-extrabold tracking-tight md:text-5xl">
-            Where ZeroTrace fits
-            <span className="mx-auto mt-3 block h-1 w-28 rounded-full bg-sky-500" style={{ boxShadow: '0 0 12px rgba(14,165,233,0.6)' }} />
-          </h2>
-          <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-neutral-400">
-            Live anti-cheats are great at stopping "loud" cheats as they run. ZeroTrace takes over where
-            they stop — proving what slipped past, after the fact.
-          </p>
+          <Reveal dir="pop">
+            <h2 className="inline-block text-4xl font-extrabold tracking-tight md:text-5xl">
+              Where ZeroTrace fits
+              <span className="mx-auto mt-3 block h-1 w-28 rounded-full bg-sky-500" style={{ boxShadow: '0 0 12px rgba(14,165,233,0.6)' }} />
+            </h2>
+          </Reveal>
+          <Reveal dir="up" delay={0.15}>
+            <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-neutral-400">
+              Live anti-cheats are great at stopping "loud" cheats as they run. ZeroTrace takes over where
+              they stop — proving what slipped past, after the fact.
+            </p>
+          </Reveal>
         </div>
 
-        <div className="mt-10 overflow-hidden rounded-2xl border border-white/10">
+        <Reveal dir="up" delay={0.1} className="mt-10 overflow-hidden rounded-2xl border border-white/10">
           <table className="w-full text-left text-sm">
             <thead>
               <tr className="border-b border-white/10 bg-white/[0.02]">
@@ -762,19 +804,25 @@ export default function Landing() {
               ))}
             </tbody>
           </table>
-        </div>
-        <p className="mt-8 text-center text-neutral-400">
-          Run them together — live protection up front, ZeroTrace for the proof.
-        </p>
+        </Reveal>
+        <Reveal dir="up" delay={0.15}>
+          <p className="mt-8 text-center text-neutral-400">
+            Run them together — live protection up front, ZeroTrace for the proof.
+          </p>
+        </Reveal>
       </section>
 
       {/* ── How ZeroTrace works ── */}
       <section className="mx-auto max-w-6xl px-6 py-20 md:px-12">
         <div className="text-center">
-          <h2 className="text-4xl font-extrabold tracking-tight md:text-6xl">From download to verdict</h2>
-          <p className="mx-auto mt-6 max-w-3xl text-lg text-neutral-400">
-            Three short steps — download, scan, review. No complications, no lengthy processes.
-          </p>
+          <Reveal dir="pop">
+            <h2 className="text-4xl font-extrabold tracking-tight md:text-6xl">From download to verdict</h2>
+          </Reveal>
+          <Reveal dir="up" delay={0.15}>
+            <p className="mx-auto mt-6 max-w-3xl text-lg text-neutral-400">
+              Three short steps — download, scan, review. No complications, no lengthy processes.
+            </p>
+          </Reveal>
         </div>
         <div className="mt-16 space-y-20">
           {STEPS.map((s, i) => (
@@ -786,17 +834,19 @@ export default function Landing() {
       {/* ── FAQ ── */}
       <section id="faq" className="mx-auto max-w-6xl px-6 py-20 md:px-12">
         <div className="grid gap-10 lg:grid-cols-2">
-          <div>
+          <Reveal dir="right">
             <h2 className="text-4xl font-extrabold leading-[1.05] tracking-tight md:text-6xl">
               Answer your <span className="text-sky-300">questions</span>
             </h2>
             <p className="mt-6 text-lg text-neutral-400">
               You've got <span className="text-white">answers</span>
             </p>
-          </div>
+          </Reveal>
           <div>
-            {QA.map((x) => (
-              <FaqRow key={x.q} q={x.q} a={x.a} />
+            {QA.map((x, i) => (
+              <Reveal key={x.q} dir="left" delay={i * 0.08}>
+                <FaqRow q={x.q} a={x.a} />
+              </Reveal>
             ))}
           </div>
         </div>
@@ -824,33 +874,35 @@ export default function Landing() {
         </div>
         <div className="relative mx-auto max-w-6xl px-6 py-28 md:px-12">
           <div className="flex flex-col gap-10 lg:flex-row lg:items-center lg:justify-between">
-            <h2 className="text-5xl font-extrabold leading-[1.05] tracking-tight md:text-7xl">
-              Two clicks
-              <br />
-              <span className="text-sky-300">to certainty</span>
-            </h2>
-            <div className="flex items-center gap-6">
+            <Reveal dir="right">
+              <h2 className="text-5xl font-extrabold leading-[1.05] tracking-tight md:text-7xl">
+                Two clicks
+                <br />
+                <span className="text-sky-300">to certainty</span>
+              </h2>
+            </Reveal>
+            <Reveal dir="left" delay={0.2} className="flex items-center gap-6">
               <button
                 onClick={enter}
-                className="zt-cta-pulse rounded-full bg-sky-500 px-10 py-5 text-lg font-bold text-[#0b0c0e] transition-all hover:bg-sky-400 hover:scale-105 active:scale-100"
+                className="zt-cta-pulse zt-sweep group rounded-full bg-sky-500 px-10 py-5 text-lg font-bold text-[#0b0c0e] transition-all hover:bg-sky-400 hover:scale-105 active:scale-100"
               >
-                Get Started
+                <span className="relative z-10">Get Started</span>
               </button>
               <p className="text-neutral-400">
                 Trusted by
                 <br />
                 <span className="text-white">500+ communities</span>
               </p>
-            </div>
+            </Reveal>
           </div>
-          <div className="mt-10 flex flex-wrap gap-8">
+          <Reveal dir="up" delay={0.3} className="mt-10 flex flex-wrap gap-8">
             <span className="flex items-center gap-2 text-neutral-300 transition-colors duration-200 hover:text-white">
               <Check size={18} className="text-sky-300" /> Download ZeroTrace
             </span>
             <span className="flex items-center gap-2 text-neutral-300 transition-colors duration-200 hover:text-white">
               <Check size={18} className="text-sky-300" /> Join our Community
             </span>
-          </div>
+          </Reveal>
         </div>
       </section>
 
