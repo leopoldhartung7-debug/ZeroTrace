@@ -735,6 +735,14 @@ export default function Landing() {
 
       {/* ── Hero (AURA-style: giant headline + floating rocks + pill CTA) ── */}
       <section className="relative overflow-hidden">
+        {/* Soft purple wash background (no sphere) */}
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background:
+              'radial-gradient(70% 60% at 50% 0%, rgba(139,110,245,0.28), transparent 70%), radial-gradient(50% 40% at 50% 30%, rgba(109,40,217,0.18), transparent 75%)',
+          }}
+        />
         {/* Faint dot grid for texture */}
         <div className="zt-grid-overlay pointer-events-none absolute inset-0" />
         {/* Floating asteroid-style rocks left and right */}
