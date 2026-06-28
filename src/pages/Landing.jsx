@@ -735,12 +735,12 @@ export default function Landing() {
 
       {/* ── Hero (AURA-style: giant headline + floating rocks + pill CTA) ── */}
       <section className="relative overflow-hidden">
-        {/* Soft purple wash background (no sphere) */}
+        {/* Solid violet wash background (no sphere) */}
         <div
           className="pointer-events-none absolute inset-0"
           style={{
             background:
-              'radial-gradient(70% 60% at 50% 0%, rgba(139,110,245,0.28), transparent 70%), radial-gradient(50% 40% at 50% 30%, rgba(109,40,217,0.18), transparent 75%)',
+              'radial-gradient(75% 65% at 50% 0%, rgba(139,110,245,0.45), transparent 72%), radial-gradient(55% 45% at 50% 28%, rgba(109,40,217,0.35), transparent 75%)',
           }}
         />
         {/* Faint dot grid for texture */}
@@ -757,7 +757,19 @@ export default function Landing() {
               fontWeight: 200,
             }}
           >
-            <span className="zt-shimmer-text uppercase">ZeroTrace</span>
+            <span
+              className="uppercase"
+              style={{
+                background:
+                  'linear-gradient(180deg, #c4b5fd 0%, #a78bfa 35%, #8b6ef5 60%, #6d28d9 100%)',
+                WebkitBackgroundClip: 'text',
+                backgroundClip: 'text',
+                color: 'transparent',
+                filter: 'drop-shadow(0 0 36px rgba(139,110,245,0.45))',
+              }}
+            >
+              ZeroTrace
+            </span>
           </h1>
 
           {/* Subtitle */}
