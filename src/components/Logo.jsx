@@ -16,7 +16,15 @@ export default function Logo({ size = 'md', sub = false }) {
       <img
         src={ztLogo}
         alt="ZeroTrace"
-        style={{ height: s.box, width: s.box * ASPECT, flexShrink: 0, display: 'block', objectFit: 'contain' }}
+        className="zt-float-slow"
+        style={{
+          height: s.box,
+          width: s.box * ASPECT,
+          flexShrink: 0,
+          display: 'block',
+          objectFit: 'contain',
+          filter: 'drop-shadow(0 0 12px rgba(154, 164, 198, 0.18))',
+        }}
       />
 
       <span style={{ display: 'flex', flexDirection: 'column', gap: 2, lineHeight: 1 }}>

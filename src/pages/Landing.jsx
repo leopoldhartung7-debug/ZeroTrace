@@ -38,22 +38,32 @@ function VerdictGraphic() {
             <circle
               cx="64" cy="64" r={r} fill="none" stroke="#9aa4c6" strokeWidth="9" strokeLinecap="round"
               strokeDasharray={`${(circ * score) / 100} ${circ}`}
-              style={{ filter: `drop-shadow(0 0 6px ${GLOW}0.8))` }}
+              style={{
+                filter: `drop-shadow(0 0 6px ${GLOW}0.8))`,
+                strokeDashoffset: circ,
+                animation: 'zt-ring-draw 1.6s cubic-bezier(0.22, 1, 0.36, 1) 0.2s forwards',
+              }}
             />
+            <style>{`
+              @keyframes zt-ring-draw {
+                from { stroke-dashoffset: ${circ}; }
+                to   { stroke-dashoffset: 0; }
+              }
+            `}</style>
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-3xl font-extrabold text-white">{score}</span>
+            <span className="zt-shimmer text-3xl font-extrabold">{score}</span>
             <span className="text-[10px] uppercase tracking-[0.15em] text-neutral-500">Risk</span>
           </div>
         </div>
-        <span className="mt-4 flex items-center gap-2 rounded-full border border-sky-500/40 bg-sky-500/10 px-4 py-1.5 text-sm font-semibold text-sky-200">
-          <AlertTriangle size={14} /> Cheating · detected
+        <span className="zt-pulse-glow mt-4 flex items-center gap-2 rounded-full border border-sky-500/40 bg-sky-500/10 px-4 py-1.5 text-sm font-semibold text-sky-200">
+          <AlertTriangle size={14} className="zt-pulse-soft" /> Cheating · detected
         </span>
       </div>
 
-      <div className="relative mt-5 grid grid-cols-3 gap-2.5">
+      <div className="zt-stagger relative mt-5 grid grid-cols-3 gap-2.5">
         {['Memory', 'Modules', 'Registry'].map((t) => (
-          <div key={t} className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-center">
+          <div key={t} className="zt-hover-lift rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-center">
             <p className="text-[11px] text-neutral-500">{t}</p>
             <p className="text-xs font-semibold text-sky-300">flagged</p>
           </div>
@@ -369,9 +379,15 @@ export default function Landing() {
           className="pointer-events-none absolute inset-0"
           style={{ background: `radial-gradient(58% 55% at 72% 8%, ${GLOW}0.20), transparent 60%), radial-gradient(42% 50% at 2% 65%, ${GLOW}0.09), transparent 70%)` }}
         />
+        <div className="zt-aurora pointer-events-none absolute inset-0 opacity-80" />
+        <div className="zt-grid-overlay pointer-events-none absolute inset-0" />
         <div className="relative mx-auto grid max-w-6xl items-center gap-12 px-6 py-20 md:px-12 md:py-28 lg:grid-cols-[1.1fr_0.9fr]">
-          <div>
-            <span className="inline-block rounded-full border border-sky-500/40 bg-sky-500/10 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.18em] text-sky-300">
+          <div className="zt-fade-up">
+            <span className="zt-pulse-glow inline-flex items-center gap-2 rounded-full border border-sky-500/40 bg-sky-500/10 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.18em] text-sky-300">
+              <span className="relative flex h-1.5 w-1.5">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-sky-400 opacity-75" />
+                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-sky-300" />
+              </span>
               Forensic Screenshare
             </span>
             <h1 className="mt-7 text-5xl font-extrabold leading-[1.02] tracking-tight md:text-7xl">
@@ -379,7 +395,7 @@ export default function Landing() {
                 Cheaters leave traces.
               </span>
               <br />
-              <span className="text-sky-300">We find them.</span>
+              <span className="zt-shimmer">We find them.</span>
             </h1>
             <p className="mt-7 max-w-xl text-lg leading-relaxed text-neutral-400">
               ZeroTrace runs a deep, consent-based forensic scan that surfaces what live anti-cheats
@@ -388,25 +404,33 @@ export default function Landing() {
             <div className="mt-9 flex flex-wrap items-center gap-4">
               <button
                 onClick={enter}
-                className="flex items-center gap-2 rounded-full bg-sky-500 px-7 py-3.5 text-base font-bold text-[#0b0c0e] transition-all hover:bg-sky-400"
+                className="zt-sweep flex items-center gap-2 rounded-full bg-sky-500 px-7 py-3.5 text-base font-bold text-[#0b0c0e] transition-all hover:-translate-y-0.5 hover:bg-sky-400"
                 style={{ boxShadow: `0 0 34px ${GLOW}0.5)` }}
               >
-                Get Started <ArrowRight size={18} />
+                <span className="relative z-10 flex items-center gap-2">
+                  Get Started <ArrowRight size={18} className="transition-transform duration-200 group-hover:translate-x-1" />
+                </span>
               </button>
               <button
                 onClick={() => onNav('Docs')}
-                className="flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.04] px-7 py-3.5 text-base font-semibold text-white backdrop-blur transition-colors hover:bg-white/[0.08]"
+                className="zt-sweep flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.04] px-7 py-3.5 text-base font-semibold text-white backdrop-blur transition-all hover:-translate-y-0.5 hover:border-white/30 hover:bg-white/[0.08]"
               >
                 <Play size={15} className="fill-white" /> See how it works
               </button>
             </div>
           </div>
 
-          <div className="space-y-5">
-            <VerdictGraphic />
-            <div className="grid grid-cols-2 gap-4">
-              <StatCard icon={Users} label="Servers" value="500+" />
-              <StatCard icon={CheckCircle2} label="Accuracy" value="99.9%" />
+          <div className="zt-fade-up space-y-5" style={{ animationDelay: '120ms' }}>
+            <div className="zt-float-slow zt-hover-glow rounded-3xl">
+              <VerdictGraphic />
+            </div>
+            <div className="zt-stagger grid grid-cols-2 gap-4">
+              <div className="zt-hover-lift rounded-2xl">
+                <StatCard icon={Users} label="Servers" value="500+" />
+              </div>
+              <div className="zt-hover-lift rounded-2xl">
+                <StatCard icon={CheckCircle2} label="Accuracy" value="99.9%" />
+              </div>
             </div>
           </div>
         </div>

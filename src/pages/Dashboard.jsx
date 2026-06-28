@@ -94,9 +94,9 @@ const accentMap = {
 
 function StatCard({ icon: Icon, label, value, accent = 'neutral' }) {
   return (
-    <div className="card-glass card-hover overflow-hidden rounded-2xl p-3 sm:p-4 md:p-5">
+    <div className="card-glass card-hover zt-hover-glow group overflow-hidden rounded-2xl p-3 sm:p-4 md:p-5">
       <div className="flex items-start gap-2 sm:gap-3">
-        <div className="tile flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border shadow-[var(--elev-1)] sm:h-9 sm:w-9 md:h-10 md:w-10">
+        <div className="tile flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border shadow-[var(--elev-1)] transition-transform duration-300 group-hover:scale-110 sm:h-9 sm:w-9 md:h-10 md:w-10">
           <Icon size={16} className={accentMap[accent]} />
         </div>
         <div className="min-w-0 flex-1">
@@ -112,7 +112,7 @@ function StatCard({ icon: Icon, label, value, accent = 'neutral' }) {
             {label}
           </p>
           <p
-            className="txt mt-1 text-lg font-bold leading-tight sm:text-xl md:text-2xl"
+            className="txt mt-1 text-lg font-bold leading-tight tabular-nums sm:text-xl md:text-2xl"
             style={{ overflowWrap: 'anywhere' }}
           >
             {value}
