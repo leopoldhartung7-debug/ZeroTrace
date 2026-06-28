@@ -632,6 +632,9 @@ export default function Landing() {
           className="pointer-events-none absolute inset-0"
           style={{ background: `radial-gradient(58% 55% at 72% 8%, ${GLOW}0.20), transparent 60%), radial-gradient(42% 50% at 2% 65%, ${GLOW}0.09), transparent 70%)` }}
         />
+        {/* Wandernde Aurora-Verläufe + feines Punktgitter */}
+        <div className="zt-aurora pointer-events-none absolute inset-0" />
+        <div className="zt-grid-overlay pointer-events-none absolute inset-0" />
         {/* Animated particles */}
         <ParticleField />
         {/* Scan line sweep */}
@@ -639,7 +642,11 @@ export default function Landing() {
 
         <div className="relative mx-auto grid max-w-6xl items-center gap-12 px-6 py-20 md:px-12 md:py-28 lg:grid-cols-[1.1fr_0.9fr]">
           <div>
-            <span className="zt-hero-line-1 zt-badge-pulse inline-block rounded-full border border-sky-500/40 bg-sky-500/10 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.18em] text-sky-300">
+            <span className="zt-hero-line-1 zt-badge-pulse inline-flex items-center gap-2 rounded-full border border-sky-500/40 bg-sky-500/10 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.18em] text-sky-300">
+              <span className="relative flex h-1.5 w-1.5">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-sky-400 opacity-75" />
+                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-sky-300" />
+              </span>
               Forensic Screenshare
             </span>
             <h1 className="mt-7 text-5xl font-extrabold leading-[1.02] tracking-tight md:text-7xl">
@@ -655,15 +662,20 @@ export default function Landing() {
             <div className="zt-hero-line-4 mt-9 flex flex-wrap items-center gap-4">
               <button
                 onClick={enter}
-                className="zt-cta-pulse flex items-center gap-2 rounded-full bg-sky-500 px-7 py-3.5 text-base font-bold text-[#0b0c0e] transition-all hover:bg-sky-400 hover:scale-105 active:scale-100"
+                className="zt-cta-pulse zt-sweep group flex items-center gap-2 rounded-full bg-sky-500 px-7 py-3.5 text-base font-bold text-[#0b0c0e] transition-all hover:bg-sky-400 hover:scale-105 active:scale-100"
               >
-                Get Started <ArrowRight size={18} />
+                <span className="relative z-10 flex items-center gap-2">
+                  Get Started
+                  <ArrowRight size={18} className="transition-transform duration-300 group-hover:translate-x-1" />
+                </span>
               </button>
               <button
                 onClick={() => onNav('Docs')}
-                className="flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.04] px-7 py-3.5 text-base font-semibold text-white backdrop-blur transition-all hover:bg-white/[0.08] hover:border-white/30 hover:scale-105 active:scale-100"
+                className="zt-sweep group flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.04] px-7 py-3.5 text-base font-semibold text-white backdrop-blur transition-all hover:bg-white/[0.08] hover:border-white/30 hover:scale-105 active:scale-100"
               >
-                <Play size={15} className="fill-white" /> See how it works
+                <span className="relative z-10 flex items-center gap-2">
+                  <Play size={15} className="fill-white transition-transform duration-300 group-hover:scale-110" /> See how it works
+                </span>
               </button>
             </div>
           </div>
@@ -671,8 +683,12 @@ export default function Landing() {
           <div className="zt-hero-graphic space-y-5">
             <VerdictGraphic />
             <div className="grid grid-cols-2 gap-4">
-              <StatCard icon={Users} label="Servers" value="500+" />
-              <StatCard icon={CheckCircle2} label="Accuracy" value="99.9%" />
+              <div className="zt-hover-glow rounded-2xl">
+                <StatCard icon={Users} label="Servers" value="500+" />
+              </div>
+              <div className="zt-hover-glow rounded-2xl">
+                <StatCard icon={CheckCircle2} label="Accuracy" value="99.9%" />
+              </div>
             </div>
           </div>
         </div>
