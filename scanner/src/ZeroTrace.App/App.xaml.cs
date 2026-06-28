@@ -3,6 +3,7 @@ using System.IO;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Threading;
+using ZeroTrace.App.Security;
 using ZeroTrace.App.Services;
 using ZeroTrace.App.ViewModels;
 using ZeroTrace.App.Views;
@@ -32,6 +33,14 @@ public partial class App : Application
         DispatcherUnhandledException += OnDispatcherUnhandledException;
         AppDomain.CurrentDomain.UnhandledException += OnDomainUnhandledException;
         TaskScheduler.UnobservedTaskException += OnUnobservedTaskException;
+
+        // Hardening: refuse to run with a debugger / reverser attached, and
+        // start a background watcher that exits if the exe is patched live.
+        if (!IntegrityGuard.EnsureSafeToRun())
+        {
+            Shutdown(0);
+            return;
+        }
 
         try
         {
