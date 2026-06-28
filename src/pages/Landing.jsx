@@ -9,6 +9,11 @@ import {
 import { useStore } from '../store.jsx'
 import { useToast } from '../components/ui.jsx'
 import Logo from '../components/Logo.jsx'
+import {
+  ScrollProgress, MouseGlow, NoiseLayer, MagneticCTA, SectionIndex,
+  Typewriter, TerminalCard, TiltCard, DetectionTicker, TrustedByMarquee,
+  LiveCounter, DemoVideoMock, PricingTeaser, StepThrough, BeforeAfter,
+} from '../components/landing/LandingExtras.jsx'
 
 const NAV = ['Features', 'Pricing', 'Docs', 'Branding', 'FAQ', 'Download', 'Discord']
 
@@ -393,7 +398,25 @@ export default function Landing() {
   }
 
   return (
-    <div className="landing-font force-dark app-bg min-h-screen overflow-x-hidden text-white">
+    <div className="landing-font force-dark app-bg relative min-h-screen overflow-x-hidden text-white">
+      <ScrollProgress />
+      <MouseGlow />
+      <NoiseLayer />
+      <SectionIndex
+        sections={[
+          { id: 'hero', label: 'Top' },
+          { id: 'ticker', label: 'Live' },
+          { id: 'before-after', label: 'Compare' },
+          { id: 'bento', label: 'Why ZeroTrace' },
+          { id: 'features', label: 'Features' },
+          { id: 'how', label: 'How it works' },
+          { id: 'demo', label: 'Demo' },
+          { id: 'pricing', label: 'Pricing' },
+          { id: 'faq', label: 'FAQ' },
+          { id: 'cta', label: 'Get started' },
+        ]}
+      />
+
       {/* Top sentinel — sits in normal flow so it scrolls off naturally. */}
       <div ref={sentinelRef} className="h-px w-full" aria-hidden="true" />
 
@@ -457,8 +480,8 @@ export default function Landing() {
         </div>
       </header>
 
-      {/* ── Hero (AURA-style: giant centered headline + floating rocks) ── */}
-      <section className="relative overflow-hidden">
+      {/* ── Hero ── */}
+      <section id="hero" className="relative overflow-hidden">
         {/* Solid violet wash background (no sphere) */}
         <div
           className="pointer-events-none absolute inset-0"
@@ -494,23 +517,43 @@ export default function Landing() {
             </span>
           </h1>
 
-          {/* Subtitle */}
+          {/* Subtitle with typewriter */}
           <p className="zt-fade-up mx-auto mt-6 max-w-2xl text-base leading-relaxed text-neutral-300 md:text-lg" style={{ animationDelay: '120ms' }}>
-            ZeroTrace runs a deep, consent-based forensic scan that surfaces what live anti-cheats
-            overlook — then hands you a clear verdict in about a minute.
+            ZeroTrace runs a deep, consent-based forensic scan that{' '}
+            <span className="font-semibold text-violet-200">
+              <Typewriter
+                phrases={[
+                  'surfaces what live anti-cheats overlook.',
+                  'unmasks unsigned kernel drivers.',
+                  'catches RWX pages live cheats hide.',
+                  'hands you a verdict in about a minute.',
+                ]}
+              />
+            </span>
           </p>
 
           {/* Pill CTA with circle arrow */}
           <div className="zt-fade-up mt-8 flex justify-center" style={{ animationDelay: '220ms' }}>
-            <button
+            <MagneticCTA
               onClick={enter}
-              className="zt-sweep group inline-flex items-center gap-3 rounded-full border border-white/15 bg-white/[0.06] py-2.5 pl-6 pr-2.5 text-sm font-medium text-white backdrop-blur transition-all duration-200 hover:border-white/30 hover:bg-white/[0.1]"
+              className="zt-sweep group inline-flex items-center gap-3 rounded-full border border-white/15 bg-white/[0.06] py-2.5 pl-6 pr-2.5 text-sm font-medium text-white backdrop-blur duration-200 hover:border-white/30 hover:bg-white/[0.1]"
             >
               <span className="relative z-10">Start Scanning Today</span>
               <span className="relative z-10 grid h-8 w-8 place-items-center rounded-full bg-white/15 transition-all duration-300 group-hover:translate-x-1 group-hover:bg-white/25">
                 <ArrowRight size={14} />
               </span>
-            </button>
+            </MagneticCTA>
+          </div>
+
+          {/* Terminal + live counters row */}
+          <div className="mx-auto mt-16 grid max-w-5xl gap-6 text-left md:grid-cols-[1.6fr_1fr]">
+            <TiltCard className="rounded-3xl">
+              <TerminalCard />
+            </TiltCard>
+            <div className="flex flex-col gap-4">
+              <LiveCounter label="Cheaters caught this week" base={1247} />
+              <LiveCounter label="Scans this week" base={8954} />
+            </div>
           </div>
         </div>
       </section>
@@ -556,8 +599,35 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* ── Live detection ticker ── */}
+      <section id="ticker" className="relative border-y border-white/[0.06] bg-white/[0.015]">
+        <DetectionTicker />
+      </section>
+
+      {/* ── Before / After slider ── */}
+      <section id="before-after" className="relative mx-auto max-w-6xl px-6 py-12 md:px-12 md:py-16">
+        <div className="mb-8 text-center">
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-violet-300">Side by side</p>
+          <h2 className="mt-3 text-3xl font-extrabold tracking-tight md:text-5xl">
+            <span className="zt-shimmer-text">Two views of the same player.</span>
+          </h2>
+          <p className="mx-auto mt-3 max-w-2xl text-neutral-400">
+            Drag the handle to compare what the live anti-cheat saw with what ZeroTrace's forensic scan found.
+          </p>
+        </div>
+        <BeforeAfter />
+      </section>
+
+      {/* ── Trusted-by marquee ── */}
+      <section id="trusted-by" className="relative mx-auto max-w-6xl px-6 pb-12 md:px-12">
+        <p className="mb-3 text-center text-[11px] font-bold uppercase tracking-[0.22em] text-neutral-500">
+          Trusted by 500+ communities
+        </p>
+        <TrustedByMarquee />
+      </section>
+
       {/* ── See why (bento, original ZeroTrace) ── */}
-      <section className="mx-auto max-w-6xl px-6 py-16 md:px-12">
+      <section id="bento" className="mx-auto max-w-6xl px-6 py-16 md:px-12">
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <h2 className="text-4xl font-extrabold tracking-tight md:text-6xl">See why teams switch</h2>
           <p className="text-lg text-neutral-400">What makes ZeroTrace different</p>
@@ -648,15 +718,18 @@ export default function Landing() {
         </p>
       </section>
 
-      {/* ── How ZeroTrace works ── */}
-      <section className="mx-auto max-w-6xl px-6 py-20 md:px-12">
+      {/* ── How ZeroTrace works — interactive step-through ── */}
+      <section id="how" className="mx-auto max-w-6xl px-6 py-20 md:px-12">
         <div className="text-center">
           <h2 className="text-4xl font-extrabold tracking-tight md:text-6xl">From download to verdict</h2>
           <p className="mx-auto mt-6 max-w-3xl text-lg text-neutral-400">
-            Three short steps — download, scan, review. No complications, no lengthy processes.
+            Four short steps. Tap one on the left to see what happens.
           </p>
         </div>
-        <div className="mt-16 space-y-20">
+        <div className="mt-12">
+          <StepThrough />
+        </div>
+        <div className="mt-20 space-y-20">
           {STEPS.map((s) => (
             <div key={s.title} className="grid items-center gap-10 md:grid-cols-2">
               <div className={s.reverse ? 'md:order-2' : ''}>
@@ -670,6 +743,39 @@ export default function Landing() {
             </div>
           ))}
         </div>
+      </section>
+
+      {/* ── Demo video card ── */}
+      <section id="demo" className="relative mx-auto max-w-6xl px-6 py-16 md:px-12 md:py-20">
+        <div className="grid items-center gap-10 lg:grid-cols-[1.1fr_0.9fr]">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-violet-300">Watch it run</p>
+            <h2 className="mt-3 text-4xl font-extrabold tracking-tight md:text-5xl">
+              <span className="zt-shimmer-text">~58 seconds, end to end.</span>
+            </h2>
+            <p className="mt-4 max-w-md text-lg text-neutral-400">
+              A real scan replay — from consent to verdict — with the same artifact ladder
+              you'll see in your own dashboard.
+            </p>
+          </div>
+          <TiltCard>
+            <DemoVideoMock />
+          </TiltCard>
+        </div>
+      </section>
+
+      {/* ── Pricing teaser ── */}
+      <section id="pricing" className="relative mx-auto max-w-6xl px-6 py-16 md:px-12 md:py-20">
+        <div className="mb-10 text-center">
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-violet-300">Pricing</p>
+          <h2 className="mt-3 text-4xl font-extrabold tracking-tight md:text-5xl">
+            Pick the plan that fits.
+          </h2>
+          <p className="mx-auto mt-3 max-w-2xl text-neutral-400">
+            Start free. Move up when your community grows.
+          </p>
+        </div>
+        <PricingTeaser />
       </section>
 
       {/* ── FAQ ── */}
@@ -692,7 +798,7 @@ export default function Landing() {
       </section>
 
       {/* ── Final CTA ── */}
-      <section className="relative overflow-hidden">
+      <section id="cta" className="relative overflow-hidden">
         <div
           className="pointer-events-none absolute inset-0"
           style={{ background: `radial-gradient(60% 80% at 50% 100%, ${GLOW}0.18), transparent 70%)` }}
@@ -705,13 +811,13 @@ export default function Landing() {
               to certainty
             </h2>
             <div className="flex items-center gap-6">
-              <button
+              <MagneticCTA
                 onClick={enter}
-                className="rounded-full bg-sky-500 px-10 py-5 text-lg font-bold text-[#0b0c0e] transition-all hover:bg-sky-400"
+                className="rounded-full bg-sky-500 px-10 py-5 text-lg font-bold text-[#0b0c0e] hover:bg-sky-400"
                 style={{ boxShadow: `0 0 40px ${GLOW}0.5)` }}
               >
                 Get Started
-              </button>
+              </MagneticCTA>
               <p className="text-neutral-400">
                 Trusted by
                 <br />
