@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Play, Globe, ChevronDown, Check, ArrowRight, Link2, MoreVertical, FileText,
@@ -355,6 +355,15 @@ export default function Landing() {
   const toast = useToast()
   const enter = () => nav(state.auth ? '/dashboard' : '/login')
 
+  // Shrink the header into a floating rounded pill once the user scrolls.
+  const [scrolled, setScrolled] = useState(false)
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 24)
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
   const ROUTES = {
     Pricing: '/pricing',
     Docs: '/docs',
@@ -375,8 +384,19 @@ export default function Landing() {
 
   return (
     <div className="landing-font force-dark app-bg min-h-screen overflow-x-hidden text-white">
-      {/* ── Header ── */}
-      <header className="sticky top-0 z-30 flex items-center justify-between border-b border-white/5 bg-black/50 px-6 py-4 backdrop-blur md:px-12">
+      {/* ── Header (shrinks into a floating rounded pill on scroll) ── */}
+      <header
+        className={`sticky top-0 z-30 transition-all duration-300 ease-out ${
+          scrolled ? 'px-3 pt-3 md:px-6' : 'px-0 pt-0'
+        }`}
+      >
+        <div
+          className={`mx-auto flex items-center justify-between transition-all duration-300 ease-out ${
+            scrolled
+              ? 'max-w-5xl rounded-full border border-white/15 bg-black/70 px-4 py-2 shadow-[0_18px_48px_-12px_rgba(0,0,0,0.6)] backdrop-blur-xl md:px-6'
+              : 'max-w-full border-b border-white/5 bg-black/50 px-6 py-4 backdrop-blur md:px-12'
+          }`}
+        >
         <button onClick={() => nav('/')} className="flex items-center gap-3">
           <Logo size="md" />
         </button>
@@ -413,6 +433,7 @@ export default function Landing() {
               </button>
             </>
           )}
+        </div>
         </div>
       </header>
 
