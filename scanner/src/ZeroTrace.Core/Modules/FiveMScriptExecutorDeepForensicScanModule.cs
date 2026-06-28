@@ -1393,7 +1393,7 @@ public sealed class FiveMScriptExecutorDeepForensicScanModule : IScanModule
                                 Location = @"HKCU\Software\Microsoft\Windows\CurrentVersion\Run",
                                 FileName = valName,
                                 Reason = $"Script executor '{matched}' is registered as an autostart entry in the Windows Run registry key, ensuring it launches automatically at user login.",
-                                Detail = $"Value: {valName} = {valData.Length > 120 ? valData[..120] + "..." : valData}"
+                                Detail = $"Value: {valName} = {(valData.Length > 120 ? valData[..120] + "..." : valData)}"
                             });
                         }
                     }
@@ -1429,7 +1429,7 @@ public sealed class FiveMScriptExecutorDeepForensicScanModule : IScanModule
                                 Risk = RiskLevel.Critical,
                                 Location = @"HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\RunMRU",
                                 Reason = $"Script executor '{matched}' path found in Run dialog MRU list, indicating the executor was launched via the Run dialog.",
-                                Detail = $"MRU entry: {valData.Length > 120 ? valData[..120] + "..." : valData}"
+                                Detail = $"MRU entry: {(valData.Length > 120 ? valData[..120] + "..." : valData)}"
                             });
                         }
                     }

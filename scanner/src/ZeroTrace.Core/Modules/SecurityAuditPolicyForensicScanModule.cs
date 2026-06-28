@@ -712,7 +712,7 @@ public sealed class SecurityAuditPolicyForensicScanModule : IScanModule
                                             Location = $@"HKLM\{ruleType}\{ruleName}",
                                             FileName = "Registry",
                                             Reason = $"AppLocker deny rule references cheat tool: '{ck}' — confirms cheat was previously blocked",
-                                            Detail = $"Rule data: {data.Length > 200 ? data[..200] : data}"
+                                            Detail = $"Rule data: {(data.Length > 200 ? data[..200] : data)}"
                                         });
                                         break;
                                     }

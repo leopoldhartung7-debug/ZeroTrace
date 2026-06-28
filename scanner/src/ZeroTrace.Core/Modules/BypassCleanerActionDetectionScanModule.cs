@@ -447,7 +447,7 @@ public sealed class BypassCleanerActionDetectionScanModule : IScanModule
                             Location = $@"HKLM\{path}\{valName}",
                             FileName = "Registry",
                             Reason = $"WMI registry value contains bypass-related content: {valName}",
-                            Detail = $"Value: {val.Length > 200 ? val[..200] + "..." : val}"
+                            Detail = $"Value: {(val.Length > 200 ? val[..200] + "..." : val)}"
                         });
                     }
                 }
@@ -1037,7 +1037,7 @@ public sealed class BypassCleanerActionDetectionScanModule : IScanModule
                                     Location = $@"{(hive == Registry.LocalMachine ? "HKLM" : "HKCU")}\{keyPath}\{valName}",
                                     FileName = "Registry",
                                     Reason = $"Startup entry for cleaner/bypass tool: '{sig}'",
-                                    Detail = $"Value: {valData.Length > 150 ? valData[..150] + "..." : valData}"
+                                    Detail = $"Value: {(valData.Length > 150 ? valData[..150] + "..." : valData)}"
                                 });
                             }
                         }
@@ -1055,7 +1055,7 @@ public sealed class BypassCleanerActionDetectionScanModule : IScanModule
                                     Location = $@"{(hive == Registry.LocalMachine ? "HKLM" : "HKCU")}\{keyPath}\{valName}",
                                     FileName = "Registry",
                                     Reason = $"Startup entry points to bypass driver loader: '{driverName}'",
-                                    Detail = $"Value: {valData.Length > 150 ? valData[..150] + "..." : valData}"
+                                    Detail = $"Value: {(valData.Length > 150 ? valData[..150] + "..." : valData)}"
                                 });
                             }
                         }
