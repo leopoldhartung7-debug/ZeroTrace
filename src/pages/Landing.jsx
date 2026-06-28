@@ -411,12 +411,12 @@ function GlowCard({ icon: Icon, title, text, delay = 0 }) {
 }
 
 const FEATURES = [
-  { icon: SlidersHorizontal, title: 'Rules you control', text: 'Dial in your own detection logic and design — from small UI tweaks to bespoke threat signatures, all part of the service.' },
-  { icon: Cpu, title: 'OS-deep forensics', text: 'Detections grounded in real operating-system internals — memory, modules, drivers and on-disk traces, not just signatures.' },
+  { icon: SlidersHorizontal, title: 'Three scan profiles', text: 'Pick Quick, Standard or Deep — same engine, different time budget. Quick for spot checks, Deep for tournament-grade evidence.' },
+  { icon: Cpu, title: 'Windows-deep forensics', text: '30+ modules covering processes, kernel drivers, ETW tampering, registry persistence, memory protections, hypervisor traces and on-disk remnants.' },
+  { icon: ShieldCheck, title: 'Game-aware detection', text: 'Dedicated modules for FiveM, CS2, Valorant, Sea of Thieves, RageMP and AltV — beyond generic process and signature checks.' },
+  { icon: Webhook, title: 'Discord webhook delivery', text: 'The full verdict, risk score and flagged artifacts post straight to your moderation channel the moment the scan finishes.' },
+  { icon: Lock, title: 'Consent-first by design', text: 'A 6-digit PIN ties every scan to a single user. They see the consent screen, can decline, and the artifacts never leave their machine without their tap.' },
   { icon: LifeBuoy, title: 'Support that shows up', text: 'A response team that actually answers, around the clock, so you are never stuck mid-screenshare.' },
-  { icon: Users, title: '500+ server network', text: 'A community that keeps growing — hundreds of active servers and members happy to lend a hand.' },
-  { icon: BookOpen, title: 'Docs for every level', text: 'Guides written for first-time screensharers and seasoned forensic analysts alike.' },
-  { icon: Lock, title: 'Private by design', text: 'Artifacts are gathered with consent and kept encrypted — nothing is sold, shared or quietly stored.' },
 ]
 
 /* ── Metric card with scroll-reveal ── */
@@ -441,8 +441,8 @@ function MetricCard({ value, label, delay = 0 }) {
 }
 
 const METRICS = [
-  { value: '~58s', label: 'Typical scan time' },
-  { value: '<0.1%', label: 'False-positive rate' },
+  { value: '~58s', label: 'Standard scan time' },
+  { value: '30+', label: 'Detection modules' },
   { value: '500+', label: 'Active servers' },
 ]
 
@@ -572,9 +572,11 @@ const STEPS = [
 ]
 
 const QA = [
-  { q: 'Why should you use ZeroTrace?', a: 'ZeroTrace delivers fast, consent-based forensic screenshare scans with precise, trustworthy results — detecting cheaters in around 60 seconds.' },
-  { q: 'What operating systems do you support?', a: 'The scanner runs on Windows and Linux. The dashboard works in any modern browser.' },
-  { q: 'What type of data does ZeroTrace collect?', a: 'Only anti-cheat artifacts (processes, modules, files, system traces) gathered with consent. Dashboard data stays in your browser; nothing is sold or shared.' },
+  { q: 'Why should you use ZeroTrace?', a: 'ZeroTrace delivers fast, consent-based forensic screenshare scans with precise, trustworthy results — a clear verdict in around a minute, backed by every artifact that drove the call.' },
+  { q: 'Which games does the scanner cover?', a: 'Dedicated modules ship for FiveM, CS2, Valorant, Sea of Thieves, RageMP and AltV — on top of generic process, driver, registry and memory checks that apply to every title.' },
+  { q: 'What operating system does the scanner support?', a: 'The scanner is Windows-only (a single-file .exe on .NET 8 — no install). The dashboard works in any modern browser.' },
+  { q: 'What type of data does ZeroTrace collect?', a: 'Only anti-cheat artifacts (processes, modules, drivers, registry persistence, on-disk traces) gathered with explicit PIN-based consent. Dashboard data stays in your browser; nothing is sold or shared.' },
+  { q: 'How does the consent flow work?', a: 'You create a pin in the dashboard, the player downloads a one-file scanner with the PIN baked in, taps Accept on the consent screen, and the verdict lands in your Discord webhook when the scan finishes.' },
   { q: 'What payment methods do you accept?', a: 'Payments are handled by our Merchant of Record (card and common online methods). See the Pricing page for plans.' },
 ]
 
