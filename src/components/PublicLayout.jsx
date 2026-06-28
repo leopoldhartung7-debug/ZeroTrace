@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react'
 import { Outlet, useNavigate } from 'react-router-dom'
 import { Globe } from 'lucide-react'
 import { useStore } from '../store.jsx'
@@ -19,6 +20,20 @@ export function PublicHeader() {
   const { state } = useStore()
   const toast = useToast()
 
+  // Same morph-on-scroll behaviour as the Landing header.
+  const [scrolled, setScrolled] = useState(false)
+  const sentinelRef = useRef(null)
+  useEffect(() => {
+    const el = sentinelRef.current
+    if (!el || typeof IntersectionObserver === 'undefined') return undefined
+    const obs = new IntersectionObserver(
+      ([entry]) => setScrolled(!entry.isIntersecting),
+      { threshold: 0, rootMargin: '0px' },
+    )
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [])
+
   const onNav = (to) => {
     if (to === 'discord') toast({ type: 'info', title: 'Discord', body: 'Community link is not configured in this demo.' })
     else if (to.startsWith('/#')) nav('/')
@@ -26,38 +41,62 @@ export function PublicHeader() {
   }
 
   return (
-    <header className="sticky top-0 z-30 flex items-center justify-between border-b border-white/5 bg-[#1a1b1e]/80 px-6 py-5 backdrop-blur md:px-12">
-      <button onClick={() => nav('/')} className="flex items-center gap-3">
-        <Logo size="md" />
-      </button>
-      <nav className="hidden items-center gap-7 lg:flex">
-        {NAV.map((n) => (
-          <button key={n.label} onClick={() => onNav(n.to)} className="text-sm text-neutral-400 transition-colors hover:text-white">
-            {n.label}
+    <>
+      {/* Top sentinel — sits in normal flow so it scrolls off naturally. */}
+      <div ref={sentinelRef} className="h-px w-full" aria-hidden="true" />
+
+      <header
+        className={`fixed inset-x-0 top-0 z-50 transition-all duration-300 ease-out ${
+          scrolled ? 'px-3 md:px-6' : 'px-0'
+        }`}
+        style={{
+          paddingTop: scrolled
+            ? 'calc(env(safe-area-inset-top, 0px) + 14px)'
+            : 'env(safe-area-inset-top, 0px)',
+          transform: 'translateZ(0)',
+          WebkitTransform: 'translateZ(0)',
+        }}
+      >
+        <div
+          className={`mx-auto flex items-center justify-between transition-all duration-300 ease-out ${
+            scrolled
+              ? 'max-w-3xl rounded-full border border-white/15 bg-[#0a0a12]/90 px-4 py-2 shadow-[0_18px_48px_-12px_rgba(0,0,0,0.65)] backdrop-blur-xl md:px-5'
+              : 'max-w-full border-b border-white/10 bg-[#0a0a12]/85 px-6 py-5 backdrop-blur-xl md:px-12'
+          }`}
+        >
+          <button onClick={() => nav('/')} className="flex items-center gap-3">
+            <Logo size="md" iconOnly={scrolled} />
           </button>
-        ))}
-      </nav>
-      <div className="flex items-center gap-4">
-        <Globe size={18} className="hidden text-neutral-500 sm:block" />
-        {state.auth ? (
-          <button onClick={() => nav('/dashboard')} className="flex items-center gap-3">
-            <span className="text-sm text-neutral-300 hover:text-white">Dashboard</span>
-            <span className="flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-white/[0.05] text-sm font-semibold text-white">
-              H
-            </span>
-          </button>
-        ) : (
-          <>
-            <button onClick={() => nav('/login')} className="text-sm text-neutral-300 transition-colors hover:text-white">
-              Login
-            </button>
-            <button onClick={() => nav('/login?register=1')} className="rounded-lg bg-sky-600 px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-sky-500">
-              Sign Up
-            </button>
-          </>
-        )}
-      </div>
-    </header>
+          <nav className="hidden items-center gap-7 lg:flex">
+            {NAV.map((n) => (
+              <button key={n.label} onClick={() => onNav(n.to)} className="text-sm text-neutral-400 transition-colors hover:text-white">
+                {n.label}
+              </button>
+            ))}
+          </nav>
+          <div className="flex items-center gap-4">
+            <Globe size={18} className="hidden text-neutral-500 sm:block" />
+            {state.auth ? (
+              <button onClick={() => nav('/dashboard')} className="flex items-center gap-3">
+                <span className="text-sm text-neutral-300 hover:text-white">Dashboard</span>
+                <span className="flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-white/[0.05] text-sm font-semibold text-white">
+                  H
+                </span>
+              </button>
+            ) : (
+              <>
+                <button onClick={() => nav('/login')} className="text-sm text-neutral-300 transition-colors hover:text-white">
+                  Login
+                </button>
+                <button onClick={() => nav('/login?register=1')} className="rounded-lg bg-sky-600 px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-sky-500">
+                  Sign Up
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      </header>
+    </>
   )
 }
 
@@ -65,7 +104,7 @@ export default function PublicLayout() {
   return (
     <div className="force-dark app-bg min-h-screen text-white">
       <PublicHeader />
-      <main className="mx-auto max-w-6xl px-6 py-12 md:px-12">
+      <main className="mx-auto max-w-6xl px-6 pb-12 pt-28 md:px-12 md:pt-32">
         <Outlet />
       </main>
       <footer className="border-t border-white/10 px-6 py-8 text-center text-sm text-neutral-600 md:px-12">
