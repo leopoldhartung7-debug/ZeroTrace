@@ -745,8 +745,6 @@ export default function Landing() {
         />
         {/* Faint dot grid for texture */}
         <div className="zt-grid-overlay pointer-events-none absolute inset-0" />
-        {/* Floating asteroid-style rocks left and right */}
-        <FloatingRocks />
 
         <div className="relative mx-auto max-w-7xl px-6 pb-24 pt-32 text-center md:px-12 md:pt-40">
           {/* Massive headline — wordmark, thin uppercase, shimmer gradient */}
