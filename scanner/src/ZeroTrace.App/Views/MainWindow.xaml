@@ -208,7 +208,8 @@
                                           LoadedBehavior="Play"
                                           UnloadedBehavior="Stop"
                                           Stretch="UniformToFill"
-                                          MediaEnded="IntroVideo_MediaEnded" />
+                                          MediaEnded="IntroVideo_MediaEnded"
+                                          MediaFailed="IntroVideo_MediaFailed" />
                         </Grid>
 
                         <!-- 0) GAME SELECT -->
