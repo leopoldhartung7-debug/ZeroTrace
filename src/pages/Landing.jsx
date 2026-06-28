@@ -673,12 +673,26 @@ export default function Landing() {
   const enter = () => nav(state.auth ? '/dashboard' : '/login')
 
   // Shrink the header into a floating rounded pill once the user scrolls.
+  // iOS Safari sometimes reports scrollY differently per element, so we
+  // poll the most reliable source on every scroll/touchmove tick.
   const [scrolled, setScrolled] = useState(false)
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 24)
+    const getY = () =>
+      window.pageYOffset ??
+      window.scrollY ??
+      document.documentElement?.scrollTop ??
+      document.body?.scrollTop ??
+      0
+    const onScroll = () => setScrolled(getY() > 24)
     onScroll()
     window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
+    window.addEventListener('touchmove', onScroll, { passive: true })
+    window.addEventListener('resize', onScroll, { passive: true })
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      window.removeEventListener('touchmove', onScroll)
+      window.removeEventListener('resize', onScroll)
+    }
   }, [])
 
   const ROUTES = {
@@ -705,8 +719,13 @@ export default function Landing() {
       {/* ── Header (shrinks into a floating rounded pill on scroll) ── */}
       <header
         className={`sticky top-0 z-30 transition-all duration-300 ease-out ${
-          scrolled ? 'px-4 pt-4 md:px-6 md:pt-5' : 'px-0 pt-0'
+          scrolled ? 'px-4 md:px-6' : 'px-0'
         }`}
+        style={{
+          paddingTop: scrolled
+            ? 'calc(env(safe-area-inset-top, 0px) + 16px)'
+            : 'env(safe-area-inset-top, 0px)',
+        }}
       >
         <div
           className={`mx-auto flex items-center justify-between transition-all duration-300 ease-out ${
