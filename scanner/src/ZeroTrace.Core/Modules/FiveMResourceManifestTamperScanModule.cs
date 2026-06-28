@@ -6,6 +6,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using ZeroTrace.Core.Models;
+using ZeroTrace.Core.Engine;
 
 namespace ZeroTrace.Core.Modules;
 

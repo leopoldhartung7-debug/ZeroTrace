@@ -1,6 +1,7 @@
 using System.Runtime.Versioning;
 using Microsoft.Win32;
 using ZeroTrace.Core.Models;
+using ZeroTrace.Core.Engine;
 
 namespace ZeroTrace.Core.Modules;
 

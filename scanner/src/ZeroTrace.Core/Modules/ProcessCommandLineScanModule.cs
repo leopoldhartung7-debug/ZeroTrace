@@ -1,5 +1,6 @@
 using System.Management;
 using ZeroTrace.Core.Models;
+using ZeroTrace.Core.Engine;
 
 namespace ZeroTrace.Core.Modules;
 

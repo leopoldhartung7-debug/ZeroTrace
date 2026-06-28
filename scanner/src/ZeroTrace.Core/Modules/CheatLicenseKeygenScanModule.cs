@@ -1,6 +1,7 @@
 using ZeroTrace.Core.Models;
 using System.Text;
 using System.Text.RegularExpressions;
+using ZeroTrace.Core.Engine;
 
 namespace ZeroTrace.Core.Modules;
 

@@ -2,6 +2,7 @@ using ZeroTrace.Core.Models;
 using Microsoft.Win32;
 using System.Net.NetworkInformation;
 using System.Text;
+using ZeroTrace.Core.Engine;
 
 namespace ZeroTrace.Core.Modules;
 
