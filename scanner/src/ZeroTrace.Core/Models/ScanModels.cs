@@ -1474,6 +1474,7 @@ public sealed class ScanOptions
     public bool ScanKernelCheatDriverDeep { get; set; } = true;
     public bool ScanFiveMTxAdminAbuseDeep { get; set; } = true;
     public bool ScanAIAimbotDeep { get; set; } = true;
+    public bool ScanRobloxExecutorDeep { get; set; } = true;
 
     /// <summary>Scan game directories (Steam, Epic, user-specified) for BepInEx, Unity Doorstop,
     /// and MelonLoader code injection frameworks. Detects: doorstop_config.ini (enabled=true),
@@ -2403,6 +2404,7 @@ public static class ScanProfiles
         ScanKernelCheatDriverDeep = true,
         ScanFiveMTxAdminAbuseDeep = true,
         ScanAIAimbotDeep = true,
+        ScanRobloxExecutorDeep = true,
         DeepDriveScan = false,
         // No per-module timeout — every Quick module runs to completion. Quick stays
         // fast because slow modules are individually disabled above, not because they
