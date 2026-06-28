@@ -41,22 +41,32 @@ const tooltipStyle = {
 
 function DetectionRates() {
   return (
-    <div className="card p-6">
+    <div className="card card-interactive p-6">
       <h3 className="text-sm font-semibold text-white">Detection Rates</h3>
       <p className="mt-1 text-xs text-zinc-500">
         Distribution across all completed scans
       </p>
       <div className="mt-6 space-y-5">
-        {detectionRates.map((rate) => (
-          <div key={rate.label}>
+        {detectionRates.map((rate, i) => (
+          <div
+            key={rate.label}
+            className="animate-fade-up-sm"
+            style={{ animationDelay: `${i * 90}ms` }}
+          >
             <div className="mb-1.5 flex items-center justify-between text-sm">
               <span className="text-zinc-400">{rate.label}</span>
-              <span className="font-semibold text-white">{rate.value}%</span>
+              <span className="font-semibold text-white tabular-nums">
+                {rate.value}%
+              </span>
             </div>
             <div className="h-2 overflow-hidden rounded-full bg-ink-700">
               <div
-                className="h-full rounded-full"
-                style={{ width: `${rate.value}%`, backgroundColor: rate.color }}
+                className="h-full rounded-full transition-all duration-1000 ease-out"
+                style={{
+                  width: `${rate.value}%`,
+                  backgroundColor: rate.color,
+                  boxShadow: `0 0 12px ${rate.color}55`,
+                }}
               />
             </div>
           </div>
@@ -69,7 +79,7 @@ function DetectionRates() {
 function ResultsDonut() {
   const total = resultsDistribution.reduce((sum, d) => sum + d.value, 0)
   return (
-    <div className="card p-6">
+    <div className="card card-interactive p-6">
       <h3 className="text-sm font-semibold text-white">Results Distribution</h3>
       <p className="mt-1 text-xs text-zinc-500">Clean vs. flagged outcomes</p>
       <div className="relative mt-2 h-[200px]">
@@ -83,6 +93,8 @@ function ResultsDonut() {
               outerRadius={88}
               paddingAngle={2}
               stroke="none"
+              isAnimationActive
+              animationDuration={900}
             >
               {resultsDistribution.map((d) => (
                 <Cell key={d.name} fill={d.color} />
@@ -92,7 +104,7 @@ function ResultsDonut() {
           </PieChart>
         </ResponsiveContainer>
         <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-2xl font-bold text-white">
+          <span className="stat-value text-2xl font-bold tabular-nums">
             {total.toLocaleString()}
           </span>
           <span className="text-xs text-zinc-500">Total</span>
@@ -102,11 +114,11 @@ function ResultsDonut() {
         {resultsDistribution.map((d) => (
           <div key={d.name} className="flex items-center gap-2 text-xs">
             <span
-              className="h-2.5 w-2.5 rounded-sm"
-              style={{ backgroundColor: d.color }}
+              className="h-2.5 w-2.5 rounded-sm shadow-[0_0_8px_currentColor]"
+              style={{ backgroundColor: d.color, color: d.color }}
             />
             <span className="text-zinc-400">{d.name}</span>
-            <span className="font-semibold text-white">
+            <span className="font-semibold text-white tabular-nums">
               {d.value.toLocaleString()}
             </span>
           </div>
@@ -118,7 +130,7 @@ function ResultsDonut() {
 
 function TrendsChart() {
   return (
-    <div className="card p-6">
+    <div className="card card-interactive p-6 animate-fade-up">
       <h3 className="text-sm font-semibold text-white">Scan Activity</h3>
       <p className="mt-1 text-xs text-zinc-500">Last 7 days</p>
       <div className="mt-6 h-[260px]">
@@ -126,7 +138,7 @@ function TrendsChart() {
           <AreaChart data={scanTrends} margin={{ left: -16, right: 8 }}>
             <defs>
               <linearGradient id="scanFill" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.35} />
+                <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.45} />
                 <stop offset="100%" stopColor="#3b82f6" stopOpacity={0} />
               </linearGradient>
             </defs>
@@ -151,6 +163,8 @@ function TrendsChart() {
               stroke="#3b82f6"
               strokeWidth={2}
               fill="url(#scanFill)"
+              isAnimationActive
+              animationDuration={1100}
             />
           </AreaChart>
         </ResponsiveContainer>
@@ -161,7 +175,7 @@ function TrendsChart() {
 
 function ByGameChart() {
   return (
-    <div className="card p-6">
+    <div className="card card-interactive p-6 animate-fade-up">
       <h3 className="text-sm font-semibold text-white">Scans by Game</h3>
       <p className="mt-1 text-xs text-zinc-500">
         Scans and detections per title
@@ -184,8 +198,20 @@ function ByGameChart() {
               axisLine={false}
             />
             <Tooltip contentStyle={tooltipStyle} cursor={{ fill: '#1a1a1a' }} />
-            <Bar dataKey="scans" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-            <Bar dataKey="detections" fill="#dc2626" radius={[4, 4, 0, 0]} />
+            <Bar
+              dataKey="scans"
+              fill="#3b82f6"
+              radius={[4, 4, 0, 0]}
+              isAnimationActive
+              animationDuration={900}
+            />
+            <Bar
+              dataKey="detections"
+              fill="#dc2626"
+              radius={[4, 4, 0, 0]}
+              isAnimationActive
+              animationDuration={1100}
+            />
           </BarChart>
         </ResponsiveContainer>
       </div>
@@ -206,7 +232,7 @@ export default function Dashboard() {
         title={`Welcome back, ${currentUser.name}.`}
       />
 
-      <div className="mb-8">
+      <div className="mb-8 animate-fade-up" style={{ animationDelay: '60ms' }}>
         <Tabs
           tabs={['My Statistics', 'Platform']}
           active={topTab}
@@ -214,17 +240,20 @@ export default function Dashboard() {
         />
       </div>
 
-      <div className="mb-4 flex items-center justify-between">
+      <div
+        className="mb-4 flex items-center justify-between animate-fade-up"
+        style={{ animationDelay: '120ms' }}
+      >
         <div className="flex items-center gap-2">
-          <AlignLeft size={18} className="text-accent" />
+          <AlignLeft size={18} className="animate-float text-accent" />
           <h2 className="text-lg font-semibold text-white">Your Statistics</h2>
         </div>
-        <span className="caps-label">
+        <span className="caps-label tabular-nums">
           {totalScans.toLocaleString()} Total Scans
         </span>
       </div>
 
-      <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mb-8 grid grid-cols-1 gap-4 stagger sm:grid-cols-2 lg:grid-cols-4">
         {dashboardStats.map((stat) => (
           <StatCard
             key={stat.key}
@@ -236,7 +265,7 @@ export default function Dashboard() {
         ))}
       </div>
 
-      <div className="mb-6">
+      <div className="mb-6 animate-fade-up" style={{ animationDelay: '300ms' }}>
         <Tabs
           tabs={['Overview', 'Trends', 'By Game']}
           active={chartTab}
@@ -244,14 +273,16 @@ export default function Dashboard() {
         />
       </div>
 
-      {chartTab === 'Overview' && (
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <DetectionRates />
-          <ResultsDonut />
-        </div>
-      )}
-      {chartTab === 'Trends' && <TrendsChart />}
-      {chartTab === 'By Game' && <ByGameChart />}
+      <div key={chartTab} className="animate-fade-up">
+        {chartTab === 'Overview' && (
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <DetectionRates />
+            <ResultsDonut />
+          </div>
+        )}
+        {chartTab === 'Trends' && <TrendsChart />}
+        {chartTab === 'By Game' && <ByGameChart />}
+      </div>
     </div>
   )
 }

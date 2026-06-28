@@ -10,9 +10,14 @@ import { PageHeader, Tabs } from '../components/ui.jsx'
 
 function Dropzone({ hint }) {
   return (
-    <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-ink-600 bg-ink-950 px-6 py-14 text-center transition-colors hover:border-accent/50">
-      <div className="grid h-14 w-14 place-items-center rounded-full border border-ink-700 bg-ink-850 text-accent">
-        <UploadCloud size={26} strokeWidth={1.8} />
+    <div className="group relative flex flex-col items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-ink-600 bg-ink-950 px-6 py-14 text-center transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/60 hover:shadow-glow">
+      <div className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-accent/10 to-transparent transition-transform duration-1000 group-hover:translate-x-full" />
+      <div className="ring-pulse grid h-14 w-14 place-items-center rounded-full border border-ink-700 bg-ink-850 text-accent transition-transform duration-300 group-hover:scale-110">
+        <UploadCloud
+          size={26}
+          strokeWidth={1.8}
+          className="transition-transform duration-300 group-hover:-translate-y-0.5"
+        />
       </div>
       <p className="mt-4 text-sm font-medium text-zinc-200">
         Drag and drop or click
@@ -28,10 +33,13 @@ function WorkingModeSelect() {
       <label className="caps-label mb-2 block">Working Mode</label>
       <button
         type="button"
-        className="flex w-full items-center justify-between rounded-lg border border-ink-700 bg-ink-900 px-3 py-2.5 text-sm text-zinc-200 sm:w-56"
+        className="group flex w-full items-center justify-between rounded-lg border border-ink-700 bg-ink-900 px-3 py-2.5 text-sm text-zinc-200 transition-all duration-200 hover:border-accent/40 sm:w-56"
       >
         Personal
-        <ChevronDown size={15} className="text-zinc-600" />
+        <ChevronDown
+          size={15}
+          className="text-zinc-600 transition-transform duration-200 group-hover:translate-y-0.5"
+        />
       </button>
     </div>
   )
@@ -39,19 +47,21 @@ function WorkingModeSelect() {
 
 function StatusBox() {
   return (
-    <div className="card flex gap-8 p-5">
-      <div className="flex items-center gap-3">
-        <div className="grid h-10 w-10 place-items-center rounded-lg border border-ink-700 bg-ink-850 text-accent">
+    <div className="card card-interactive flex gap-8 p-5">
+      <div className="group flex items-center gap-3">
+        <div className="grid h-10 w-10 place-items-center rounded-lg border border-ink-700 bg-ink-850 text-accent transition-all duration-300 group-hover:scale-110 group-hover:border-accent/40">
           <FileCode2 size={18} />
         </div>
         <div>
           <p className="caps-label">Detection Files</p>
-          <p className="mt-0.5 text-lg font-bold text-white">128</p>
+          <p className="stat-value mt-0.5 text-lg font-bold tabular-nums">
+            128
+          </p>
         </div>
       </div>
-      <div className="flex items-center gap-3">
-        <div className="grid h-10 w-10 place-items-center rounded-lg border border-ink-700 bg-ink-850 text-accent">
-          <Clock size={18} />
+      <div className="group flex items-center gap-3">
+        <div className="grid h-10 w-10 place-items-center rounded-lg border border-ink-700 bg-ink-850 text-accent transition-all duration-300 group-hover:scale-110 group-hover:border-accent/40">
+          <Clock size={18} className="transition-transform duration-700 group-hover:rotate-180" />
         </div>
         <div>
           <p className="caps-label">Last Updated</p>
@@ -70,7 +80,7 @@ function ClientNameInput() {
       <label className="caps-label mb-2 block">Client Name</label>
       <input
         placeholder="e.g. Vape Lite, Doomsday..."
-        className="w-full rounded-lg border border-ink-700 bg-ink-950 px-3 py-2.5 text-sm text-zinc-200 placeholder:text-zinc-600 focus:border-accent focus:outline-none"
+        className="w-full rounded-lg border border-ink-700 bg-ink-950 px-3 py-2.5 text-sm text-zinc-200 placeholder:text-zinc-600 transition-all duration-200 focus:border-accent focus:shadow-glow focus:outline-none"
       />
     </div>
   )
@@ -78,7 +88,7 @@ function ClientNameInput() {
 
 function StringExtractor() {
   return (
-    <div className="card space-y-6 p-6">
+    <div className="card card-interactive space-y-6 p-6 animate-fade-up">
       <div>
         <h3 className="text-sm font-semibold text-white">String Extractor</h3>
         <p className="mt-1 text-xs text-zinc-500">
@@ -86,10 +96,7 @@ function StringExtractor() {
         </p>
       </div>
       <Dropzone hint="Supported: .exe, .jar, .dll, .sys" />
-      <button
-        type="button"
-        className="w-full rounded-lg bg-accent py-2.5 text-sm font-semibold text-white shadow-glow transition-colors hover:bg-blue-500"
-      >
+      <button type="button" className="btn-primary w-full">
         Analyze File
       </button>
     </div>
@@ -99,7 +106,7 @@ function StringExtractor() {
 function PresenceDetection() {
   const [subTab, setSubTab] = useState('Upload')
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-up">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <WorkingModeSelect />
         <StatusBox />
@@ -111,36 +118,36 @@ function PresenceDetection() {
           active={subTab}
           onChange={setSubTab}
         />
-        {subTab === 'Upload' ? (
-          <>
-            <ClientNameInput />
-            <Dropzone hint="Supported: .exe, .jar, .dll, .sys" />
-            <button
-              type="button"
-              className="w-full rounded-lg bg-accent py-2.5 text-sm font-semibold text-white shadow-glow transition-colors hover:bg-blue-500"
-            >
-              Upload Detection File
-            </button>
-          </>
-        ) : (
-          <div className="rounded-lg border border-ink-700">
-            {['vape_v4.exe', 'doomsday.jar', 'liquidbounce.dll'].map(
-              (file, i) => (
-                <div
-                  key={file}
-                  className={`flex items-center justify-between px-4 py-3 text-sm ${
-                    i !== 0 ? 'border-t border-ink-800' : ''
-                  }`}
-                >
-                  <span className="font-mono text-zinc-300">{file}</span>
-                  <span className="text-xs text-zinc-500">
-                    indexed
-                  </span>
-                </div>
-              )
-            )}
-          </div>
-        )}
+        <div key={subTab} className="animate-fade-up-sm space-y-6">
+          {subTab === 'Upload' ? (
+            <>
+              <ClientNameInput />
+              <Dropzone hint="Supported: .exe, .jar, .dll, .sys" />
+              <button type="button" className="btn-primary w-full">
+                Upload Detection File
+              </button>
+            </>
+          ) : (
+            <div className="rounded-lg border border-ink-700 stagger">
+              {['vape_v4.exe', 'doomsday.jar', 'liquidbounce.dll'].map(
+                (file, i) => (
+                  <div
+                    key={file}
+                    className={`row-hover flex items-center justify-between px-4 py-3 text-sm ${
+                      i !== 0 ? 'border-t border-ink-800' : ''
+                    }`}
+                  >
+                    <span className="font-mono text-zinc-300">{file}</span>
+                    <span className="inline-flex items-center gap-1.5 text-xs text-zinc-500">
+                      <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-success shadow-[0_0_8px_#22c55e]" />
+                      indexed
+                    </span>
+                  </div>
+                )
+              )}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )
@@ -166,10 +173,13 @@ function RuleEditor() {
   const lineCount = code.split('\n').length
 
   return (
-    <div className="card overflow-hidden">
+    <div className="card card-interactive overflow-hidden">
       <div className="flex items-center justify-between border-b border-ink-700 px-4 py-3">
         <h3 className="text-sm font-semibold text-white">Rule Editor</h3>
-        <span className="caps-label">YARA</span>
+        <span className="caps-label inline-flex items-center gap-1.5">
+          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-accent shadow-[0_0_8px_#3b82f6]" />
+          YARA
+        </span>
       </div>
       <div className="flex font-mono text-[13px] leading-6">
         <div className="select-none border-r border-ink-700 bg-ink-950 px-3 py-3 text-right text-zinc-600">
@@ -182,7 +192,7 @@ function RuleEditor() {
           onChange={(e) => setCode(e.target.value)}
           spellCheck={false}
           rows={lineCount}
-          className="w-full resize-none bg-ink-950 px-4 py-3 text-zinc-200 focus:outline-none"
+          className="w-full resize-none bg-ink-950 px-4 py-3 text-zinc-200 transition-colors duration-200 focus:outline-none"
         />
       </div>
     </div>
@@ -192,7 +202,7 @@ function RuleEditor() {
 function SuspiciousDetection() {
   const [subTab, setSubTab] = useState('YARA Rules')
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-up">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <WorkingModeSelect />
         <StatusBox />
@@ -205,50 +215,50 @@ function SuspiciousDetection() {
           onChange={setSubTab}
         />
 
-        {subTab === 'YARA Rules' && (
-          <>
-            <ClientNameInput />
-            <RuleEditor />
-            <button
-              type="button"
-              className="w-full rounded-lg bg-accent py-2.5 text-sm font-semibold text-white shadow-glow transition-colors hover:bg-blue-500"
-            >
-              Save Rule
-            </button>
-          </>
-        )}
+        <div key={subTab} className="animate-fade-up-sm space-y-6">
+          {subTab === 'YARA Rules' && (
+            <>
+              <ClientNameInput />
+              <RuleEditor />
+              <button type="button" className="btn-primary w-full">
+                Save Rule
+              </button>
+            </>
+          )}
 
-        {subTab === 'Suspicious Files' && (
-          <>
-            <Dropzone hint="Supported: .exe, .jar, .dll, .sys" />
-            <button
-              type="button"
-              className="w-full rounded-lg bg-accent py-2.5 text-sm font-semibold text-white shadow-glow transition-colors hover:bg-blue-500"
-            >
-              Upload Suspicious File
-            </button>
-          </>
-        )}
+          {subTab === 'Suspicious Files' && (
+            <>
+              <Dropzone hint="Supported: .exe, .jar, .dll, .sys" />
+              <button type="button" className="btn-primary w-full">
+                Upload Suspicious File
+              </button>
+            </>
+          )}
 
-        {subTab === 'Scan' && (
-          <div className="flex flex-col items-center justify-center rounded-xl border border-ink-700 bg-ink-950 px-6 py-14 text-center">
-            <div className="grid h-14 w-14 place-items-center rounded-full border border-ink-700 bg-ink-850 text-accent">
-              <ScanSearch size={26} strokeWidth={1.8} />
+          {subTab === 'Scan' && (
+            <div className="flex flex-col items-center justify-center rounded-xl border border-ink-700 bg-ink-950 px-6 py-14 text-center">
+              <div className="ring-pulse grid h-14 w-14 place-items-center rounded-full border border-ink-700 bg-ink-850 text-accent">
+                <ScanSearch
+                  size={26}
+                  strokeWidth={1.8}
+                  className="animate-float"
+                />
+              </div>
+              <p className="mt-4 text-sm font-medium text-zinc-200">
+                Run YARA rules against indexed files
+              </p>
+              <p className="mt-1 text-xs text-zinc-500">
+                128 detection files · 14 rules loaded
+              </p>
+              <button
+                type="button"
+                className="btn-primary mt-5 px-6"
+              >
+                Start Scan
+              </button>
             </div>
-            <p className="mt-4 text-sm font-medium text-zinc-200">
-              Run YARA rules against indexed files
-            </p>
-            <p className="mt-1 text-xs text-zinc-500">
-              128 detection files · 14 rules loaded
-            </p>
-            <button
-              type="button"
-              className="mt-5 rounded-lg bg-accent px-6 py-2 text-sm font-semibold text-white shadow-glow transition-colors hover:bg-blue-500"
-            >
-              Start Scan
-            </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   )
@@ -264,7 +274,7 @@ export default function Strings() {
         title="Strings"
       />
 
-      <div className="mb-8">
+      <div className="mb-8 animate-fade-up" style={{ animationDelay: '60ms' }}>
         <Tabs
           tabs={['String Extractor', 'Presence Detection', 'Suspicious Detection']}
           active={mode}
@@ -272,9 +282,11 @@ export default function Strings() {
         />
       </div>
 
-      {mode === 'String Extractor' && <StringExtractor />}
-      {mode === 'Presence Detection' && <PresenceDetection />}
-      {mode === 'Suspicious Detection' && <SuspiciousDetection />}
+      <div key={mode}>
+        {mode === 'String Extractor' && <StringExtractor />}
+        {mode === 'Presence Detection' && <PresenceDetection />}
+        {mode === 'Suspicious Detection' && <SuspiciousDetection />}
+      </div>
     </div>
   )
 }

@@ -32,6 +32,16 @@
   ::-webkit-scrollbar-thumb:hover {
     background: #333;
   }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+    }
+  }
 }
 
 @layer components {
@@ -40,14 +50,147 @@
   }
 
   .card {
-    @apply rounded-xl border border-ink-700 bg-ink-900;
+    @apply relative rounded-xl border border-ink-700 bg-ink-900 transition-all duration-300;
+  }
+
+  .card-interactive {
+    @apply hover:-translate-y-0.5 hover:border-accent/40 hover:shadow-glow;
   }
 
   .nav-item {
-    @apply flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-zinc-400 transition-colors hover:bg-ink-800 hover:text-zinc-200;
+    @apply relative flex items-center gap-3 overflow-hidden rounded-lg px-3 py-2 text-sm font-medium text-zinc-400 transition-all duration-200 hover:bg-ink-800 hover:text-zinc-200;
+  }
+
+  .nav-item::before {
+    content: '';
+    @apply absolute left-0 top-1/2 h-0 w-[3px] -translate-y-1/2 rounded-r-full bg-accent transition-all duration-300;
+  }
+
+  .nav-item:hover::before {
+    @apply h-4;
   }
 
   .nav-item-active {
     @apply bg-accent-soft text-accent shadow-glow hover:bg-accent-soft hover:text-accent;
+  }
+
+  .nav-item-active::before {
+    @apply h-6;
+  }
+
+  .stat-value {
+    background: linear-gradient(
+      120deg,
+      #ffffff 0%,
+      #e5e7eb 40%,
+      #ffffff 60%,
+      #ffffff 100%
+    );
+    background-size: 200% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: shimmer 6s linear infinite;
+  }
+
+  .bg-aurora {
+    background:
+      radial-gradient(
+        circle at 15% 10%,
+        rgba(59, 130, 246, 0.16) 0%,
+        transparent 45%
+      ),
+      radial-gradient(
+        circle at 85% 0%,
+        rgba(59, 130, 246, 0.08) 0%,
+        transparent 40%
+      ),
+      radial-gradient(
+        circle at 50% 100%,
+        rgba(59, 130, 246, 0.1) 0%,
+        transparent 50%
+      );
+    background-size: 200% 200%;
+    animation: gradient-pan 18s ease-in-out infinite;
+  }
+
+  .grid-bg {
+    background-image:
+      linear-gradient(rgba(59, 130, 246, 0.045) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(59, 130, 246, 0.045) 1px, transparent 1px);
+    background-size: 48px 48px;
+    mask-image: radial-gradient(circle at 50% 0%, black 0%, transparent 75%);
+    -webkit-mask-image: radial-gradient(
+      circle at 50% 0%,
+      black 0%,
+      transparent 75%
+    );
+  }
+
+  .ring-pulse {
+    position: relative;
+  }
+
+  .ring-pulse::after {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: inherit;
+    border: 1px solid rgba(59, 130, 246, 0.5);
+    opacity: 0;
+    animation: pulse-glow 2.6s ease-in-out infinite;
+    pointer-events: none;
+  }
+
+  .btn-primary {
+    @apply relative overflow-hidden rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white shadow-glow transition-all duration-200 hover:-translate-y-0.5 hover:bg-blue-500 hover:shadow-glow-lg active:translate-y-0;
+  }
+
+  .btn-primary::after {
+    content: '';
+    @apply pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent transition-transform duration-700;
+  }
+
+  .btn-primary:hover::after {
+    @apply translate-x-full;
+  }
+
+  .btn-ghost {
+    @apply rounded-lg border border-ink-700 bg-ink-900 px-3 py-2 text-sm text-zinc-400 transition-all duration-200 hover:border-accent/40 hover:text-zinc-200;
+  }
+
+  .row-hover {
+    @apply transition-colors duration-200 hover:bg-ink-850;
+  }
+}
+
+@layer utilities {
+  .stagger > * {
+    animation: fade-up 0.5s ease-out both;
+  }
+
+  .stagger > *:nth-child(1) {
+    animation-delay: 0.02s;
+  }
+  .stagger > *:nth-child(2) {
+    animation-delay: 0.08s;
+  }
+  .stagger > *:nth-child(3) {
+    animation-delay: 0.14s;
+  }
+  .stagger > *:nth-child(4) {
+    animation-delay: 0.2s;
+  }
+  .stagger > *:nth-child(5) {
+    animation-delay: 0.26s;
+  }
+  .stagger > *:nth-child(6) {
+    animation-delay: 0.32s;
+  }
+  .stagger > *:nth-child(7) {
+    animation-delay: 0.38s;
+  }
+  .stagger > *:nth-child(8) {
+    animation-delay: 0.44s;
   }
 }

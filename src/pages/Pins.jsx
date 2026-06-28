@@ -9,6 +9,7 @@ import {
   ChevronRight,
 } from 'lucide-react'
 import { PageHeader, Tabs, Badge } from '../components/ui.jsx'
+import { useCountUp } from '../hooks/useCountUp.js'
 import { pins, pinStats } from '../data.js'
 
 const columns = [
@@ -26,11 +27,26 @@ function Select({ label }) {
   return (
     <button
       type="button"
-      className="flex items-center gap-2 rounded-lg border border-ink-700 bg-ink-900 px-3 py-2 text-sm text-zinc-400 hover:text-zinc-200"
+      className="group flex items-center gap-2 rounded-lg border border-ink-700 bg-ink-900 px-3 py-2 text-sm text-zinc-400 transition-all duration-200 hover:border-accent/40 hover:text-zinc-200"
     >
       {label}
-      <ChevronDown size={15} className="text-zinc-600" />
+      <ChevronDown
+        size={15}
+        className="text-zinc-600 transition-transform duration-200 group-hover:translate-y-0.5"
+      />
     </button>
+  )
+}
+
+function StatTile({ stat }) {
+  const animated = useCountUp(stat.value)
+  return (
+    <div className="card card-interactive p-5">
+      <p className="caps-label">{stat.label}</p>
+      <p className="stat-value mt-2 text-2xl font-bold tabular-nums">
+        {animated.toLocaleString()}
+      </p>
+    </div>
   )
 }
 
@@ -70,15 +86,19 @@ export default function Pins() {
         action={
           <button
             type="button"
-            className="flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-semibold text-ink-950 transition-colors hover:bg-zinc-200"
+            className="group flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-semibold text-ink-950 transition-all duration-200 hover:-translate-y-0.5 hover:bg-zinc-200 hover:shadow-glow"
           >
-            <Plus size={16} strokeWidth={2.4} />
+            <Plus
+              size={16}
+              strokeWidth={2.4}
+              className="transition-transform duration-300 group-hover:rotate-90"
+            />
             Create Pin
           </button>
         }
       />
 
-      <div className="mb-8">
+      <div className="mb-8 animate-fade-up" style={{ animationDelay: '60ms' }}>
         <Tabs
           tabs={[
             { value: 'mine', label: 'My Pins' },
@@ -92,23 +112,18 @@ export default function Pins() {
         />
       </div>
 
-      <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+      <div className="mb-8 grid grid-cols-2 gap-4 stagger sm:grid-cols-3 lg:grid-cols-5">
         {pinStats.map((stat) => (
-          <div key={stat.key} className="card p-5">
-            <p className="caps-label">{stat.label}</p>
-            <p className="mt-2 text-2xl font-bold text-white">
-              {stat.value.toLocaleString()}
-            </p>
-          </div>
+          <StatTile key={stat.key} stat={stat} />
         ))}
       </div>
 
-      <div className="card overflow-hidden">
+      <div className="card overflow-hidden animate-fade-up">
         <div className="flex flex-wrap items-center gap-3 border-b border-ink-700 p-4">
-          <div className="relative min-w-[220px] flex-1">
+          <div className="group relative min-w-[220px] flex-1">
             <Search
               size={16}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600"
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600 transition-colors duration-200 group-focus-within:text-accent"
             />
             <input
               value={query}
@@ -117,14 +132,14 @@ export default function Pins() {
                 setPage(1)
               }}
               placeholder="Search pins..."
-              className="w-full rounded-lg border border-ink-700 bg-ink-950 py-2 pl-9 pr-3 text-sm text-zinc-200 placeholder:text-zinc-600 focus:border-accent focus:outline-none"
+              className="w-full rounded-lg border border-ink-700 bg-ink-950 py-2 pl-9 pr-3 text-sm text-zinc-200 placeholder:text-zinc-600 transition-all duration-200 focus:border-accent focus:shadow-glow focus:outline-none"
             />
           </div>
           <Select label="All Status" />
           <Select label="All Games" />
           <button
             type="button"
-            className="flex items-center gap-2 rounded-lg border border-ink-700 bg-ink-900 px-3 py-2 text-sm text-zinc-400 hover:text-zinc-200"
+            className="flex items-center gap-2 rounded-lg border border-ink-700 bg-ink-900 px-3 py-2 text-sm text-zinc-400 transition-all duration-200 hover:border-accent/40 hover:text-zinc-200"
           >
             <SlidersHorizontal size={15} />
             More
@@ -145,11 +160,11 @@ export default function Pins() {
                 ))}
               </tr>
             </thead>
-            <tbody>
+            <tbody key={`${tab}-${query}-${safePage}`} className="stagger">
               {visible.map((p) => (
                 <tr
                   key={p.pin}
-                  className="border-b border-ink-800 last:border-0 hover:bg-ink-850"
+                  className="row-hover border-b border-ink-800 last:border-0"
                 >
                   <td className="px-4 py-3 font-mono text-xs text-accent">
                     {p.pin}
@@ -161,7 +176,9 @@ export default function Pins() {
                   <td className="px-4 py-3">
                     <Badge>{p.status}</Badge>
                   </td>
-                  <td className="px-4 py-3 text-zinc-400">{p.used}</td>
+                  <td className="px-4 py-3 text-zinc-400 tabular-nums">
+                    {p.used}
+                  </td>
                   <td className="px-4 py-3">
                     <Badge>{p.result}</Badge>
                   </td>
@@ -171,7 +188,7 @@ export default function Pins() {
                   <td className="px-4 py-3">
                     <button
                       type="button"
-                      className="rounded-md p-1.5 text-zinc-500 hover:bg-ink-800 hover:text-zinc-200"
+                      className="rounded-md p-1.5 text-zinc-500 transition-all duration-200 hover:bg-ink-800 hover:text-accent"
                     >
                       <MoreHorizontal size={16} />
                     </button>
@@ -193,7 +210,7 @@ export default function Pins() {
         </div>
 
         <div className="flex items-center justify-between border-t border-ink-700 px-4 py-3 text-sm text-zinc-500">
-          <span>
+          <span className="tabular-nums">
             Showing {visible.length} of {filtered.length} pins
           </span>
           <div className="flex items-center gap-1">
@@ -201,18 +218,18 @@ export default function Pins() {
               type="button"
               disabled={safePage <= 1}
               onClick={() => setPage((p) => Math.max(1, p - 1))}
-              className="rounded-md border border-ink-700 p-1.5 text-zinc-400 hover:text-zinc-200 disabled:opacity-40"
+              className="rounded-md border border-ink-700 p-1.5 text-zinc-400 transition-all duration-200 hover:border-accent/40 hover:text-zinc-200 disabled:opacity-40 disabled:hover:border-ink-700"
             >
               <ChevronLeft size={16} />
             </button>
-            <span className="px-3 text-zinc-300">
+            <span className="px-3 text-zinc-300 tabular-nums">
               {safePage} / {totalPages}
             </span>
             <button
               type="button"
               disabled={safePage >= totalPages}
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              className="rounded-md border border-ink-700 p-1.5 text-zinc-400 hover:text-zinc-200 disabled:opacity-40"
+              className="rounded-md border border-ink-700 p-1.5 text-zinc-400 transition-all duration-200 hover:border-accent/40 hover:text-zinc-200 disabled:opacity-40 disabled:hover:border-ink-700"
             >
               <ChevronRight size={16} />
             </button>
