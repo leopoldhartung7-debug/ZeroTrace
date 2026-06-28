@@ -28,6 +28,9 @@ jobs:
   # ---------------------------------------------------------------------
   build-scanner:
     runs-on: windows-latest
+    # Allow scanner build to fail without blocking the web deploy.
+    # If it fails, deploy reuses the ZeroTrace.exe already on gh-pages.
+    continue-on-error: true
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
@@ -53,10 +56,13 @@ jobs:
 
   build-deploy:
     needs: build-scanner
+    if: always()
     runs-on: ubuntu-latest
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -69,9 +75,19 @@ jobs:
 
       - name: Download scanner artifact
         uses: actions/download-artifact@v4
+        continue-on-error: true
         with:
           name: zerotrace-exe
           path: public
+
+      - name: Fallback — reuse ZeroTrace.exe from gh-pages if build skipped
+        run: |
+          if [ ! -f public/ZeroTrace.exe ]; then
+            echo "Scanner build failed/skipped — reusing existing exe from gh-pages."
+            git fetch origin gh-pages --depth=1 || true
+            git show origin/gh-pages:ZeroTrace.exe > public/ZeroTrace.exe \
+              || echo "::warning::No ZeroTrace.exe on gh-pages either; download button will 404."
+          fi
 
       - name: Build
         run: npm run build
