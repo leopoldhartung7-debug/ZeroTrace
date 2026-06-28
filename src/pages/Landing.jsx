@@ -673,26 +673,20 @@ export default function Landing() {
   const enter = () => nav(state.auth ? '/dashboard' : '/login')
 
   // Shrink the header into a floating rounded pill once the user scrolls.
-  // iOS Safari sometimes reports scrollY differently per element, so we
-  // poll the most reliable source on every scroll/touchmove tick.
+  // Uses an IntersectionObserver on a top-of-page sentinel — fires reliably
+  // on iPad Safari where window 'scroll' events can be inconsistent when
+  // ancestors set overflow / 100% heights.
   const [scrolled, setScrolled] = useState(false)
+  const sentinelRef = useRef(null)
   useEffect(() => {
-    const getY = () =>
-      window.pageYOffset ??
-      window.scrollY ??
-      document.documentElement?.scrollTop ??
-      document.body?.scrollTop ??
-      0
-    const onScroll = () => setScrolled(getY() > 24)
-    onScroll()
-    window.addEventListener('scroll', onScroll, { passive: true })
-    window.addEventListener('touchmove', onScroll, { passive: true })
-    window.addEventListener('resize', onScroll, { passive: true })
-    return () => {
-      window.removeEventListener('scroll', onScroll)
-      window.removeEventListener('touchmove', onScroll)
-      window.removeEventListener('resize', onScroll)
-    }
+    const el = sentinelRef.current
+    if (!el || typeof IntersectionObserver === 'undefined') return undefined
+    const obs = new IntersectionObserver(
+      ([entry]) => setScrolled(!entry.isIntersecting),
+      { threshold: 0, rootMargin: '0px' },
+    )
+    obs.observe(el)
+    return () => obs.disconnect()
   }, [])
 
   const ROUTES = {
@@ -716,22 +710,27 @@ export default function Landing() {
   return (
     <div className="landing-font force-dark app-bg min-h-screen overflow-x-hidden text-white">
 
+      {/* Top sentinel — when this leaves the viewport, the header morphs. */}
+      <div ref={sentinelRef} className="absolute left-0 top-0 h-px w-full" aria-hidden="true" />
+
       {/* ── Header (shrinks into a floating rounded pill on scroll) ── */}
       <header
-        className={`fixed inset-x-0 top-0 z-30 transition-all duration-300 ease-out ${
+        className={`fixed inset-x-0 top-0 z-50 transition-all duration-300 ease-out ${
           scrolled ? 'px-4 md:px-6' : 'px-0'
         }`}
         style={{
           paddingTop: scrolled
             ? 'calc(env(safe-area-inset-top, 0px) + 16px)'
             : 'env(safe-area-inset-top, 0px)',
+          transform: 'translateZ(0)',
+          WebkitTransform: 'translateZ(0)',
         }}
       >
         <div
           className={`mx-auto flex items-center justify-between transition-all duration-300 ease-out ${
             scrolled
-              ? 'max-w-5xl rounded-full border border-white/15 bg-black/70 px-4 py-2 shadow-[0_18px_48px_-12px_rgba(0,0,0,0.6)] backdrop-blur-xl md:px-6'
-              : 'max-w-full border-b border-white/5 bg-black/50 px-6 py-4 backdrop-blur md:px-12'
+              ? 'max-w-5xl rounded-full border border-white/15 bg-[#0a0a12]/90 px-4 py-2 shadow-[0_18px_48px_-12px_rgba(0,0,0,0.65)] backdrop-blur-xl md:px-6'
+              : 'max-w-full border-b border-white/10 bg-[#0a0a12]/85 px-6 py-4 backdrop-blur-xl md:px-12'
           }`}
         >
         <button onClick={() => nav('/')} className="flex shrink-0 items-center gap-3 transition-opacity duration-200 hover:opacity-80">
