@@ -65,7 +65,7 @@ public partial class MainWindow : Window
                 new Uri("pack://application:,,,/Resources/intro.mp4"));
             if (sri is null) { ShowStep(GameView); return; }
 
-            _introTempPath = Path.Combine(Path.GetTempPath(), "zt_intro_" + Path.GetRandomFileName() + ".mp4");
+            _introTempPath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "zt_intro_" + System.IO.Path.GetRandomFileName() + ".mp4");
             using (var dst = File.Create(_introTempPath))
                 sri.Stream.CopyTo(dst);
 
