@@ -16,7 +16,6 @@ export default function Logo({ size = 'md', sub = false }) {
       <img
         src={ztLogo}
         alt="ZeroTrace"
-        className="zt-float-slow"
         style={{
           height: s.box,
           width: s.box * ASPECT,
