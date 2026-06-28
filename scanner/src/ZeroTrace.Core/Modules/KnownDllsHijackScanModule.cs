@@ -28,7 +28,8 @@ namespace ZeroTrace.Core.Modules;
 /// </summary>
 public sealed class KnownDllsHijackScanModule : IScanModule
 {
-    public string Name => "KnownDLLs-Hijack-Analyse";
+    private static readonly string _name = "KnownDLLs-Hijack-Analyse";
+    public string Name => _name;
     public double Weight => 0.5;
     public int ParallelGroup => 3;
 
@@ -92,7 +93,7 @@ public sealed class KnownDllsHijackScanModule : IScanModule
                     hits++;
                     ctx.AddFinding(new Finding
                     {
-                        Module   = Name,
+                        Module = _name,
                         Title    = $"KnownDLLs-Verzeichnis manipuliert: {dllDir}",
                         Risk     = RiskLevel.High,
                         Location = $@"HKLM\{KnownDllsKey}",
@@ -128,7 +129,7 @@ public sealed class KnownDllsHijackScanModule : IScanModule
                 hits++;
                 ctx.AddFinding(new Finding
                 {
-                    Module   = Name,
+                    Module = _name,
                     Title    = $"Unbekannte KnownDLL: {valueName} → {dllValue}",
                     Risk     = cheatKw is not null ? RiskLevel.Critical : RiskLevel.High,
                     Location = $@"HKLM\{KnownDllsKey}",
@@ -163,7 +164,7 @@ public sealed class KnownDllsHijackScanModule : IScanModule
                 hits++;
                 ctx.AddFinding(new Finding
                 {
-                    Module   = Name,
+                    Module = _name,
                     Title    = "SafeDllSearchMode deaktiviert",
                     Risk     = RiskLevel.High,
                     Location = $@"HKLM\{SessionManagerKey}",

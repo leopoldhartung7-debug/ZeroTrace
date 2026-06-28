@@ -32,7 +32,8 @@ namespace ZeroTrace.Core.Modules;
 /// </summary>
 public sealed class BootSectorScanModule : IScanModule
 {
-    public string Name => "Bootsektor-Analyse";
+    private static readonly string _name = "Bootsektor-Analyse";
+    public string Name => _name;
     public double Weight => 0.9;
     public int ParallelGroup => 0;
 
@@ -133,7 +134,7 @@ public sealed class BootSectorScanModule : IScanModule
                 hits++;
                 ctx.AddFinding(new Finding
                 {
-                    Module   = Name,
+                    Module = _name,
                     Title    = $"Ungültige MBR-Signatur: PhysicalDrive{driveNum}",
                     Risk     = RiskLevel.High,
                     Location = path,
@@ -159,7 +160,7 @@ public sealed class BootSectorScanModule : IScanModule
                     var patHex = BitConverter.ToString(pattern).Replace("-", " ");
                     ctx.AddFinding(new Finding
                     {
-                        Module   = Name,
+                        Module = _name,
                         Title    = $"Bootkit-Muster im MBR: PhysicalDrive{driveNum}",
                         Risk     = RiskLevel.Critical,
                         Location = path,
@@ -186,7 +187,7 @@ public sealed class BootSectorScanModule : IScanModule
                 hits++;
                 ctx.AddFinding(new Finding
                 {
-                    Module   = Name,
+                    Module = _name,
                     Title    = $"Unbekannter MBR-Bootstrap-Code: PhysicalDrive{driveNum}",
                     Risk     = RiskLevel.High,
                     Location = path,

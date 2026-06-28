@@ -28,7 +28,8 @@ namespace ZeroTrace.Core.Modules;
 /// </summary>
 public sealed class RegistryRunHistoryScanModule : IScanModule
 {
-    public string Name => "Registry-Run-Persistenz-Analyse";
+    private static readonly string _name = "Registry-Run-Persistenz-Analyse";
+    public string Name => _name;
     public double Weight => 0.8;
     public int ParallelGroup => 3;
 
@@ -110,7 +111,7 @@ public sealed class RegistryRunHistoryScanModule : IScanModule
                         hits++;
                         ctx.AddFinding(new Finding
                         {
-                            Module   = Name,
+                            Module = _name,
                             Title    = $"Run-Key: Cheat-Autostart: {valueName}",
                             Risk     = RiskLevel.Critical,
                             Location = $@"{hive}\{path}",
@@ -136,7 +137,7 @@ public sealed class RegistryRunHistoryScanModule : IScanModule
                             hits++;
                             ctx.AddFinding(new Finding
                             {
-                                Module   = Name,
+                                Module = _name,
                                 Title    = $"Run-Key: LOLBIN-Missbrauch: {valueName}",
                                 Risk     = RiskLevel.High,
                                 Location = $@"{hive}\{path}",
@@ -158,7 +159,7 @@ public sealed class RegistryRunHistoryScanModule : IScanModule
                         hits++;
                         ctx.AddFinding(new Finding
                         {
-                            Module   = Name,
+                            Module = _name,
                             Title    = $"Run-Key: Obfuskierter Startbefehl: {valueName}",
                             Risk     = RiskLevel.High,
                             Location = $@"{hive}\{path}",
@@ -178,7 +179,7 @@ public sealed class RegistryRunHistoryScanModule : IScanModule
                         hits++;
                         ctx.AddFinding(new Finding
                         {
-                            Module   = Name,
+                            Module = _name,
                             Title    = $"Run-Key: Autostart aus verdächtigem Pfad: {valueName}",
                             Risk     = RiskLevel.Medium,
                             Location = $@"{hive}\{path}",
@@ -225,7 +226,7 @@ public sealed class RegistryRunHistoryScanModule : IScanModule
                 hits++;
                 ctx.AddFinding(new Finding
                 {
-                    Module   = Name,
+                    Module = _name,
                     Title    = $"Winlogon Shell geändert: {shell}",
                     Risk     = RiskLevel.Critical,
                     Location = $@"HKLM\{winlogonKey}",
@@ -243,7 +244,7 @@ public sealed class RegistryRunHistoryScanModule : IScanModule
                 hits++;
                 ctx.AddFinding(new Finding
                 {
-                    Module   = Name,
+                    Module = _name,
                     Title    = $"Winlogon Userinit geändert: {userinit}",
                     Risk     = RiskLevel.Critical,
                     Location = $@"HKLM\{winlogonKey}",
@@ -285,7 +286,7 @@ public sealed class RegistryRunHistoryScanModule : IScanModule
                     hits++;
                     ctx.AddFinding(new Finding
                     {
-                        Module   = Name,
+                        Module = _name,
                         Title    = $"Active Setup: Cheat-Persistenz: {subName}",
                         Risk     = RiskLevel.Critical,
                         Location = $@"HKLM\{activeSetupKey}\{subName}",
@@ -300,7 +301,7 @@ public sealed class RegistryRunHistoryScanModule : IScanModule
                     hits++;
                     ctx.AddFinding(new Finding
                     {
-                        Module   = Name,
+                        Module = _name,
                         Title    = $"Active Setup aus verdächtigem Pfad: {subName}",
                         Risk     = RiskLevel.High,
                         Location = $@"HKLM\{activeSetupKey}\{subName}",

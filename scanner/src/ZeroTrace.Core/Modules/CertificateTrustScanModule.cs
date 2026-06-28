@@ -24,7 +24,8 @@ namespace ZeroTrace.Core.Modules;
 /// </summary>
 public sealed class CertificateTrustScanModule : IScanModule
 {
-    public string Name => "Zertifikat-Vertrauens-Analyse";
+    private static readonly string _name = "Zertifikat-Vertrauens-Analyse";
+    public string Name => _name;
     public double Weight => 0.6;
     public int ParallelGroup => 1;
 
@@ -101,7 +102,7 @@ public sealed class CertificateTrustScanModule : IScanModule
                         hits++;
                         ctx.AddFinding(new Finding
                         {
-                            Module   = Name,
+                            Module = _name,
                             Title    = $"Verdächtiges Zertifikat im Trust-Store: {cert.GetNameInfo(X509NameType.SimpleName, false)}",
                             Risk     = storeName == "Root" ? RiskLevel.Critical : RiskLevel.High,
                             Location = $"{location}/{storeName}",
@@ -131,7 +132,7 @@ public sealed class CertificateTrustScanModule : IScanModule
                             hits++;
                             ctx.AddFinding(new Finding
                             {
-                                Module   = Name,
+                                Module = _name,
                                 Title    = $"Unbekanntes selbst-signiertes Root-CA: {cert.GetNameInfo(X509NameType.SimpleName, false)}",
                                 Risk     = RiskLevel.High,
                                 Location = $"{location}/Root",
@@ -154,7 +155,7 @@ public sealed class CertificateTrustScanModule : IScanModule
                         hits++;
                         ctx.AddFinding(new Finding
                         {
-                            Module   = Name,
+                            Module = _name,
                             Title    = $"Abgelaufenes Herausgeber-Zertifikat: {cert.GetNameInfo(X509NameType.SimpleName, false)}",
                             Risk     = RiskLevel.Low,
                             Location = $"{location}/{storeName}",

@@ -25,7 +25,8 @@ namespace ZeroTrace.Core.Modules;
 /// </summary>
 public sealed class TaskSchedulerDeepScanModule : IScanModule
 {
-    public string Name => "Task-Scheduler-Deep-Scan";
+    private static readonly string _name = "Task-Scheduler-Deep-Scan";
+    public string Name => _name;
     public double Weight => 0.8;
     public int ParallelGroup => 4;
 
@@ -200,7 +201,7 @@ public sealed class TaskSchedulerDeepScanModule : IScanModule
 
                 ctx.AddFinding(new Finding
                 {
-                    Module   = Name,
+                    Module = _name,
                     Title    = $"Verdächtiger geplanter Task: {taskName}",
                     Risk     = risk,
                     Location = filePath,

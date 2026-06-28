@@ -29,7 +29,8 @@ namespace ZeroTrace.Core.Modules;
 /// </summary>
 public sealed class CryptoMinerScanModule : IScanModule
 {
-    public string Name => "Crypto-Miner-Erkennung";
+    private static readonly string _name = "Crypto-Miner-Erkennung";
+    public string Name => _name;
     public double Weight => 0.8;
     public int ParallelGroup => 2;
 
@@ -147,7 +148,7 @@ public sealed class CryptoMinerScanModule : IScanModule
                         ctx.IncrementProcesses();
                         ctx.AddFinding(new Finding
                         {
-                            Module   = Name,
+                            Module = _name,
                             Title    = $"Aktiver Crypto-Miner (Befehlszeile): {proc.ProcessName}",
                             Risk     = RiskLevel.Critical,
                             Location = $"PID {proc.Id}: {proc.ProcessName}",
@@ -165,7 +166,7 @@ public sealed class CryptoMinerScanModule : IScanModule
                         ctx.IncrementProcesses();
                         ctx.AddFinding(new Finding
                         {
-                            Module   = Name,
+                            Module = _name,
                             Title    = $"Bekannter Crypto-Miner aktiv: {proc.ProcessName}",
                             Risk     = RiskLevel.Critical,
                             Location = $"PID {proc.Id}: {proc.ProcessName}",
@@ -221,7 +222,7 @@ public sealed class CryptoMinerScanModule : IScanModule
                         hits++;
                         ctx.AddFinding(new Finding
                         {
-                            Module   = Name,
+                            Module = _name,
                             Title    = $"Miner-Autostart: {valueName}",
                             Risk     = RiskLevel.Critical,
                             Location = $@"{hiveName}\{keyPath}",
@@ -263,7 +264,7 @@ public sealed class CryptoMinerScanModule : IScanModule
                         hits++;
                         ctx.AddFinding(new Finding
                         {
-                            Module   = Name,
+                            Module = _name,
                             Title    = $"Miner-Executable gefunden: {fname}",
                             Risk     = RiskLevel.Critical,
                             Location = file,
@@ -293,7 +294,7 @@ public sealed class CryptoMinerScanModule : IScanModule
                             hits++;
                             ctx.AddFinding(new Finding
                             {
-                                Module   = Name,
+                                Module = _name,
                                 Title    = $"Miner-Konfigurationsdatei: {fname}",
                                 Risk     = RiskLevel.Critical,
                                 Location = file,

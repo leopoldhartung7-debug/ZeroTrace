@@ -2101,7 +2101,6 @@ public static class ScanProfiles
         ScanEfiVariables = true,              // GetFirmwareEnvironmentVariable — fast
         ScanDnsCacheExtended = true,          // DnsGetCacheDataTable — fast
         ScanSuspiciousNetworkAdapters = true, // GetAdaptersInfo + registry — fast
-        ScanTokenIntegrityAbuse = true,       // integrity level check — fast
         ScanMouseAccelerationCheat = true,    // HID registry check — fast
         ScanNamedPipeCheatIpc = true,         // NtQueryDirectoryObject \Device\NamedPipe — fast
         ScanCheatInstallerArtifacts = false,  // filesystem scan — slow
@@ -2123,7 +2122,6 @@ public static class ScanProfiles
         ScanBrowserBookmarks = true,          // bookmark JSON parse — fast
         ScanDiscordCheatArtifacts = true,     // LevelDB byte-grep — bounded
         ScanTelegramArtifacts = true,         // tdata byte-grep — bounded
-        ScanMacroSoftware = true,             // JSON profile + AHK scan — fast
         ScanSteamCheatCorrelation = true,     // localconfig.vdf + ACF — fast
         ScanShadowplayArtifacts = true,       // clip file names — fast
         ScanVirtualAudioDevices = true,       // registry enum — fast
@@ -2202,7 +2200,6 @@ public static class ScanProfiles
         ScanWindowsEventLogTamper = true,     // event log clearing/audit policy tamper scan — fast
         ScanAmsiBypassArtifact = true,        // AMSI patch/registry bypass + reflective DLL scan — fast
         ScanCheatHashSignature = true,        // SHA-256/MD5 hash database match scan — fast
-        ScanCryptoMiner = true,               // bundled miner EXE/config/persistence scan — fast
         ScanFiveMExploitInjection = true,      // FiveM NUI/Lua/socket/manifest exploit scan — fast
         ScanOverlayEspAimbot = true,           // D3D/ImGui/GDI overlay ESP & aimbot DLL scan — fast
         ScanSpeedHackTimer = true,             // speed hack EXE/DLL/timer abuse artifact scan — fast
@@ -2237,7 +2234,6 @@ public static class ScanProfiles
         ScanWarzoneCheatDeep = true,            // Warzone/MW2/MW3 / RICOCHET bypass scan
         ScanCounterStrike2Cheat = true,         // CS2/CSGO cheat / VAC bypass scan
         ScanApexLegendsCheat = true,            // Apex Legends / EAC bypass scan
-        ScanValorantCheat = true,               // Valorant / Vanguard bypass scan
         ScanDota2Cheat = true,                  // Dota 2 cheat / maphack scan
         ScanLeagueOfLegendsCheat = true,        // League of Legends / Vanguard bypass scan
         ScanPubgCheat = true,                   // PUBG / BattlEye bypass scan
@@ -2256,13 +2252,10 @@ public static class ScanProfiles
         ScanNetworkPacketManipulation = true,   // lag switch / packet injection scan
         ScanGameTrainerCheatEngine = true,      // Cheat Engine / game trainer scan
         ScanVirtualMachineCheatBypass = true,   // VM-based cheat bypass scan
-        ScanEasyAntiCheatBypass = true,
         ScanBattleEyeBypass = true,
-        ScanVanguardBypass = true,
         ScanFiveMNativeSpoof = true,
         ScanAltVResourceInjection = true,
         ScanRageMpPacketSpoof = true,
-        ScanAntiDebugEvasion = true,
         ScanProcessInjectionArtifact = true,
         ScanKernelCallbackHijack = true,
         ScanMemoryPatchingDetection = true,
@@ -2272,12 +2265,7 @@ public static class ScanProfiles
         ScanGameExploitKit = true,
         ScanRootKitUserModeArtifact = true,
         ScanGTA5OnlineCheat = true,
-        ScanRustApexCheat = true,
-        ScanEscapeFromTarkovCheat = true,
-        ScanMinecraftCheatDeep = true,
-        ScanFortniteWarzoneCheat = true,
         ScanFortniteCheatDetection = true,
-        ScanRainbowSixSiegeCheat = true,
         ScanFiveMKernelExploit = true,
         ScanRustCheatDetection = true,
         ScanCS2Cheat = true,
@@ -2381,7 +2369,6 @@ public static class ScanProfiles
         ScanGTAVDeep = true,
         ScanGamingVPNBanEvasion = true,
         ScanCheatCommunityPlatform = true,
-        ScanFiveMNativeHook = true,
         ScanWindowsDefenderTamperDeep = true,
         ScanFiveMModMenuDeep = true,
         ScanESXQBCoreExploitDeep = true,

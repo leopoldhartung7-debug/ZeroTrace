@@ -6,7 +6,8 @@ namespace ZeroTrace.Core.Modules;
 
 public sealed class RustCheatDetectionScanModule : IScanModule
 {
-    public string Name => "Rust Game Cheat Detection";
+    private static readonly string _name = "Rust Game Cheat Detection";
+    public string Name => _name;
     public double Weight => 4.3;
     public int ParallelGroup => 4;
 
@@ -371,7 +372,7 @@ public sealed class RustCheatDetectionScanModule : IScanModule
                     {
                         ctx.AddFinding(new Finding
                         {
-                            Module   = Name,
+                            Module = _name,
                             Title    = $"Rust Cheat Directory: {dirName}",
                             Risk     = RiskLevel.Critical,
                             Location = dir,
@@ -416,7 +417,7 @@ public sealed class RustCheatDetectionScanModule : IScanModule
             ctx.IncrementFiles();
             ctx.AddFinding(new Finding
             {
-                Module   = Name,
+                Module = _name,
                 Title    = $"Known Rust Cheat Executable: {fileName}",
                 Risk     = RiskLevel.Critical,
                 Location = file,
@@ -435,7 +436,7 @@ public sealed class RustCheatDetectionScanModule : IScanModule
             ctx.IncrementFiles();
             ctx.AddFinding(new Finding
             {
-                Module   = Name,
+                Module = _name,
                 Title    = $"Known Rust Cheat DLL: {fileName}",
                 Risk     = RiskLevel.Critical,
                 Location = file,
@@ -454,7 +455,7 @@ public sealed class RustCheatDetectionScanModule : IScanModule
             ctx.IncrementFiles();
             ctx.AddFinding(new Finding
             {
-                Module   = Name,
+                Module = _name,
                 Title    = $"Rust Cheat Configuration File: {fileName}",
                 Risk     = RiskLevel.High,
                 Location = file,
@@ -473,7 +474,7 @@ public sealed class RustCheatDetectionScanModule : IScanModule
             ctx.IncrementFiles();
             ctx.AddFinding(new Finding
             {
-                Module   = Name,
+                Module = _name,
                 Title    = $"Rust Recoil Script: {fileName}",
                 Risk     = RiskLevel.High,
                 Location = file,
@@ -522,7 +523,7 @@ public sealed class RustCheatDetectionScanModule : IScanModule
                     ctx.IncrementFiles();
                     ctx.AddFinding(new Finding
                     {
-                        Module   = Name,
+                        Module = _name,
                         Title    = $"Rust Cheat Keyword in Config: {fileName}",
                         Risk     = RiskLevel.High,
                         Location = file,
@@ -570,7 +571,7 @@ public sealed class RustCheatDetectionScanModule : IScanModule
                 ctx.IncrementFiles();
                 ctx.AddFinding(new Finding
                 {
-                    Module   = Name,
+                    Module = _name,
                     Title    = $"Rust Recoil Macro Script Content: {fileName}",
                     Risk     = RiskLevel.High,
                     Location = file,
@@ -638,7 +639,7 @@ public sealed class RustCheatDetectionScanModule : IScanModule
                         ctx.IncrementFiles();
                         ctx.AddFinding(new Finding
                         {
-                            Module   = Name,
+                            Module = _name,
                             Title    = $"Rust Recoil Script Found: {fn}",
                             Risk     = RiskLevel.High,
                             Location = file,
@@ -696,7 +697,7 @@ public sealed class RustCheatDetectionScanModule : IScanModule
 
                             ctx.AddFinding(new Finding
                             {
-                                Module   = Name,
+                                Module = _name,
                                 Title    = $"Rust Cheat Process Running: {proc.ProcessName}",
                                 Risk     = RiskLevel.Critical,
                                 Location = exePath ?? $"PID {proc.Id}",
@@ -720,7 +721,7 @@ public sealed class RustCheatDetectionScanModule : IScanModule
 
                                 ctx.AddFinding(new Finding
                                 {
-                                    Module   = Name,
+                                    Module = _name,
                                     Title    = $"Suspicious Rust-Related Process: {proc.ProcessName}",
                                     Risk     = RiskLevel.High,
                                     Location = exePath ?? $"PID {proc.Id}",
@@ -767,7 +768,7 @@ public sealed class RustCheatDetectionScanModule : IScanModule
                         ctx.IncrementFiles();
                         ctx.AddFinding(new Finding
                         {
-                            Module   = Name,
+                            Module = _name,
                             Title    = $"EAC Bypass DLL in Rust Directory: {bypassFile}",
                             Risk     = RiskLevel.Critical,
                             Location = targetPath,
@@ -816,7 +817,7 @@ public sealed class RustCheatDetectionScanModule : IScanModule
                     ctx.IncrementFiles();
                     ctx.AddFinding(new Finding
                     {
-                        Module   = Name,
+                        Module = _name,
                         Title    = $"Suspiciously Small EAC DLL (Possible Stub): {fn}",
                         Risk     = RiskLevel.Critical,
                         Location = file,
@@ -846,7 +847,7 @@ public sealed class RustCheatDetectionScanModule : IScanModule
                 ctx.IncrementFiles();
                 ctx.AddFinding(new Finding
                 {
-                    Module   = Name,
+                    Module = _name,
                     Title    = "Rust.exe Size Anomaly (Possible Modification)",
                     Risk     = RiskLevel.High,
                     Location = rustExe,
@@ -888,7 +889,7 @@ public sealed class RustCheatDetectionScanModule : IScanModule
                 {
                     ctx.AddFinding(new Finding
                     {
-                        Module   = Name,
+                        Module = _name,
                         Title    = $"EasyAntiCheat Service Disabled: {serviceName}",
                         Risk     = RiskLevel.Critical,
                         Location = $@"HKLM\SYSTEM\CurrentControlSet\Services\{serviceName}",
@@ -904,7 +905,7 @@ public sealed class RustCheatDetectionScanModule : IScanModule
                 {
                     ctx.AddFinding(new Finding
                     {
-                        Module   = Name,
+                        Module = _name,
                         Title    = $"Suspicious EAC Service ImagePath: {serviceName}",
                         Risk     = RiskLevel.Critical,
                         Location = $@"HKLM\SYSTEM\CurrentControlSet\Services\{serviceName}",
@@ -967,7 +968,7 @@ public sealed class RustCheatDetectionScanModule : IScanModule
                                 ctx.IncrementFiles();
                                 ctx.AddFinding(new Finding
                                 {
-                                    Module   = Name,
+                                    Module = _name,
                                     Title    = $"Suspicious Oxide/uMod Plugin: {Path.GetFileName(plugin)}",
                                     Risk     = RiskLevel.High,
                                     Location = plugin,
@@ -1034,7 +1035,7 @@ public sealed class RustCheatDetectionScanModule : IScanModule
                 ctx.IncrementFiles();
                 ctx.AddFinding(new Finding
                 {
-                    Module   = Name,
+                    Module = _name,
                     Title    = $"Oxide Plugin With Cheat Code Patterns: {Path.GetFileName(file)}",
                     Risk     = RiskLevel.High,
                     Location = file,
@@ -1095,7 +1096,7 @@ public sealed class RustCheatDetectionScanModule : IScanModule
                     ctx.IncrementFiles();
                     ctx.AddFinding(new Finding
                     {
-                        Module   = Name,
+                        Module = _name,
                         Title    = $"Suspicious Harmony/Carbon File Outside Game: {harmonyFile}",
                         Risk     = RiskLevel.High,
                         Location = fullPath,
@@ -1127,7 +1128,7 @@ public sealed class RustCheatDetectionScanModule : IScanModule
                     {
                         ctx.AddFinding(new Finding
                         {
-                            Module   = Name,
+                            Module = _name,
                             Title    = $"Suspicious Harmony Directory: {Path.GetFileName(sub)}",
                             Risk     = RiskLevel.High,
                             Location = sub,
@@ -1170,7 +1171,7 @@ public sealed class RustCheatDetectionScanModule : IScanModule
                     {
                         ctx.AddFinding(new Finding
                         {
-                            Module   = Name,
+                            Module = _name,
                             Title    = $"Rust Cheat Execution Record (MUICache): {fileNamePart}",
                             Risk     = RiskLevel.Critical,
                             Location = $@"HKCU\{MUICacheKeyPath}",
@@ -1189,7 +1190,7 @@ public sealed class RustCheatDetectionScanModule : IScanModule
                         {
                             ctx.AddFinding(new Finding
                             {
-                                Module   = Name,
+                                Module = _name,
                                 Title    = $"Rust Cheat Execution Record (MUICache): {kw}",
                                 Risk     = RiskLevel.High,
                                 Location = $@"HKCU\{MUICacheKeyPath}",
@@ -1245,7 +1246,7 @@ public sealed class RustCheatDetectionScanModule : IScanModule
                             {
                                 ctx.AddFinding(new Finding
                                 {
-                                    Module   = Name,
+                                    Module = _name,
                                     Title    = $"Rust Cheat Execution Record (UserAssist): {fileNamePart}",
                                     Risk     = RiskLevel.Critical,
                                     Location = $@"HKCU\{UserAssistKeyPath}\{guidName}\Count",
@@ -1265,7 +1266,7 @@ public sealed class RustCheatDetectionScanModule : IScanModule
                                 {
                                     ctx.AddFinding(new Finding
                                     {
-                                        Module   = Name,
+                                        Module = _name,
                                         Title    = $"Rust Cheat in UserAssist: {kw}",
                                         Risk     = RiskLevel.High,
                                         Location = $@"HKCU\{UserAssistKeyPath}\{guidName}\Count",
@@ -1333,7 +1334,7 @@ public sealed class RustCheatDetectionScanModule : IScanModule
                                 {
                                     ctx.AddFinding(new Finding
                                     {
-                                        Module   = Name,
+                                        Module = _name,
                                         Title    = $"Rust Cheat Software in Uninstall Registry: {subKeyName}",
                                         Risk     = RiskLevel.Critical,
                                         Location = $@"HKLM\{path}\{subKeyName}",

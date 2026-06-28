@@ -27,7 +27,8 @@ namespace ZeroTrace.Core.Modules;
 /// </summary>
 public sealed class SvcHostGroupScanModule : IScanModule
 {
-    public string Name => "SvcHost-Gruppen-Analyse";
+    private static readonly string _name = "SvcHost-Gruppen-Analyse";
+    public string Name => _name;
     public double Weight => 0.6;
     public int ParallelGroup => 3;
 
@@ -148,7 +149,7 @@ public sealed class SvcHostGroupScanModule : IScanModule
                         ctx.IncrementRegistryKeys();
                         ctx.AddFinding(new Finding
                         {
-                            Module   = Name,
+                            Module = _name,
                             Title    = $"Verdächtiger SvcHost-Dienst: {svcName} ({groupName})",
                             Risk     = cheatKw is not null ? RiskLevel.Critical :
                                        !isKnownGroup ? RiskLevel.High : RiskLevel.Medium,

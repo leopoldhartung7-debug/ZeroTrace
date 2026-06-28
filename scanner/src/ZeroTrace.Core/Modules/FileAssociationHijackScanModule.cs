@@ -30,7 +30,8 @@ namespace ZeroTrace.Core.Modules;
 /// </summary>
 public sealed class FileAssociationHijackScanModule : IScanModule
 {
-    public string Name => "Dateiverknüpfungs-Hijack";
+    private static readonly string _name = "Dateiverknüpfungs-Hijack";
+    public string Name => _name;
     public double Weight => 0.6;
     public int ParallelGroup => 3;
 
@@ -125,7 +126,7 @@ public sealed class FileAssociationHijackScanModule : IScanModule
                     bool exists = File.Exists(exe);
                     ctx.AddFinding(new Finding
                     {
-                        Module   = Name,
+                        Module = _name,
                         Title    = $"Dateiverknüpfungs-Hijack: {progId} ({hiveName})",
                         Risk     = cheatKw is not null || progId.Equals("exefile", StringComparison.OrdinalIgnoreCase)
                             ? RiskLevel.Critical : RiskLevel.High,
@@ -178,7 +179,7 @@ public sealed class FileAssociationHijackScanModule : IScanModule
                     cmdLower.Contains(k, StringComparison.OrdinalIgnoreCase));
                 ctx.AddFinding(new Finding
                 {
-                    Module   = Name,
+                    Module = _name,
                     Title    = "Kritischer EXE-Handler-Hijack (HKCU\\exefile)",
                     Risk     = RiskLevel.Critical,
                     Location = @"HKCU\SOFTWARE\Classes\exefile\shell\open\command",

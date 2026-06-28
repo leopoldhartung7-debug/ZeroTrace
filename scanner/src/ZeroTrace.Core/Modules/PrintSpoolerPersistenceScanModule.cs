@@ -28,7 +28,8 @@ namespace ZeroTrace.Core.Modules;
 /// </summary>
 public sealed class PrintSpoolerPersistenceScanModule : IScanModule
 {
-    public string Name => "Druckspooler-Persistenz";
+    private static readonly string _name = "Druckspooler-Persistenz";
+    public string Name => _name;
     public double Weight => 0.5;
     public int ParallelGroup => 3;
 
@@ -103,7 +104,7 @@ public sealed class PrintSpoolerPersistenceScanModule : IScanModule
                     hits++;
                     ctx.AddFinding(new Finding
                     {
-                        Module   = Name,
+                        Module = _name,
                         Title    = $"Verdächtiger Druck-Monitor: {monitorName}",
                         Risk     = cheatKw is not null ? RiskLevel.Critical : RiskLevel.High,
                         Location = $@"HKLM\{PrintMonitorsKey}\{monitorName}",
@@ -162,7 +163,7 @@ public sealed class PrintSpoolerPersistenceScanModule : IScanModule
                         hits++;
                         ctx.AddFinding(new Finding
                         {
-                            Module   = Name,
+                            Module = _name,
                             Title    = $"Verdächtiger Druck-Prozessor: {ppName}",
                             Risk     = cheatKw is not null ? RiskLevel.Critical : RiskLevel.High,
                             Location = $@"HKLM\{PrintEnvironmentsKey}\{envName}\Print Processors\{ppName}",

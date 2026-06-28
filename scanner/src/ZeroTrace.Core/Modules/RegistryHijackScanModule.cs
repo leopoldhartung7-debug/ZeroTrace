@@ -37,7 +37,8 @@ namespace ZeroTrace.Core.Modules;
 /// </summary>
 public sealed class RegistryHijackScanModule : IScanModule
 {
-    public string Name => "Registry-Hijack-Analyse";
+    private static readonly string _name = "Registry-Hijack-Analyse";
+    public string Name => _name;
     public double Weight => 0.7;
     public int ParallelGroup => 3;
 
@@ -129,7 +130,7 @@ public sealed class RegistryHijackScanModule : IScanModule
                         bool exists = !string.IsNullOrEmpty(dllPath) && File.Exists(dllPath);
                         ctx.AddFinding(new Finding
                         {
-                            Module   = Name,
+                            Module = _name,
                             Title    = $"Unbekanntes Browser-Helper-Objekt: {guidName}",
                             Risk     = cheatKw is not null ? RiskLevel.Critical : RiskLevel.High,
                             Location = $@"HKLM\{keyPath}\{guidName}",
@@ -185,7 +186,7 @@ public sealed class RegistryHijackScanModule : IScanModule
                     hits++;
                     ctx.AddFinding(new Finding
                     {
-                        Module   = Name,
+                        Module = _name,
                         Title    = $"Benutzerdefinierte Shell-Erweiterung: {guidName}",
                         Risk     = cheatKw is not null ? RiskLevel.Critical : RiskLevel.High,
                         Location = $@"HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Shell Extensions\Approved",
@@ -240,7 +241,7 @@ public sealed class RegistryHijackScanModule : IScanModule
                     hits++;
                     ctx.AddFinding(new Finding
                     {
-                        Module   = Name,
+                        Module = _name,
                         Title    = $"Unbekanntes Session-Manager-Subsystem: {valueName}",
                         Risk     = RiskLevel.Critical,
                         Location = @"HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\SubSystems",
@@ -301,7 +302,7 @@ public sealed class RegistryHijackScanModule : IScanModule
                         hits++;
                         ctx.AddFinding(new Finding
                         {
-                            Module   = Name,
+                            Module = _name,
                             Title    = $"Verdächtiger URI-Protocol-Handler: {protoName}",
                             Risk     = cheatKw is not null ? RiskLevel.High : RiskLevel.Medium,
                             Location = $@"{hiveName}\SOFTWARE\Classes\{protoName}\shell\open\command",
@@ -357,7 +358,7 @@ public sealed class RegistryHijackScanModule : IScanModule
                         hits++;
                         ctx.AddFinding(new Finding
                         {
-                            Module   = Name,
+                            Module = _name,
                             Title    = $"Verdächtiger Desktop-Namespace: {guidName}",
                             Risk     = cheatKw is not null ? RiskLevel.Critical : RiskLevel.Medium,
                             Location = $@"{hiveName}\{keyPath}\{guidName}",

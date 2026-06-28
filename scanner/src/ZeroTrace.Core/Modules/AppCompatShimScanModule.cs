@@ -29,7 +29,8 @@ namespace ZeroTrace.Core.Modules;
 /// </summary>
 public sealed class AppCompatShimScanModule : IScanModule
 {
-    public string Name => "AppCompat-Shim-Persistenz";
+    private static readonly string _name = "AppCompat-Shim-Persistenz";
+    public string Name => _name;
     public double Weight => 0.6;
     public int ParallelGroup => 3;
 
@@ -100,7 +101,7 @@ public sealed class AppCompatShimScanModule : IScanModule
                     hits++;
                     ctx.AddFinding(new Finding
                     {
-                        Module   = Name,
+                        Module = _name,
                         Title    = $"Benutzerdefinierte Shim-Datenbank: {dbName}",
                         Risk     = cheatKw is not null ? RiskLevel.Critical : RiskLevel.High,
                         Location = $@"{hiveName}\{keyPath}\{guidName}",
@@ -145,7 +146,7 @@ public sealed class AppCompatShimScanModule : IScanModule
                 hits++;
                 ctx.AddFinding(new Finding
                 {
-                    Module   = Name,
+                    Module = _name,
                     Title    = $"AppCompat-Custom-Flag: {exeName}",
                     Risk     = RiskLevel.High,
                     Location = $@"HKLM\{CustomFlagsKeyLm}\{exeName}",
@@ -193,7 +194,7 @@ public sealed class AppCompatShimScanModule : IScanModule
                     hits++;
                     ctx.AddFinding(new Finding
                     {
-                        Module   = Name,
+                        Module = _name,
                         Title    = $"SDB-Datei in AppPatch: {Path.GetFileName(file)}",
                         Risk     = cheatKw is not null ? RiskLevel.Critical : RiskLevel.Medium,
                         Location = file,

@@ -32,7 +32,8 @@ namespace ZeroTrace.Core.Modules;
 /// </summary>
 public sealed class WindowsEventLogDeepScanModule : IScanModule
 {
-    public string Name => "EventLog-Tiefenanalyse";
+    private static readonly string _name = "EventLog-Tiefenanalyse";
+    public string Name => _name;
     public double Weight => 0.9;
     public int ParallelGroup => 4;
 
@@ -116,7 +117,7 @@ public sealed class WindowsEventLogDeepScanModule : IScanModule
 
                             ctx.AddFinding(new Finding
                             {
-                                Module   = Name,
+                                Module = _name,
                                 Title    = $"Security-Log: {evType}: Cheat-Keyword '{keyword}'",
                                 Risk     = evId == 4688 ? RiskLevel.High : RiskLevel.Critical,
                                 Location = "Security Event Log",
@@ -172,7 +173,7 @@ public sealed class WindowsEventLogDeepScanModule : IScanModule
                                 hits++;
                                 ctx.AddFinding(new Finding
                                 {
-                                    Module   = Name,
+                                    Module = _name,
                                     Title    = $"System-Log: Anti-Cheat-Service gestoppt: {acSvc}",
                                     Risk     = RiskLevel.Critical,
                                     Location = "System Event Log",
@@ -195,7 +196,7 @@ public sealed class WindowsEventLogDeepScanModule : IScanModule
                                 hits++;
                                 ctx.AddFinding(new Finding
                                 {
-                                    Module   = Name,
+                                    Module = _name,
                                     Title    = $"System-Log: Verdächtiger Treiber geladen: Keyword '{keyword}'",
                                     Risk     = RiskLevel.Critical,
                                     Location = "System Event Log",
@@ -262,7 +263,7 @@ public sealed class WindowsEventLogDeepScanModule : IScanModule
                             hits++;
                             ctx.AddFinding(new Finding
                             {
-                                Module   = Name,
+                                Module = _name,
                                 Title    = $"PS-Script-Block-Log: Verdächtiger Code: '{pattern}'",
                                 Risk     = RiskLevel.High,
                                 Location = "Microsoft-Windows-PowerShell/Operational",

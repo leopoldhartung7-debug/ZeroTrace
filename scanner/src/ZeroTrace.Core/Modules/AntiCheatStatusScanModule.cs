@@ -33,7 +33,8 @@ namespace ZeroTrace.Core.Modules;
 /// </summary>
 public sealed class AntiCheatStatusScanModule : IScanModule
 {
-    public string Name => "Anti-Cheat-Integrität";
+    private static readonly string _name = "Anti-Cheat-Integrität";
+    public string Name => _name;
     public double Weight => 0.8;
     public int ParallelGroup => 2;
 
@@ -159,7 +160,7 @@ public sealed class AntiCheatStatusScanModule : IScanModule
                     hits++;
                     ctx.AddFinding(new Finding
                     {
-                        Module   = Name,
+                        Module = _name,
                         Title    = $"Anti-Cheat deaktiviert: {ac.Name} ({svcName})",
                         Risk     = RiskLevel.High,
                         Location = $@"HKLM\SYSTEM\CurrentControlSet\Services\{svcName}",
@@ -204,7 +205,7 @@ public sealed class AntiCheatStatusScanModule : IScanModule
                 {
                     ctx.AddFinding(new Finding
                     {
-                        Module   = Name,
+                        Module = _name,
                         Title    = $"Anti-Cheat-Datei zu klein: {Path.GetFileName(file)}",
                         Risk     = RiskLevel.Critical,
                         Location = file,
@@ -253,7 +254,7 @@ public sealed class AntiCheatStatusScanModule : IScanModule
                         ctx.IncrementProcesses();
                         ctx.AddFinding(new Finding
                         {
-                            Module   = Name,
+                            Module = _name,
                             Title    = $"AC-Bypass-Prozess aktiv: {proc.ProcessName}",
                             Risk     = RiskLevel.Critical,
                             Location = $"PID {proc.Id}: {proc.ProcessName}",

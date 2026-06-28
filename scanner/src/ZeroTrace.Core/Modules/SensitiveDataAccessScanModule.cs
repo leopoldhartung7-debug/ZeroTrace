@@ -35,7 +35,8 @@ namespace ZeroTrace.Core.Modules;
 /// </summary>
 public sealed class SensitiveDataAccessScanModule : IScanModule
 {
-    public string Name => "Zugangsdaten-Zugriff-Analyse";
+    private static readonly string _name = "Zugangsdaten-Zugriff-Analyse";
+    public string Name => _name;
     public double Weight => 0.9;
     public int ParallelGroup => 4;
 
@@ -176,7 +177,7 @@ public sealed class SensitiveDataAccessScanModule : IScanModule
 
                 ctx.AddFinding(new Finding
                 {
-                    Module   = Name,
+                    Module = _name,
                     Title    = $"Zugangsdaten-Artefakt: {fname}",
                     Risk     = risk,
                     Location = file,

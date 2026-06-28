@@ -6,7 +6,8 @@ namespace ZeroTrace.Core.Modules;
 
 public sealed class MemoryCheatSignatureScanModule : IScanModule
 {
-    public string Name => "Memory-Cheat-Signature";
+    private static readonly string _name = "Memory-Cheat-Signature";
+    public string Name => _name;
     public double Weight => 0.75;
     public int ParallelGroup => 4;
 
@@ -159,7 +160,7 @@ public sealed class MemoryCheatSignatureScanModule : IScanModule
 
                         ctx.AddFinding(new Finding
                         {
-                            Module = Name,
+                            Module = _name,
                             Title = $"Cheat brand string in PE header region: '{brand}' in {Path.GetFileName(file)}",
                             Risk = RiskLevel.Critical,
                             Location = file,
@@ -245,7 +246,7 @@ public sealed class MemoryCheatSignatureScanModule : IScanModule
                         var matchedBypass = FindFirstMatch(asciiLower, AntiAcBypassStrings);
                         ctx.AddFinding(new Finding
                         {
-                            Module = Name,
+                            Module = _name,
                             Title = $"PE file with cheat brand AND anti-cheat bypass strings: {Path.GetFileName(file)}",
                             Risk = RiskLevel.Critical,
                             Location = file,
@@ -264,7 +265,7 @@ public sealed class MemoryCheatSignatureScanModule : IScanModule
                     {
                         ctx.AddFinding(new Finding
                         {
-                            Module = Name,
+                            Module = _name,
                             Title = $"PE file with multiple cheat feature strings ({totalFeatureHits} matches): {Path.GetFileName(file)}",
                             Risk = RiskLevel.High,
                             Location = file,
@@ -283,7 +284,7 @@ public sealed class MemoryCheatSignatureScanModule : IScanModule
                         var matchedBrand = FindFirstMatch(asciiLower, CheatBrandStrings);
                         ctx.AddFinding(new Finding
                         {
-                            Module = Name,
+                            Module = _name,
                             Title = $"PE file contains cheat brand string: '{matchedBrand}' in {Path.GetFileName(file)}",
                             Risk = RiskLevel.High,
                             Location = file,
@@ -349,7 +350,7 @@ public sealed class MemoryCheatSignatureScanModule : IScanModule
 
                         ctx.AddFinding(new Finding
                         {
-                            Module = Name,
+                            Module = _name,
                             Title = $"DLL with cheat export function name '{exportName}': {Path.GetFileName(file)}",
                             Risk = RiskLevel.High,
                             Location = file,
@@ -435,7 +436,7 @@ public sealed class MemoryCheatSignatureScanModule : IScanModule
 
             ctx.AddFinding(new Finding
             {
-                Module = Name,
+                Module = _name,
                 Title = $"PE executable disguised with non-executable extension: {Path.GetFileName(file)}",
                 Risk = RiskLevel.High,
                 Location = file,
@@ -496,7 +497,7 @@ public sealed class MemoryCheatSignatureScanModule : IScanModule
 
             ctx.AddFinding(new Finding
             {
-                Module = Name,
+                Module = _name,
                 Title = $"Suspicious obfuscated PE loader (no version info, few imports): {Path.GetFileName(file)}",
                 Risk = RiskLevel.Medium,
                 Location = file,
@@ -533,7 +534,7 @@ public sealed class MemoryCheatSignatureScanModule : IScanModule
 
             ctx.AddFinding(new Finding
             {
-                Module = Name,
+                Module = _name,
                 Title = $"PE file with random hex filename in temp/download dir: {fileName}",
                 Risk = RiskLevel.Medium,
                 Location = file,
@@ -607,7 +608,7 @@ public sealed class MemoryCheatSignatureScanModule : IScanModule
 
                     ctx.AddFinding(new Finding
                     {
-                        Module = Name,
+                        Module = _name,
                         Title = $"Config file with {matchCount} cheat configuration keys: {Path.GetFileName(file)}",
                         Risk = risk,
                         Location = file,

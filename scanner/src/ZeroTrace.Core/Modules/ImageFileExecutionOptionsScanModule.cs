@@ -29,7 +29,8 @@ namespace ZeroTrace.Core.Modules;
 /// </summary>
 public sealed class ImageFileExecutionOptionsScanModule : IScanModule
 {
-    public string Name => "IFEO-Debugger-Hijack";
+    private static readonly string _name = "IFEO-Debugger-Hijack";
+    public string Name => _name;
     public double Weight => 0.7;
     public int ParallelGroup => 3;
 
@@ -182,7 +183,7 @@ public sealed class ImageFileExecutionOptionsScanModule : IScanModule
                         bool exists = File.Exists(debugger.Trim('"'));
                         ctx.AddFinding(new Finding
                         {
-                            Module   = Name,
+                            Module = _name,
                             Title    = $"IFEO-Debugger-Hijack: {exeName}",
                             Risk     = risk,
                             Location = $@"{hiveLabel}\{keyPath}\{exeName}",
@@ -210,7 +211,7 @@ public sealed class ImageFileExecutionOptionsScanModule : IScanModule
                         hits++;
                         ctx.AddFinding(new Finding
                         {
-                            Module   = Name,
+                            Module = _name,
                             Title    = $"IFEO-VerifierDll: {exeName}",
                             Risk     = cheatKw is not null ? RiskLevel.Critical : RiskLevel.High,
                             Location = $@"{hiveLabel}\{keyPath}\{exeName}",

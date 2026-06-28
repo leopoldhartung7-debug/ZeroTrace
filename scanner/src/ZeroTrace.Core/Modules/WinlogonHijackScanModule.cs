@@ -32,7 +32,8 @@ namespace ZeroTrace.Core.Modules;
 /// </summary>
 public sealed class WinlogonHijackScanModule : IScanModule
 {
-    public string Name => "Winlogon-Hijack-Analyse";
+    private static readonly string _name = "Winlogon-Hijack-Analyse";
+    public string Name => _name;
     public double Weight => 0.6;
     public int ParallelGroup => 3;
 
@@ -116,7 +117,7 @@ public sealed class WinlogonHijackScanModule : IScanModule
                     hits++;
                     ctx.AddFinding(new Finding
                     {
-                        Module   = Name,
+                        Module = _name,
                         Title    = $"Winlogon-Userinit-Hijack ({hiveName}): {fname}",
                         Risk     = cheatKw is not null ? RiskLevel.Critical : RiskLevel.High,
                         Location = $@"{hiveName}\{WinlogonKey}",
@@ -144,7 +145,7 @@ public sealed class WinlogonHijackScanModule : IScanModule
                     hits++;
                     ctx.AddFinding(new Finding
                     {
-                        Module   = Name,
+                        Module = _name,
                         Title    = $"Winlogon-GINA-Ersatz: {Path.GetFileName(gina)}",
                         Risk     = cheatKw is not null ? RiskLevel.Critical : RiskLevel.High,
                         Location = $@"{hiveName}\{WinlogonKey}",
@@ -171,7 +172,7 @@ public sealed class WinlogonHijackScanModule : IScanModule
                     hits++;
                     ctx.AddFinding(new Finding
                     {
-                        Module   = Name,
+                        Module = _name,
                         Title    = $"Task-Manager-Ersatz: {Path.GetFileName(taskMan)}",
                         Risk     = cheatKw is not null ? RiskLevel.Critical : RiskLevel.High,
                         Location = $@"{hiveName}\{WinlogonKey}",
@@ -258,7 +259,7 @@ public sealed class WinlogonHijackScanModule : IScanModule
                     hits++;
                     ctx.AddFinding(new Finding
                     {
-                        Module   = Name,
+                        Module = _name,
                         Title    = $"Winlogon-Notify-Paket: {pkgName}",
                         Risk     = cheatKw is not null ? RiskLevel.Critical : RiskLevel.High,
                         Location = $@"HKLM\{WinlogonKey}\Notify\{pkgName}",

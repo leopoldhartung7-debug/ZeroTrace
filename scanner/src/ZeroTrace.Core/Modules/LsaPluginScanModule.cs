@@ -29,7 +29,8 @@ namespace ZeroTrace.Core.Modules;
 /// </summary>
 public sealed class LsaPluginScanModule : IScanModule
 {
-    public string Name => "LSA-Plugin-Analyse";
+    private static readonly string _name = "LSA-Plugin-Analyse";
+    public string Name => _name;
     public double Weight => 0.8;
     public int ParallelGroup => 3;
 
@@ -127,7 +128,7 @@ public sealed class LsaPluginScanModule : IScanModule
 
                     ctx.AddFinding(new Finding
                     {
-                        Module   = Name,
+                        Module = _name,
                         Title    = $"Unbekanntes LSA-{typeLabel}: {pkg}",
                         Risk     = cheatKw is not null ? RiskLevel.Critical : RiskLevel.High,
                         Location = $@"HKLM\{LsaKey}\{valueName}",
@@ -179,7 +180,7 @@ public sealed class LsaPluginScanModule : IScanModule
 
                     ctx.AddFinding(new Finding
                     {
-                        Module   = Name,
+                        Module = _name,
                         Title    = $"Unbekannter Security-Provider: {dll}",
                         Risk     = cheatKw is not null ? RiskLevel.Critical : RiskLevel.High,
                         Location = $@"HKLM\{SecurityProvidersKey}",

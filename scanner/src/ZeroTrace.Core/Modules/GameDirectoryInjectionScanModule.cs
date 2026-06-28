@@ -37,7 +37,8 @@ namespace ZeroTrace.Core.Modules;
 /// </summary>
 public sealed class GameDirectoryInjectionScanModule : IScanModule
 {
-    public string Name => "Spielverzeichnis-DLL-Injektion";
+    private static readonly string _name = "Spielverzeichnis-DLL-Injektion";
+    public string Name => _name;
     public double Weight => 1.1;
     public int ParallelGroup => 0;
 
@@ -220,7 +221,7 @@ public sealed class GameDirectoryInjectionScanModule : IScanModule
                 hits++;
                 ctx.AddFinding(new Finding
                 {
-                    Module   = Name,
+                    Module = _name,
                     Title    = $"Proxy-DLL in Spielverzeichnis: {fname} ({gameName})",
                     Risk     = cheatKw is not null || !isSigned ? RiskLevel.Critical : RiskLevel.High,
                     Location = file,

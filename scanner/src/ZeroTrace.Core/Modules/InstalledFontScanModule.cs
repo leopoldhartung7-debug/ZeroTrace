@@ -27,7 +27,8 @@ namespace ZeroTrace.Core.Modules;
 /// </summary>
 public sealed class InstalledFontScanModule : IScanModule
 {
-    public string Name => "Schriftart-Treiber-Analyse";
+    private static readonly string _name = "Schriftart-Treiber-Analyse";
+    public string Name => _name;
     public double Weight => 0.3;
     public int ParallelGroup => 1;
 
@@ -85,7 +86,7 @@ public sealed class InstalledFontScanModule : IScanModule
                     hits++;
                     ctx.AddFinding(new Finding
                     {
-                        Module   = Name,
+                        Module = _name,
                         Title    = $"Verdächtiger Schriftart-Treiber: {name}",
                         Risk     = RiskLevel.Critical,
                         Location = $@"HKLM\{FontDriversKey}",
@@ -126,7 +127,7 @@ public sealed class InstalledFontScanModule : IScanModule
                     hits++;
                     ctx.AddFinding(new Finding
                     {
-                        Module   = Name,
+                        Module = _name,
                         Title    = $"Verdächtige Font-Datei: {Path.GetFileName(file)}",
                         Risk     = RiskLevel.High,
                         Location = file,
@@ -152,7 +153,7 @@ public sealed class InstalledFontScanModule : IScanModule
                             hits++;
                             ctx.AddFinding(new Finding
                             {
-                                Module   = Name,
+                                Module = _name,
                                 Title    = $"Getarnte PE-Datei als Font: {Path.GetFileName(file)}",
                                 Risk     = RiskLevel.Critical,
                                 Location = file,
@@ -199,7 +200,7 @@ public sealed class InstalledFontScanModule : IScanModule
                     hits++;
                     ctx.AddFinding(new Finding
                     {
-                        Module   = Name,
+                        Module = _name,
                         Title    = $"Font-Registry zeigt auf unerwarteten Pfad: {name}",
                         Risk     = RiskLevel.Medium,
                         Location = $@"HKLM\{FontsKey}",

@@ -6,7 +6,8 @@ namespace ZeroTrace.Core.Modules;
 
 public sealed class GTA5OnlineCheatScanModule : IScanModule
 {
-    public string Name => "GTA V Online Cheat Detection";
+    private static readonly string _name = "GTA V Online Cheat Detection";
+    public string Name => _name;
     public double Weight => 4.5;
     public int ParallelGroup => 4;
 
@@ -370,7 +371,7 @@ public sealed class GTA5OnlineCheatScanModule : IScanModule
                     {
                         ctx.AddFinding(new Finding
                         {
-                            Module   = Name,
+                            Module = _name,
                             Title    = $"GTA V Cheat Directory: {dirName}",
                             Risk     = RiskLevel.Critical,
                             Location = dir,
@@ -417,7 +418,7 @@ public sealed class GTA5OnlineCheatScanModule : IScanModule
             ctx.IncrementFiles();
             ctx.AddFinding(new Finding
             {
-                Module   = Name,
+                Module = _name,
                 Title    = $"Known GTA V Cheat Executable: {fileName}",
                 Risk     = RiskLevel.Critical,
                 Location = file,
@@ -436,7 +437,7 @@ public sealed class GTA5OnlineCheatScanModule : IScanModule
             ctx.IncrementFiles();
             ctx.AddFinding(new Finding
             {
-                Module   = Name,
+                Module = _name,
                 Title    = $"Known GTA V Cheat DLL: {fileName}",
                 Risk     = RiskLevel.Critical,
                 Location = file,
@@ -455,7 +456,7 @@ public sealed class GTA5OnlineCheatScanModule : IScanModule
             ctx.IncrementFiles();
             ctx.AddFinding(new Finding
             {
-                Module   = Name,
+                Module = _name,
                 Title    = $"Known GTA V Cheat ASI Plugin: {fileName}",
                 Risk     = RiskLevel.Critical,
                 Location = file,
@@ -473,7 +474,7 @@ public sealed class GTA5OnlineCheatScanModule : IScanModule
             ctx.IncrementFiles();
             ctx.AddFinding(new Finding
             {
-                Module   = Name,
+                Module = _name,
                 Title    = $"GTA V Cheat Configuration File: {fileName}",
                 Risk     = RiskLevel.High,
                 Location = file,
@@ -513,7 +514,7 @@ public sealed class GTA5OnlineCheatScanModule : IScanModule
                     ctx.IncrementFiles();
                     ctx.AddFinding(new Finding
                     {
-                        Module   = Name,
+                        Module = _name,
                         Title    = $"GTA V Cheat Keyword in Config: {fileName}",
                         Risk     = RiskLevel.High,
                         Location = file,
@@ -558,7 +559,7 @@ public sealed class GTA5OnlineCheatScanModule : IScanModule
 
                             ctx.AddFinding(new Finding
                             {
-                                Module   = Name,
+                                Module = _name,
                                 Title    = $"GTA V Cheat Process Running: {proc.ProcessName}",
                                 Risk     = RiskLevel.Critical,
                                 Location = exePath ?? $"PID {proc.Id}",
@@ -582,7 +583,7 @@ public sealed class GTA5OnlineCheatScanModule : IScanModule
 
                                 ctx.AddFinding(new Finding
                                 {
-                                    Module   = Name,
+                                    Module = _name,
                                     Title    = $"Suspicious GTA V Process: {proc.ProcessName}",
                                     Risk     = RiskLevel.High,
                                     Location = exePath ?? $"PID {proc.Id}",
@@ -629,7 +630,7 @@ public sealed class GTA5OnlineCheatScanModule : IScanModule
                     {
                         ctx.AddFinding(new Finding
                         {
-                            Module   = Name,
+                            Module = _name,
                             Title    = $"GTA V Cheat Execution Record (MUICache): {fileNamePart}",
                             Risk     = RiskLevel.Critical,
                             Location = $@"HKCU\{MUICacheKeyPath}",
@@ -649,7 +650,7 @@ public sealed class GTA5OnlineCheatScanModule : IScanModule
                         {
                             ctx.AddFinding(new Finding
                             {
-                                Module   = Name,
+                                Module = _name,
                                 Title    = $"GTA V Cheat Execution Record (MUICache): {kw}",
                                 Risk     = RiskLevel.High,
                                 Location = $@"HKCU\{MUICacheKeyPath}",
@@ -704,7 +705,7 @@ public sealed class GTA5OnlineCheatScanModule : IScanModule
                             {
                                 ctx.AddFinding(new Finding
                                 {
-                                    Module   = Name,
+                                    Module = _name,
                                     Title    = $"GTA V Cheat Execution Record (UserAssist): {fileNamePart}",
                                     Risk     = RiskLevel.Critical,
                                     Location = $@"HKCU\{UserAssistKeyPath}\{guidName}\Count",
@@ -723,7 +724,7 @@ public sealed class GTA5OnlineCheatScanModule : IScanModule
                                 {
                                     ctx.AddFinding(new Finding
                                     {
-                                        Module   = Name,
+                                        Module = _name,
                                         Title    = $"GTA V Cheat in UserAssist: {kw}",
                                         Risk     = RiskLevel.High,
                                         Location = $@"HKCU\{UserAssistKeyPath}\{guidName}\Count",
@@ -791,7 +792,7 @@ public sealed class GTA5OnlineCheatScanModule : IScanModule
                                 {
                                     ctx.AddFinding(new Finding
                                     {
-                                        Module   = Name,
+                                        Module = _name,
                                         Title    = $"GTA V Cheat Software in Uninstall Registry: {subKeyName}",
                                         Risk     = RiskLevel.Critical,
                                         Location = $@"HKLM\{path}\{subKeyName}",
@@ -849,7 +850,7 @@ public sealed class GTA5OnlineCheatScanModule : IScanModule
 
                         ctx.AddFinding(new Finding
                         {
-                            Module   = Name,
+                            Module = _name,
                             Title    = isAsiLoader
                                 ? $"GTA ASI Loader DLL Outside Game Directory: {hookFile}"
                                 : $"Script Hook V File Outside Game Directory: {hookFile}",
@@ -907,7 +908,7 @@ public sealed class GTA5OnlineCheatScanModule : IScanModule
                     ctx.IncrementFiles();
                     ctx.AddFinding(new Finding
                     {
-                        Module   = Name,
+                        Module = _name,
                         Title    = $"GTA V Cheat ASI Plugin in Scripts Folder: {fn}",
                         Risk     = RiskLevel.Critical,
                         Location = file,
@@ -1023,7 +1024,7 @@ public sealed class GTA5OnlineCheatScanModule : IScanModule
                             ctx.IncrementFiles();
                             ctx.AddFinding(new Finding
                             {
-                                Module   = Name,
+                                Module = _name,
                                 Title    = $"GTA V Bypass/Cheat Artifact: {Path.GetFileName(file)}",
                                 Risk     = RiskLevel.High,
                                 Location = file,
@@ -1077,7 +1078,7 @@ public sealed class GTA5OnlineCheatScanModule : IScanModule
                         {
                             ctx.AddFinding(new Finding
                             {
-                                Module   = Name,
+                                Module = _name,
                                 Title    = $"Suspicious Rockstar Registry Value: {valueName}",
                                 Risk     = RiskLevel.High,
                                 Location = $@"HKLM\{regPath}",

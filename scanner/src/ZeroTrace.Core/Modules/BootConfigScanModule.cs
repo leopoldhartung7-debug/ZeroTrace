@@ -29,7 +29,8 @@ namespace ZeroTrace.Core.Modules;
 /// </summary>
 public sealed class BootConfigScanModule : IScanModule
 {
-    public string Name => "Boot-Konfiguration-Analyse";
+    private static readonly string _name = "Boot-Konfiguration-Analyse";
+    public string Name => _name;
     public double Weight => 0.6;
     public int ParallelGroup => 3;
 
@@ -82,7 +83,7 @@ public sealed class BootConfigScanModule : IScanModule
                     hits++;
                     ctx.AddFinding(new Finding
                     {
-                        Module   = Name,
+                        Module = _name,
                         Title    = "Treiber-Blockliste deaktiviert (HVCI-Bypass-Vorbereitung)",
                         Risk     = RiskLevel.High,
                         Location = @"HKLM\SYSTEM\CurrentControlSet\Control\CI\Config",
@@ -108,7 +109,7 @@ public sealed class BootConfigScanModule : IScanModule
                     hits++;
                     ctx.AddFinding(new Finding
                     {
-                        Module   = Name,
+                        Module = _name,
                         Title    = "Code Integrity Enforcement deaktiviert",
                         Risk     = RiskLevel.Critical,
                         Location = @"HKLM\SYSTEM\CurrentControlSet\Control\CI\Policy",
@@ -144,7 +145,7 @@ public sealed class BootConfigScanModule : IScanModule
                 hits++;
                 ctx.AddFinding(new Finding
                 {
-                    Module   = Name,
+                    Module = _name,
                     Title    = "HVCI/Memory Integrity deaktiviert",
                     Risk     = RiskLevel.Critical,
                     Location = @"HKLM\SYSTEM\CurrentControlSet\Control\DeviceGuard\Scenarios\HVCI",
@@ -178,7 +179,7 @@ public sealed class BootConfigScanModule : IScanModule
                 hits++;
                 ctx.AddFinding(new Finding
                 {
-                    Module   = Name,
+                    Module = _name,
                     Title    = "Secure Boot deaktiviert",
                     Risk     = RiskLevel.High,
                     Location = @"HKLM\SYSTEM\CurrentControlSet\Control\SecureBoot\State",
@@ -230,7 +231,7 @@ public sealed class BootConfigScanModule : IScanModule
                         hits++;
                         ctx.AddFinding(new Finding
                         {
-                            Module   = Name,
+                            Module = _name,
                             Title    = "BCD: Test-Signing-Modus aktiviert",
                             Risk     = RiskLevel.Critical,
                             Location = $@"HKLM\BCD00000000\Objects\{guid}\Elements\16000048",
@@ -253,7 +254,7 @@ public sealed class BootConfigScanModule : IScanModule
                         hits++;
                         ctx.AddFinding(new Finding
                         {
-                            Module   = Name,
+                            Module = _name,
                             Title    = "BCD: NoIntegrityChecks aktiviert (DSE deaktiviert)",
                             Risk     = RiskLevel.Critical,
                             Location = $@"HKLM\BCD00000000\Objects\{guid}\Elements\16000010",

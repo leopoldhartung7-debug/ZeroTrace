@@ -25,7 +25,8 @@ namespace ZeroTrace.Core.Modules;
 /// </summary>
 public sealed class MemoryMappedFileScanModule : IScanModule
 {
-    public string Name => "Memory-Mapped-File-Analyse";
+    private static readonly string _name = "Memory-Mapped-File-Analyse";
+    public string Name => _name;
     public double Weight => 0.6;
     public int ParallelGroup => 2;
 
@@ -197,7 +198,7 @@ public sealed class MemoryMappedFileScanModule : IScanModule
                                         hits++;
                                         ctx.AddFinding(new Finding
                                         {
-                                            Module   = Name,
+                                            Module = _name,
                                             Title    = $"Cheat-IPC-Objekt: {typeName} '{name}'",
                                             Risk     = typeName == "Section" ? RiskLevel.High : RiskLevel.Medium,
                                             Location = $@"{dirPath}\{name}",

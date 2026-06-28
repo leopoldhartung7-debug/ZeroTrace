@@ -37,7 +37,8 @@ namespace ZeroTrace.Core.Modules;
 /// </summary>
 public sealed class PEHeaderAnomalyScanModule : IScanModule
 {
-    public string Name => "PE-Header-Anomalie";
+    private static readonly string _name = "PE-Header-Anomalie";
+    public string Name => _name;
     public double Weight => 1.0;
     public int ParallelGroup => 0;
 
@@ -169,7 +170,7 @@ public sealed class PEHeaderAnomalyScanModule : IScanModule
             hits++;
             ctx.AddFinding(new Finding
             {
-                Module   = Name,
+                Module = _name,
                 Title    = $"Gestoßenes PE-Header (Module Stomping): {modName}",
                 Risk     = RiskLevel.Critical,
                 Location = $"PID {proc.Id}: {modPath}",
@@ -220,7 +221,7 @@ public sealed class PEHeaderAnomalyScanModule : IScanModule
             hits++;
             ctx.AddFinding(new Finding
             {
-                Module   = Name,
+                Module = _name,
                 Title    = $"Packer-/Protector-Sektion in Prozess: {modName}",
                 Risk     = RiskLevel.Critical,
                 Location = $"PID {proc.Id}: {modPath}",
@@ -268,7 +269,7 @@ public sealed class PEHeaderAnomalyScanModule : IScanModule
                 hits++;
                 ctx.AddFinding(new Finding
                 {
-                    Module   = Name,
+                    Module = _name,
                     Title    = $"PE-Timestamp-Mismatch: {modName}",
                     Risk     = RiskLevel.High,
                     Location = $"PID {proc.Id}: {diskPath}",

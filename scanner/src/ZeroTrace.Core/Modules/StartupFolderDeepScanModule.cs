@@ -28,7 +28,8 @@ namespace ZeroTrace.Core.Modules;
 /// </summary>
 public sealed class StartupFolderDeepScanModule : IScanModule
 {
-    public string Name => "Autostart-Ordner-Deep-Scan";
+    private static readonly string _name = "Autostart-Ordner-Deep-Scan";
+    public string Name => _name;
     public double Weight => 0.7;
     public int ParallelGroup => 4;
 
@@ -145,7 +146,7 @@ public sealed class StartupFolderDeepScanModule : IScanModule
                     hits++;
                     ctx.AddFinding(new Finding
                     {
-                        Module   = Name,
+                        Module = _name,
                         Title    = $"Verdächtiger Autostart-Eintrag: {Path.GetFileName(file)}",
                         Risk     = cheatKw is not null ? RiskLevel.Critical :
                                    isSuspiciousExt ? RiskLevel.High : RiskLevel.Medium,
@@ -167,7 +168,7 @@ public sealed class StartupFolderDeepScanModule : IScanModule
                     hits++;
                     ctx.AddFinding(new Finding
                     {
-                        Module   = Name,
+                        Module = _name,
                         Title    = $"Unbekannte Datei im Autostart: {Path.GetFileName(file)}",
                         Risk     = RiskLevel.Medium,
                         Location = file,
@@ -209,7 +210,7 @@ public sealed class StartupFolderDeepScanModule : IScanModule
                     hits++;
                     ctx.AddFinding(new Finding
                     {
-                        Module   = Name,
+                        Module = _name,
                         Title    = $"Windows-{valueName}-Autostart: {value}",
                         Risk     = cheatKw is not null ? RiskLevel.Critical : RiskLevel.High,
                         Location = $@"HKCU\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows",

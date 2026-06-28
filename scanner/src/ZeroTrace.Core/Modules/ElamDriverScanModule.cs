@@ -34,7 +34,8 @@ namespace ZeroTrace.Core.Modules;
 /// </summary>
 public sealed class ElamDriverScanModule : IScanModule
 {
-    public string Name => "ELAM-Treiber-Analyse";
+    private static readonly string _name = "ELAM-Treiber-Analyse";
+    public string Name => _name;
     public double Weight => 0.6;
     public int ParallelGroup => 3;
 
@@ -79,7 +80,7 @@ public sealed class ElamDriverScanModule : IScanModule
                 hits++;
                 ctx.AddFinding(new Finding
                 {
-                    Module   = Name,
+                    Module = _name,
                     Title    = "ELAM-Treiberladerichtlinie auf 'Alle zulassen' gesetzt",
                     Risk     = RiskLevel.Critical,
                     Location = $@"HKLM\{EarlyLaunchKey}",
@@ -97,7 +98,7 @@ public sealed class ElamDriverScanModule : IScanModule
                 hits++;
                 ctx.AddFinding(new Finding
                 {
-                    Module   = Name,
+                    Module = _name,
                     Title    = "ELAM vollständig deaktiviert (Policy=7)",
                     Risk     = RiskLevel.Critical,
                     Location = $@"HKLM\{EarlyLaunchKey}",
@@ -115,7 +116,7 @@ public sealed class ElamDriverScanModule : IScanModule
                 hits++;
                 ctx.AddFinding(new Finding
                 {
-                    Module   = Name,
+                    Module = _name,
                     Title    = "ELAM-Boot-AM-Treiber deaktiviert",
                     Risk     = RiskLevel.Critical,
                     Location = $@"HKLM\{EarlyLaunchKey}",
@@ -148,7 +149,7 @@ public sealed class ElamDriverScanModule : IScanModule
                         hits++;
                         ctx.AddFinding(new Finding
                         {
-                            Module   = Name,
+                            Module = _name,
                             Title    = $"ELAM-Treiber fehlt: {driverName}",
                             Risk     = RiskLevel.High,
                             Location = driverPath,
@@ -191,7 +192,7 @@ public sealed class ElamDriverScanModule : IScanModule
                 hits++;
                 ctx.AddFinding(new Finding
                 {
-                    Module   = Name,
+                    Module = _name,
                     Title    = $"ELAM-Treiber deaktiviert: {serviceName}",
                     Risk     = RiskLevel.High,
                     Location = $@"HKLM\SYSTEM\CurrentControlSet\Services\{serviceName}",
@@ -227,7 +228,7 @@ public sealed class ElamDriverScanModule : IScanModule
                 hits++;
                 ctx.AddFinding(new Finding
                 {
-                    Module   = Name,
+                    Module = _name,
                     Title    = "LSA-BootDriverFlags: ELAM-Messung deaktiviert",
                     Risk     = RiskLevel.High,
                     Location = @"HKLM\SYSTEM\CurrentControlSet\Control\Lsa",

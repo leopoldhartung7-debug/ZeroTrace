@@ -29,7 +29,8 @@ namespace ZeroTrace.Core.Modules;
 /// </summary>
 public sealed class WmiSubscriptionDeepScanModule : IScanModule
 {
-    public string Name => "WMI-Persistenz-Deep-Scan";
+    private static readonly string _name = "WMI-Persistenz-Deep-Scan";
+    public string Name => _name;
     public double Weight => 0.7;
     public int ParallelGroup => 3;
 
@@ -133,7 +134,7 @@ public sealed class WmiSubscriptionDeepScanModule : IScanModule
 
                     ctx.AddFinding(new Finding
                     {
-                        Module   = Name,
+                        Module = _name,
                         Title    = $"WMI-Persistenz ({className}): {name}",
                         Risk     = cheatKw is not null ? RiskLevel.Critical : RiskLevel.High,
                         Location = $@"{wmiNamespace}\{className}",

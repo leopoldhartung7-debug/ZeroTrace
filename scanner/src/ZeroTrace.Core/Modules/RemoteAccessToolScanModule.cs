@@ -31,7 +31,8 @@ namespace ZeroTrace.Core.Modules;
 /// </summary>
 public sealed class RemoteAccessToolScanModule : IScanModule
 {
-    public string Name => "Fernzugriff-Tool-Analyse";
+    private static readonly string _name = "Fernzugriff-Tool-Analyse";
+    public string Name => _name;
     public double Weight => 0.7;
     public int ParallelGroup => 2;
 
@@ -140,7 +141,7 @@ public sealed class RemoteAccessToolScanModule : IScanModule
             hits++;
             ctx.AddFinding(new Finding
             {
-                Module   = Name,
+                Module = _name,
                 Title    = $"Fernzugriff-Tool erkannt: {rat.Name}",
                 Risk     = isRunning && rat.BaseRisk >= RiskLevel.High ? RiskLevel.Critical : rat.BaseRisk,
                 Location = isRunning ? $"Prozess aktiv: {rat.ProcessNames[0]}"
@@ -178,7 +179,7 @@ public sealed class RemoteAccessToolScanModule : IScanModule
                 hits++;
                 ctx.AddFinding(new Finding
                 {
-                    Module   = Name,
+                    Module = _name,
                     Title    = "Remote Desktop (RDP) aktiviert",
                     Risk     = nlaRequired == 0 ? RiskLevel.High : RiskLevel.Medium,
                     Location = $@"HKLM\{TerminalServerKey}",
@@ -226,7 +227,7 @@ public sealed class RemoteAccessToolScanModule : IScanModule
                 hits++;
                 ctx.AddFinding(new Finding
                 {
-                    Module   = Name,
+                    Module = _name,
                     Title    = $"Unbekannter RDP-Benutzer: {userName}",
                     Risk     = RiskLevel.High,
                     Location = "Remote Desktop Users (Lokale Gruppe)",

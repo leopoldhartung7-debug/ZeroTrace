@@ -28,7 +28,8 @@ namespace ZeroTrace.Core.Modules;
 /// </summary>
 public sealed class NetworkConnectionScanModule : IScanModule
 {
-    public string Name => "Netzwerkverbindung-Analyse";
+    private static readonly string _name = "Netzwerkverbindung-Analyse";
+    public string Name => _name;
     public double Weight => 0.7;
     public int ParallelGroup => 3;
 
@@ -158,7 +159,7 @@ public sealed class NetworkConnectionScanModule : IScanModule
                     hits++;
                     ctx.AddFinding(new Finding
                     {
-                        Module   = Name,
+                        Module = _name,
                         Title    = $"Spielprozess: Unerwartete Verbindung: {procName} → {remoteIp}:{remotePort}",
                         Risk     = RiskLevel.Medium,
                         Location = $"PID {pid}",
@@ -179,7 +180,7 @@ public sealed class NetworkConnectionScanModule : IScanModule
                     hits++;
                     ctx.AddFinding(new Finding
                     {
-                        Module   = Name,
+                        Module = _name,
                         Title    = $"Cheat-Prozess: Aktive Verbindung: {procName} → {remoteIp}:{remotePort}",
                         Risk     = RiskLevel.Critical,
                         Location = $"PID {pid}",

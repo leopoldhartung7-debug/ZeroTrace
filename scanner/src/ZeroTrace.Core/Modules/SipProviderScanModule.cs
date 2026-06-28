@@ -29,7 +29,8 @@ namespace ZeroTrace.Core.Modules;
 /// </summary>
 public sealed class SipProviderScanModule : IScanModule
 {
-    public string Name => "SIP-Provider-Analyse";
+    private static readonly string _name = "SIP-Provider-Analyse";
+    public string Name => _name;
     public double Weight => 0.5;
     public int ParallelGroup => 3;
 
@@ -133,7 +134,7 @@ public sealed class SipProviderScanModule : IScanModule
                         bool exists = File.Exists(dll);
                         ctx.AddFinding(new Finding
                         {
-                            Module   = Name,
+                            Module = _name,
                             Title    = $"Verdächtiger SIP-Provider: {dllName}",
                             Risk     = cheatKw is not null || !exists ? RiskLevel.Critical : RiskLevel.High,
                             Location = $@"HKLM\{SipRootKey}\{funcName}\{guidName}",
@@ -200,7 +201,7 @@ public sealed class SipProviderScanModule : IScanModule
                             : Path.Combine(System32, dll));
                         ctx.AddFinding(new Finding
                         {
-                            Module   = Name,
+                            Module = _name,
                             Title    = $"Verdächtiger Trust-Provider: {dllName}",
                             Risk     = cheatKw is not null ? RiskLevel.Critical : RiskLevel.High,
                             Location = $@"HKLM\{TrustProvidersKey}\{funcName}\{guidName}",

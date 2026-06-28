@@ -32,7 +32,8 @@ namespace ZeroTrace.Core.Modules;
 /// </summary>
 public sealed class SystemCallDirectScanModule : IScanModule
 {
-    public string Name => "Direkte-Syscall-Erkennung";
+    private static readonly string _name = "Direkte-Syscall-Erkennung";
+    public string Name => _name;
     public double Weight => 0.9;
     public int ParallelGroup => 0;
 
@@ -180,7 +181,7 @@ public sealed class SystemCallDirectScanModule : IScanModule
                             hits++;
                             ctx.AddFinding(new Finding
                             {
-                                Module   = Name,
+                                Module = _name,
                                 Title    = $"Doppelte ntdll.dll: {proc.ProcessName}",
                                 Risk     = RiskLevel.Critical,
                                 Location = $"PID {proc.Id}: {proc.ProcessName}",
@@ -216,7 +217,7 @@ public sealed class SystemCallDirectScanModule : IScanModule
                     hits++;
                     ctx.AddFinding(new Finding
                     {
-                        Module   = Name,
+                        Module = _name,
                         Title    = $"Direkte-Syscall-Stubs: {proc.ProcessName}",
                         Risk     = RiskLevel.Critical,
                         Location = $"PID {proc.Id}: 0x{mbi.BaseAddress.ToInt64():X}",
@@ -331,7 +332,7 @@ public sealed class SystemCallDirectScanModule : IScanModule
                 hits++;
                 ctx.AddFinding(new Finding
                 {
-                    Module   = Name,
+                    Module = _name,
                     Title    = $"ntdll.dll im Speicher modifiziert ({mismatches} Bytes)",
                     Risk     = RiskLevel.Critical,
                     Location = ntdllPath,

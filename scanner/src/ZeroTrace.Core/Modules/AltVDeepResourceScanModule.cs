@@ -5,7 +5,8 @@ namespace ZeroTrace.Core.Modules;
 
 public sealed class AltVDeepResourceScanModule : IScanModule
 {
-    public string Name => "AltV-Deep-Resource";
+    private static readonly string _name = "AltV-Deep-Resource";
+    public string Name => _name;
     public double Weight => 0.65;
     public int ParallelGroup => 4;
 
@@ -141,7 +142,7 @@ public sealed class AltVDeepResourceScanModule : IScanModule
                     {
                         ctx.AddFinding(new Finding
                         {
-                            Module   = Name,
+                            Module = _name,
                             Title    = $"Orphan alt:V resource (no manifest): {resourceName}",
                             Risk     = RiskLevel.High,
                             Location = resourceDir,
@@ -190,7 +191,7 @@ public sealed class AltVDeepResourceScanModule : IScanModule
                     {
                         ctx.AddFinding(new Finding
                         {
-                            Module   = Name,
+                            Module = _name,
                             Title    = $"alt:V resource manifest has suspicious main path: {resourceName}",
                             Risk     = RiskLevel.High,
                             Location = manifestFile,
@@ -217,7 +218,7 @@ public sealed class AltVDeepResourceScanModule : IScanModule
                     {
                         ctx.AddFinding(new Finding
                         {
-                            Module   = Name,
+                            Module = _name,
                             Title    = $"alt:V resource manifest references exploit dependency: {resourceName}",
                             Risk     = RiskLevel.High,
                             Location = manifestFile,
@@ -292,7 +293,7 @@ public sealed class AltVDeepResourceScanModule : IScanModule
                 {
                     ctx.AddFinding(new Finding
                     {
-                        Module   = Name,
+                        Module = _name,
                         Title    = $"Known cheat C# resource name: {resourceName}",
                         Risk     = RiskLevel.Critical,
                         Location = resourceDir,
@@ -323,7 +324,7 @@ public sealed class AltVDeepResourceScanModule : IScanModule
                     {
                         ctx.AddFinding(new Finding
                         {
-                            Module   = Name,
+                            Module = _name,
                             Title    = $"alt:V C# resource DLL with debug PDB: {Path.GetFileName(dll)}",
                             Risk     = RiskLevel.High,
                             Location = dll,
@@ -373,7 +374,7 @@ public sealed class AltVDeepResourceScanModule : IScanModule
 
                     ctx.AddFinding(new Finding
                     {
-                        Module   = Name,
+                        Module = _name,
                         Title    = $"alt:V C# resource contains native cheat calls: {Path.GetFileName(csFile)}",
                         Risk     = risk,
                         Location = csFile,
@@ -533,7 +534,7 @@ public sealed class AltVDeepResourceScanModule : IScanModule
 
                 ctx.AddFinding(new Finding
                 {
-                    Module   = Name,
+                    Module = _name,
                     Title    = $"alt:V JS/TS cheat resource: {fileName}",
                     Risk     = risk,
                     Location = file,
@@ -599,7 +600,7 @@ public sealed class AltVDeepResourceScanModule : IScanModule
                     {
                         ctx.AddFinding(new Finding
                         {
-                            Module   = Name,
+                            Module = _name,
                             Title    = $"alt:V {jsonName} has non-standard branch",
                             Risk     = RiskLevel.Medium,
                             Location = jsonPath,
@@ -631,7 +632,7 @@ public sealed class AltVDeepResourceScanModule : IScanModule
                     ctx.IncrementFiles();
                     ctx.AddFinding(new Finding
                     {
-                        Module   = Name,
+                        Module = _name,
                         Title    = $"Binary patch file in alt:V directory: {Path.GetFileName(pf)}",
                         Risk     = RiskLevel.Medium,
                         Location = pf,
@@ -657,7 +658,7 @@ public sealed class AltVDeepResourceScanModule : IScanModule
                     {
                         ctx.AddFinding(new Finding
                         {
-                            Module   = Name,
+                            Module = _name,
                             Title    = "altv.exe has unexpected file size",
                             Risk     = RiskLevel.Medium,
                             Location = altVExePath,
@@ -703,7 +704,7 @@ public sealed class AltVDeepResourceScanModule : IScanModule
                 {
                     ctx.AddFinding(new Finding
                     {
-                        Module   = Name,
+                        Module = _name,
                         Title    = $"Unexpected file type in alt:V data directory: {dfName}",
                         Risk     = RiskLevel.Medium,
                         Location = df,
@@ -754,7 +755,7 @@ public sealed class AltVDeepResourceScanModule : IScanModule
                 {
                     ctx.AddFinding(new Finding
                     {
-                        Module   = Name,
+                        Module = _name,
                         Title    = "voice.dll in unexpected location: altv\\voice\\",
                         Risk     = RiskLevel.High,
                         Location = voiceDll,
@@ -777,7 +778,7 @@ public sealed class AltVDeepResourceScanModule : IScanModule
                 // Flag its presence in voice dir as it shouldn't be user-editable
                 ctx.AddFinding(new Finding
                 {
-                    Module   = Name,
+                    Module = _name,
                     Title    = "voice-server.js present in alt:V voice directory",
                     Risk     = RiskLevel.Medium,
                     Location = voiceServerJs,
@@ -821,7 +822,7 @@ public sealed class AltVDeepResourceScanModule : IScanModule
                     {
                         ctx.AddFinding(new Finding
                         {
-                            Module   = Name,
+                            Module = _name,
                             Title    = "libcef.dll has unexpected file size in alt:V directory",
                             Risk     = RiskLevel.Medium,
                             Location = libCefPath,
@@ -876,7 +877,7 @@ public sealed class AltVDeepResourceScanModule : IScanModule
                     {
                         ctx.AddFinding(new Finding
                         {
-                            Module   = Name,
+                            Module = _name,
                             Title    = $"JS file with 'native' in name in alt:V CEF cache: {jsName}",
                             Risk     = RiskLevel.High,
                             Location = jsFile,
@@ -914,7 +915,7 @@ public sealed class AltVDeepResourceScanModule : IScanModule
                     {
                         ctx.AddFinding(new Finding
                         {
-                            Module   = Name,
+                            Module = _name,
                             Title    = $"Injected JS with native calls in alt:V CEF cache: {jsName}",
                             Risk     = RiskLevel.Critical,
                             Location = jsFile,
