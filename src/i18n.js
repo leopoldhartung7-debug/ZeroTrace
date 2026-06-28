@@ -1298,6 +1298,23 @@ export const DE = {
   '500+ communities': '500+ Communities',
   'Download ZeroTrace': 'ZeroTrace herunterladen',
   'Join our Community': 'Tritt unserer Community bei',
+
+  // ---- Landing extras (header, verdict mock, step mocks) ----
+  'FAQ': 'FAQ',
+  'Cheating · detected': 'Cheating · erkannt',
+  'Memory': 'Speicher',
+  'Modules': 'Module',
+  'Registry': 'Registry',
+  'flagged': 'markiert',
+  'Risk': 'Risiko',
+  'Verdict tier': 'Verdict-Stufe',
+  'Clean': 'Sauber',
+  'User PC': 'User-PC',
+  '~58 seconds': '~58 Sekunden',
+  'ZeroTrace File - exe': 'ZeroTrace-Datei – exe',
+  'Scanning...': 'Scanne...',
+  'Scan complete': 'Scan abgeschlossen',
+  'Detected': 'Erkannt',
 }
 
 // Dynamic patterns (computed strings)
