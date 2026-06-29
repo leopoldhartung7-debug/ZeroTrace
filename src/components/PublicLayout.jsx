@@ -3,6 +3,7 @@ import { Outlet, useNavigate } from 'react-router-dom'
 import { Globe } from 'lucide-react'
 import { useStore } from '../store.jsx'
 import Logo from './Logo.jsx'
+import LanguageToggle from './LanguageToggle.jsx'
 import { useToast } from './ui.jsx'
 
 const NAV = [
@@ -35,7 +36,7 @@ export function PublicHeader() {
   }, [])
 
   const onNav = (to) => {
-    if (to === 'discord') toast({ type: 'info', title: 'Discord', body: 'Community link is not configured in this demo.' })
+    if (to === 'discord') window.open('https://discord.gg/r4hJzh4pcW', '_blank', 'noopener,noreferrer')
     else if (to.startsWith('/#')) nav('/')
     else nav(to)
   }
@@ -73,7 +74,7 @@ export function PublicHeader() {
             ))}
           </nav>
           <div className="flex items-center gap-4">
-            <Globe size={18} className="hidden text-neutral-500 sm:block" />
+            <LanguageToggle size={scrolled ? 'sm' : 'md'} />
             {state.auth ? (
               <button onClick={() => nav('/dashboard')} className="flex items-center gap-3">
                 <span className="text-sm text-neutral-300 hover:text-white">Dashboard</span>

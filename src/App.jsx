@@ -117,10 +117,29 @@ function DashboardLayout() {
   )
 }
 
+function BrowserLangAutoDetect() {
+  const { state, dispatch } = useStore()
+  useEffect(() => {
+    try {
+      if (localStorage.getItem('zt-lang-chosen')) return
+      const browserLang = (navigator.language || 'en').toLowerCase().startsWith('de') ? 'de' : 'en'
+      if (state.settings?.lang !== browserLang) {
+        dispatch({ type: 'set-setting', key: 'lang', value: browserLang })
+      }
+      localStorage.setItem('zt-lang-chosen', '1')
+    } catch {
+      // ignore — env without localStorage / navigator
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+  return null
+}
+
 export default function App() {
   return (
     <StoreProvider>
       <ToastProvider>
+        <BrowserLangAutoDetect />
         <AutoI18n />
         <ScanWebhookNotifier />
         <KeyExpiryWatcher />
