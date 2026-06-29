@@ -405,27 +405,60 @@ function DownloadCard({ icon: Icon, name, tagTone, desc, hint, accent, pins, toa
   const [pin, setPin] = useState('')
   const go = () => {
     const code = pin.trim().toUpperCase()
-    const match = pins.find((p) => p.pin === code)
-    if (code.length !== 8 || !match) {
-      toast({ type: 'error', title: 'Invalid PIN', body: 'Enter a valid 8-character pin from your Pins.' })
+    // Format-only check — the player visiting from a different browser will
+    // not have the analyst's pin in their local state, so we accept any
+    // well-formed 8-char code and just embed it in the session manifest.
+    if (!/^[A-Z0-9]{8}$/.test(code)) {
+      toast({ type: 'error', title: 'Invalid PIN', body: 'Enter a valid 8-character PIN (A–Z, 0–9).' })
       return
     }
+
+    const match = pins.find((p) => p.pin === code) // optional, for the analyst on their own machine
+    const now = Date.now()
     const session = {
       v: 1,
       product: `ZeroTrace Scanner (${name})`,
-      pin: match.pin,
-      game: match.game,
-      name: match.name,
-      discordId: match.discordId || '',
-      createdAt: match.createdAt,
-      expiresAt: match.createdAt + 24 * 3600 * 1000,
+      pin: code,
+      game: match?.game || 'unknown',
+      name: match?.name || '',
+      discordId: match?.discordId || '',
+      createdAt: match?.createdAt || now,
+      expiresAt: (match?.createdAt || now) + 24 * 3600 * 1000,
     }
-    const a = document.createElement('a')
-    a.href = URL.createObjectURL(new Blob([JSON.stringify(session, null, 2)], { type: 'application/json' }))
-    a.download = `ZeroTraceScan-${match.pin}.zerotrace`
-    a.click()
-    URL.revokeObjectURL(a.href)
-    toast({ type: 'success', title: 'Session downloaded', body: `ZeroTraceScan-${match.pin}.zerotrace` })
+
+    // 1) Always download the session manifest — the scanner reads the PIN from it.
+    const sessionLink = document.createElement('a')
+    sessionLink.href = URL.createObjectURL(
+      new Blob([JSON.stringify(session, null, 2)], { type: 'application/json' }),
+    )
+    sessionLink.download = `ZeroTraceScan-${code}.zerotrace`
+    sessionLink.click()
+    URL.revokeObjectURL(sessionLink.href)
+
+    // 2) Trigger the actual scanner .exe download for Windows (the only
+    //    binary the deploy currently ships at /ZeroTrace.exe).
+    if (name === 'Windows') {
+      const exeLink = document.createElement('a')
+      exeLink.href = `${import.meta.env.BASE_URL}ZeroTrace.exe`
+      exeLink.download = 'ZeroTrace.exe'
+      exeLink.rel = 'noopener'
+      // Some browsers ignore <a download> for cross-origin redirects; the
+      // .exe is same-origin so this is fine on gh-pages.
+      document.body.appendChild(exeLink)
+      exeLink.click()
+      exeLink.remove()
+      toast({
+        type: 'success',
+        title: 'Scanner downloading',
+        body: `ZeroTrace.exe + ZeroTraceScan-${code}.zerotrace`,
+      })
+    } else {
+      toast({
+        type: 'info',
+        title: 'Session downloaded',
+        body: `${name} scanner binary is not available yet — open the .zerotrace file with the Windows scanner for now.`,
+      })
+    }
   }
   return (
     <Card className="p-6">
