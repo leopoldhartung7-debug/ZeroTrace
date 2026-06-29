@@ -19,6 +19,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowRight, Check, Play, Shield, ShieldAlert, ShieldCheck, Cpu, FileText, Link2, MoreVertical } from 'lucide-react'
+import { useStore } from '../../store.jsx'
 import ztLogoForScannerMock from '../../assets/zt-logo.png'
 
 /* ------------------------------------------------------------ */
@@ -148,13 +149,33 @@ export function SkeletonBlock({ className = 'h-24 w-full' }) {
 /* ------------------------------------------------------------ */
 /* 4 — Typewriter (cycles between phrases)                       */
 /* ------------------------------------------------------------ */
+/* `phrases` may be either:                                       */
+/*   - an array of strings (single language), or                  */
+/*   - { en: [...], de: [...] }  — switched live by lang setting. */
+/* The output span carries data-no-i18n so the DOM auto-translator*/
+/* never rewrites in-progress letters (which made the text bug    */
+/* visually when the language toggle fired mid-animation).        */
 export function Typewriter({ phrases, className = '', speed = 55, pause = 1400 }) {
+  const lang = useTypewriterLang()
+  const list = Array.isArray(phrases)
+    ? phrases
+    : (phrases?.[lang] || phrases?.en || [])
+
   const [out, setOut] = useState('')
   const [phaseIdx, setPhaseIdx] = useState(0)
   const [deleting, setDeleting] = useState(false)
 
+  // Reset typing when the active language (and therefore the list) changes,
+  // so we don't index off the previous list.
   useEffect(() => {
-    const current = phrases[phaseIdx]
+    setOut('')
+    setPhaseIdx(0)
+    setDeleting(false)
+  }, [lang])
+
+  useEffect(() => {
+    if (!list.length) return
+    const current = list[phaseIdx % list.length] || ''
     let timeout
     if (!deleting && out.length < current.length) {
       timeout = setTimeout(() => setOut(current.slice(0, out.length + 1)), speed)
@@ -165,18 +186,23 @@ export function Typewriter({ phrases, className = '', speed = 55, pause = 1400 }
     } else {
       timeout = setTimeout(() => {
         setDeleting(false)
-        setPhaseIdx((i) => (i + 1) % phrases.length)
+        setPhaseIdx((i) => (i + 1) % list.length)
       }, 220)
     }
     return () => clearTimeout(timeout)
-  }, [out, deleting, phaseIdx, phrases, speed, pause])
+  }, [out, deleting, phaseIdx, list, speed, pause])
 
   return (
-    <span className={className}>
+    <span className={className} data-no-i18n>
       {out}
       <span className="zt-caret" />
     </span>
   )
+}
+
+function useTypewriterLang() {
+  const { state } = useStore()
+  return state.settings?.lang === 'de' ? 'de' : 'en'
 }
 
 /* ------------------------------------------------------------ */

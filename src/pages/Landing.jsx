@@ -755,7 +755,7 @@ export default function Landing() {
               : 'max-w-full border-b border-white/10 bg-[#0a0a12]/85 px-6 py-4 backdrop-blur-xl md:px-12'
           }`}
         >
-        <Logo size="md" iconOnly={scrolled} />
+        <Logo size="md" />
         <nav className="hidden items-center gap-4 lg:flex">
           {NAV.map((n) => (
             <button
@@ -807,8 +807,10 @@ export default function Landing() {
         <div className="zt-grid-overlay pointer-events-none absolute inset-0" />
 
         <div className="relative mx-auto max-w-7xl px-6 pb-20 pt-32 text-center md:px-12 md:pt-40">
-          {/* Massive headline — Oxanium display font, violet shimmer gradient */}
+          {/* Massive headline — Oxanium display font, violet shimmer gradient.
+              data-no-i18n: brand wordmark, never translate. */}
           <h1
+            data-no-i18n
             className="zt-hero-line-1 mx-auto leading-[0.95]"
             style={{
               fontFamily: "'Oxanium', 'Inter', system-ui, sans-serif",
@@ -840,12 +842,20 @@ export default function Landing() {
             ZeroTrace runs a deep, consent-based forensic scan that{' '}
             <span className="font-semibold text-violet-200">
               <Typewriter
-                phrases={[
-                  'surfaces what live anti-cheats overlook.',
-                  'unmasks unsigned kernel drivers.',
-                  'catches RWX pages live cheats hide.',
-                  'hands you a verdict in about a minute.',
-                ]}
+                phrases={{
+                  en: [
+                    'surfaces what live anti-cheats overlook.',
+                    'unmasks unsigned kernel drivers.',
+                    'catches RWX pages live cheats hide.',
+                    'hands you a verdict in about a minute.',
+                  ],
+                  de: [
+                    'entdeckt, was Live-Anticheats übersehen.',
+                    'enttarnt unsignierte Kernel-Treiber.',
+                    'erkennt RWX-Speicher, den Cheats verstecken.',
+                    'liefert ein Verdict in etwa einer Minute.',
+                  ],
+                }}
               />
             </span>
           </p>
