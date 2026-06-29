@@ -543,15 +543,11 @@ export default function Landing() {
             </MagneticCTA>
           </div>
 
-          {/* Terminal + live counters row */}
-          <div className="mx-auto mt-16 grid max-w-5xl gap-6 text-left md:grid-cols-[1.6fr_1fr]">
-            <TiltCard className="rounded-3xl">
+          {/* Scanner preview — matches the real Windows scanner 1:1 */}
+          <div className="mx-auto mt-16 max-w-4xl text-left">
+            <TiltCard className="rounded-2xl">
               <TerminalCard />
             </TiltCard>
-            <div className="flex flex-col gap-4">
-              <LiveCounter label="Cheaters caught this week" base={1247} />
-              <LiveCounter label="Scans this week" base={8954} />
-            </div>
           </div>
         </div>
       </section>
