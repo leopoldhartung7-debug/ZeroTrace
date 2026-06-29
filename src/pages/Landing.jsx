@@ -11,7 +11,7 @@ import { useToast } from '../components/ui.jsx'
 import Logo from '../components/Logo.jsx'
 import {
   ScrollProgress, MouseGlow, NoiseLayer, MagneticCTA, SectionIndex,
-  Typewriter, TerminalCard, TiltCard, DetectionTicker, TrustedByMarquee,
+  Typewriter, TerminalCard, TiltCard, DetectionTicker,
   LiveCounter, DemoVideoMock, PricingTeaser, StepThrough, BeforeAfter,
 } from '../components/landing/LandingExtras.jsx'
 
@@ -595,14 +595,6 @@ export default function Landing() {
             <VerdictGraphic />
           </div>
         </div>
-      </section>
-
-      {/* ── Trusted-by marquee ── */}
-      <section id="trusted-by" className="relative mx-auto max-w-6xl px-6 pb-12 md:px-12">
-        <p className="mb-3 text-center text-[11px] font-bold uppercase tracking-[0.22em] text-neutral-500">
-          Trusted by 500+ communities
-        </p>
-        <TrustedByMarquee />
       </section>
 
       {/* ── See why (bento, original ZeroTrace) ── */}
