@@ -3,7 +3,6 @@ import { Outlet, useNavigate } from 'react-router-dom'
 import { Globe } from 'lucide-react'
 import { useStore } from '../store.jsx'
 import Logo from './Logo.jsx'
-import LanguageToggle from './LanguageToggle.jsx'
 import { useToast } from './ui.jsx'
 
 const NAV = [
@@ -65,7 +64,7 @@ export function PublicHeader() {
               : 'max-w-full border-b border-white/10 bg-[#0a0a12]/85 px-6 py-5 backdrop-blur-xl md:px-12'
           }`}
         >
-          <Logo size="md" iconOnly={scrolled} />
+          <Logo size="lg" iconOnly={scrolled} />
           <nav className="hidden items-center gap-7 lg:flex">
             {NAV.map((n) => (
               <button key={n.label} onClick={() => onNav(n.to)} className="text-sm text-neutral-400 transition-colors hover:text-white">
@@ -74,7 +73,6 @@ export function PublicHeader() {
             ))}
           </nav>
           <div className="flex items-center gap-4">
-            <LanguageToggle size={scrolled ? 'sm' : 'md'} />
             {state.auth ? (
               <button onClick={() => nav('/dashboard')} className="flex items-center gap-3">
                 <span className="text-sm text-neutral-300 hover:text-white">Dashboard</span>
