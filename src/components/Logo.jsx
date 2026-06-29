@@ -19,6 +19,7 @@ export default function Logo({ size = 'md', sub = false, iconOnly = false, asLin
   return (
     <Wrapper
       {...wrapperProps}
+      data-no-i18n
       style={{
         display: 'inline-flex',
         alignItems: 'center',
