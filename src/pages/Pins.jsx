@@ -544,7 +544,7 @@ export default function Pins() {
           </div>
         )}
 
-        <div className="mt-5">
+        <div className="mt-5 overflow-x-auto">
           <table className="w-full table-fixed text-left">
             <colgroup>
               <col className="w-[5%]" />
@@ -558,19 +558,22 @@ export default function Pins() {
               <col className="w-[11%]" />
             </colgroup>
             <thead>
-              <tr className="caps-label bd border-b">
-                <th className="px-2 py-3">
+              <tr className="caps-label">
+                <th className="bd border-y bg-white/[0.02] px-2 py-3 first:rounded-l-lg">
                   <input
                     type="checkbox"
                     checked={allOnPageSelected}
                     onChange={toggleSelectAllOnPage}
-                    className="h-3.5 w-3.5 align-middle"
+                    className="h-3.5 w-3.5 align-middle accent-sky-500"
                     aria-label="Select all"
                   />
                 </th>
                 {['Pin', 'Name', 'Game', 'Status', 'Used', 'Result', 'Visibility', ''].map(
-                  (h, i) => (
-                    <th key={i} className="px-2 py-3 font-semibold">
+                  (h, i, arr) => (
+                    <th
+                      key={i}
+                      className={`bd border-y bg-white/[0.02] px-2 py-3 font-semibold ${i === arr.length - 1 ? 'rounded-r-lg' : ''}`}
+                    >
                       {h}
                     </th>
                   ),
@@ -580,67 +583,112 @@ export default function Pins() {
             <tbody>
               {pageRows.length === 0 && (
                 <tr>
-                  <td colSpan={9} className="muted px-2 py-12 text-center text-sm">
-                    {tab === 'shared' ? 'Nothing shared with you yet.' : 'No pins match your filters.'}
+                  <td colSpan={9} className="muted px-2 py-16 text-center text-sm">
+                    <div className="mx-auto flex max-w-xs flex-col items-center gap-2">
+                      <span className="grid h-12 w-12 place-items-center rounded-full border border-white/10 bg-white/[0.03]">
+                        <Search size={18} className="muted" />
+                      </span>
+                      <p className="txt text-sm font-semibold">
+                        {tab === 'shared' ? 'Nothing shared with you yet.' : 'No pins match your filters.'}
+                      </p>
+                      <p className="muted text-xs">Try clearing the search or status filter above.</p>
+                    </div>
                   </td>
                 </tr>
               )}
               {pageRows.map((r) => {
                 const scanned = r.used || r.status === 'Finished' || !!r.result
+                const statusColors = {
+                  Finished: { bg: 'rgba(34,197,94,0.10)',  ring: 'rgba(34,197,94,0.35)',  fg: '#86efac', dot: '#22c55e' },
+                  Pending:  { bg: 'rgba(245,158,11,0.10)', ring: 'rgba(245,158,11,0.35)', fg: '#fbbf24', dot: '#f59e0b' },
+                  Expired:  { bg: 'rgba(244,63,94,0.10)',  ring: 'rgba(244,63,94,0.35)',  fg: '#fda4af', dot: '#f43f5e' },
+                }
+                const st = statusColors[r.status] || statusColors.Pending
+                const resultColors = {
+                  Cheating:   { bg: 'rgba(244,63,94,0.12)',  ring: 'rgba(244,63,94,0.45)',  fg: '#fda4af' },
+                  Suspicious: { bg: 'rgba(245,158,11,0.12)', ring: 'rgba(245,158,11,0.45)', fg: '#fbbf24' },
+                  Clean:      { bg: 'rgba(34,197,94,0.12)',  ring: 'rgba(34,197,94,0.45)',  fg: '#86efac' },
+                }
+                const rs = resultColors[r.result]
                 return (
-                <tr key={r.id} className="hoverable bd border-b align-middle text-sm">
+                <tr
+                  key={r.id}
+                  className="group bd relative border-b align-middle text-sm transition-colors hover:bg-white/[0.025]"
+                >
                   <td className="px-2 py-4">
+                    {/* tiny left rail when the row is starred or selected */}
+                    {(r.starred || selected.includes(r.id)) && (
+                      <span
+                        aria-hidden="true"
+                        className="pointer-events-none absolute inset-y-2 left-0 w-[3px] rounded-r-full"
+                        style={{ background: selected.includes(r.id) ? '#0ea5e9' : '#f59e0b' }}
+                      />
+                    )}
                     <input
                       type="checkbox"
                       checked={selected.includes(r.id)}
                       onChange={() => toggleSelect(r.id)}
-                      className="h-3.5 w-3.5 align-middle"
+                      className="h-3.5 w-3.5 align-middle accent-sky-500"
                       aria-label="Select pin"
                     />
                   </td>
                   <td className="txt truncate px-2 py-4 font-mono text-xs" title={r.pin}>
-                    <span className="flex items-center gap-1.5">
+                    <span className="flex items-center gap-2">
                       <button
                         onClick={() => dispatch({ type: 'toggle-pin-star', id: r.id })}
                         title={r.starred ? 'Unstar' : 'Star'}
-                        className="shrink-0"
+                        className="shrink-0 transition-transform hover:scale-110"
                       >
                         <Star
-                          size={13}
-                          className={r.starred ? 'fill-yellow-400 text-yellow-400' : 'muted hover:text-yellow-400'}
+                          size={14}
+                          className={r.starred ? 'fill-yellow-400 text-yellow-400 drop-shadow-[0_0_6px_rgba(250,204,21,0.55)]' : 'muted hover:text-yellow-400'}
                         />
                       </button>
-                      <span className="truncate">{r.pin}</span>
+                      <span className="truncate rounded-md bg-white/[0.04] px-1.5 py-0.5 tracking-wider">{r.pin}</span>
                     </span>
                   </td>
-                  <td className="txt truncate px-2 py-4" title={r.name}>
+                  <td className="txt truncate px-2 py-4 font-medium" title={r.name}>
                     {r.name}
                   </td>
                   <td className="px-2 py-4">
-                    <span className="bd txt inline-block max-w-full truncate rounded-md border px-2 py-0.5 text-[11px] font-semibold">
+                    <span className="bd txt inline-flex max-w-full items-center gap-1 truncate rounded-full border bg-white/[0.03] px-2.5 py-0.5 text-[11px] font-semibold">
                       {r.game}
                     </span>
                   </td>
-                  <td className={`px-2 py-4 text-[11px] font-semibold ${STATUS_TONE[r.status]}`}>
-                    {r.status.toUpperCase()}
-                  </td>
-                  <td
-                    className={`px-2 py-4 text-[11px] font-semibold ${
-                      r.used ? 'text-green-500' : 'muted'
-                    }`}
-                  >
-                    {r.used ? 'YES' : 'NO'}
-                  </td>
-                  <td
-                    className={`px-2 py-4 text-[11px] font-semibold ${
-                      RESULT_TONE[r.result] || 'muted'
-                    }`}
-                  >
-                    {r.result ? r.result.toUpperCase() : '—'}
+                  <td className="px-2 py-4">
+                    <span
+                      className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10.5px] font-bold uppercase tracking-wider"
+                      style={{ background: st.bg, borderColor: st.ring, color: st.fg }}
+                    >
+                      <span className="h-1.5 w-1.5 rounded-full" style={{ background: st.dot, boxShadow: `0 0 6px ${st.dot}` }} />
+                      {r.status}
+                    </span>
                   </td>
                   <td className="px-2 py-4">
-                    <span className="bd txt inline-block max-w-full truncate rounded-md border px-2 py-0.5 text-[11px] font-semibold">
-                      {r.visibility.toUpperCase()}
+                    {r.used ? (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-bold text-green-400" title="Scanned">
+                        <CheckCircle2 size={13} className="drop-shadow-[0_0_5px_rgba(34,197,94,0.55)]" />
+                        YES
+                      </span>
+                    ) : (
+                      <span className="muted text-[11px]">—</span>
+                    )}
+                  </td>
+                  <td className="px-2 py-4">
+                    {rs ? (
+                      <span
+                        className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10.5px] font-bold uppercase tracking-wider"
+                        style={{ background: rs.bg, borderColor: rs.ring, color: rs.fg }}
+                      >
+                        {r.result}
+                      </span>
+                    ) : (
+                      <span className="muted text-[11px]">—</span>
+                    )}
+                  </td>
+                  <td className="px-2 py-4">
+                    <span className="bd muted inline-block max-w-full truncate rounded-full border bg-white/[0.02] px-2.5 py-0.5 text-[10.5px] font-semibold uppercase tracking-wider">
+                      {r.visibility}
                     </span>
                   </td>
                   <td className="px-2 py-4">
@@ -648,8 +696,11 @@ export default function Pins() {
                       <Menu
                         header="Actions"
                         trigger={
-                          <button className="hover:txt p-1" title="Actions">
-                            <MoreHorizontal size={18} />
+                          <button
+                            className="hoverable txt grid h-8 w-8 place-items-center rounded-lg border border-transparent transition-colors hover:border-sky-500/40 hover:bg-sky-500/5"
+                            title="Actions"
+                          >
+                            <MoreHorizontal size={16} />
                           </button>
                         }
                         items={[
