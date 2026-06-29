@@ -546,16 +546,18 @@ export default function Pins() {
 
         <div className="mt-5 overflow-x-auto">
           <table className="w-full table-fixed text-left">
+            {/* Widened Status/Result and shrunk Used so the colour pills
+                stop overlapping each other on tighter viewports. */}
             <colgroup>
               <col className="w-[5%]" />
+              <col className="w-[13%]" />
               <col className="w-[14%]" />
-              <col className="w-[16%]" />
-              <col className="w-[11%]" />
-              <col className="w-[11%]" />
-              <col className="w-[8%]" />
+              <col className="w-[10%]" />
+              <col className="w-[14%]" />
+              <col className="w-[6%]" />
+              <col className="w-[14%]" />
               <col className="w-[12%]" />
               <col className="w-[12%]" />
-              <col className="w-[11%]" />
             </colgroup>
             <thead>
               <tr className="caps-label bd border-b">
@@ -638,25 +640,26 @@ export default function Pins() {
                     {r.name}
                   </td>
                   <td className="px-2 py-4">
-                    <span className="bd txt inline-flex max-w-full items-center gap-1 truncate rounded-full border bg-white/[0.03] px-2.5 py-0.5 text-[11px] font-semibold">
+                    <span className="bd txt inline-flex max-w-full items-center truncate rounded-full border bg-white/[0.03] px-2 py-0.5 text-[10px] font-semibold">
                       {r.game}
                     </span>
                   </td>
                   <td className="px-2 py-4">
                     <span
-                      className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10.5px] font-bold uppercase tracking-wider"
+                      className="inline-flex max-w-full items-center gap-1 truncate rounded-full border px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-wide"
                       style={{ background: st.bg, borderColor: st.ring, color: st.fg }}
                     >
-                      <span className="h-1.5 w-1.5 rounded-full" style={{ background: st.dot, boxShadow: `0 0 6px ${st.dot}` }} />
-                      {r.status}
+                      <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: st.dot, boxShadow: `0 0 6px ${st.dot}` }} />
+                      <span className="truncate">{r.status}</span>
                     </span>
                   </td>
-                  <td className="px-2 py-4">
+                  <td className="px-2 py-4 text-center">
                     {r.used ? (
-                      <span className="inline-flex items-center gap-1 text-[11px] font-bold text-green-400" title="Scanned">
-                        <CheckCircle2 size={13} className="drop-shadow-[0_0_5px_rgba(34,197,94,0.55)]" />
-                        YES
-                      </span>
+                      <CheckCircle2
+                        size={15}
+                        className="inline-block text-green-400 drop-shadow-[0_0_5px_rgba(34,197,94,0.55)]"
+                        aria-label="Scanned"
+                      />
                     ) : (
                       <span className="muted text-[11px]">—</span>
                     )}
@@ -664,17 +667,17 @@ export default function Pins() {
                   <td className="px-2 py-4">
                     {rs ? (
                       <span
-                        className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10.5px] font-bold uppercase tracking-wider"
+                        className="inline-flex max-w-full items-center truncate rounded-full border px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-wide"
                         style={{ background: rs.bg, borderColor: rs.ring, color: rs.fg }}
                       >
-                        {r.result}
+                        <span className="truncate">{r.result}</span>
                       </span>
                     ) : (
                       <span className="muted text-[11px]">—</span>
                     )}
                   </td>
                   <td className="px-2 py-4">
-                    <span className="bd muted inline-block max-w-full truncate rounded-full border bg-white/[0.02] px-2.5 py-0.5 text-[10.5px] font-semibold uppercase tracking-wider">
+                    <span className="bd muted inline-block max-w-full truncate rounded-full border bg-white/[0.02] px-2 py-0.5 text-[9.5px] font-semibold uppercase tracking-wide">
                       {r.visibility}
                     </span>
                   </td>
