@@ -9,7 +9,6 @@ import {
 import { useStore } from '../store.jsx'
 import { useToast } from '../components/ui.jsx'
 import Logo from '../components/Logo.jsx'
-import LanguageToggle from '../components/LanguageToggle.jsx'
 import {
   ScrollProgress, MouseGlow, NoiseLayer, MagneticCTA, SectionIndex,
   Typewriter, TerminalCard, TiltCard, DetectionTicker,
@@ -439,7 +438,7 @@ export default function Landing() {
               : 'max-w-full border-b border-white/10 bg-[#0a0a12]/85 px-6 py-4 backdrop-blur-xl md:px-12'
           }`}
         >
-        <Logo size="md" iconOnly={scrolled} />
+        <Logo size="lg" iconOnly={scrolled} />
         <nav className="hidden items-center gap-7 lg:flex">
           {NAV.map((n) => (
             <button key={n} onClick={() => onNav(n)} className="text-sm text-neutral-400 transition-colors hover:text-white">
@@ -448,7 +447,6 @@ export default function Landing() {
           ))}
         </nav>
         <div className="flex items-center gap-3">
-          <LanguageToggle size={scrolled ? 'sm' : 'md'} />
           {state.auth ? (
             <button onClick={() => nav('/dashboard')} className="flex items-center gap-3">
               <span className="text-sm text-neutral-300 hover:text-white">Dashboard</span>
