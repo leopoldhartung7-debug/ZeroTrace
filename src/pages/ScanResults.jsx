@@ -548,57 +548,47 @@ export default function ScanResults() {
                   {report[cat].length === 0 ? (
                     <p className="muted py-10 text-center text-sm">Nothing found in this category.</p>
                   ) : (
-                    <div className="mt-5 max-h-[560px] space-y-4 overflow-y-auto pr-1">
+                    <div className="mt-4 max-h-[560px] space-y-2 overflow-y-auto pr-1">
                       {report[cat].map((l, i) => (
                         <div
                           key={i}
-                          className="rounded-2xl border border-white/5 bg-white/[0.02] p-5"
+                          className="rounded-xl border border-white/5 bg-white/[0.02] px-3.5 py-3"
                           style={{ borderLeft: `3px solid ${cs.accent}` }}
                         >
-                          <div className="flex items-start justify-between gap-3">
+                          {/* Header row: icon + title + actions */}
+                          <div className="flex items-center gap-2.5">
                             <span
-                              className="flex h-11 w-11 items-center justify-center rounded-xl"
+                              className="grid h-7 w-7 shrink-0 place-items-center rounded-lg"
                               style={{ background: `${cs.accent}1f`, color: cs.accent }}
                             >
-                              <cs.Icon size={20} />
+                              <cs.Icon size={14} />
                             </span>
-                            <div className="flex items-center gap-2">
-                              <button
-                                onClick={() => copyDetail(`${l.name} — ${l.detail}`)}
-                                className="bd muted hover:txt rounded-md border p-1.5"
-                                title="Copy"
-                              >
-                                <Copy size={13} />
-                              </button>
-                              <span className={`rounded-md border px-2.5 py-1 text-xs font-semibold ${cs.bcls}`}>
-                                {l.severity || cs.badge}
-                              </span>
-                            </div>
+                            <p className="txt min-w-0 flex-1 truncate text-sm font-semibold">{l.name}</p>
+                            <span className={`shrink-0 rounded-md border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${cs.bcls}`}>
+                              {l.severity || cs.badge}
+                            </span>
+                            <button
+                              onClick={() => copyDetail(`${l.name} — ${l.detail}`)}
+                              className="bd muted hover:txt grid h-6 w-6 shrink-0 place-items-center rounded-md border"
+                              title="Copy"
+                            >
+                              <Copy size={11} />
+                            </button>
                           </div>
-                          <p className="txt mt-4 text-lg font-semibold">{l.name}</p>
+                          {/* Inline meta row: location + evidence on one line each */}
                           {l.location && (
-                            <div className="mt-3">
-                              <p className="caps-label mb-1">Location</p>
-                              <div
-                                className="tile rounded-lg border p-3"
-                                style={{ borderLeft: `2px solid ${cs.accent}` }}
-                              >
-                                <p
-                                  className="break-all font-mono text-xs leading-relaxed"
-                                  style={{ color: cs.accent }}
-                                >
-                                  {l.location}
-                                </p>
-                              </div>
-                            </div>
+                            <p className="mt-2 flex items-start gap-2 break-all font-mono text-[11px] leading-snug">
+                              <span className="caps-label muted mt-0.5 shrink-0 text-[9px]">LOC</span>
+                              <span style={{ color: cs.accent }}>{l.location}</span>
+                            </p>
                           )}
-                          <div className="tile mt-3 rounded-lg border p-3">
-                            <p className="caps-label mb-1">Evidence</p>
-                            <p className="muted break-all font-mono text-xs leading-relaxed">
+                          <p className="muted mt-1 flex items-start gap-2 break-all font-mono text-[11px] leading-snug">
+                            <span className="caps-label mt-0.5 shrink-0 text-[9px]">EVI</span>
+                            <span>
                               {l.detail}
                               {l.time ? ` · ${l.time}` : ''}
-                            </p>
-                          </div>
+                            </span>
+                          </p>
                         </div>
                       ))}
                     </div>
