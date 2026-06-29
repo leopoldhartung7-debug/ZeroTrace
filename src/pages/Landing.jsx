@@ -826,8 +826,12 @@ export default function Landing() {
             </span>
           </h1>
 
-          {/* Typewriter sub-line */}
-          <p className="zt-hero-line-3 mx-auto mt-6 max-w-2xl text-base leading-relaxed text-neutral-300 md:text-lg">
+          {/* Typewriter sub-line — minHeight locks the box so different
+              phrase lengths can't re-wrap the line and shift the page below. */}
+          <p
+            className="zt-hero-line-3 mx-auto mt-6 max-w-2xl text-base leading-relaxed text-neutral-300 md:text-lg"
+            style={{ minHeight: '7em' }}
+          >
             ZeroTrace runs a deep, consent-based forensic scan that{' '}
             <span className="font-semibold text-violet-200">
               <Typewriter
