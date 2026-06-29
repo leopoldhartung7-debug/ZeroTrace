@@ -337,24 +337,13 @@ function ConsentStep() {
 
 function ScanStep({ progress }) {
   const pct = Math.round(progress * 100)
-  const modules = [
-    'Processes',
-    'Modules',
-    'Kernel drivers',
-    'Registry',
-    'ETW tamper',
-    'Memory',
-    'Hypervisor',
-    'Browser history',
-  ]
-  const stage = Math.min(modules.length - 1, Math.floor(progress * modules.length))
   return (
     <div className="flex h-full flex-col justify-center">
       <p className="text-center text-[11px] font-semibold" style={{ color: ZT.trace }}>
         Scanning now
       </p>
       <p className="mt-1 text-center text-[13px] font-bold" style={{ color: '#E6E2F2' }}>
-        {modules[stage]}…
+        Working through the system…
       </p>
       <div className="mt-3 h-[6px] w-full overflow-hidden rounded-[3px]" style={{ background: '#13101D' }}>
         <div
@@ -366,24 +355,26 @@ function ScanStep({ progress }) {
           }}
         />
       </div>
-      <div className="mt-1 flex items-center justify-between font-mono text-[10px]" style={{ color: '#7C7894' }}>
-        <span>Module {stage + 1}/{modules.length}</span>
+      <div className="mt-1 flex items-center justify-end font-mono text-[10px]" style={{ color: '#7C7894' }}>
         <span>{pct}%</span>
       </div>
-      <div className="mt-3 grid grid-cols-4 gap-[6px]">
-        {modules.map((m, i) => (
-          <div
-            key={m}
-            className="rounded-[4px] border px-[6px] py-[4px] text-center text-[9.5px] transition-all"
-            style={{
-              borderColor: i < stage ? '#22c55e66' : i === stage ? ZT.accent : ZT.border,
-              background: i < stage ? 'rgba(34,197,94,0.10)' : i === stage ? 'rgba(139,110,245,0.12)' : '#13101D',
-              color: i < stage ? '#86efac' : i === stage ? '#E6E2F2' : '#5A5468',
-            }}
-          >
-            {m}
-          </div>
-        ))}
+      {/* abstract activity indicator — pulsing dots, no module names */}
+      <div className="mt-3 flex items-center justify-center gap-1.5">
+        {Array.from({ length: 24 }).map((_, i) => {
+          const head = Math.floor(progress * 28) % 24
+          const dist = (i - head + 24) % 24
+          const alpha = Math.max(0.12, 1 - dist / 8)
+          return (
+            <span
+              key={i}
+              className="h-2 w-[3px] rounded-[1px]"
+              style={{
+                background: `rgba(139,110,245,${alpha.toFixed(2)})`,
+                boxShadow: dist < 3 ? `0 0 6px rgba(139,110,245,${alpha.toFixed(2)})` : 'none',
+              }}
+            />
+          )
+        })}
       </div>
     </div>
   )
@@ -436,8 +427,32 @@ export function TerminalCard() {
 
 export function ScannerMock() {
   const ref = useRef(null)
+  const wrapRef = useRef(null)
+  const innerRef = useRef(null)
   const [idx, setIdx] = useState(0)
   const [progress, setProgress] = useState(0)
+
+  // Scale the fixed-size 800x400 scanner mock down to fit narrower viewports,
+  // so it always looks the same shape regardless of screen size.
+  useEffect(() => {
+    const wrap = wrapRef.current
+    const inner = innerRef.current
+    if (!wrap || !inner) return undefined
+    const apply = () => {
+      const w = wrap.clientWidth
+      const s = Math.min(1, w / 800)
+      inner.style.transform = `scale(${s})`
+      wrap.style.height = `${400 * s}px`
+    }
+    apply()
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(apply) : null
+    if (ro) ro.observe(wrap)
+    window.addEventListener('resize', apply)
+    return () => {
+      if (ro) ro.disconnect()
+      window.removeEventListener('resize', apply)
+    }
+  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -484,12 +499,14 @@ export function ScannerMock() {
   const current = SCANNER_STEPS[idx].id
 
   return (
+    <div ref={wrapRef} className="relative mx-auto w-full" style={{ maxWidth: 800, height: 400 }}>
     <div
-      ref={ref}
-      className="relative mx-auto w-full overflow-hidden rounded-[14px] border shadow-[0_30px_80px_-20px_rgba(0,0,0,0.75)]"
+      ref={(node) => { ref.current = node; innerRef.current = node }}
+      className="absolute left-0 top-0 overflow-hidden rounded-[14px] border shadow-[0_30px_80px_-20px_rgba(0,0,0,0.75)]"
       style={{
+        width: 800,
         height: 400,
-        maxWidth: 800,
+        transformOrigin: 'top left',
         background: ZT.panel,
         borderColor: 'rgba(139,110,245,0.28)',
       }}
@@ -510,10 +527,10 @@ export function ScannerMock() {
         ✕
       </div>
 
-      {/* two columns: left branding (hidden on small screens), right step flow */}
-      <div className="grid h-full md:[grid-template-columns:290px_1fr] [grid-template-columns:1fr]">
-        {/* LEFT — branding (md+) */}
-        <div className="relative hidden flex-col items-center justify-center px-5 md:flex">
+      {/* two columns: left branding, right step flow — fixed 290px / flex */}
+      <div className="grid h-full" style={{ gridTemplateColumns: '290px 1fr' }}>
+        {/* LEFT — branding */}
+        <div className="relative flex flex-col items-center justify-center px-5">
           <div className="flex items-center gap-3">
             <img
               src={ztLogoForScannerMock}
@@ -548,6 +565,7 @@ export function ScannerMock() {
           {current === 'result'  && <ResultStep />}
         </div>
       </div>
+    </div>
     </div>
   )
 }
