@@ -405,7 +405,6 @@ export default function Landing() {
       <SectionIndex
         sections={[
           { id: 'hero', label: 'Top' },
-          { id: 'ticker', label: 'Live' },
           { id: 'before-after', label: 'Compare' },
           { id: 'bento', label: 'Why ZeroTrace' },
           { id: 'features', label: 'Features' },
@@ -597,11 +596,6 @@ export default function Landing() {
             <VerdictGraphic />
           </div>
         </div>
-      </section>
-
-      {/* ── Live detection ticker ── */}
-      <section id="ticker" className="relative border-y border-white/[0.06] bg-white/[0.015]">
-        <DetectionTicker />
       </section>
 
       {/* ── Before / After slider ── */}
