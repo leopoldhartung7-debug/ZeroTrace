@@ -181,76 +181,273 @@ export function Typewriter({ phrases, className = '', speed = 55, pause = 1400 }
 /* ------------------------------------------------------------ */
 /* 1 — Terminal hero (animated scan-style log)                   */
 /* ------------------------------------------------------------ */
-const TERM_LINES = [
-  { c: 'muted', t: '$ zerotrace --profile=deep --webhook=… --pin=••••••' },
-  { c: 'muted', t: '> establishing consent…' },
-  { c: 'ok',    t: '✓ consent accepted' },
-  { c: 'muted', t: '> enumerating processes (148)' },
-  { c: 'ok',    t: '✓ processes clean' },
-  { c: 'muted', t: '> reading kernel drivers (54)' },
-  { c: 'warn',  t: '⚠ unsigned driver: wnbios.sys' },
-  { c: 'muted', t: '> ETW tamper check' },
-  { c: 'ok',    t: '✓ ETW providers intact' },
-  { c: 'muted', t: '> memory protections sweep' },
-  { c: 'bad',   t: '✗ RWX page in csgo.exe @ 0x7ff64a210000' },
-  { c: 'muted', t: '> hypervisor traces' },
-  { c: 'ok',    t: '✓ no hypervisor cheat traces' },
-  { c: 'muted', t: '> compiling verdict…' },
-  { c: 'bad',   t: 'VERDICT  cheating · risk 78/100' },
+/*  Looks like the real WPF scanner cycling through its steps:    */
+/*  Game → PIN → Consent → Scanning → Result                       */
+/* ------------------------------------------------------------ */
+
+const SCANNER_STEPS = [
+  { id: 'game',    durationMs: 2200 },
+  { id: 'pin',     durationMs: 2400 },
+  { id: 'consent', durationMs: 2000 },
+  { id: 'scan',    durationMs: 4200 },
+  { id: 'result',  durationMs: 3500 },
 ]
 
+function GameStep() {
+  const games = ['FiveM', 'CS2', 'Valorant', 'Sea of Thieves', 'RageMP', 'AltV']
+  return (
+    <div className="px-8 py-7">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500">Step 1 · Select game</p>
+      <h3 className="mt-2 text-xl font-bold text-white">Which game are you scanning?</h3>
+      <div className="mt-5 grid grid-cols-3 gap-2.5">
+        {games.map((g, i) => (
+          <div
+            key={g}
+            className={`rounded-lg border px-3 py-3 text-center text-[12.5px] font-medium transition-all ${
+              i === 0
+                ? 'border-violet-500/60 bg-violet-500/10 text-white shadow-[0_0_18px_rgba(139,110,245,0.3)]'
+                : 'border-white/10 bg-white/[0.02] text-neutral-300'
+            }`}
+          >
+            {g}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function PinStep({ progress }) {
+  // progress 0..1 — fills the 6 boxes one by one
+  const filled = Math.min(6, Math.round(progress * 7))
+  const digits = ['4', '8', '2', '9', '1', '6']
+  return (
+    <div className="px-8 py-7">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500">Step 2 · Enter PIN</p>
+      <h3 className="mt-2 text-xl font-bold text-white">Pre-filled from the session file</h3>
+      <div className="mt-6 flex justify-center gap-2.5">
+        {digits.map((d, i) => {
+          const active = i === filled
+          const done = i < filled
+          return (
+            <div
+              key={i}
+              className={`grid h-12 w-10 place-items-center rounded-lg border font-mono text-xl transition-all ${
+                done   ? 'border-violet-500/50 bg-violet-500/10 text-white' :
+                active ? 'border-violet-500/80 bg-violet-500/15 text-white shadow-[0_0_14px_rgba(139,110,245,0.5)]' :
+                          'border-white/10 bg-white/[0.02] text-neutral-600'
+              }`}
+            >
+              {done ? d : active ? <span className="zt-caret" /> : '·'}
+            </div>
+          )
+        })}
+      </div>
+      <p className="mt-5 text-center text-xs text-neutral-500">PIN locked — provided by the analyst.</p>
+    </div>
+  )
+}
+
+function ConsentStep() {
+  return (
+    <div className="px-8 py-7">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500">Step 3 · Consent</p>
+      <h3 className="mt-2 text-xl font-bold text-white">Allow ZeroTrace to scan this PC?</h3>
+      <ul className="mt-4 space-y-1.5 text-[12.5px] text-neutral-400">
+        <li>• Processes, modules and loaded drivers</li>
+        <li>• Registry persistence + execution history</li>
+        <li>• Memory protections and ETW providers</li>
+        <li>• On-disk artifacts in known cheat paths</li>
+      </ul>
+      <div className="mt-6 flex justify-end gap-2">
+        <span className="rounded-lg border border-white/10 px-4 py-2 text-sm text-neutral-400">Decline</span>
+        <span className="rounded-lg bg-violet-500 px-4 py-2 text-sm font-semibold text-white shadow-[0_0_18px_rgba(139,110,245,0.5)]">
+          Accept &amp; scan
+        </span>
+      </div>
+    </div>
+  )
+}
+
+function ScanStep({ progress }) {
+  const pct = Math.round(progress * 100)
+  const modules = [
+    'Process enumerator',
+    'Kernel drivers',
+    'Registry persistence',
+    'ETW tamper check',
+    'Memory protections',
+    'Hypervisor traces',
+  ]
+  const stage = Math.min(modules.length - 1, Math.floor(progress * modules.length))
+  return (
+    <div className="px-8 py-7">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500">Step 4 · Scanning</p>
+      <h3 className="mt-2 text-xl font-bold text-white">{modules[stage]}…</h3>
+      <div className="mt-5 h-2 w-full overflow-hidden rounded-full bg-white/[0.06]">
+        <div
+          className="h-full rounded-full transition-all duration-150"
+          style={{
+            width: `${pct}%`,
+            background: 'linear-gradient(90deg, #8b6ef5, #a78bfa)',
+            boxShadow: '0 0 14px rgba(139,110,245,0.7)',
+          }}
+        />
+      </div>
+      <div className="mt-2 flex items-center justify-between text-xs font-mono text-neutral-500">
+        <span>module {stage + 1}/{modules.length}</span>
+        <span>{pct}%</span>
+      </div>
+      <div className="mt-5 grid grid-cols-3 gap-2">
+        {modules.map((m, i) => (
+          <div
+            key={m}
+            className={`rounded-md border px-2 py-1.5 text-[10.5px] text-center transition-all ${
+              i < stage
+                ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-300'
+                : i === stage
+                ? 'border-violet-500/50 bg-violet-500/10 text-white'
+                : 'border-white/10 bg-white/[0.02] text-neutral-600'
+            }`}
+          >
+            {m.split(' ')[0]}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function ResultStep() {
+  return (
+    <div className="relative px-8 py-7">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500">Step 5 · Result</p>
+      <div className="mt-4 flex flex-col items-center">
+        <div
+          className="grid h-20 w-20 place-items-center rounded-full"
+          style={{
+            background: 'radial-gradient(circle, rgba(34,197,94,0.25), rgba(34,197,94,0.05) 70%, transparent)',
+            boxShadow: '0 0 40px rgba(34,197,94,0.45)',
+          }}
+        >
+          <svg viewBox="0 0 52 52" className="h-12 w-12">
+            <circle cx="26" cy="26" r="22" fill="none" stroke="#22c55e" strokeWidth="3" opacity="0.7">
+              <animate attributeName="stroke-dasharray" from="0 200" to="138 200" dur="0.7s" fill="freeze" />
+            </circle>
+            <path
+              d="M14 27 l9 8 l16 -18"
+              fill="none"
+              stroke="#22c55e"
+              strokeWidth="3.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <animate attributeName="stroke-dasharray" from="0 60" to="60 60" dur="0.45s" begin="0.5s" fill="freeze" />
+              <animate attributeName="stroke-dashoffset" from="60" to="0" dur="0.45s" begin="0.5s" fill="freeze" />
+            </path>
+          </svg>
+        </div>
+        <h3 className="mt-5 text-2xl font-bold text-emerald-300">Scan complete</h3>
+        <p className="mt-1 text-sm text-neutral-400">Result sent to the analyst's dashboard.</p>
+        <p className="mt-4 font-mono text-[11px] uppercase tracking-[0.18em] text-neutral-500">
+          window closes in <span className="text-emerald-300">3s</span>
+        </p>
+      </div>
+    </div>
+  )
+}
+
 export function TerminalCard() {
-  const [revealed, setRevealed] = useState(0)
+  // Compatibility alias — kept the export name to avoid touching imports.
+  return <ScannerMock />
+}
+
+export function ScannerMock() {
   const ref = useRef(null)
+  const [idx, setIdx] = useState(0)
+  const [progress, setProgress] = useState(0)
 
   useEffect(() => {
-    let stopped = false
-    const start = () => {
-      let i = 0
-      const tick = () => {
-        if (stopped) return
-        setRevealed(i + 1)
-        i = (i + 1) % (TERM_LINES.length + 3) // small pause at end
-        setTimeout(tick, i === 0 ? 700 : 360)
+    let cancelled = false
+    let timer = null
+    let rafId = null
+
+    const runStep = (i) => {
+      if (cancelled) return
+      const step = SCANNER_STEPS[i]
+      const start = performance.now()
+      const tick = (t) => {
+        if (cancelled) return
+        const p = Math.min(1, (t - start) / step.durationMs)
+        setProgress(p)
+        if (p < 1) rafId = requestAnimationFrame(tick)
+        else {
+          timer = setTimeout(() => {
+            const next = (i + 1) % SCANNER_STEPS.length
+            setIdx(next)
+            setProgress(0)
+            runStep(next)
+          }, 250)
+        }
       }
-      tick()
+      rafId = requestAnimationFrame(tick)
     }
+
     const io = new IntersectionObserver(([e]) => {
-      if (e.isIntersecting) { start(); io.disconnect() }
+      if (e.isIntersecting) {
+        runStep(0)
+        io.disconnect()
+      }
     }, { threshold: 0.2 })
     if (ref.current) io.observe(ref.current)
-    return () => { stopped = true; io.disconnect() }
+
+    return () => {
+      cancelled = true
+      io.disconnect()
+      if (rafId) cancelAnimationFrame(rafId)
+      if (timer) clearTimeout(timer)
+    }
   }, [])
 
-  const colorFor = (c) => ({
-    muted: 'text-neutral-500',
-    ok:    'text-emerald-400',
-    warn:  'text-amber-400',
-    bad:   'text-red-400',
-  })[c] || 'text-neutral-300'
+  const current = SCANNER_STEPS[idx].id
 
   return (
     <div
       ref={ref}
-      className="zt-glass zt-gradient-border is-always-on overflow-hidden rounded-3xl font-mono text-[12.5px] leading-relaxed shadow-[0_30px_80px_-30px_rgba(0,0,0,0.7)]"
+      className="zt-glass zt-gradient-border is-always-on overflow-hidden rounded-3xl shadow-[0_30px_80px_-30px_rgba(0,0,0,0.7)]"
     >
-      <div className="flex items-center gap-1.5 border-b border-white/10 bg-black/40 px-4 py-2.5">
-        <span className="h-2.5 w-2.5 rounded-full bg-red-500/80" />
-        <span className="h-2.5 w-2.5 rounded-full bg-yellow-500/80" />
-        <span className="h-2.5 w-2.5 rounded-full bg-green-500/80" />
-        <span className="ml-3 text-[11px] uppercase tracking-[0.18em] text-neutral-500">zerotrace · live</span>
+      {/* Window chrome (matches the real WPF scanner: close button + title) */}
+      <div className="flex items-center justify-between border-b border-white/10 bg-black/40 px-5 py-3">
+        <div className="flex items-center gap-2.5">
+          <div className="h-7 w-7 rounded-md bg-gradient-to-br from-violet-500 to-violet-700 shadow-[0_0_12px_rgba(139,110,245,0.5)]" />
+          <div className="leading-tight">
+            <p className="text-sm font-bold text-white">ZeroTrace</p>
+            <p className="text-[10px] uppercase tracking-[0.18em] text-neutral-500">Host-Scanner · FiveM</p>
+          </div>
+        </div>
+        <span className="grid h-7 w-7 place-items-center rounded-md border border-white/10 text-neutral-500">×</span>
       </div>
-      <div className="min-h-[280px] space-y-1 bg-black/55 px-5 py-4">
-        {TERM_LINES.slice(0, Math.min(revealed, TERM_LINES.length)).map((l, i) => (
-          <p key={i} className={`${colorFor(l.c)} zt-fade-in`}>
-            {l.t}
-          </p>
+
+      <div key={current} className="min-h-[300px] bg-black/55 zt-fade-in">
+        {current === 'game'    && <GameStep />}
+        {current === 'pin'     && <PinStep progress={progress} />}
+        {current === 'consent' && <ConsentStep />}
+        {current === 'scan'    && <ScanStep progress={progress} />}
+        {current === 'result'  && <ResultStep />}
+      </div>
+
+      {/* Step indicator dots */}
+      <div className="flex items-center justify-center gap-2 border-t border-white/10 bg-black/40 py-3">
+        {SCANNER_STEPS.map((s, i) => (
+          <span
+            key={s.id}
+            className={`h-1.5 rounded-full transition-all duration-300 ${
+              i === idx ? 'w-8 bg-violet-400' :
+              i  < idx ? 'w-3 bg-violet-700' :
+                         'w-3 bg-white/15'
+            }`}
+          />
         ))}
-        {revealed < TERM_LINES.length && (
-          <p className="text-neutral-400">
-            <span className="zt-caret" />
-          </p>
-        )}
       </div>
     </div>
   )

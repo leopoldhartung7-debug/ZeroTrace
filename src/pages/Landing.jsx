@@ -720,9 +720,7 @@ export default function Landing() {
       <SectionIndex
         sections={[
           { id: 'hero', label: 'Top' },
-          { id: 'ticker', label: 'Live' },
           { id: 'sample-verdict', label: 'Verdict' },
-          { id: 'before-after', label: 'Compare' },
           { id: 'bento', label: 'Why ZeroTrace' },
           { id: 'features', label: 'Features' },
           { id: 'how', label: 'How it works' },
@@ -869,11 +867,6 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ── Live detection ticker ── */}
-      <section id="ticker" className="relative border-y border-white/[0.06] bg-white/[0.015]">
-        <DetectionTicker />
-      </section>
-
       {/* ── Sample verdict (moved out of the hero, keeps all original info) ── */}
       <section id="sample-verdict" className="relative mx-auto max-w-6xl px-6 py-16 md:px-12 md:py-20">
         <div className="grid items-start gap-10 lg:grid-cols-[1fr_1fr]">
@@ -923,22 +916,6 @@ export default function Landing() {
             <VerdictGraphic />
           </Reveal>
         </div>
-      </section>
-
-      {/* ── Before / After slider (live anti-cheat vs ZeroTrace) ── */}
-      <section id="before-after" className="relative mx-auto max-w-6xl px-6 py-12 md:px-12 md:py-16">
-        <Reveal dir="pop">
-          <div className="mb-8 text-center">
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-violet-300">Side by side</p>
-            <h2 className="mt-3 text-3xl font-extrabold tracking-tight md:text-5xl">
-              <span className="zt-shimmer-text">Two views of the same player.</span>
-            </h2>
-            <p className="mx-auto mt-3 max-w-2xl text-neutral-400">
-              Drag the handle to compare what the live anti-cheat saw with what ZeroTrace's forensic scan found.
-            </p>
-          </div>
-        </Reveal>
-        <BeforeAfter />
       </section>
 
       {/* ── Trusted-by marquee ── */}
