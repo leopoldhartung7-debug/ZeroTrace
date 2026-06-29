@@ -1031,12 +1031,6 @@ export default function Landing() {
         <div className="mt-12">
           <StepThrough />
         </div>
-        {/* Original step rows kept below for the slower scrollers */}
-        <div className="mt-20 space-y-20">
-          {STEPS.map((s, i) => (
-            <StepRow key={s.title} s={s} idx={i} />
-          ))}
-        </div>
       </section>
 
       {/* ── Demo video card ── */}
