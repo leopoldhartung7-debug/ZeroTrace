@@ -9,6 +9,7 @@ import {
 import { useStore } from '../store.jsx'
 import { useToast } from '../components/ui.jsx'
 import Logo from '../components/Logo.jsx'
+import LanguageToggle from '../components/LanguageToggle.jsx'
 import {
   ScrollProgress, MouseGlow, NoiseLayer, MagneticCTA, SectionIndex,
   Typewriter, TerminalCard, TiltCard, DetectionTicker,
@@ -392,7 +393,7 @@ export default function Landing() {
   const onNav = (item) => {
     if (item === 'Features') document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })
     else if (item === 'FAQ') document.getElementById('faq')?.scrollIntoView({ behavior: 'smooth' })
-    else if (item === 'Discord') toast({ type: 'info', title: 'Discord', body: 'Community link is not configured in this demo.' })
+    else if (item === 'Discord') window.open('https://discord.gg/r4hJzh4pcW', '_blank', 'noopener,noreferrer')
     else if (ROUTES[item]) nav(ROUTES[item])
     else nav('/')
   }
@@ -447,7 +448,7 @@ export default function Landing() {
           ))}
         </nav>
         <div className="flex items-center gap-3">
-          <Globe size={18} className="hidden text-neutral-500 sm:block" />
+          <LanguageToggle size={scrolled ? 'sm' : 'md'} />
           {state.auth ? (
             <button onClick={() => nav('/dashboard')} className="flex items-center gap-3">
               <span className="text-sm text-neutral-300 hover:text-white">Dashboard</span>
@@ -804,24 +805,49 @@ export default function Landing() {
             <p className="mt-3 max-w-xs text-sm text-neutral-500">
               The most powerful screenshare tool — detect cheaters in 60 seconds.
             </p>
+            <div className="mt-5 flex items-center gap-3">
+              <a
+                href="https://discord.gg/r4hJzh4pcW"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Join the ZeroTrace Discord"
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-neutral-300 transition-all hover:border-violet-400/40 hover:bg-violet-500/10 hover:text-violet-200"
+              >
+                {/* Discord glyph */}
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d="M20.317 4.369A19.79 19.79 0 0 0 16.558 3.2c-.18.323-.385.76-.526 1.108a18.4 18.4 0 0 0-4.069 0c-.14-.348-.354-.785-.534-1.108A19.7 19.7 0 0 0 7.677 4.37C4.155 9.633 3.195 14.766 3.675 19.82a19.94 19.94 0 0 0 6.099 3.087c.487-.664.92-1.37 1.292-2.116a13.04 13.04 0 0 1-2.034-.974c.171-.126.339-.257.5-.392 3.927 1.795 8.18 1.795 12.057 0 .163.135.331.266.5.392-.65.387-1.331.714-2.036.974.373.745.805 1.45 1.292 2.115a19.93 19.93 0 0 0 6.1-3.086c.562-5.886-.96-10.97-4.128-15.451ZM10.04 16.85c-1.215 0-2.21-1.116-2.21-2.486 0-1.37.977-2.486 2.21-2.486 1.234 0 2.23 1.116 2.21 2.486 0 1.37-.976 2.486-2.21 2.486Zm6.92 0c-1.214 0-2.21-1.116-2.21-2.486 0-1.37.977-2.486 2.21-2.486 1.234 0 2.23 1.116 2.21 2.486 0 1.37-.976 2.486-2.21 2.486Z" />
+                </svg>
+              </a>
+            </div>
           </div>
           {[
-            { h: 'Product', items: ['Features', 'Pricing', 'Download', 'Changelog'] },
-            { h: 'Legal', items: ['Terms of Service', 'Privacy Policy', 'Legal'] },
+            { h: 'Product',   items: ['Features', 'Pricing', 'Download', 'Changelog'] },
+            { h: 'Legal',     items: ['Terms of Service', 'Privacy Policy', 'Legal'] },
             { h: 'Community', items: ['Discord', 'Branding'] },
-            { h: 'Support', items: ['Docs', 'Contact Us', 'FAQ'] },
+            { h: 'Support',   items: ['Docs', 'FAQ'] },
           ].map((col) => (
             <div key={col.h}>
               <p className="text-sm font-semibold text-white">{col.h}</p>
               <ul className="mt-3 space-y-2">
                 {col.items.map((it) => (
                   <li key={it}>
-                    <button
-                      onClick={() => onNav(it === 'Contact Us' ? 'Discord' : it)}
-                      className="text-sm text-neutral-500 hover:text-white"
-                    >
-                      {it}
-                    </button>
+                    {it === 'Discord' ? (
+                      <a
+                        href="https://discord.gg/r4hJzh4pcW"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-neutral-500 hover:text-white"
+                      >
+                        Discord
+                      </a>
+                    ) : (
+                      <button
+                        onClick={() => onNav(it)}
+                        className="text-sm text-neutral-500 hover:text-white"
+                      >
+                        {it}
+                      </button>
+                    )}
                   </li>
                 ))}
               </ul>
