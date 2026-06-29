@@ -144,7 +144,7 @@ export default function Branding() {
       <Section n="01" label="IDENTITY" title="Logo" desc="Fixed aspect ratio. No effects or distortion. Same geometry in both backgrounds.">
         <div className="w-full">
           <div className="flex items-center justify-center rounded-2xl border border-white/10 bg-black/40 py-14">
-            <Logo size="lg" sub />
+            <Logo size="lg" sub asLink={false} />
           </div>
           <div className="mt-7 flex flex-wrap justify-center gap-x-8 gap-y-2 text-center text-[11px] font-semibold tracking-[0.15em] text-neutral-400">
             <button
@@ -200,7 +200,7 @@ export default function Branding() {
         <div className="w-full">
           <div className="relative mx-auto flex h-72 max-w-md items-center justify-center rounded-sm border border-dashed border-white/15">
             <div className="flex h-44 w-72 items-center justify-center border border-dashed border-white/15">
-              <Logo size="lg" />
+              <Logo size="lg" asLink={false} />
             </div>
           </div>
           <p className="mt-6 text-center text-[11px] font-semibold tracking-[0.25em] text-neutral-600">
@@ -220,7 +220,7 @@ export default function Branding() {
                 ) : wp.label === 'tagline' ? (
                   <span className="text-sm font-semibold text-neutral-300">Think. Scan. Find.</span>
                 ) : (
-                  <Logo size={wp.label === 'logo-sm' ? 'sm' : 'lg'} />
+                  <Logo size={wp.label === 'logo-sm' ? 'sm' : 'lg'} asLink={false} />
                 )}
               </div>
               <div className="mt-4 flex items-center justify-between">

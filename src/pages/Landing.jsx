@@ -522,7 +522,7 @@ function ScanningMock() {
       <pre className="mt-1 font-mono text-[11px] leading-relaxed text-neutral-500">{`"KeyAuth": {
   Var1 => String::Keyauth::Nocase;
   Var2 => String::Keyauth::Wide;`}</pre>
-      <div className="mt-6 flex justify-center"><Logo size="md" /></div>
+      <div className="mt-6 flex justify-center"><Logo size="md" asLink={false} /></div>
       <p className="mt-3 text-center text-sm text-neutral-500 transition-colors duration-500">
         {done ? 'Scan complete' : 'Scanning...'}
       </p>
@@ -754,9 +754,7 @@ export default function Landing() {
               : 'max-w-full border-b border-white/10 bg-[#0a0a12]/85 px-6 py-4 backdrop-blur-xl md:px-12'
           }`}
         >
-        <button onClick={() => nav('/')} className="flex shrink-0 items-center gap-3 transition-opacity duration-200 hover:opacity-80">
-          <Logo size="md" iconOnly={scrolled} />
-        </button>
+        <Logo size="md" iconOnly={scrolled} />
         <nav className="hidden items-center gap-4 lg:flex">
           {NAV.map((n) => (
             <button
@@ -808,9 +806,15 @@ export default function Landing() {
         <div className="zt-grid-overlay pointer-events-none absolute inset-0" />
 
         <div className="relative mx-auto max-w-7xl px-6 pb-20 pt-32 text-center md:px-12 md:pt-40">
+          {/* Massive headline — Oxanium display font, violet shimmer gradient */}
           <h1
-            className="zt-hero-line-1 mx-auto leading-[0.95] tracking-[0.04em]"
-            style={{ fontSize: 'clamp(4rem, 14vw, 13rem)', fontWeight: 200 }}
+            className="zt-hero-line-1 mx-auto leading-[0.95]"
+            style={{
+              fontFamily: "'Oxanium', 'Inter', system-ui, sans-serif",
+              fontSize: 'clamp(4rem, 14vw, 13rem)',
+              fontWeight: 800,
+              letterSpacing: '0.01em',
+            }}
           >
             <span
               className="uppercase"

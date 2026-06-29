@@ -1,4 +1,5 @@
 /* ZeroTrace brand logo — original ZT monogram (extracted 1:1) + wordmark */
+import { Link } from 'react-router-dom'
 import ztLogo from '../assets/zt-logo.png'
 
 const SIZES = {
@@ -9,10 +10,24 @@ const SIZES = {
 
 const ASPECT = 341 / 263 // intrinsic logo aspect ratio (w/h)
 
-export default function Logo({ size = 'md', sub = false, iconOnly = false }) {
+export default function Logo({ size = 'md', sub = false, iconOnly = false, asLink = true }) {
   const s = SIZES[size] || SIZES.md
+  const Wrapper = asLink ? Link : 'div'
+  const wrapperProps = asLink
+    ? { to: '/', 'aria-label': 'ZeroTrace — home', title: 'ZeroTrace — home' }
+    : {}
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: iconOnly ? 0 : s.gap }}>
+    <Wrapper
+      {...wrapperProps}
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: iconOnly ? 0 : s.gap,
+        textDecoration: 'none',
+        color: 'inherit',
+        cursor: asLink ? 'pointer' : 'default',
+      }}
+    >
       <img
         src={ztLogo}
         alt="ZeroTrace"
@@ -67,6 +82,6 @@ export default function Logo({ size = 'md', sub = false, iconOnly = false }) {
           </span>
         )}
       </span>
-    </div>
+    </Wrapper>
   )
 }
