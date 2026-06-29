@@ -544,57 +544,37 @@ export default function Pins() {
           </div>
         )}
 
-        <div className="mt-5 overflow-x-auto">
-          <table className="w-full table-fixed text-left">
-            {/* Widened Status/Result and shrunk Used so the colour pills
-                stop overlapping each other on tighter viewports. */}
-            <colgroup>
-              <col className="w-[5%]" />
-              <col className="w-[13%]" />
-              <col className="w-[14%]" />
-              <col className="w-[10%]" />
-              <col className="w-[14%]" />
-              <col className="w-[6%]" />
-              <col className="w-[14%]" />
-              <col className="w-[12%]" />
-              <col className="w-[12%]" />
-            </colgroup>
-            <thead>
-              <tr className="caps-label bd border-b">
-                <th className="px-2 py-3">
-                  <input
-                    type="checkbox"
-                    checked={allOnPageSelected}
-                    onChange={toggleSelectAllOnPage}
-                    className="h-3.5 w-3.5 align-middle accent-sky-500"
-                    aria-label="Select all"
-                  />
-                </th>
-                {['Pin', 'Name', 'Game', 'Status', 'Used', 'Result', 'Visibility', ''].map((h, i) => (
-                  <th key={i} className="px-2 py-3 font-semibold">
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {pageRows.length === 0 && (
-                <tr>
-                  <td colSpan={9} className="muted px-2 py-16 text-center text-sm">
-                    <div className="mx-auto flex max-w-xs flex-col items-center gap-2">
-                      <span className="grid h-12 w-12 place-items-center rounded-full border border-white/10 bg-white/[0.03]">
-                        <Search size={18} className="muted" />
-                      </span>
-                      <p className="txt text-sm font-semibold">
-                        {tab === 'shared' ? 'Nothing shared with you yet.' : 'No pins match your filters.'}
-                      </p>
-                      <p className="muted text-xs">Try clearing the search or status filter above.</p>
-                    </div>
-                  </td>
-                </tr>
-              )}
+        {/* ── Card-list redesign (replaces the old table) ─────────────── */}
+        <div className="mt-5">
+          <div className="bd muted mb-2 flex items-center gap-3 border-b px-3 pb-2 text-[10px] font-bold uppercase tracking-[0.14em]">
+            <label className="hoverable flex cursor-pointer items-center gap-2 rounded-md px-1.5 py-0.5">
+              <input
+                type="checkbox"
+                checked={allOnPageSelected}
+                onChange={toggleSelectAllOnPage}
+                className="h-3.5 w-3.5 align-middle accent-violet-500"
+                aria-label="Select all"
+              />
+              Select all
+            </label>
+            <span className="ml-auto">{pageRows.length} {pageRows.length === 1 ? 'pin' : 'pins'} on this page</span>
+          </div>
+
+          {pageRows.length === 0 ? (
+            <div className="muted flex flex-col items-center gap-2 px-2 py-16 text-center text-sm">
+              <span className="grid h-12 w-12 place-items-center rounded-full border border-white/10 bg-white/[0.03]">
+                <Search size={18} className="muted" />
+              </span>
+              <p className="txt text-sm font-semibold">
+                {tab === 'shared' ? 'Nothing shared with you yet.' : 'No pins match your filters.'}
+              </p>
+              <p className="muted text-xs">Try clearing the search or status filter above.</p>
+            </div>
+          ) : (
+            <ul className="flex flex-col gap-2.5">
               {pageRows.map((r) => {
                 const scanned = r.used || r.status === 'Finished' || !!r.result
+                const isSelected = selected.includes(r.id)
                 const statusColors = {
                   Finished: { bg: 'rgba(34,197,94,0.10)',  ring: 'rgba(34,197,94,0.35)',  fg: '#86efac', dot: '#22c55e' },
                   Pending:  { bg: 'rgba(245,158,11,0.10)', ring: 'rgba(245,158,11,0.35)', fg: '#fbbf24', dot: '#f59e0b' },
@@ -608,148 +588,141 @@ export default function Pins() {
                 }
                 const rs = resultColors[r.result]
                 return (
-                <tr
-                  key={r.id}
-                  className="bd border-b align-middle text-sm transition-colors hover:bg-white/[0.025]"
-                >
-                  <td className="px-2 py-4">
-                    <input
-                      type="checkbox"
-                      checked={selected.includes(r.id)}
-                      onChange={() => toggleSelect(r.id)}
-                      className="h-3.5 w-3.5 align-middle accent-sky-500"
-                      aria-label="Select pin"
-                    />
-                  </td>
-                  <td className="txt truncate px-2 py-4 font-mono text-xs" title={r.pin}>
-                    <span className="flex items-center gap-2">
-                      <button
-                        onClick={() => dispatch({ type: 'toggle-pin-star', id: r.id })}
-                        title={r.starred ? 'Unstar' : 'Star'}
-                        className="shrink-0 transition-transform hover:scale-110"
-                      >
-                        <Star
-                          size={14}
-                          className={r.starred ? 'fill-yellow-400 text-yellow-400 drop-shadow-[0_0_6px_rgba(250,204,21,0.55)]' : 'muted hover:text-yellow-400'}
-                        />
-                      </button>
-                      <span className="truncate rounded-md bg-white/[0.04] px-1.5 py-0.5 tracking-wider">{r.pin}</span>
-                    </span>
-                  </td>
-                  <td className="txt truncate px-2 py-4 font-medium" title={r.name}>
-                    {r.name}
-                  </td>
-                  <td className="px-2 py-4">
-                    <span className="bd txt inline-flex max-w-full items-center truncate rounded-full border bg-white/[0.03] px-2 py-0.5 text-[10px] font-semibold">
-                      {r.game}
-                    </span>
-                  </td>
-                  <td className="px-2 py-4">
-                    <span
-                      className="inline-flex max-w-full items-center gap-1 truncate rounded-full border px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-wide"
-                      style={{ background: st.bg, borderColor: st.ring, color: st.fg }}
-                    >
-                      <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: st.dot, boxShadow: `0 0 6px ${st.dot}` }} />
-                      <span className="truncate">{r.status}</span>
-                    </span>
-                  </td>
-                  <td className="px-2 py-4 text-center">
-                    {r.used ? (
-                      <CheckCircle2
-                        size={15}
-                        className="inline-block text-green-400 drop-shadow-[0_0_5px_rgba(34,197,94,0.55)]"
-                        aria-label="Scanned"
-                      />
-                    ) : (
-                      <span className="muted text-[11px]">—</span>
-                    )}
-                  </td>
-                  <td className="px-2 py-4">
-                    {rs ? (
+                  <li
+                    key={r.id}
+                    className="bd group relative overflow-hidden rounded-2xl border bg-white/[0.015] transition-all duration-200 hover:-translate-y-0.5 hover:border-violet-500/40 hover:bg-violet-500/[0.025]"
+                    style={{
+                      boxShadow: isSelected ? '0 0 0 2px rgba(139,110,245,0.40)' : 'var(--elev-1)',
+                    }}
+                  >
+                    {/* left accent rail — violet when selected, amber when starred */}
+                    {(isSelected || r.starred) && (
                       <span
-                        className="inline-flex max-w-full items-center truncate rounded-full border px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-wide"
-                        style={{ background: rs.bg, borderColor: rs.ring, color: rs.fg }}
-                      >
-                        <span className="truncate">{r.result}</span>
-                      </span>
-                    ) : (
-                      <span className="muted text-[11px]">—</span>
-                    )}
-                  </td>
-                  <td className="px-2 py-4">
-                    <span className="bd muted inline-block max-w-full truncate rounded-full border bg-white/[0.02] px-2 py-0.5 text-[9.5px] font-semibold uppercase tracking-wide">
-                      {r.visibility}
-                    </span>
-                  </td>
-                  <td className="px-2 py-4">
-                    <div className="muted flex items-center justify-end">
-                      <Menu
-                        header="Actions"
-                        trigger={
-                          <button
-                            className="hoverable txt grid h-8 w-8 place-items-center rounded-lg border border-transparent transition-colors hover:border-sky-500/40 hover:bg-sky-500/5"
-                            title="Actions"
-                          >
-                            <MoreHorizontal size={16} />
-                          </button>
-                        }
-                        items={[
-                          {
-                            label: 'View Results',
-                            icon: <Search size={15} />,
-                            onClick: () => nav(`/scan/${r.id}`),
-                          },
-                          {
-                            label: 'Edit',
-                            icon: <Pencil size={15} />,
-                            onClick: () => {
-                              setEditing(r)
-                              setEditForm({ name: r.name, game: r.game, visibility: r.visibility })
-                            },
-                          },
-                          { divider: true },
-                          {
-                            label: 'Manage Access',
-                            icon: <Users size={15} />,
-                            onClick: () => setAccess(r),
-                          },
-                          { divider: true },
-                          {
-                            label: scanned ? 'Delete (scanned)' : 'Delete',
-                            icon: <Trash2 size={15} />,
-                            danger: !scanned,
-                            disabled: scanned,
-                            disabledHint: 'A scan was already performed with this pin — use "Delete as admin".',
-                            onClick: () => {
-                              setAdminMode(false)
-                              setDeleting(r)
-                              setDeleteInput('')
-                            },
-                          },
-                          {
-                            label: 'Delete as admin',
-                            icon: <Trash2 size={15} />,
-                            danger: true,
-                            onClick: () => {
-                              setAdminMode(true)
-                              setDeleting(r)
-                              setDeleteInput('')
-                            },
-                          },
-                          {
-                            label: 'Copy Pin',
-                            icon: <Copy size={15} />,
-                            onClick: () => copyPin(r.pin),
-                          },
-                        ]}
+                        aria-hidden="true"
+                        className="absolute inset-y-3 left-0 w-[3px] rounded-r-full"
+                        style={{ background: isSelected ? '#8b6ef5' : '#f59e0b' }}
                       />
+                    )}
+
+                    <div className="flex flex-wrap items-center gap-3 px-4 py-3.5 sm:flex-nowrap">
+                      {/* select + star */}
+                      <div className="flex shrink-0 items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => toggleSelect(r.id)}
+                          className="h-4 w-4 accent-violet-500"
+                          aria-label="Select pin"
+                        />
+                        <button
+                          onClick={() => dispatch({ type: 'toggle-pin-star', id: r.id })}
+                          title={r.starred ? 'Unstar' : 'Star'}
+                          className="grid h-7 w-7 place-items-center rounded-md transition-all hover:scale-110"
+                        >
+                          <Star
+                            size={15}
+                            className={r.starred ? 'fill-yellow-400 text-yellow-400 drop-shadow-[0_0_6px_rgba(250,204,21,0.55)]' : 'muted hover:text-yellow-400'}
+                          />
+                        </button>
+                      </div>
+
+                      {/* PIN code — hero chip */}
+                      <button
+                        onClick={() => copyPin(r.pin)}
+                        title="Click to copy"
+                        className="shrink-0 rounded-lg border border-violet-500/20 bg-violet-500/[0.08] px-3 py-1.5 font-mono text-[13px] font-bold tracking-[0.18em] text-violet-100 transition-all hover:border-violet-400/40 hover:bg-violet-500/15"
+                      >
+                        {r.pin}
+                      </button>
+
+                      {/* Name + Game (stacked) */}
+                      <div className="min-w-0 flex-1">
+                        <p className="txt truncate text-sm font-semibold" title={r.name}>
+                          {r.name}
+                        </p>
+                        <p className="muted mt-0.5 truncate text-[11px]">
+                          <span className="font-semibold tracking-wide">{r.game}</span>
+                          <span className="mx-1.5 opacity-50">·</span>
+                          <span className="uppercase tracking-wide">{r.visibility}</span>
+                        </p>
+                      </div>
+
+                      {/* Status pill */}
+                      <span
+                        className="inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider"
+                        style={{ background: st.bg, borderColor: st.ring, color: st.fg }}
+                      >
+                        <span className="h-1.5 w-1.5 rounded-full" style={{ background: st.dot, boxShadow: `0 0 6px ${st.dot}` }} />
+                        {r.status}
+                      </span>
+
+                      {/* Result pill (only when scanned) */}
+                      {rs ? (
+                        <span
+                          className="inline-flex shrink-0 items-center rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider"
+                          style={{ background: rs.bg, borderColor: rs.ring, color: rs.fg }}
+                        >
+                          {r.result}
+                        </span>
+                      ) : (
+                        <span className="muted shrink-0 text-[11px]">—</span>
+                      )}
+
+                      {/* Used indicator */}
+                      {r.used && (
+                        <CheckCircle2
+                          size={16}
+                          className="shrink-0 text-green-400 drop-shadow-[0_0_5px_rgba(34,197,94,0.55)]"
+                          aria-label="Scanned"
+                        />
+                      )}
+
+                      {/* Actions menu */}
+                      <div className="ml-auto flex shrink-0 items-center">
+                        <Menu
+                          header="Actions"
+                          trigger={
+                            <button
+                              className="hoverable txt grid h-8 w-8 place-items-center rounded-lg border border-transparent transition-all hover:border-violet-500/40 hover:bg-violet-500/10"
+                              title="Actions"
+                            >
+                              <MoreHorizontal size={16} />
+                            </button>
+                          }
+                          items={[
+                            { label: 'View Results', icon: <Search size={15} />, onClick: () => nav(`/scan/${r.id}`) },
+                            {
+                              label: 'Edit',
+                              icon: <Pencil size={15} />,
+                              onClick: () => { setEditing(r); setEditForm({ name: r.name, game: r.game, visibility: r.visibility }) },
+                            },
+                            { divider: true },
+                            { label: 'Manage Access', icon: <Users size={15} />, onClick: () => setAccess(r) },
+                            { divider: true },
+                            {
+                              label: scanned ? 'Delete (scanned)' : 'Delete',
+                              icon: <Trash2 size={15} />,
+                              danger: !scanned,
+                              disabled: scanned,
+                              disabledHint: 'A scan was already performed with this pin — use "Delete as admin".',
+                              onClick: () => { setAdminMode(false); setDeleting(r); setDeleteInput('') },
+                            },
+                            {
+                              label: 'Delete as admin',
+                              icon: <Trash2 size={15} />,
+                              danger: true,
+                              onClick: () => { setAdminMode(true); setDeleting(r); setDeleteInput('') },
+                            },
+                            { label: 'Copy Pin', icon: <Copy size={15} />, onClick: () => copyPin(r.pin) },
+                          ]}
+                        />
+                      </div>
                     </div>
-                  </td>
-                </tr>
+                  </li>
                 )
               })}
-            </tbody>
-          </table>
+            </ul>
+          )}
         </div>
 
         <div className="muted mt-5 flex items-center justify-between text-sm">
