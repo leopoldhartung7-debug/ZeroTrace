@@ -1315,6 +1315,53 @@ export const DE = {
   'Scanning...': 'Scanne...',
   'Scan complete': 'Scan abgeschlossen',
   'Detected': 'Erkannt',
+
+  // ---- Hero scanner-preview (mock scanner window) ----
+  'Select game': 'Spiel auswählen',
+  'Scan profile:': 'Scan-Profil:',
+  'Standard ▾': 'Standard ▾',
+  'Enter your 6-digit PIN': 'Gib deinen 6-stelligen PIN ein',
+  'Continue': 'Weiter',
+  'Licence agreement & privacy': 'Lizenzvereinbarung & Datenschutz',
+  'Please read the terms before continuing.': 'Bitte lies die Bedingungen, bevor du fortfährst.',
+  'END-USER LICENCE & PRIVACY AGREEMENT': 'ENDBENUTZER-LIZENZ- UND DATENSCHUTZVEREINBARUNG',
+  'ZeroTrace is a local analysis tool that inspects this PC for signs of cheating and tampering. By tapping Accept you agree to the checks described below.':
+    'ZeroTrace ist ein lokales Analysewerkzeug, das diesen PC auf Hinweise für Cheats und Manipulationen untersucht. Mit „Akzeptieren" stimmst du der nachfolgend beschriebenen Prüfung zu.',
+  '1. What we check': '1. Was geprüft wird',
+  'Running processes and loaded modules, autostart, selected registry keys…':
+    'Laufende Prozesse samt geladener Module, Autostart, ausgewählte Registry-Schlüssel…',
+  'Decline': 'Ablehnen',
+  'Accept': 'Akzeptieren',
+  'Scanning now': 'Scanne gerade',
+  'Processes': 'Prozesse',
+  'Modules': 'Module',
+  'Kernel drivers': 'Kernel-Treiber',
+  'Registry': 'Registry',
+  'ETW tamper': 'ETW-Tamper',
+  'Memory': 'Speicher',
+  'Hypervisor': 'Hypervisor',
+  'Browser history': 'Browser-Verlauf',
+  'No findings': 'Kein Befund',
+  'Report sent to the analyst.': 'Bericht an den Analysten gesendet.',
+  'Host scanner': 'Host-Scanner',
+  'Local cheat & tampering analysis': 'Lokale Cheat- & Manipulations-Analyse',
+
+  // ---- Step-through (How it works) mocks ----
+  'New PIN': 'Neuer PIN',
+  'ready': 'bereit',
+  'Player': 'Spieler',
+  'unset': 'nicht gesetzt',
+  'Profile': 'Profil',
+  'Standard': 'Standard',
+  'Download': 'Download',
+  '.NET single-file · Windows': '.NET Single-File · Windows',
+  'Consent': 'Zustimmung',
+  'Allow ZeroTrace to scan this PC?': 'ZeroTrace darf diesen PC scannen?',
+  'Processes, modules and drivers': 'Prozesse, Module und Treiber',
+  'Registry persistence + history': 'Registry-Persistenz + Verlauf',
+  'Memory + ETW providers': 'Speicher + ETW-Provider',
+  'Accept & scan': 'Akzeptieren & scannen',
+  'flagged': 'auffällig',
 }
 
 // Dynamic patterns (computed strings)

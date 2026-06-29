@@ -18,7 +18,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowRight, Check, Play, Shield, ShieldAlert, ShieldCheck, Cpu } from 'lucide-react'
+import { ArrowRight, Check, Play, Shield, ShieldAlert, ShieldCheck, Cpu, FileText, Link2, MoreVertical } from 'lucide-react'
 import ztLogoForScannerMock from '../../assets/zt-logo.png'
 
 /* ------------------------------------------------------------ */
@@ -194,23 +194,26 @@ const SCANNER_STEPS = [
   { id: 'result',  durationMs: 3500 },
 ]
 
-/* Palette mirrors scanner/src/ZeroTrace.App/Themes/DarkTheme.xaml */
+/* Mock scanner palette — uses the website's violet so the preview matches
+   the rest of the landing page (the real WPF window is themable per-tool;
+   this preview is just visual continuity with the surrounding hero). */
 const ZT = {
-  panel: '#161d33',
-  accent: '#38bdf8',
+  panel: '#161426',
+  accent: '#8b6ef5',
+  accentSoft: '#a78bfa',
   text: '#e8eaf0',
   muted: '#8b93a7',
-  trace: '#8A9AAA',
-  border: '#2A3038',
-  tileBg: 'rgba(25, 29, 36, 0.38)',
-  tileBorder: 'rgba(46, 130, 150, 0.63)',
+  trace: '#9aa4c6',
+  border: '#2A2A38',
+  tileBg: 'rgba(25, 22, 38, 0.55)',
+  tileBorder: 'rgba(139, 110, 245, 0.30)',
 }
 
 function GameStep() {
   const games = ['FiveM', 'alt:V', 'RageMP']
   return (
     <div className="flex h-full flex-col items-center justify-center">
-      <p className="text-[11px] font-semibold" style={{ color: ZT.trace }}>Spiel auswählen</p>
+      <p className="text-[11px] font-semibold" style={{ color: ZT.trace }}>Select game</p>
       <div className="mt-3 flex gap-2">
         {games.map((g, i) => (
           <div
@@ -218,20 +221,20 @@ function GameStep() {
             className="grid h-[58px] w-[88px] place-items-center rounded-[10px] border text-[12px] font-bold transition-all"
             style={{
               borderColor: i === 0 ? ZT.accent : ZT.tileBorder,
-              background: i === 0 ? 'rgba(56,189,248,0.10)' : ZT.tileBg,
-              color: '#C8D4DC',
-              boxShadow: i === 0 ? '0 0 14px rgba(56,189,248,0.25)' : 'none',
+              background: i === 0 ? 'rgba(139,110,245,0.12)' : ZT.tileBg,
+              color: '#D8D2EC',
+              boxShadow: i === 0 ? '0 0 14px rgba(139,110,245,0.30)' : 'none',
             }}
           >
             {g}
           </div>
         ))}
       </div>
-      <div className="mt-3 flex items-center gap-2 text-[10px]" style={{ color: '#5A6772' }}>
-        <span>Scan-Profil:</span>
+      <div className="mt-3 flex items-center gap-2 text-[10px]" style={{ color: '#7C7894' }}>
+        <span>Scan profile:</span>
         <span
           className="rounded border px-2 py-[2px]"
-          style={{ borderColor: ZT.border, background: '#1A2028', color: '#C8D4DC' }}
+          style={{ borderColor: ZT.border, background: '#1A1726', color: '#D8D2EC' }}
         >
           Standard ▾
         </span>
@@ -250,7 +253,7 @@ function PinStep({ progress }) {
         style={{ borderColor: ZT.border, background: 'rgba(255,255,255,0.012)' }}
       >
         <p className="text-center text-[10px]" style={{ color: ZT.trace }}>
-          Gib deinen 6-stelligen PIN ein
+          Enter your 6-digit PIN
         </p>
         <div className="mt-2 flex justify-center gap-[6px]">
           {digits.map((d, i) => {
@@ -262,9 +265,9 @@ function PinStep({ progress }) {
                 className="grid h-[33px] w-[28px] place-items-center rounded-[5px] border font-mono text-[15px] font-bold"
                 style={{
                   borderColor: active ? ZT.accent : ZT.border,
-                  background: done ? 'rgba(56,189,248,0.08)' : '#0E141B',
-                  color: '#C8D2DA',
-                  boxShadow: active ? `0 0 10px rgba(56,189,248,0.45)` : 'none',
+                  background: done ? 'rgba(139,110,245,0.10)' : '#13101D',
+                  color: '#D8D2EC',
+                  boxShadow: active ? `0 0 10px rgba(139,110,245,0.55)` : 'none',
                 }}
               >
                 {done ? d : active ? <span className="zt-caret" /> : ''}
@@ -276,11 +279,12 @@ function PinStep({ progress }) {
       <span
         className="mt-[10px] rounded-[6px] px-[22px] py-[8px] text-[12.5px] font-semibold"
         style={{
-          background: filled >= 6 ? ZT.accent : '#2A3038',
-          color: filled >= 6 ? '#0E1418' : '#3A4450',
+          background: filled >= 6 ? ZT.accent : '#2A2A38',
+          color: filled >= 6 ? '#0E0B1A' : '#4A4458',
+          boxShadow: filled >= 6 ? '0 0 18px rgba(139,110,245,0.40)' : 'none',
         }}
       >
-        Weiter
+        Continue
       </span>
     </div>
   )
@@ -289,43 +293,42 @@ function PinStep({ progress }) {
 function ConsentStep() {
   return (
     <div className="flex h-full flex-col justify-center">
-      <p className="text-center text-[13px] font-bold" style={{ color: '#E6EDF2' }}>
-        Lizenzvereinbarung &amp; Datenschutz
+      <p className="text-center text-[13px] font-bold" style={{ color: '#E6E2F2' }}>
+        Licence agreement &amp; privacy
       </p>
-      <p className="mt-[2px] text-center text-[10px]" style={{ color: '#5A6772' }}>
-        Bitte lies die Bedingungen, bevor du fortfährst.
+      <p className="mt-[2px] text-center text-[10px]" style={{ color: '#7C7894' }}>
+        Please read the terms before continuing.
       </p>
       <div
         className="mt-2 h-[120px] overflow-hidden rounded-[7px] border px-[13px] py-[10px]"
-        style={{ background: '#191D24', borderColor: ZT.border }}
+        style={{ background: '#191324', borderColor: ZT.border }}
       >
-        <p className="text-[11px] font-semibold" style={{ color: '#C8D4DC' }}>
-          ENDBENUTZER-LIZENZ- UND DATENSCHUTZVEREINBARUNG
+        <p className="text-[11px] font-semibold" style={{ color: '#D8D2EC' }}>
+          END-USER LICENCE &amp; PRIVACY AGREEMENT
         </p>
-        <p className="mt-1 text-[10px] leading-[14px]" style={{ color: '#9AAAB4' }}>
-          ZeroTrace ist ein lokales Analysewerkzeug, das diesen PC auf Hinweise für Cheats und
-          Manipulationen untersucht. Mit „Akzeptieren" stimmst du der nachfolgend beschriebenen
-          Prüfung zu.
+        <p className="mt-1 text-[10px] leading-[14px]" style={{ color: '#9A95B4' }}>
+          ZeroTrace is a local analysis tool that inspects this PC for signs of cheating and
+          tampering. By tapping Accept you agree to the checks described below.
         </p>
         <p className="mt-2 text-[10px] font-semibold" style={{ color: ZT.accent }}>
-          1. Was geprüft wird
+          1. What we check
         </p>
-        <p className="mt-[2px] text-[10px] leading-[14px]" style={{ color: '#9AAAB4' }}>
-          Laufende Prozesse samt geladener Module, Autostart, ausgewählte Registry-Schlüssel…
+        <p className="mt-[2px] text-[10px] leading-[14px]" style={{ color: '#9A95B4' }}>
+          Running processes and loaded modules, autostart, selected registry keys…
         </p>
       </div>
       <div className="mt-2 flex justify-end gap-2">
         <span
           className="rounded-[6px] px-[18px] py-[6px] text-[11px] font-semibold"
-          style={{ background: '#2A313A', color: '#C2CCD4' }}
+          style={{ background: '#2A2A38', color: '#C2BCD4' }}
         >
-          Ablehnen
+          Decline
         </span>
         <span
           className="rounded-[6px] px-[18px] py-[6px] text-[11px] font-semibold"
-          style={{ background: ZT.accent, color: '#0E1418' }}
+          style={{ background: ZT.accent, color: '#0E0B1A', boxShadow: '0 0 18px rgba(139,110,245,0.40)' }}
         >
-          Akzeptieren
+          Accept
         </span>
       </div>
     </div>
@@ -335,36 +338,36 @@ function ConsentStep() {
 function ScanStep({ progress }) {
   const pct = Math.round(progress * 100)
   const modules = [
-    'Prozesse',
-    'Module',
-    'Kernel-Treiber',
+    'Processes',
+    'Modules',
+    'Kernel drivers',
     'Registry',
-    'ETW-Tamper',
-    'Speicher',
+    'ETW tamper',
+    'Memory',
     'Hypervisor',
-    'Browser-Verlauf',
+    'Browser history',
   ]
   const stage = Math.min(modules.length - 1, Math.floor(progress * modules.length))
   return (
     <div className="flex h-full flex-col justify-center">
       <p className="text-center text-[11px] font-semibold" style={{ color: ZT.trace }}>
-        Scanne gerade
+        Scanning now
       </p>
-      <p className="mt-1 text-center text-[13px] font-bold" style={{ color: '#E6EDF2' }}>
+      <p className="mt-1 text-center text-[13px] font-bold" style={{ color: '#E6E2F2' }}>
         {modules[stage]}…
       </p>
-      <div className="mt-3 h-[6px] w-full overflow-hidden rounded-[3px]" style={{ background: '#0E141B' }}>
+      <div className="mt-3 h-[6px] w-full overflow-hidden rounded-[3px]" style={{ background: '#13101D' }}>
         <div
           className="h-full rounded-[3px] transition-all duration-150"
           style={{
             width: `${pct}%`,
-            background: ZT.accent,
-            boxShadow: `0 0 10px rgba(56,189,248,0.55)`,
+            background: `linear-gradient(90deg, ${ZT.accent}, ${ZT.accentSoft})`,
+            boxShadow: `0 0 10px rgba(139,110,245,0.65)`,
           }}
         />
       </div>
-      <div className="mt-1 flex items-center justify-between font-mono text-[10px]" style={{ color: '#5A6772' }}>
-        <span>Modul {stage + 1}/{modules.length}</span>
+      <div className="mt-1 flex items-center justify-between font-mono text-[10px]" style={{ color: '#7C7894' }}>
+        <span>Module {stage + 1}/{modules.length}</span>
         <span>{pct}%</span>
       </div>
       <div className="mt-3 grid grid-cols-4 gap-[6px]">
@@ -374,8 +377,8 @@ function ScanStep({ progress }) {
             className="rounded-[4px] border px-[6px] py-[4px] text-center text-[9.5px] transition-all"
             style={{
               borderColor: i < stage ? '#22c55e66' : i === stage ? ZT.accent : ZT.border,
-              background: i < stage ? 'rgba(34,197,94,0.10)' : i === stage ? 'rgba(56,189,248,0.10)' : '#0E141B',
-              color: i < stage ? '#86efac' : i === stage ? '#E6EDF2' : '#46505C',
+              background: i < stage ? 'rgba(34,197,94,0.10)' : i === stage ? 'rgba(139,110,245,0.12)' : '#13101D',
+              color: i < stage ? '#86efac' : i === stage ? '#E6E2F2' : '#5A5468',
             }}
           >
             {m}
@@ -390,7 +393,7 @@ function ResultStep() {
   return (
     <div className="flex h-full flex-col items-center justify-center">
       <p className="text-[11px] font-semibold" style={{ color: ZT.trace }}>
-        Scan abgeschlossen
+        Scan complete
       </p>
       <div
         className="mt-3 grid h-[64px] w-[64px] place-items-center rounded-full"
@@ -417,10 +420,10 @@ function ResultStep() {
         </svg>
       </div>
       <p className="mt-3 text-[15px] font-bold" style={{ color: '#86efac' }}>
-        Kein Befund
+        No findings
       </p>
-      <p className="mt-1 text-[10.5px]" style={{ color: '#5A6772' }}>
-        Bericht an den Analysten gesendet.
+      <p className="mt-1 text-[10.5px]" style={{ color: '#7C7894' }}>
+        Report sent to the analyst.
       </p>
     </div>
   )
@@ -483,34 +486,34 @@ export function ScannerMock() {
   return (
     <div
       ref={ref}
-      className="relative mx-auto overflow-hidden rounded-[14px] border shadow-[0_30px_80px_-20px_rgba(0,0,0,0.75)]"
+      className="relative mx-auto w-full overflow-hidden rounded-[14px] border shadow-[0_30px_80px_-20px_rgba(0,0,0,0.75)]"
       style={{
-        aspectRatio: '2 / 1',
+        height: 400,
         maxWidth: 800,
         background: ZT.panel,
-        borderColor: '#264EBCD2',
+        borderColor: 'rgba(139,110,245,0.28)',
       }}
     >
-      {/* top accent line (gradient → accent → gradient), matches WPF top accent */}
+      {/* top accent line (gradient → accent → gradient) */}
       <div
         className="absolute inset-x-0 top-0 h-[2px]"
         style={{
-          background: `linear-gradient(90deg, rgba(56,189,248,0) 0%, ${ZT.accent} 50%, rgba(56,189,248,0) 100%)`,
+          background: `linear-gradient(90deg, rgba(139,110,245,0) 0%, ${ZT.accent} 50%, rgba(139,110,245,0) 100%)`,
         }}
       />
 
       {/* close button (top-right) */}
       <div
         className="absolute right-[10px] top-[8px] z-10 grid h-6 w-6 place-items-center rounded-[6px] text-[12px]"
-        style={{ color: '#5A6772' }}
+        style={{ color: '#7C7894' }}
       >
         ✕
       </div>
 
-      {/* two columns: left branding, right step flow */}
-      <div className="grid h-full" style={{ gridTemplateColumns: '290px 1fr' }}>
-        {/* LEFT — branding */}
-        <div className="relative flex flex-col items-center justify-center px-5">
+      {/* two columns: left branding (hidden on small screens), right step flow */}
+      <div className="grid h-full md:[grid-template-columns:290px_1fr] [grid-template-columns:1fr]">
+        {/* LEFT — branding (md+) */}
+        <div className="relative hidden flex-col items-center justify-center px-5 md:flex">
           <div className="flex items-center gap-3">
             <img
               src={ztLogoForScannerMock}
@@ -523,16 +526,16 @@ export function ScannerMock() {
               <span style={{ color: ZT.trace }}>Trace</span>
             </span>
           </div>
-          <p className="mt-[10px] text-[13px]" style={{ color: '#5A6772' }}>Host-Scanner</p>
-          <p className="mt-[6px] max-w-[200px] text-center text-[11px] leading-tight" style={{ color: '#46505C' }}>
-            Lokale Cheat- &amp; Manipulations-Analyse
+          <p className="mt-[10px] text-[13px]" style={{ color: '#7C7894' }}>Host scanner</p>
+          <p className="mt-[6px] max-w-[200px] text-center text-[11px] leading-tight" style={{ color: '#5A5468' }}>
+            Local cheat &amp; tampering analysis
           </p>
-          <p className="mt-[10px] text-[11px]" style={{ color: '#3A444E' }}>v1.3</p>
+          <p className="mt-[10px] text-[11px]" style={{ color: '#4A4458' }}>v1.3</p>
 
           {/* vertical divider on the right of the left column */}
           <div
             className="absolute bottom-[40px] right-0 top-[40px] w-px"
-            style={{ background: '#242A33' }}
+            style={{ background: '#26213A' }}
           />
         </div>
 
@@ -814,33 +817,140 @@ export function PricingTeaser() {
 }
 
 /* ------------------------------------------------------------ */
-/* 9 — Interactive step-through                                   */
+/* 9 — Interactive step-through (new tab UI + old visual mocks)   */
 /* ------------------------------------------------------------ */
+function PinCreatedMock() {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+      <div className="flex items-center justify-between">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-violet-300">New PIN</p>
+        <span className="rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-300">
+          ready
+        </span>
+      </div>
+      <div className="mt-3 flex justify-center gap-2">
+        {['4', '8', '2', '9', '1', '6'].map((d, i) => (
+          <div
+            key={i}
+            className="grid h-10 w-8 place-items-center rounded-md border border-violet-500/40 bg-violet-500/10 font-mono text-lg font-bold text-white shadow-[0_0_10px_rgba(139,110,245,0.30)]"
+          >
+            {d}
+          </div>
+        ))}
+      </div>
+      <div className="mt-3 grid grid-cols-2 gap-2 text-[11px]">
+        <div className="rounded-md border border-white/10 bg-white/[0.02] px-3 py-2 text-neutral-400">
+          Player <span className="text-neutral-200">unset</span>
+        </div>
+        <div className="rounded-md border border-white/10 bg-white/[0.02] px-3 py-2 text-neutral-400">
+          Profile <span className="text-neutral-200">Standard</span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function DownloadMock() {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-violet-300">Download</p>
+      <div className="mt-3 space-y-2">
+        {[1, 0.6, 0.35].map((o, i) => (
+          <div
+            key={i}
+            className={`flex items-center gap-3 rounded-lg border border-white/10 px-3 py-2 ${i === 0 ? 'bg-white/[0.05]' : 'bg-white/[0.02]'}`}
+            style={{ opacity: o }}
+          >
+            <FileText size={16} className={i === 0 ? 'text-violet-300' : 'text-neutral-500'} />
+            <div className="flex-1">
+              <p className="text-[12px] text-white">ZeroTrace-238fS64.exe</p>
+              <p className="text-[10px] text-neutral-500">.NET single-file · Windows</p>
+            </div>
+            {i === 0 && <Check size={14} className="text-emerald-400" />}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function ConsentMock() {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-violet-300">Consent</p>
+      <p className="mt-2 text-[12px] font-semibold text-white">Allow ZeroTrace to scan this PC?</p>
+      <ul className="mt-2 space-y-1 text-[11px] text-neutral-400">
+        <li>• Processes, modules and drivers</li>
+        <li>• Registry persistence + history</li>
+        <li>• Memory + ETW providers</li>
+      </ul>
+      <div className="mt-3 flex justify-end gap-2">
+        <span className="rounded-md border border-white/10 px-3 py-1.5 text-[11px] text-neutral-400">Decline</span>
+        <span className="rounded-md bg-violet-500 px-3 py-1.5 text-[11px] font-semibold text-white shadow-[0_0_14px_rgba(139,110,245,0.50)]">
+          Accept &amp; scan
+        </span>
+      </div>
+    </div>
+  )
+}
+
+function VerdictMock() {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+      <div className="flex items-center justify-between text-xs">
+        <span className="text-neutral-300">Results <span className="text-neutral-600">›</span> 238FS64</span>
+        <span className="flex items-center gap-2 text-neutral-600"><Link2 size={12} /> <MoreVertical size={12} /></span>
+      </div>
+      <div className="mt-3 flex items-center justify-center rounded-xl border border-red-600/30 bg-red-600/[0.06] py-6">
+        <span className="relative rounded-md border border-red-500 px-3 py-1 text-base font-semibold text-white" style={{ boxShadow: '0 0 20px rgba(239,68,68,0.3)' }}>
+          Cheating
+          <span className="absolute -right-3 -top-2.5 rounded bg-red-600 px-1.5 py-0.5 text-[9px] font-bold text-white">
+            Detected
+          </span>
+        </span>
+      </div>
+      <div className="mt-3 grid grid-cols-3 gap-2 text-[10px]">
+        {['Memory', 'Modules', 'Registry'].map((t) => (
+          <div key={t} className="rounded-md border border-white/10 bg-white/[0.02] px-2 py-1.5 text-center">
+            <p className="text-neutral-500">{t}</p>
+            <p className="font-semibold text-red-300">flagged</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 const STEPS = [
   {
     n: '01',
     title: 'Create a PIN',
     text: 'In the dashboard tap Create Pin. A 6-digit code is generated and tied to one player.',
+    Mock: PinCreatedMock,
   },
   {
     n: '02',
     title: 'Send the scanner',
     text: 'Download the single-file ZeroTrace.exe with the PIN baked in. The player opens it — no install.',
+    Mock: DownloadMock,
   },
   {
     n: '03',
     title: 'They tap Accept',
     text: 'The player sees the consent screen, the scan profile, and accepts. They can decline at any time.',
+    Mock: ConsentMock,
   },
   {
     n: '04',
     title: 'You get the verdict',
     text: 'Around 58 seconds later the verdict, risk score and every artifact land in your Discord webhook.',
+    Mock: VerdictMock,
   },
 ]
 
 export function StepThrough() {
   const [i, setI] = useState(0)
+  const Mock = STEPS[i].Mock
   return (
     <div className="grid items-start gap-8 lg:grid-cols-[1fr_1.4fr]">
       <div className="space-y-2">
@@ -868,12 +978,16 @@ export function StepThrough() {
       </div>
       <div
         key={i}
-        className="zt-glass zt-gradient-border is-always-on min-h-[280px] rounded-3xl p-8 animate-fade-up"
+        className="zt-glass zt-gradient-border is-always-on rounded-3xl p-6 md:p-7 animate-fade-up"
+        style={{ minHeight: 440 }}
       >
         <p className="text-xs font-bold uppercase tracking-[0.18em] text-violet-300">STEP {STEPS[i].n}</p>
-        <h3 className="mt-3 text-2xl font-bold text-white md:text-3xl">{STEPS[i].title}</h3>
-        <p className="mt-4 text-base leading-relaxed text-neutral-300">{STEPS[i].text}</p>
-        <div className="mt-8 flex items-center gap-3 text-sm">
+        <h3 className="mt-2 text-2xl font-bold text-white md:text-3xl">{STEPS[i].title}</h3>
+        <p className="mt-3 text-base leading-relaxed text-neutral-300">{STEPS[i].text}</p>
+        <div className="mt-5">
+          <Mock />
+        </div>
+        <div className="mt-5 flex items-center gap-3 text-sm">
           {STEPS.map((_, idx) => (
             <span
               key={idx}
