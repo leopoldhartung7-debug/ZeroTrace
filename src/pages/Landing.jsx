@@ -515,8 +515,12 @@ export default function Landing() {
             </span>
           </h1>
 
-          {/* Subtitle with typewriter */}
-          <p className="zt-fade-up mx-auto mt-6 max-w-2xl text-base leading-relaxed text-neutral-300 md:text-lg" style={{ animationDelay: '120ms' }}>
+          {/* Subtitle with typewriter — minHeight locks the box so different
+              phrase lengths can't re-wrap the line and shift the page below. */}
+          <p
+            className="zt-fade-up mx-auto mt-6 max-w-2xl text-base leading-relaxed text-neutral-300 md:text-lg"
+            style={{ animationDelay: '120ms', minHeight: '7em' }}
+          >
             ZeroTrace runs a deep, consent-based forensic scan that{' '}
             <span className="font-semibold text-violet-200">
               <Typewriter
