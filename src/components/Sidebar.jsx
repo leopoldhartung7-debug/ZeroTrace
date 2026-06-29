@@ -24,7 +24,16 @@ function Popover({ open, onClose, children, className = '' }) {
   }, [open, onClose])
   if (!open) return null
   return (
-    <div ref={ref} className={`panel absolute z-30 rounded-xl border shadow-2xl ${className}`}>
+    <div
+      ref={ref}
+      className={`absolute z-50 overflow-hidden rounded-xl border shadow-[0_30px_80px_-20px_rgba(0,0,0,0.85)] ${className}`}
+      style={{
+        background: 'var(--panel-2)',
+        borderColor: 'var(--border)',
+        backdropFilter: 'blur(8px)',
+        WebkitBackdropFilter: 'blur(8px)',
+      }}
+    >
       {children}
     </div>
   )
@@ -199,27 +208,35 @@ export default function Sidebar() {
           <kbd className="bd rounded border px-1.5 py-0.5">⌘K</kbd>
         </button>
 
-        <div className="relative mb-3 flex items-center gap-5 px-2">
-          <span title="Online">
-            <Wifi size={16} className="text-green-500" />
+        <div className="relative mb-3 flex items-center gap-2 px-1">
+          <span title="Online" className="grid h-8 w-8 place-items-center rounded-lg">
+            <Wifi size={15} className="text-green-500" />
           </span>
-          <button className="muted hover:txt relative" title="Notifications" onClick={() => setPanel(panel === 'n' ? null : 'n')}>
-            <Bell size={16} />
+          <button
+            className="hoverable muted hover:txt relative grid h-8 w-8 place-items-center rounded-lg"
+            title="Notifications"
+            onClick={() => setPanel(panel === 'n' ? null : 'n')}
+          >
+            <Bell size={15} />
             {unread > 0 && (
-              <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold text-white">
+              <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold text-white">
                 {unread}
               </span>
             )}
           </button>
-          <button className="muted hover:txt" title="Language" onClick={() => setPanel(panel === 'l' ? null : 'l')}>
-            <Globe size={16} />
+          <button
+            className="hoverable muted hover:txt grid h-8 w-8 place-items-center rounded-lg"
+            title="Language"
+            onClick={() => setPanel(panel === 'l' ? null : 'l')}
+          >
+            <Globe size={15} />
           </button>
           <button
-            className="muted hover:txt"
+            className="hoverable muted hover:txt grid h-8 w-8 place-items-center rounded-lg"
             title="Theme"
             onClick={() => dispatch({ type: 'set-setting', key: 'theme', value: dark ? 'light' : 'dark' })}
           >
-            {dark ? <Moon size={16} /> : <Sun size={16} />}
+            {dark ? <Moon size={15} /> : <Sun size={15} />}
           </button>
 
           <Popover open={panel === 'n'} onClose={() => setPanel(null)} className="bottom-10 left-0 w-72">
