@@ -809,7 +809,11 @@ export default function Pins() {
             </button>
             <button
               onClick={submitCreate}
-              className="rounded-lg bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-500"
+              className="rounded-lg px-5 py-2 text-sm font-semibold text-white transition-all hover:-translate-y-0.5"
+              style={{
+                background: 'linear-gradient(135deg, #8b6ef5 0%, #6d28d9 100%)',
+                boxShadow: '0 8px 24px -8px rgba(139,110,245,0.55), 0 0 0 1px rgba(255,255,255,0.06) inset',
+              }}
             >
               Create
             </button>
@@ -847,7 +851,7 @@ export default function Pins() {
               onChange={(e) => setForm({ ...form, name: e.target.value })}
               onKeyDown={(e) => e.key === 'Enter' && submitCreate()}
               placeholder="e.g. Suspect #42"
-              className="bd tile txt w-full rounded-lg border px-4 py-2.5 text-sm focus:outline-none"
+              className="bd tile txt w-full rounded-lg border px-4 py-2.5 text-sm transition-all focus:border-violet-500/60 focus:bg-violet-500/[0.04] focus:outline-none focus:ring-2 focus:ring-violet-500/20"
             />
           </div>
           <div>
@@ -861,7 +865,7 @@ export default function Pins() {
               }}
               onKeyDown={(e) => e.key === 'Enter' && submitCreate()}
               placeholder="ID or paste a Discord profile link"
-              className="bd tile txt w-full rounded-lg border px-4 py-2.5 font-mono text-sm focus:outline-none"
+              className="bd tile txt w-full rounded-lg border px-4 py-2.5 font-mono text-sm transition-all focus:border-violet-500/60 focus:bg-violet-500/[0.04] focus:outline-none focus:ring-2 focus:ring-violet-500/20"
             />
             <p className="muted mt-1 text-xs">Discord ID or a profile URL — the ID is extracted automatically.</p>
           </div>
@@ -898,7 +902,7 @@ export default function Pins() {
                 })
                 toast({ type: 'success', title: 'Template saved', body: label })
               }}
-              className="bd txt rounded-md border px-2.5 py-1 hover:border-sky-500"
+              className="bd txt rounded-md border px-2.5 py-1 transition-colors hover:border-violet-500/60 hover:bg-violet-500/10"
             >
               Save as template
             </button>
@@ -921,14 +925,32 @@ export default function Pins() {
       >
         {created && (
           <div className="space-y-4">
-            <div className="tile flex items-center justify-between rounded-xl border p-4">
-              <span className="txt font-mono text-xl tracking-wide">{created.pin}</span>
-              <button
-                onClick={() => copyText(created.pin, created.pin)}
-                className="bd txt flex items-center gap-2 rounded-lg border px-3 py-2 text-sm hover:border-sky-500"
-              >
-                <Copy size={15} /> Copy
-              </button>
+            {/* Dramatic PIN reveal — violet glow card */}
+            <div
+              className="relative overflow-hidden rounded-2xl border p-5"
+              style={{
+                background: 'linear-gradient(135deg, rgba(139,110,245,0.16) 0%, rgba(109,40,217,0.08) 100%)',
+                borderColor: 'rgba(139,110,245,0.35)',
+                boxShadow: '0 24px 60px -20px rgba(139,110,245,0.45), inset 0 0 0 1px rgba(255,255,255,0.04)',
+              }}
+            >
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-0"
+                style={{ background: 'radial-gradient(60% 80% at 100% 0%, rgba(139,110,245,0.25), transparent 60%)' }}
+              />
+              <div className="relative flex flex-col items-center gap-3 text-center">
+                <p className="caps-label tracking-[0.22em] text-violet-300">Your PIN</p>
+                <p className="font-mono text-3xl font-extrabold tracking-[0.18em] text-white drop-shadow-[0_0_14px_rgba(139,110,245,0.55)]">
+                  {created.pin}
+                </p>
+                <button
+                  onClick={() => copyText(created.pin, created.pin)}
+                  className="inline-flex items-center gap-2 rounded-full border border-violet-400/40 bg-violet-500/15 px-4 py-1.5 text-xs font-semibold text-violet-100 transition-colors hover:bg-violet-500/25"
+                >
+                  <Copy size={13} /> Copy PIN
+                </button>
+              </div>
             </div>
 
             <div className="tile rounded-xl border p-4">
@@ -936,7 +958,11 @@ export default function Pins() {
 
               <button
                 onClick={() => downloadScannerWithPin(created)}
-                className="flex w-full items-center justify-center gap-2 rounded-lg bg-sky-600 px-3 py-2.5 text-sm font-semibold text-white hover:bg-sky-500"
+                className="flex w-full items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-sm font-semibold text-white transition-all hover:-translate-y-0.5"
+                style={{
+                  background: 'linear-gradient(135deg, #8b6ef5 0%, #6d28d9 100%)',
+                  boxShadow: '0 10px 30px -10px rgba(139,110,245,0.55), 0 0 0 1px rgba(255,255,255,0.06) inset',
+                }}
               >
                 <Download size={15} /> Download Scanner (PIN built in)
               </button>
@@ -950,7 +976,7 @@ export default function Pins() {
                   href="https://dotnet.microsoft.com/download/dotnet/8.0"
                   target="_blank"
                   rel="noreferrer"
-                  className="text-sky-400 underline-offset-2 hover:underline"
+                  className="text-violet-300 underline-offset-2 hover:underline"
                 >
                   .NET 8 Desktop Runtime
                 </a>
@@ -969,7 +995,7 @@ export default function Pins() {
                   />
                   <button
                     onClick={() => copyText(scannerLink(created), 'Scanner link')}
-                    className="bd txt flex shrink-0 items-center gap-2 rounded-lg border px-3 py-2 text-sm hover:border-sky-500"
+                    className="bd txt flex shrink-0 items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors hover:border-violet-500/60 hover:bg-violet-500/10"
                   >
                     <Link2 size={15} /> Copy
                   </button>
