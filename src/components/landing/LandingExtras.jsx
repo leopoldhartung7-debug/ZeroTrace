@@ -19,6 +19,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowRight, Check, Play, Shield, ShieldAlert, ShieldCheck, Cpu } from 'lucide-react'
+import ztLogoForScannerMock from '../../assets/zt-logo.png'
 
 /* ------------------------------------------------------------ */
 /* 17 — Scroll progress bar (top of viewport)                   */
@@ -193,76 +194,138 @@ const SCANNER_STEPS = [
   { id: 'result',  durationMs: 3500 },
 ]
 
+/* Palette mirrors scanner/src/ZeroTrace.App/Themes/DarkTheme.xaml */
+const ZT = {
+  panel: '#161d33',
+  accent: '#38bdf8',
+  text: '#e8eaf0',
+  muted: '#8b93a7',
+  trace: '#8A9AAA',
+  border: '#2A3038',
+  tileBg: 'rgba(25, 29, 36, 0.38)',
+  tileBorder: 'rgba(46, 130, 150, 0.63)',
+}
+
 function GameStep() {
-  const games = ['FiveM', 'CS2', 'Valorant', 'Sea of Thieves', 'RageMP', 'AltV']
+  const games = ['FiveM', 'alt:V', 'RageMP']
   return (
-    <div className="px-8 py-7">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500">Step 1 · Select game</p>
-      <h3 className="mt-2 text-xl font-bold text-white">Which game are you scanning?</h3>
-      <div className="mt-5 grid grid-cols-3 gap-2.5">
+    <div className="flex h-full flex-col items-center justify-center">
+      <p className="text-[11px] font-semibold" style={{ color: ZT.trace }}>Spiel auswählen</p>
+      <div className="mt-3 flex gap-2">
         {games.map((g, i) => (
           <div
             key={g}
-            className={`rounded-lg border px-3 py-3 text-center text-[12.5px] font-medium transition-all ${
-              i === 0
-                ? 'border-violet-500/60 bg-violet-500/10 text-white shadow-[0_0_18px_rgba(139,110,245,0.3)]'
-                : 'border-white/10 bg-white/[0.02] text-neutral-300'
-            }`}
+            className="grid h-[58px] w-[88px] place-items-center rounded-[10px] border text-[12px] font-bold transition-all"
+            style={{
+              borderColor: i === 0 ? ZT.accent : ZT.tileBorder,
+              background: i === 0 ? 'rgba(56,189,248,0.10)' : ZT.tileBg,
+              color: '#C8D4DC',
+              boxShadow: i === 0 ? '0 0 14px rgba(56,189,248,0.25)' : 'none',
+            }}
           >
             {g}
           </div>
         ))}
+      </div>
+      <div className="mt-3 flex items-center gap-2 text-[10px]" style={{ color: '#5A6772' }}>
+        <span>Scan-Profil:</span>
+        <span
+          className="rounded border px-2 py-[2px]"
+          style={{ borderColor: ZT.border, background: '#1A2028', color: '#C8D4DC' }}
+        >
+          Standard ▾
+        </span>
       </div>
     </div>
   )
 }
 
 function PinStep({ progress }) {
-  // progress 0..1 — fills the 6 boxes one by one
   const filled = Math.min(6, Math.round(progress * 7))
   const digits = ['4', '8', '2', '9', '1', '6']
   return (
-    <div className="px-8 py-7">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500">Step 2 · Enter PIN</p>
-      <h3 className="mt-2 text-xl font-bold text-white">Pre-filled from the session file</h3>
-      <div className="mt-6 flex justify-center gap-2.5">
-        {digits.map((d, i) => {
-          const active = i === filled
-          const done = i < filled
-          return (
-            <div
-              key={i}
-              className={`grid h-12 w-10 place-items-center rounded-lg border font-mono text-xl transition-all ${
-                done   ? 'border-violet-500/50 bg-violet-500/10 text-white' :
-                active ? 'border-violet-500/80 bg-violet-500/15 text-white shadow-[0_0_14px_rgba(139,110,245,0.5)]' :
-                          'border-white/10 bg-white/[0.02] text-neutral-600'
-              }`}
-            >
-              {done ? d : active ? <span className="zt-caret" /> : '·'}
-            </div>
-          )
-        })}
+    <div className="flex h-full flex-col items-center justify-center">
+      <div
+        className="rounded-[11px] border px-[14px] py-[12px]"
+        style={{ borderColor: ZT.border, background: 'rgba(255,255,255,0.012)' }}
+      >
+        <p className="text-center text-[10px]" style={{ color: ZT.trace }}>
+          Gib deinen 6-stelligen PIN ein
+        </p>
+        <div className="mt-2 flex justify-center gap-[6px]">
+          {digits.map((d, i) => {
+            const done = i < filled
+            const active = i === filled
+            return (
+              <div
+                key={i}
+                className="grid h-[33px] w-[28px] place-items-center rounded-[5px] border font-mono text-[15px] font-bold"
+                style={{
+                  borderColor: active ? ZT.accent : ZT.border,
+                  background: done ? 'rgba(56,189,248,0.08)' : '#0E141B',
+                  color: '#C8D2DA',
+                  boxShadow: active ? `0 0 10px rgba(56,189,248,0.45)` : 'none',
+                }}
+              >
+                {done ? d : active ? <span className="zt-caret" /> : ''}
+              </div>
+            )
+          })}
+        </div>
       </div>
-      <p className="mt-5 text-center text-xs text-neutral-500">PIN locked — provided by the analyst.</p>
+      <span
+        className="mt-[10px] rounded-[6px] px-[22px] py-[8px] text-[12.5px] font-semibold"
+        style={{
+          background: filled >= 6 ? ZT.accent : '#2A3038',
+          color: filled >= 6 ? '#0E1418' : '#3A4450',
+        }}
+      >
+        Weiter
+      </span>
     </div>
   )
 }
 
 function ConsentStep() {
   return (
-    <div className="px-8 py-7">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500">Step 3 · Consent</p>
-      <h3 className="mt-2 text-xl font-bold text-white">Allow ZeroTrace to scan this PC?</h3>
-      <ul className="mt-4 space-y-1.5 text-[12.5px] text-neutral-400">
-        <li>• Processes, modules and loaded drivers</li>
-        <li>• Registry persistence + execution history</li>
-        <li>• Memory protections and ETW providers</li>
-        <li>• On-disk artifacts in known cheat paths</li>
-      </ul>
-      <div className="mt-6 flex justify-end gap-2">
-        <span className="rounded-lg border border-white/10 px-4 py-2 text-sm text-neutral-400">Decline</span>
-        <span className="rounded-lg bg-violet-500 px-4 py-2 text-sm font-semibold text-white shadow-[0_0_18px_rgba(139,110,245,0.5)]">
-          Accept &amp; scan
+    <div className="flex h-full flex-col justify-center">
+      <p className="text-center text-[13px] font-bold" style={{ color: '#E6EDF2' }}>
+        Lizenzvereinbarung &amp; Datenschutz
+      </p>
+      <p className="mt-[2px] text-center text-[10px]" style={{ color: '#5A6772' }}>
+        Bitte lies die Bedingungen, bevor du fortfährst.
+      </p>
+      <div
+        className="mt-2 h-[120px] overflow-hidden rounded-[7px] border px-[13px] py-[10px]"
+        style={{ background: '#191D24', borderColor: ZT.border }}
+      >
+        <p className="text-[11px] font-semibold" style={{ color: '#C8D4DC' }}>
+          ENDBENUTZER-LIZENZ- UND DATENSCHUTZVEREINBARUNG
+        </p>
+        <p className="mt-1 text-[10px] leading-[14px]" style={{ color: '#9AAAB4' }}>
+          ZeroTrace ist ein lokales Analysewerkzeug, das diesen PC auf Hinweise für Cheats und
+          Manipulationen untersucht. Mit „Akzeptieren" stimmst du der nachfolgend beschriebenen
+          Prüfung zu.
+        </p>
+        <p className="mt-2 text-[10px] font-semibold" style={{ color: ZT.accent }}>
+          1. Was geprüft wird
+        </p>
+        <p className="mt-[2px] text-[10px] leading-[14px]" style={{ color: '#9AAAB4' }}>
+          Laufende Prozesse samt geladener Module, Autostart, ausgewählte Registry-Schlüssel…
+        </p>
+      </div>
+      <div className="mt-2 flex justify-end gap-2">
+        <span
+          className="rounded-[6px] px-[18px] py-[6px] text-[11px] font-semibold"
+          style={{ background: '#2A313A', color: '#C2CCD4' }}
+        >
+          Ablehnen
+        </span>
+        <span
+          className="rounded-[6px] px-[18px] py-[6px] text-[11px] font-semibold"
+          style={{ background: ZT.accent, color: '#0E1418' }}
+        >
+          Akzeptieren
         </span>
       </div>
     </div>
@@ -272,45 +335,50 @@ function ConsentStep() {
 function ScanStep({ progress }) {
   const pct = Math.round(progress * 100)
   const modules = [
-    'Process enumerator',
-    'Kernel drivers',
-    'Registry persistence',
-    'ETW tamper check',
-    'Memory protections',
-    'Hypervisor traces',
+    'Prozesse',
+    'Module',
+    'Kernel-Treiber',
+    'Registry',
+    'ETW-Tamper',
+    'Speicher',
+    'Hypervisor',
+    'Browser-Verlauf',
   ]
   const stage = Math.min(modules.length - 1, Math.floor(progress * modules.length))
   return (
-    <div className="px-8 py-7">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500">Step 4 · Scanning</p>
-      <h3 className="mt-2 text-xl font-bold text-white">{modules[stage]}…</h3>
-      <div className="mt-5 h-2 w-full overflow-hidden rounded-full bg-white/[0.06]">
+    <div className="flex h-full flex-col justify-center">
+      <p className="text-center text-[11px] font-semibold" style={{ color: ZT.trace }}>
+        Scanne gerade
+      </p>
+      <p className="mt-1 text-center text-[13px] font-bold" style={{ color: '#E6EDF2' }}>
+        {modules[stage]}…
+      </p>
+      <div className="mt-3 h-[6px] w-full overflow-hidden rounded-[3px]" style={{ background: '#0E141B' }}>
         <div
-          className="h-full rounded-full transition-all duration-150"
+          className="h-full rounded-[3px] transition-all duration-150"
           style={{
             width: `${pct}%`,
-            background: 'linear-gradient(90deg, #8b6ef5, #a78bfa)',
-            boxShadow: '0 0 14px rgba(139,110,245,0.7)',
+            background: ZT.accent,
+            boxShadow: `0 0 10px rgba(56,189,248,0.55)`,
           }}
         />
       </div>
-      <div className="mt-2 flex items-center justify-between text-xs font-mono text-neutral-500">
-        <span>module {stage + 1}/{modules.length}</span>
+      <div className="mt-1 flex items-center justify-between font-mono text-[10px]" style={{ color: '#5A6772' }}>
+        <span>Modul {stage + 1}/{modules.length}</span>
         <span>{pct}%</span>
       </div>
-      <div className="mt-5 grid grid-cols-3 gap-2">
+      <div className="mt-3 grid grid-cols-4 gap-[6px]">
         {modules.map((m, i) => (
           <div
             key={m}
-            className={`rounded-md border px-2 py-1.5 text-[10.5px] text-center transition-all ${
-              i < stage
-                ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-300'
-                : i === stage
-                ? 'border-violet-500/50 bg-violet-500/10 text-white'
-                : 'border-white/10 bg-white/[0.02] text-neutral-600'
-            }`}
+            className="rounded-[4px] border px-[6px] py-[4px] text-center text-[9.5px] transition-all"
+            style={{
+              borderColor: i < stage ? '#22c55e66' : i === stage ? ZT.accent : ZT.border,
+              background: i < stage ? 'rgba(34,197,94,0.10)' : i === stage ? 'rgba(56,189,248,0.10)' : '#0E141B',
+              color: i < stage ? '#86efac' : i === stage ? '#E6EDF2' : '#46505C',
+            }}
           >
-            {m.split(' ')[0]}
+            {m}
           </div>
         ))}
       </div>
@@ -320,39 +388,40 @@ function ScanStep({ progress }) {
 
 function ResultStep() {
   return (
-    <div className="relative px-8 py-7">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500">Step 5 · Result</p>
-      <div className="mt-4 flex flex-col items-center">
-        <div
-          className="grid h-20 w-20 place-items-center rounded-full"
-          style={{
-            background: 'radial-gradient(circle, rgba(34,197,94,0.25), rgba(34,197,94,0.05) 70%, transparent)',
-            boxShadow: '0 0 40px rgba(34,197,94,0.45)',
-          }}
-        >
-          <svg viewBox="0 0 52 52" className="h-12 w-12">
-            <circle cx="26" cy="26" r="22" fill="none" stroke="#22c55e" strokeWidth="3" opacity="0.7">
-              <animate attributeName="stroke-dasharray" from="0 200" to="138 200" dur="0.7s" fill="freeze" />
-            </circle>
-            <path
-              d="M14 27 l9 8 l16 -18"
-              fill="none"
-              stroke="#22c55e"
-              strokeWidth="3.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <animate attributeName="stroke-dasharray" from="0 60" to="60 60" dur="0.45s" begin="0.5s" fill="freeze" />
-              <animate attributeName="stroke-dashoffset" from="60" to="0" dur="0.45s" begin="0.5s" fill="freeze" />
-            </path>
-          </svg>
-        </div>
-        <h3 className="mt-5 text-2xl font-bold text-emerald-300">Scan complete</h3>
-        <p className="mt-1 text-sm text-neutral-400">Result sent to the analyst's dashboard.</p>
-        <p className="mt-4 font-mono text-[11px] uppercase tracking-[0.18em] text-neutral-500">
-          window closes in <span className="text-emerald-300">3s</span>
-        </p>
+    <div className="flex h-full flex-col items-center justify-center">
+      <p className="text-[11px] font-semibold" style={{ color: ZT.trace }}>
+        Scan abgeschlossen
+      </p>
+      <div
+        className="mt-3 grid h-[64px] w-[64px] place-items-center rounded-full"
+        style={{
+          background: 'radial-gradient(circle, rgba(34,197,94,0.28), rgba(34,197,94,0.04) 70%, transparent)',
+          boxShadow: '0 0 36px rgba(34,197,94,0.40)',
+        }}
+      >
+        <svg viewBox="0 0 52 52" className="h-10 w-10">
+          <circle cx="26" cy="26" r="22" fill="none" stroke="#22c55e" strokeWidth="3" opacity="0.7">
+            <animate attributeName="stroke-dasharray" from="0 200" to="138 200" dur="0.7s" fill="freeze" />
+          </circle>
+          <path
+            d="M14 27 l9 8 l16 -18"
+            fill="none"
+            stroke="#22c55e"
+            strokeWidth="3.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <animate attributeName="stroke-dasharray" from="0 60" to="60 60" dur="0.45s" begin="0.5s" fill="freeze" />
+            <animate attributeName="stroke-dashoffset" from="60" to="0" dur="0.45s" begin="0.5s" fill="freeze" />
+          </path>
+        </svg>
       </div>
+      <p className="mt-3 text-[15px] font-bold" style={{ color: '#86efac' }}>
+        Kein Befund
+      </p>
+      <p className="mt-1 text-[10.5px]" style={{ color: '#5A6772' }}>
+        Bericht an den Analysten gesendet.
+      </p>
     </div>
   )
 }
@@ -414,40 +483,67 @@ export function ScannerMock() {
   return (
     <div
       ref={ref}
-      className="zt-glass zt-gradient-border is-always-on overflow-hidden rounded-3xl shadow-[0_30px_80px_-30px_rgba(0,0,0,0.7)]"
+      className="relative mx-auto overflow-hidden rounded-[14px] border shadow-[0_30px_80px_-20px_rgba(0,0,0,0.75)]"
+      style={{
+        aspectRatio: '2 / 1',
+        maxWidth: 800,
+        background: ZT.panel,
+        borderColor: '#264EBCD2',
+      }}
     >
-      {/* Window chrome (matches the real WPF scanner: close button + title) */}
-      <div className="flex items-center justify-between border-b border-white/10 bg-black/40 px-5 py-3">
-        <div className="flex items-center gap-2.5">
-          <div className="h-7 w-7 rounded-md bg-gradient-to-br from-violet-500 to-violet-700 shadow-[0_0_12px_rgba(139,110,245,0.5)]" />
-          <div className="leading-tight">
-            <p className="text-sm font-bold text-white">ZeroTrace</p>
-            <p className="text-[10px] uppercase tracking-[0.18em] text-neutral-500">Host-Scanner · FiveM</p>
+      {/* top accent line (gradient → accent → gradient), matches WPF top accent */}
+      <div
+        className="absolute inset-x-0 top-0 h-[2px]"
+        style={{
+          background: `linear-gradient(90deg, rgba(56,189,248,0) 0%, ${ZT.accent} 50%, rgba(56,189,248,0) 100%)`,
+        }}
+      />
+
+      {/* close button (top-right) */}
+      <div
+        className="absolute right-[10px] top-[8px] z-10 grid h-6 w-6 place-items-center rounded-[6px] text-[12px]"
+        style={{ color: '#5A6772' }}
+      >
+        ✕
+      </div>
+
+      {/* two columns: left branding, right step flow */}
+      <div className="grid h-full" style={{ gridTemplateColumns: '290px 1fr' }}>
+        {/* LEFT — branding */}
+        <div className="relative flex flex-col items-center justify-center px-5">
+          <div className="flex items-center gap-3">
+            <img
+              src={ztLogoForScannerMock}
+              alt=""
+              className="h-[40px] w-[52px] object-contain"
+              draggable="false"
+            />
+            <span className="text-[26px] font-bold leading-none">
+              <span style={{ color: ZT.accent }}>Zero</span>
+              <span style={{ color: ZT.trace }}>Trace</span>
+            </span>
           </div>
-        </div>
-        <span className="grid h-7 w-7 place-items-center rounded-md border border-white/10 text-neutral-500">×</span>
-      </div>
+          <p className="mt-[10px] text-[13px]" style={{ color: '#5A6772' }}>Host-Scanner</p>
+          <p className="mt-[6px] max-w-[200px] text-center text-[11px] leading-tight" style={{ color: '#46505C' }}>
+            Lokale Cheat- &amp; Manipulations-Analyse
+          </p>
+          <p className="mt-[10px] text-[11px]" style={{ color: '#3A444E' }}>v1.3</p>
 
-      <div key={current} className="h-[340px] overflow-hidden bg-black/55 zt-fade-in">
-        {current === 'game'    && <GameStep />}
-        {current === 'pin'     && <PinStep progress={progress} />}
-        {current === 'consent' && <ConsentStep />}
-        {current === 'scan'    && <ScanStep progress={progress} />}
-        {current === 'result'  && <ResultStep />}
-      </div>
-
-      {/* Step indicator dots */}
-      <div className="flex items-center justify-center gap-2 border-t border-white/10 bg-black/40 py-3">
-        {SCANNER_STEPS.map((s, i) => (
-          <span
-            key={s.id}
-            className={`h-1.5 rounded-full transition-all duration-300 ${
-              i === idx ? 'w-8 bg-violet-400' :
-              i  < idx ? 'w-3 bg-violet-700' :
-                         'w-3 bg-white/15'
-            }`}
+          {/* vertical divider on the right of the left column */}
+          <div
+            className="absolute bottom-[40px] right-0 top-[40px] w-px"
+            style={{ background: '#242A33' }}
           />
-        ))}
+        </div>
+
+        {/* RIGHT — step flow (margin 34,16 in WPF) */}
+        <div key={current} className="relative px-[28px] py-[18px] zt-fade-in">
+          {current === 'game'    && <GameStep />}
+          {current === 'pin'     && <PinStep progress={progress} />}
+          {current === 'consent' && <ConsentStep />}
+          {current === 'scan'    && <ScanStep progress={progress} />}
+          {current === 'result'  && <ResultStep />}
+        </div>
       </div>
     </div>
   )
