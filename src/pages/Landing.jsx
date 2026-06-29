@@ -755,7 +755,7 @@ export default function Landing() {
               : 'max-w-full border-b border-white/10 bg-[#0a0a12]/85 px-6 py-4 backdrop-blur-xl md:px-12'
           }`}
         >
-        <Logo size="md" />
+        <Logo size="md" iconOnly={scrolled} />
         <nav className="hidden items-center gap-4 lg:flex">
           {NAV.map((n) => (
             <button
