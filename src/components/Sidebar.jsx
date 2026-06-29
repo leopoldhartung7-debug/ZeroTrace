@@ -200,7 +200,7 @@ export default function Sidebar() {
         ))}
       </nav>
 
-      <div className="bd panel sticky bottom-0 shrink-0 border-t px-4 py-3">
+      <div className="bd panel sticky bottom-0 z-20 shrink-0 border-t px-4 py-3">
         <button
           onClick={() => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true }))}
           className="hoverable bd muted mb-3 flex w-full items-center justify-between rounded-lg border px-3 py-2 text-xs"
