@@ -291,7 +291,7 @@ function ScanningMock() {
       <pre className="mt-1 font-mono text-[11px] leading-relaxed text-neutral-500">{`"KeyAuth": {
   Var1 => String::Keyauth::Nocase;
   Var2 => String::Keyauth::Wide;`}</pre>
-      <div className="mt-6 flex justify-center"><Logo size="md" /></div>
+      <div className="mt-6 flex justify-center"><Logo size="md" asLink={false} /></div>
       <p className="mt-3 text-center text-sm text-neutral-500">Scanning...</p>
       <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
         <div className="h-full w-3/4 rounded-full bg-sky-500" />
@@ -438,9 +438,7 @@ export default function Landing() {
               : 'max-w-full border-b border-white/10 bg-[#0a0a12]/85 px-6 py-4 backdrop-blur-xl md:px-12'
           }`}
         >
-        <button onClick={() => nav('/')} className="flex items-center gap-3">
-          <Logo size="md" iconOnly={scrolled} />
-        </button>
+        <Logo size="md" iconOnly={scrolled} />
         <nav className="hidden items-center gap-7 lg:flex">
           {NAV.map((n) => (
             <button key={n} onClick={() => onNav(n)} className="text-sm text-neutral-400 transition-colors hover:text-white">
@@ -492,12 +490,14 @@ export default function Landing() {
         <div className="zt-grid-overlay pointer-events-none absolute inset-0" />
 
         <div className="relative mx-auto max-w-7xl px-6 pb-24 pt-32 text-center md:px-12 md:pt-40">
-          {/* Massive headline — wordmark, thin uppercase, shimmer gradient */}
+          {/* Massive headline — Oxanium display font, violet shimmer gradient */}
           <h1
-            className="zt-fade-up mx-auto leading-[0.95] tracking-[0.04em]"
+            className="zt-fade-up mx-auto leading-[0.95]"
             style={{
+              fontFamily: "'Oxanium', 'Inter', system-ui, sans-serif",
               fontSize: 'clamp(4rem, 14vw, 13rem)',
-              fontWeight: 200,
+              fontWeight: 800,
+              letterSpacing: '0.01em',
             }}
           >
             <span

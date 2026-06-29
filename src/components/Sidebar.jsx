@@ -123,9 +123,9 @@ export default function Sidebar() {
 
   return (
     <aside className="panel bd relative flex h-full w-[256px] shrink-0 flex-col overflow-hidden rounded-2xl border shadow-[var(--elev-2)]">
-      <NavLink to="/" className="bd relative z-10 flex items-center gap-3 border-b px-6 py-5 transition-opacity hover:opacity-80" title="Back to home">
+      <div className="bd relative z-10 border-b px-6 py-5">
         <Logo size="sm" sub />
-      </NavLink>
+      </div>
 
       <nav className="relative z-10 flex-1 overflow-y-auto px-3 pb-2">
         {groups.map((g) => (
