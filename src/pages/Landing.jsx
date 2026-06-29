@@ -405,7 +405,6 @@ export default function Landing() {
       <SectionIndex
         sections={[
           { id: 'hero', label: 'Top' },
-          { id: 'before-after', label: 'Compare' },
           { id: 'bento', label: 'Why ZeroTrace' },
           { id: 'features', label: 'Features' },
           { id: 'how', label: 'How it works' },
@@ -598,20 +597,6 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ── Before / After slider ── */}
-      <section id="before-after" className="relative mx-auto max-w-6xl px-6 py-12 md:px-12 md:py-16">
-        <div className="mb-8 text-center">
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-violet-300">Side by side</p>
-          <h2 className="mt-3 text-3xl font-extrabold tracking-tight md:text-5xl">
-            <span className="zt-shimmer-text">Two views of the same player.</span>
-          </h2>
-          <p className="mx-auto mt-3 max-w-2xl text-neutral-400">
-            Drag the handle to compare what the live anti-cheat saw with what ZeroTrace's forensic scan found.
-          </p>
-        </div>
-        <BeforeAfter />
-      </section>
-
       {/* ── Trusted-by marquee ── */}
       <section id="trusted-by" className="relative mx-auto max-w-6xl px-6 pb-12 md:px-12">
         <p className="mb-3 text-center text-[11px] font-bold uppercase tracking-[0.22em] text-neutral-500">
@@ -722,20 +707,6 @@ export default function Landing() {
         </div>
         <div className="mt-12">
           <StepThrough />
-        </div>
-        <div className="mt-20 space-y-20">
-          {STEPS.map((s) => (
-            <div key={s.title} className="grid items-center gap-10 md:grid-cols-2">
-              <div className={s.reverse ? 'md:order-2' : ''}>
-                <p className="text-lg text-neutral-500">{s.n}</p>
-                <h3 className="mt-4 text-4xl font-extrabold tracking-tight text-sky-300 md:text-5xl">
-                  {s.title}
-                </h3>
-                <p className="mt-6 max-w-md text-lg leading-relaxed text-neutral-400">{s.text}</p>
-              </div>
-              <div className={s.reverse ? 'md:order-1' : ''}>{s.mock}</div>
-            </div>
-          ))}
         </div>
       </section>
 
