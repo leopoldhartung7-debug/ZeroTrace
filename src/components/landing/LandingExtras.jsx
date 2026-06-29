@@ -428,7 +428,7 @@ export function ScannerMock() {
         <span className="grid h-7 w-7 place-items-center rounded-md border border-white/10 text-neutral-500">×</span>
       </div>
 
-      <div key={current} className="min-h-[300px] bg-black/55 zt-fade-in">
+      <div key={current} className="h-[340px] overflow-hidden bg-black/55 zt-fade-in">
         {current === 'game'    && <GameStep />}
         {current === 'pin'     && <PinStep progress={progress} />}
         {current === 'consent' && <ConsentStep />}
