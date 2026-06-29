@@ -16,7 +16,7 @@
    "DESIGN UPLIFT" comment block.
    ============================================================ */
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowRight, Check, Play, Shield, ShieldAlert, ShieldCheck, Cpu, FileText, Link2, MoreVertical } from 'lucide-react'
 import ztLogoForScannerMock from '../../assets/zt-logo.png'
@@ -432,9 +432,11 @@ export function ScannerMock() {
   const [idx, setIdx] = useState(0)
   const [progress, setProgress] = useState(0)
 
-  // Scale the fixed-size 800x400 scanner mock down to fit narrower viewports,
-  // so it always looks the same shape regardless of screen size.
-  useEffect(() => {
+  // Scale the fixed-size 800x400 scanner mock down to fit narrower viewports.
+  // Wrapper uses aspect-ratio 2/1 so its height is always width/2 — JS only
+  // sets the transform on the inner (purely visual). useLayoutEffect runs
+  // synchronously before paint, so the page never shifts.
+  useLayoutEffect(() => {
     const wrap = wrapRef.current
     const inner = innerRef.current
     if (!wrap || !inner) return undefined
@@ -442,7 +444,6 @@ export function ScannerMock() {
       const w = wrap.clientWidth
       const s = Math.min(1, w / 800)
       inner.style.transform = `scale(${s})`
-      wrap.style.height = `${400 * s}px`
     }
     apply()
     const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(apply) : null
@@ -499,7 +500,7 @@ export function ScannerMock() {
   const current = SCANNER_STEPS[idx].id
 
   return (
-    <div ref={wrapRef} className="relative mx-auto w-full" style={{ maxWidth: 800, height: 400 }}>
+    <div ref={wrapRef} className="relative mx-auto w-full overflow-hidden" style={{ maxWidth: 800, aspectRatio: '2 / 1' }}>
     <div
       ref={(node) => { ref.current = node; innerRef.current = node }}
       className="absolute left-0 top-0 overflow-hidden rounded-[14px] border shadow-[0_30px_80px_-20px_rgba(0,0,0,0.75)]"
@@ -762,28 +763,28 @@ export function DemoVideoMock() {
 /* ------------------------------------------------------------ */
 const PLANS = [
   {
-    name: 'Free',
-    price: '€0',
-    period: '/forever',
-    blurb: 'Try ZeroTrace with limited monthly scans.',
-    bullets: ['25 scans / month', 'Standard profile', 'Community support'],
-    cta: 'Get Started',
+    name: 'Monthly',
+    price: '$5',
+    period: '/month',
+    blurb: 'Try ZeroTrace for FiveM on a rolling monthly plan.',
+    bullets: ['1 slot', 'Personal use', 'FiveM access', 'Unlimited pin generation', 'Basic support'],
+    cta: 'Get Monthly',
   },
   {
-    name: 'Pro',
-    price: '€19',
-    period: '/month',
-    blurb: 'For active moderation teams and small leagues.',
-    bullets: ['Unlimited scans', 'Deep profile + custom rules', 'Discord webhook', 'Priority support'],
-    cta: 'Choose Pro',
+    name: 'Yearly',
+    price: '$39.99',
+    period: '/year',
+    blurb: 'Best value — full year of FiveM scans with personal access.',
+    bullets: ['1 slot', 'Personal use', 'FiveM access', 'Unlimited pin generation', 'Basic support'],
+    cta: 'Choose Yearly',
     highlight: true,
   },
   {
-    name: 'Tournament',
-    price: '€79',
-    period: '/month',
-    blurb: 'For tournament organisers running high-stakes matches.',
-    bullets: ['Multi-admin dashboard', 'API access', '24/7 response team', 'Custom signatures'],
+    name: 'Enterprise',
+    price: '$139.99',
+    period: '/6 months',
+    blurb: '20 slots for teams and organisations running FiveM communities.',
+    bullets: ['20 slots', 'Team / organisation use', 'FiveM access', 'Shared pins & access', 'Priority support'],
     cta: 'Talk to us',
   },
 ]
