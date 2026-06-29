@@ -12,14 +12,37 @@ import { makeZip } from '../lib/zip.js'
 
 const GAMES = ['HYTALE', 'MINECRAFT', 'CS2', 'VALORANT', 'RUST', 'FIVEM']
 
-function PinStatCard({ icon: Icon, label, value, valueClass = 'txt', children }) {
+const STAT_TONES = {
+  sky:     { ring: 'rgba(56,189,248,0.40)', glow: '0 0 24px rgba(56,189,248,0.18)',  bg: 'rgba(56,189,248,0.10)',  fg: '#7dd3fc' },
+  amber:   { ring: 'rgba(245,158,11,0.40)', glow: '0 0 24px rgba(245,158,11,0.18)',  bg: 'rgba(245,158,11,0.10)',  fg: '#fbbf24' },
+  emerald: { ring: 'rgba(34,197,94,0.40)',  glow: '0 0 24px rgba(34,197,94,0.18)',   bg: 'rgba(34,197,94,0.10)',   fg: '#86efac' },
+  rose:    { ring: 'rgba(244,63,94,0.40)',  glow: '0 0 24px rgba(244,63,94,0.18)',   bg: 'rgba(244,63,94,0.10)',   fg: '#fda4af' },
+}
+
+function PinStatCard({ icon: Icon, label, value, tone = 'sky', children }) {
+  const t = STAT_TONES[tone] || STAT_TONES.sky
   return (
-    <div className="panel rounded-xl border p-5">
-      <div className="flex items-center justify-between">
+    <div
+      className="panel group relative overflow-hidden rounded-2xl border p-5 transition-all duration-300 hover:-translate-y-0.5"
+      style={{ boxShadow: 'var(--elev-1)' }}
+      onMouseEnter={(e) => { e.currentTarget.style.borderColor = t.ring; e.currentTarget.style.boxShadow = `${'var(--elev-2)'}, ${t.glow}` }}
+      onMouseLeave={(e) => { e.currentTarget.style.borderColor = ''; e.currentTarget.style.boxShadow = 'var(--elev-1)' }}
+    >
+      {/* corner gradient wash */}
+      <div
+        className="pointer-events-none absolute inset-0 opacity-60"
+        style={{ background: `radial-gradient(80% 70% at 100% 0%, ${t.bg}, transparent 60%)` }}
+      />
+      <div className="relative flex items-start justify-between">
         <p className="caps-label">{label}</p>
-        <Icon size={16} className="muted" />
+        <span
+          className="flex h-9 w-9 items-center justify-center rounded-xl border transition-transform duration-300 group-hover:scale-110"
+          style={{ background: t.bg, borderColor: t.ring, color: t.fg }}
+        >
+          <Icon size={16} />
+        </span>
       </div>
-      <p className={`mt-3 text-2xl font-bold ${valueClass}`}>{value}</p>
+      <p className="relative mt-3 text-3xl font-extrabold tracking-tight" style={{ color: t.fg }}>{value}</p>
       {children}
     </div>
   )
@@ -357,24 +380,36 @@ export default function Pins() {
 
   return (
     <div>
-      <p className="caps-label">{t('pins.kicker')}</p>
-      <h1 className="txt mt-3 text-4xl font-bold tracking-tight">{t('pins.title')}</h1>
-
-      <div className="mt-7 flex flex-wrap gap-3">
-        <button
-          onClick={() => setCreateOpen(true)}
-          className="flex items-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-semibold text-black transition-opacity hover:opacity-90"
-        >
-          <Plus size={18} />
-          {t('pins.create')}
-        </button>
-        <button
-          onClick={() => setImportOpen(true)}
-          className="bd txt flex items-center gap-2 rounded-xl border px-5 py-3 text-sm font-semibold transition-colors hover:border-sky-500"
-        >
-          <Download size={18} />
-          Import Result
-        </button>
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <span className="inline-flex items-center gap-2 rounded-full border border-sky-500/30 bg-sky-500/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-sky-300">
+            <span className="h-1.5 w-1.5 rounded-full bg-sky-400 shadow-[0_0_10px_rgba(56,189,248,0.7)]" />
+            {t('pins.kicker')}
+          </span>
+          <h1 className="txt mt-3 text-4xl font-bold tracking-tight md:text-5xl">{t('pins.title')}</h1>
+        </div>
+        <div className="flex flex-wrap gap-2.5">
+          <button
+            onClick={() => setCreateOpen(true)}
+            className="group inline-flex items-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold text-white transition-all hover:-translate-y-0.5"
+            style={{
+              background: 'linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%)',
+              boxShadow: '0 10px 30px -10px rgba(14,165,233,0.55), 0 0 0 1px rgba(255,255,255,0.06) inset',
+            }}
+          >
+            <span className="grid h-5 w-5 place-items-center rounded-md bg-white/20 transition-transform group-hover:rotate-90">
+              <Plus size={14} />
+            </span>
+            {t('pins.create')}
+          </button>
+          <button
+            onClick={() => setImportOpen(true)}
+            className="bd txt inline-flex items-center gap-2 rounded-xl border px-5 py-3 text-sm font-semibold transition-all hover:-translate-y-0.5 hover:border-sky-500/60 hover:bg-sky-500/[0.04]"
+          >
+            <Download size={16} className="muted" />
+            Import Result
+          </button>
+        </div>
       </div>
 
       <div className="mt-8">
@@ -389,10 +424,10 @@ export default function Pins() {
       </div>
 
       <div className="mt-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <PinStatCard icon={MessageSquare} label="Total Pins" value={ownPins.length} />
-        <PinStatCard icon={Clock} label="Pending" value={ownPins.filter((p) => p.status === 'Pending').length} />
-        <PinStatCard icon={CheckCircle2} label="Finished" value={ownPins.filter((p) => p.status === 'Finished').length} />
-        <PinStatCard icon={AlertCircle} label="Expired" value={ownPins.filter((p) => p.status === 'Expired').length} />
+        <PinStatCard icon={MessageSquare} label="Total Pins" value={ownPins.length} tone="sky" />
+        <PinStatCard icon={Clock} label="Pending" value={ownPins.filter((p) => p.status === 'Pending').length} tone="amber" />
+        <PinStatCard icon={CheckCircle2} label="Finished" value={ownPins.filter((p) => p.status === 'Finished').length} tone="emerald" />
+        <PinStatCard icon={AlertCircle} label="Expired" value={ownPins.filter((p) => p.status === 'Expired').length} tone="rose" />
       </div>
 
       {(() => {
@@ -421,18 +456,18 @@ export default function Pins() {
         )
       })()}
 
-      <div className="panel mt-8 rounded-2xl border p-5">
+      <div className="panel mt-8 overflow-hidden rounded-2xl border p-5" style={{ boxShadow: 'var(--elev-1)' }}>
         <div className="flex flex-col gap-3 sm:flex-row">
           <div className="relative flex-1">
-            <Search size={16} className="muted absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <Search size={16} className="muted absolute left-3.5 top-1/2 -translate-y-1/2 transition-colors" />
             <input
               value={query}
               onChange={(e) => {
                 setQuery(e.target.value)
                 setPage(1)
               }}
-              placeholder="Search by pin or name..."
-              className="bd tile txt w-full rounded-lg border py-2.5 pl-10 pr-4 text-sm focus:outline-none"
+              placeholder="Search by pin or name…"
+              className="bd tile txt w-full rounded-lg border py-2.5 pl-10 pr-4 text-sm transition-all placeholder:text-neutral-500 focus:border-sky-500/60 focus:bg-sky-500/[0.04] focus:outline-none focus:ring-2 focus:ring-sky-500/20"
             />
           </div>
           <Select
