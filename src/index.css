@@ -14,6 +14,7 @@
   --bg-2: #0f0f12;
   --panel: #17181c;       /* floating surfaces — lighter than the frame */
   --panel-2: #1c1d22;
+  --panel-pop: #262830;   /* popovers — clearly lighter than --panel */
   --tile: #212228;
   --border: #2a2b32;
   --border-soft: #202127;
@@ -33,6 +34,7 @@
   --bg-2: #e6e9f0;
   --panel: #ffffff;
   --panel-2: #fbfcfe;
+  --panel-pop: #ffffff;
   --tile: #eef0f6;
   --border: #dadce5;
   --border-soft: #e6e8ef;
@@ -53,6 +55,7 @@
   --bg-2: #0f0f12;
   --panel: #17181c;
   --panel-2: #1c1d22;
+  --panel-pop: #262830;
   --tile: #212228;
   --border: #2a2b32;
   --border-soft: #202127;

@@ -26,12 +26,15 @@ function Popover({ open, onClose, children, className = '' }) {
   return (
     <div
       ref={ref}
-      className={`absolute z-50 overflow-hidden rounded-xl border shadow-[0_30px_80px_-20px_rgba(0,0,0,0.85)] ${className}`}
+      className={`absolute z-50 overflow-hidden rounded-xl ${className}`}
       style={{
-        background: 'var(--panel-2)',
-        borderColor: 'var(--border)',
-        backdropFilter: 'blur(8px)',
-        WebkitBackdropFilter: 'blur(8px)',
+        // Solid, opaque, clearly lighter than the sidebar so it never
+        // blends into the background. Light theme uses pure white; dark
+        // theme uses a panel-2-derived colour that's a real step lighter
+        // than --panel. Hard 1px outline + heavy shadow finish the lift.
+        background: 'var(--panel-pop, #262830)',
+        boxShadow:
+          '0 0 0 1px rgba(255,255,255,0.10), 0 22px 60px -12px rgba(0,0,0,0.85), 0 4px 14px rgba(0,0,0,0.55)',
       }}
     >
       {children}
@@ -239,7 +242,7 @@ export default function Sidebar() {
             {dark ? <Moon size={15} /> : <Sun size={15} />}
           </button>
 
-          <Popover open={panel === 'n'} onClose={() => setPanel(null)} className="bottom-10 left-0 w-72">
+          <Popover open={panel === 'n'} onClose={() => setPanel(null)} className="bottom-10 left-0 right-0">
             <div className="bd flex items-center justify-between border-b px-4 py-3">
               <p className="txt text-sm font-semibold">Notifications</p>
               <button className="muted hover:txt text-xs" onClick={() => dispatch({ type: 'mark-notifications-read', role: state.role, userId: state.session?.userId })}>
