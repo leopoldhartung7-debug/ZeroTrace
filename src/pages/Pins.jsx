@@ -393,8 +393,8 @@ export default function Pins() {
             onClick={() => setCreateOpen(true)}
             className="group inline-flex items-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold text-white transition-all hover:-translate-y-0.5"
             style={{
-              background: 'linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%)',
-              boxShadow: '0 10px 30px -10px rgba(14,165,233,0.55), 0 0 0 1px rgba(255,255,255,0.06) inset',
+              background: 'linear-gradient(135deg, #8b6ef5 0%, #6d28d9 100%)',
+              boxShadow: '0 10px 30px -10px rgba(139,110,245,0.55), 0 0 0 1px rgba(255,255,255,0.06) inset',
             }}
           >
             <span className="grid h-5 w-5 place-items-center rounded-md bg-white/20 transition-transform group-hover:rotate-90">
@@ -558,8 +558,8 @@ export default function Pins() {
               <col className="w-[11%]" />
             </colgroup>
             <thead>
-              <tr className="caps-label">
-                <th className="bd border-y bg-white/[0.02] px-2 py-3 first:rounded-l-lg">
+              <tr className="caps-label bd border-b">
+                <th className="px-2 py-3">
                   <input
                     type="checkbox"
                     checked={allOnPageSelected}
@@ -568,16 +568,11 @@ export default function Pins() {
                     aria-label="Select all"
                   />
                 </th>
-                {['Pin', 'Name', 'Game', 'Status', 'Used', 'Result', 'Visibility', ''].map(
-                  (h, i, arr) => (
-                    <th
-                      key={i}
-                      className={`bd border-y bg-white/[0.02] px-2 py-3 font-semibold ${i === arr.length - 1 ? 'rounded-r-lg' : ''}`}
-                    >
-                      {h}
-                    </th>
-                  ),
-                )}
+                {['Pin', 'Name', 'Game', 'Status', 'Used', 'Result', 'Visibility', ''].map((h, i) => (
+                  <th key={i} className="px-2 py-3 font-semibold">
+                    {h}
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody>
@@ -613,17 +608,9 @@ export default function Pins() {
                 return (
                 <tr
                   key={r.id}
-                  className="group bd relative border-b align-middle text-sm transition-colors hover:bg-white/[0.025]"
+                  className="bd border-b align-middle text-sm transition-colors hover:bg-white/[0.025]"
                 >
                   <td className="px-2 py-4">
-                    {/* tiny left rail when the row is starred or selected */}
-                    {(r.starred || selected.includes(r.id)) && (
-                      <span
-                        aria-hidden="true"
-                        className="pointer-events-none absolute inset-y-2 left-0 w-[3px] rounded-r-full"
-                        style={{ background: selected.includes(r.id) ? '#0ea5e9' : '#f59e0b' }}
-                      />
-                    )}
                     <input
                       type="checkbox"
                       checked={selected.includes(r.id)}
