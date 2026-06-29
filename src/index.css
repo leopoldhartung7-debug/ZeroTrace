@@ -15,6 +15,7 @@
   --bg-2: #0d0d1a;
   --panel: #101020;
   --panel-2: #15152a;
+  --panel-pop: #1f1f3d;   /* popovers — clearly lighter than --panel */
   --tile: #1a1a32;
   --border: #26264e;
   --border-soft: #1c1c3c;
@@ -37,6 +38,7 @@
   --bg-2: #e6e6f5;
   --panel: #ffffff;
   --panel-2: #f8f8ff;
+  --panel-pop: #ffffff;
   --tile: #ededfc;
   --border: #d0d0f0;
   --border-soft: #dcdcf5;
@@ -59,6 +61,7 @@
   --bg-2: #0d0d1a;
   --panel: #101020;
   --panel-2: #15152a;
+  --panel-pop: #1f1f3d;
   --tile: #1a1a32;
   --border: #26264e;
   --border-soft: #1c1c3c;
